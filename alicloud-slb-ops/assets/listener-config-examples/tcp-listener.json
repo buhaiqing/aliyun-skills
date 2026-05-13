@@ -1,0 +1,16 @@
+{
+  "LoadBalancerId": "lb-bp67acfmxazb4ph***",
+  "ListenerPort": 443,
+  "BackendServerPort": 443,
+  "Bandwidth": -1,
+  "Scheduler": "wrr",
+  "PersistenceTimeout": 3600,
+  "HealthCheckType": "tcp",
+  "HealthCheckDomain": "",
+  "HealthCheckURI": "",
+  "HealthCheckConnectPort": 443,
+  "HealthyThreshold": 3,
+  "UnhealthyThreshold": 3,
+  "HealthCheckTimeout": 5,
+  "HealthCheckInterval": 2
+}

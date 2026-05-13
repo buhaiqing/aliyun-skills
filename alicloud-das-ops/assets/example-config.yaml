@@ -1,0 +1,18 @@
+# Example configuration for alicloud-das-ops
+# DAS is a single-region service; SDK endpoint is fixed to cn-shanghai.
+
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+das:
+  endpoint: "das.cn-shanghai.aliyuncs.com"
+  sdk_region: "cn-shanghai"
+  vpc_endpoint: "das.vpc-proxy.aliyuncs.com"
+
+defaults:
+  timeout_seconds: 30
+  retry_count: 3
+  poll_interval_seconds: 5
+  max_wait_seconds: 300

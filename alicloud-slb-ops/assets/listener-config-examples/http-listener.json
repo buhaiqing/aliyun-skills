@@ -1,0 +1,17 @@
+{
+  "LoadBalancerId": "lb-bp67acfmxazb4ph***",
+  "ListenerPort": 80,
+  "BackendServerPort": 8080,
+  "Bandwidth": -1,
+  "Scheduler": "wrr",
+  "StickySession": "off",
+  "HealthCheck": "on",
+  "XForwardedFor": "on",
+  "HealthCheckDomain": "$ _ip",
+  "HealthCheckURI": "/health",
+  "HealthCheckConnectPort": 8080,
+  "HealthyThreshold": 3,
+  "UnhealthyThreshold": 3,
+  "HealthCheckTimeout": 5,
+  "HealthCheckInterval": 2
+}

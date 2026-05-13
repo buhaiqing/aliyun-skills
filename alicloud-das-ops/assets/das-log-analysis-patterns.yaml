@@ -1,0 +1,217 @@
+# DAS Log Analysis Patterns
+# DAS 多源日志聚合分析模式 - 用于 Agent 执行关联诊断
+
+patterns:
+  - name: slow_query_cascade
+    description: "慢查询级联分析"
+    category: performance_degradation
+    severity: critical
+    apis:
+      - GetQueryOptimizeData      # 获取慢查询列表
+      - GetPfsSqlSamples          # 获取 SQL 执行样本
+      - DescribeSqlLogStatistic   # SQL 洞察统计（Pro）
+      - GetSessionList            # 检查是否有锁等待会话
+    correlation_logic: |
+      1. 从 GetQueryOptimizeData 提取 top N 慢查询（按 avg_exec_time 排序）
+      2. 用 GetPfsSqlSamples 获取这些 SQL 的 wait events 和 execution timeline
+      3. 若 wait events 包含 "lock" 或 "mutex"：
+         - 调用 GetSessionList 检查锁持有者（state = 'Locked' 且 time > 60s）
+         - 分析锁等待链，识别阻塞根会话
+      4. 若存在长时间锁等待：
+         - 建议 CreateKillInstanceSessionTask（需用户确认）
+         - 或建议 CreateSqlLimitTask 限流热点 SQL
+      5. 输出级联影响分析：慢查询 → 锁等待 → 连接堆积 → 连接超时
+    output_format: markdown_table
+    expected_duration: "2-3 分钟"
+
+  - name: space_pressure_root_cause
+    description: "空间压力根因分析"
+    category: data_anomaly
+    severity: critical
+    apis:
+      - GetSpaceSummary           # 空间总览
+      - GetQueryOptimizeData      # 检查是否有大量写入
+      - GetAutonomousNotifyEventsInRange  # 检查自治空间优化事件
+    correlation_logic: |
+      1. GetSpaceSummary 获取 totalSize / dataSize / indexSize / freeSize
+      2. 计算各类型空间占比：
+         - data_ratio = dataSize / totalSize
+         - index_ratio = indexSize / totalSize
+         - free_ratio = freeSize / totalSize
+      3. 若 data_ratio > 0.70：
+         - 用 GetQueryOptimizeData 检查是否有大表写入（INSERT/UPDATE 频率突增）
+         - 识别写入量 Top 3 的表
+      4. 若 index_ratio > 0.40：
+         - 提示索引膨胀，建议运行 CreateDiagnosticReport 检查冗余索引
+      5. 检查自治事件中是否有 SPACE_OPTIMIZATION 事件：
+         - 若有且状态为 SUCCESS：说明自治优化已尝试回收空间
+         - 若有且状态为 FAILED：需要人工介入
+      6. 输出空间压力根因及释放建议
+    output_format: markdown_table
+    expected_duration: "1-2 分钟"
+
+  - name: connection_storm_analysis
+    description: "连接风暴深度分析"
+    category: connection_timeout
+    severity: emergency
+    apis:
+      - GetSessionList            # 会话列表
+      - GetQueryOptimizeData      # 慢查询检查
+      - GetDBInstanceConnectivityDiagnosis  # 连通性诊断
+      - GetAutonomousNotifyEventsInRange    # 自治事件
+    correlation_logic: |
+      1. GetSessionList 获取全部会话，按以下维度分组统计：
+         - 按 user 分组：识别是否有异常用户连接突增
+         - 按 host 分组：识别是否有特定 IP 连接过多
+         - 按 command 分组：统计 Sleep / Query / Locked 比例
+         - 按 time 排序：识别长时间会话
+      2. 若 Sleep 会话占比 > 60% 且来自同一 host：
+         - 判定为连接池配置问题
+         - 输出连接池优化建议
+      3. 若 Query 会话占比高且存在慢查询：
+         - 调用 GetQueryOptimizeData 确认慢查询列表
+         - 判定为慢查询导致连接不释放
+      4. 若存在大量 Locked 会话：
+         - 分析锁等待链
+         - 判定为锁竞争导致连接堆积
+      5. 调用 GetDBInstanceConnectivityDiagnosis 排除网络层问题
+      6. 检查自治事件中是否有 SQL_THROTTLING 事件（DAS 是否已介入）
+      7. 输出连接风暴类型判定及分级处置建议
+    output_format: markdown_table
+    expected_duration: "2-3 分钟"
+
+  - name: deadlock_pattern_analysis
+    description: "死锁模式分析"
+    category: data_anomaly
+    severity: warning
+    apis:
+      - CreateLatestDeadLockAnalysis  # 最新死锁分析
+      - GetDeadLockHistory            # 死锁历史
+      - GetQueryOptimizeData          # 查询优化数据
+    correlation_logic: |
+      1. CreateLatestDeadLockAnalysis 获取最新死锁详情
+      2. GetDeadLockHistory 获取最近 7 天死锁历史
+      3. 分析死锁模式：
+         - 按涉及表分组：识别是否总是同一组表
+         - 按时间分布：识别死锁高发时段
+         - 按事务长度：识别长事务导致的死锁
+      4. 若死锁涉及表固定：
+         - 输出事务访问顺序优化建议
+         - 建议对热点表启用 CreateSqlLimitTask 限流
+      5. 若死锁集中在特定时段：
+         - 分析该时段的 GetQueryOptimizeData，识别批处理任务
+         - 建议调整批处理时间窗口
+      6. 输出死锁模式总结及预防策略
+    output_format: markdown_table
+    expected_duration: "2-3 分钟"
+
+  - name: performance_degradation_holistic
+    description: "性能下降 holistic 分析"
+    category: performance_degradation
+    severity: critical
+    apis:
+      - GetInstanceInspections      # 巡检评分
+      - GetQueryOptimizeData        # 慢查询
+      - GetPfsSqlSamples            # 性能洞察
+      - GetSessionList              # 会话
+      - GetSpaceSummary             # 空间
+      - GetAutonomousNotifyEventsInRange  # 自治事件
+    correlation_logic: |
+      1. GetInstanceInspections 获取 score 及子项评分（CPU / 内存 / I/O / 连接）
+      2. 识别评分最低的子项，确定主要瓶颈方向
+      3. 若 CPU 子项评分低：
+         - GetQueryOptimizeData 提取 CPU 消耗 Top SQL
+         - GetPfsSqlSamples 分析这些 SQL 的执行特征
+      4. 若 I/O 子项评分低：
+         - GetPfsSqlSamples 提取 I/O 等待事件
+         - GetSpaceSummary 检查是否有大表扫描导致 I/O 飙升
+      5. 若连接子项评分低：
+         - GetSessionList 分析连接使用模式
+         - 执行 connection_storm_analysis 模式
+      6. 检查自治事件：
+         - 是否有 AUTO_SCALING 事件（资源是否已自动扩容）
+         - 是否有 SQL_THROTTLING 事件（DAS 是否已限流）
+      7. 输出 holistic 性能分析报告及优化优先级
+    output_format: markdown_table
+    expected_duration: "3-5 分钟"
+
+  - name: das_pro_health_check
+    description: "DAS Pro 健康检查"
+    category: data_anomaly
+    severity: warning
+    apis:
+      - GetDasProServiceUsage       # Pro 使用情况
+      - DescribeSqlLogStatistic     # SQL 洞察统计
+      - GetAutonomousNotifyEventsInRange  # 自治事件
+    correlation_logic: |
+      1. GetDasProServiceUsage 获取：
+         - storageUsed / storageFreeQuotaInMB 比率
+         - expireTime（许可证过期时间）
+         - 各功能模块使用状态
+      2. 若 storage_ratio > 0.85：
+         - 输出存储配额告警
+         - 建议清理历史数据或升级配额
+      3. 若 expireTime 在 30 天内：
+         - 输出许可证即将过期告警
+         - 建议续费或降级
+      4. DescribeSqlLogStatistic 检查 SQL Insight 数据完整性：
+         - 若数据存在断档，检查自治事件中是否有采集异常
+      5. 检查自治事件成功率：
+         - 统计最近 7 天自治事件成功/失败比例
+         - 若失败率 > 10%，输出告警
+      6. 输出 DAS Pro 健康状态及维护建议
+    output_format: markdown_table
+    expected_duration: "1-2 分钟"
+
+  - name: autonomous_event_impact
+    description: "自治事件影响分析"
+    category: data_anomaly
+    severity: warning
+    apis:
+      - GetAutonomousNotifyEventsInRange    # 自治事件列表
+      - GetAutonomousNotifyEventContent     # 事件详情
+      - GetInstanceInspections              # 巡检评分
+    correlation_logic: |
+      1. GetAutonomousNotifyEventsInRange 获取最近 24 小时自治事件
+      2. 按事件类型分组统计：
+         - AUTO_SCALING：统计扩容次数及触发原因
+         - SQL_THROTTLING：统计限流次数及限流效果
+         - SPACE_OPTIMIZATION：统计空间回收量
+      3. 对每条事件调用 GetAutonomousNotifyEventContent 获取详情：
+         - 分析事件触发前的指标状态
+         - 分析事件执行后的指标变化
+         - 评估事件是否达到预期效果
+      4. 若事件状态为 FAILED：
+         - 分析失败原因
+         - 输出人工介入建议
+      5. 若事件频繁触发（如 AUTO_SCALING > 3 次/24h）：
+         - 输出基线配置不当告警
+         - 建议调整自动扩容阈值或升级实例规格
+      6. 对比事件前后 GetInstanceInspections 评分变化
+      7. 输出自治事件影响评估报告
+    output_format: markdown_table
+    expected_duration: "2-3 分钟"
+
+  - name: cross_skill_network_diagnosis
+    description: "跨技能网络诊断"
+    category: connection_timeout
+    severity: critical
+    apis:
+      - GetDBInstanceConnectivityDiagnosis  # DAS 连通性诊断
+    correlation_logic: |
+      1. GetDBInstanceConnectivityDiagnosis 获取连通性结果
+      2. 若结果为 REACHABLE：
+         - 排除网络层问题
+         - 转向会话层/应用层诊断
+      3. 若结果为 UNREACHABLE：
+         - 解析 failureReason 和 suggestedActions
+         - 按原因类型委托：
+           a. 安全组/白名单问题 → 委托 alicloud-vpc-ops 或 alicloud-ecs-ops
+           b. 路由问题 → 委托 alicloud-vpc-ops
+           c. DNS 解析问题 → 委托 alicloud-dns-ops（如存在）
+         - 传递上下文：instance_id, src_ip, failureReason
+      4. 跨技能诊断完成后，重新执行连通性诊断验证
+      5. 输出网络诊断结论及修复结果
+    output_format: markdown_table
+    expected_duration: "3-5 分钟"
+    cross_skill_delegation: true

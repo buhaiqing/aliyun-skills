@@ -1,0 +1,255 @@
+# DAS Fault Pattern Library
+# 故障模式库 - 用于 Agent 快速匹配故障类型和诊断路径
+
+fault_patterns:
+  - id: F001
+    name: "连接风暴"
+    category: connection_timeout
+    severity: emergency
+    symptoms:
+      - "大量连接超时"
+      - "GetSessionList 返回会话数接近 max_connections"
+      - "新连接建立失败"
+    root_causes:
+      - "应用连接池配置过大"
+      - "存在慢查询导致连接长时间不释放"
+      - "网络抖动导致连接半开"
+    diagnostic_apis:
+      - GetSessionList
+      - GetQueryOptimizeData
+      - GetDBInstanceConnectivityDiagnosis
+    resolution_apis:
+      - CreateKillInstanceSessionTask
+      - CreateSqlLimitTask
+    prevention:
+      - "配置连接池 max_connections < 实例上限的 80%"
+      - "启用 SQL 限流防止慢查询堆积"
+
+  - id: F002
+    name: "慢查询导致性能下降"
+    category: performance_degradation
+    severity: critical
+    symptoms:
+      - "inspection score < 60"
+      - "GetQueryOptimizeData 中 avg_exec_time 突增"
+      - "CPU 使用率持续高位"
+    root_causes:
+      - "缺失索引或索引失效"
+      - "统计信息过期导致执行计划劣化"
+      - "数据量增长但查询未优化"
+    diagnostic_apis:
+      - GetQueryOptimizeData
+      - GetPfsSqlSamples
+      - CreateDiagnosticReport
+    resolution_apis:
+      - CreateSqlLimitTask
+    prevention:
+      - "定期运行 CreateDiagnosticReport 检查索引建议"
+      - "对高频慢查询启用 SQL 限流"
+
+  - id: F003
+    name: "存储空间不足"
+    category: data_anomaly
+    severity: critical
+    symptoms:
+      - "GetSpaceSummary 中 usage_ratio > 85%"
+      - "写入操作报错磁盘满"
+      - "自治事件中出现 SPACE_OPTIMIZATION"
+    root_causes:
+      - "数据文件膨胀"
+      - "Binlog/Redo log 未清理"
+      - "临时表空间过大"
+    diagnostic_apis:
+      - GetSpaceSummary
+      - GetAutonomousNotifyEventsInRange
+    resolution_apis:
+      - SetAutoScalingConfig
+    prevention:
+      - "配置存储自动扩容阈值"
+      - "定期清理过期 Binlog"
+
+  - id: F004
+    name: "死锁频繁"
+    category: data_anomaly
+    severity: warning
+    symptoms:
+      - "应用报错 Deadlock found"
+      - "CreateLatestDeadLockAnalysis 频繁触发"
+    root_causes:
+      - "事务顺序不一致"
+      - "事务粒度过大"
+      - "并发更新同一组记录"
+    diagnostic_apis:
+      - CreateLatestDeadLockAnalysis
+      - GetDeadLockHistory
+    resolution_apis:
+      - CreateSqlLimitTask
+    prevention:
+      - "统一事务内表访问顺序"
+      - "缩短事务持有锁时间"
+
+  - id: F005
+    name: "DAS Pro 存储配额耗尽"
+    category: data_anomaly
+    severity: warning
+    symptoms:
+      - "GetDasProServiceUsage 中 storageUsed >= storageFreeQuotaInMB"
+      - "SQL Insight 数据停止写入"
+    root_causes:
+      - "SQL Insight 数据量增长"
+      - "未配置存储自动清理"
+    diagnostic_apis:
+      - GetDasProServiceUsage
+    resolution_apis:
+      - SetEventSubscription
+    prevention:
+      - "监控 storageUsed / storageFreeQuotaInMB 比率"
+      - "配置自动清理策略"
+
+  - id: F006
+    name: "实例未注册导致 DAS 功能不可用"
+    category: connection_timeout
+    severity: critical
+    symptoms:
+      - "调用任何 DAS API 返回 InvalidDBInstanceId.NotFound"
+      - "DAS 控制台看不到该实例"
+    root_causes:
+      - "实例刚创建，尚未接入 DAS"
+      - "实例曾从 DAS 移除"
+    diagnostic_apis:
+      - GetInstanceInspections
+    resolution_apis:
+      - AddHDMInstance
+    prevention:
+      - "实例创建后自动调用 AddHDMInstance"
+
+  - id: F007
+    name: "网络连通性异常"
+    category: connection_timeout
+    severity: critical
+    symptoms:
+      - "GetDBInstanceConnectivityDiagnosis 返回 UNREACHABLE"
+      - "特定 IP 无法连接，其他 IP 正常"
+    root_causes:
+      - "安全组规则未放行"
+      - "白名单限制"
+      - "VPC 路由问题"
+      - "数据库实例防火墙配置"
+    diagnostic_apis:
+      - GetDBInstanceConnectivityDiagnosis
+    resolution_apis:
+      - "委托 alicloud-vpc-ops / alicloud-ecs-ops 处理网络配置"
+    prevention:
+      - "标准化安全组和白名单配置"
+      - "连通性监控告警"
+
+  - id: F008
+    name: "自治事件触发异常"
+    category: data_anomaly
+    severity: warning
+    symptoms:
+      - "GetAutonomousNotifyEventsInRange 中事件状态为 FAILED"
+      - "自治优化未生效或导致副作用"
+    root_causes:
+      - "自治策略配置不当"
+      - "实例状态不稳定导致自治操作失败"
+      - "DAS Pro 许可证过期"
+    diagnostic_apis:
+      - GetAutonomousNotifyEventsInRange
+      - GetAutonomousNotifyEventContent
+      - GetDasProServiceUsage
+    resolution_apis:
+      - SetEventSubscription
+      - SetAutoScalingConfig
+    prevention:
+      - "定期检查自治事件成功率"
+      - "配置自治事件告警"
+
+  - id: F009
+    name: "SQL 限流失效"
+    category: performance_degradation
+    severity: critical
+    symptoms:
+      - "CreateSqlLimitTask 后热点 SQL 仍无限制"
+      - "DescribeSqlLimitTasks 中规则状态为 EXPIRED"
+      - "限流规则未匹配目标 SQL"
+    root_causes:
+      - "SQL 关键词匹配模式不准确"
+      - "限流规则已过期"
+      - "实例重启后规则未持久化"
+      - "DAS Agent 未正常运行"
+    diagnostic_apis:
+      - DescribeSqlLimitTasks
+      - GetQueryOptimizeData
+      - GetInstanceInspections
+    resolution_apis:
+      - CreateSqlLimitTask
+    prevention:
+      - "使用精确的 SQL 模板匹配"
+      - "定期检查限流规则有效期"
+      - "实例变更后重新评估限流策略"
+
+  - id: F010
+    name: "巡检评分异常下降"
+    category: performance_degradation
+    severity: warning
+    symptoms:
+      - "GetInstanceInspections 中 score 突然下降超过 20 分"
+      - "无明确用户报障，但评分已低于 warning 阈值"
+    root_causes:
+      - "后台自治任务失败"
+      - "实例配置变更未同步到 DAS"
+      - "监控数据采集异常"
+      - "潜在性能问题尚未爆发"
+    diagnostic_apis:
+      - GetInstanceInspections
+      - GetAutonomousNotifyEventsInRange
+      - CreateDiagnosticReport
+    resolution_apis:
+      - CreateDiagnosticReport
+    prevention:
+      - "配置评分变化告警"
+      - "定期巡检并关注趋势"
+
+  - id: F011
+    name: "会话长时间持有锁"
+    category: performance_degradation
+    severity: critical
+    symptoms:
+      - "GetSessionList 中存在 state='Locked' 且 time > 300s 的会话"
+      - "其他会话出现大量锁等待"
+      - "应用反馈操作卡顿"
+    root_causes:
+      - "未提交的事务长时间持有锁"
+      - "应用程序未正确关闭事务"
+      - "批处理任务在事务中执行大量操作"
+    diagnostic_apis:
+      - GetSessionList
+      - GetQueryOptimizeData
+    resolution_apis:
+      - CreateKillInstanceSessionTask
+    prevention:
+      - "应用层设置事务超时"
+      - "监控长时间未提交的会话"
+
+  - id: F012
+    name: "DAS Agent 连接异常"
+    category: connection_timeout
+    severity: critical
+    symptoms:
+      - "DAS 控制台显示 Agent 离线"
+      - "自治功能全部失效"
+      - "GetInstanceInspections 返回数据延迟或缺失"
+    root_causes:
+      - "DAS Agent 进程崩溃"
+      - "Agent 与 DAS 服务端网络不通"
+      - "Agent 版本过旧"
+      - "实例防火墙阻止 Agent 心跳"
+    diagnostic_apis:
+      - GetInstanceInspections
+      - GetDBInstanceConnectivityDiagnosis
+    resolution_apis:
+      - "重启 DAS Agent（需通过引擎技能或控制台操作）"
+    prevention:
+      - "监控 Agent 心跳状态"
+      - "保持 Agent 版本更新"

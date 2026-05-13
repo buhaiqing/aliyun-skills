@@ -1,0 +1,48 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "slb:Describe*",
+        "slb:CreateLoadBalancer",
+        "slb:DeleteLoadBalancer",
+        "slb:SetLoadBalancer*",
+        "slb:ModifyLoadBalancer*",
+        "slb:CreateLoadBalancer*Listener",
+        "slb:SetLoadBalancer*ListenerAttribute",
+        "slb:DeleteLoadBalancerListener",
+        "slb:StartLoadBalancerListener",
+        "slb:StopLoadBalancerListener",
+        "slb:CreateVServerGroup",
+        "slb:DeleteVServerGroup",
+        "slb:DescribeVServerGroup*",
+        "slb:AddVServerGroupBackendServers",
+        "slb:RemoveVServerGroupBackendServers",
+        "slb:ModifyVServerGroupBackendServers",
+        "slb:SetVServerGroupAttribute",
+        "slb:AddBackendServers",
+        "slb:RemoveBackendServers",
+        "slb:SetBackendServers",
+        "slb:DescribeHealthStatus",
+        "slb:UploadServerCertificate",
+        "slb:DeleteServerCertificate",
+        "slb:DescribeServerCertificates",
+        "slb:UploadCACertificate",
+        "slb:DeleteCACertificate",
+        "slb:DescribeCACertificates",
+        "slb:CreateAccessControlList",
+        "slb:DeleteAccessControlList",
+        "slb:DescribeAccessControlLists",
+        "slb:AddAccessControlListEntry",
+        "slb:RemoveAccessControlListEntry",
+        "slb:SetAccessControlListAttribute",
+        "slb:CreateRules",
+        "slb:DeleteRules",
+        "slb:DescribeRules",
+        "slb:SetRule"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

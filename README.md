@@ -6,8 +6,6 @@
 
 本项目是阿里云（Alibaba Cloud）运维 Agent Skills 集合，提供云产品的自动化运维、监控和管理能力。
 
-> 基于 [JD Cloud Skills Farm](https://github.com/jdcloud-skills) 的 Meta Skill 体系构建。
-
 ## 核心价值
 
 **Skills Farm 是一套 Meta Skill（元技能）体系**——将运维知识转化为结构化的、AI Agent 可解析、可执行、可验证的声明式规范。
@@ -85,17 +83,7 @@ alicloud-ecs-ops/
     └── example-config.yaml
 ```
 
-## 阿里云 CLI 行为特征（与京东云 jdc 对比）
-
-| 特性 | 京东云 (jdc) | 阿里云 (aliyun) |
-|------|------------|----------------|
-| 配置文件 | `~/.jdc/config` (INI) | `~/.aliyun/config.json` (JSON) |
-| 环境变量 | ❌ 不支持 | ✅ 原生支持 `ALIBABA_CLOUD_*` |
-| 默认输出 | XML | ✅ JSON（默认） |
-| `--output json` | 必须放在子命令前 | ❌ 不需要（输出已是 JSON）|
-| `--output` 用途 | 控制输出格式 | JMESPath 转换（tabs、提取字段）|
-| `--no-interactive` | ❌ 不存在 | ❌ 不存在（默认非交互）|
-| 认证模式 | AK | AK / StsToken / RamRoleArn / OIDC / CloudSSO 等 |
+## 阿里云 CLI 行为特征
 
 ### 正确 CLI 调用模式
 

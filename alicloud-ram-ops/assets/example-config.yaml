@@ -1,0 +1,48 @@
+# Example configuration for alicloud-ram-ops
+# This file serves as a template for credential and resource configuration.
+#
+# SECURITY WARNING:
+# - NEVER commit this file with real credentials to version control.
+# - Add this file to .gitignore if you store real credentials here.
+# - Prefer environment variables for credential injection.
+
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+defaults:
+  region: "cn-hangzhou"
+  timeout_seconds: 30
+  retry_count: 3
+
+# RAM-specific defaults
+ram:
+  # Default password policy settings
+  password_policy:
+    minimum_password_length: 12
+    require_lowercase_characters: true
+    require_uppercase_characters: true
+    require_numbers: true
+    require_symbols: true
+    max_login_attempts: 5
+    password_reuse_prevention: 5
+    max_password_age: 90
+    hard_expiry: false
+
+  # Default role session duration (seconds)
+  max_session_duration: 3600
+
+  # Default trust policy for internal roles
+  # IMPORTANT: Replace {{account_id}} with your ACTUAL Alibaba Cloud account ID.
+  # How to get your account ID:
+  #   aliyun sts GetCallerIdentity --output json | jq -r '.AccountId'
+  # Then substitute the real account ID into the trust policy before use.
+  default_trust_policy:
+    Version: "1"
+    Statement:
+      - Action: "sts:AssumeRole"
+        Effect: "Allow"
+        Principal:
+          RAM:
+            - "acs:ram::{{account_id}}:root"
