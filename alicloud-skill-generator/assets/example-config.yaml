@@ -1,0 +1,12 @@
+# Example configuration for alicloud-[product]-ops
+# This file serves as a template for credential and resource configuration.
+
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+defaults:
+  region: "cn-hangzhou"
+  timeout_seconds: 30
+  retry_count: 3
