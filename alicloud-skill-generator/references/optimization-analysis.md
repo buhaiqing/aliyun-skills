@@ -273,12 +273,22 @@ This document provides a structured three-dimensional analysis of the current sk
 - [ ] Troubleshooting includes dependency mapping
 - [ ] Recovery table distinguishes auto-remediation vs HALT
 - [ ] Escalation template is standardized and complete
+- [ ] **AIOps patterns** (multi-metric correlation, cross-skill delegation, proactive inspection) implemented per `aiops-best-practices.md`
 
 ### 6.2 Validation Method
 
 1. **Synthetic fault injection:** Test each skill against simulated failures
 2. **Real incident replay:** Use historical incidents to validate diagnosis accuracy
 3. **User feedback loop:** Collect MTTD/MTTL/MTTR metrics from actual usage
+4. **AIOps compliance audit:** Verify monitoring/diagnosis skills pass P0 checklist in `aiops-best-practices.md`
+
+---
+
+## 7. Related Documents
+
+- [AIOps Best Practices](aiops-best-practices.md) — mandatory patterns for monitoring & diagnosis skills
+- [Governance & Adversarial Review](governance-and-adversarial-review.md)
+- [User Experience Specification](user-experience-spec.md)
 
 ---
 

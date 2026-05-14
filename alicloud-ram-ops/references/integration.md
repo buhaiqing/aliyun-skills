@@ -165,3 +165,65 @@ Example: ECS instance access via RAM role
 2. Attach `AliyunECSFullAccess` to role (this skill)
 3. Create ECS instance and attach instance role (`alicloud-ecs-ops` skill)
 4. Verify instance metadata can retrieve STS credentials (`alicloud-ecs-ops` skill)
+
+## CloudMonitor (CMS) Integration
+
+### RAM Policy for CMS Access
+
+When configuring CloudMonitor (CMS) permissions via RAM, the following policies
+are commonly used. Delegate to `alicloud-cms-ops` for actual monitoring operations.
+
+#### Read-Only Policy for CMS
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cms:DescribeMetricList",
+        "cms:DescribeMetricLast",
+        "cms:DescribeMetricData",
+        "cms:DescribeMetricTop",
+        "cms:DescribeMetricMetaList",
+        "cms:DescribeProjectMeta",
+        "cms:DescribeMetricAlarmList",
+        "cms:DescribeMonitorGroups",
+        "cms:DescribeMonitorGroupInstances",
+        "cms:DescribeContactGroupList",
+        "cms:DescribeContactList"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+#### Full Access Policy for CMS
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "cms:*",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+### Delegation Protocol
+
+When a user needs monitoring permissions:
+
+```
+[RAM Permission Request]
+    │
+    ├── 1. Determine required CMS operations (read-only or full access)
+    ├── 2. Create or attach CMS policy via this skill (alicloud-ram-ops)
+    ├── 3. Verify CMS access via alicloud-cms-ops (DescribeMetricList)
+    └── 4. If access denied → check policy attachment and return to step 2
+```

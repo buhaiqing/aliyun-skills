@@ -1,193 +1,267 @@
-# Troubleshooting RAM
+# Troubleshooting Alibaba Cloud RAM
 
 ## Common API Error Codes
 
 | Code / HTTP | Meaning | Agent Action |
 |-------------|---------|--------------|
-| `EntityAlreadyExists.User` | User already exists | Ask reuse vs new name |
-| `EntityAlreadyExists.Group` | Group already exists | Ask reuse vs new name |
-| `EntityAlreadyExists.Role` | Role already exists | Ask reuse vs new name |
-| `EntityAlreadyExists.Policy` | Policy already exists | Ask reuse vs new name |
-| `EntityNotExist.User` | User does not exist | HALT; verify name or create first |
-| `EntityNotExist.Group` | Group does not exist | HALT; verify name or create first |
-| `EntityNotExist.Role` | Role does not exist | HALT; verify name or create first |
-| `EntityNotExist.Policy` | Policy does not exist | HALT; verify name or create first |
-| `EntityNotExist.LoginProfile` | No login profile for user | HALT; create login profile first |
-| `DeleteConflict.User.Group` | User still in groups | Remove from all groups first |
-| `DeleteConflict.User.AccessKey` | User still has access keys | Delete access keys first |
-| `DeleteConflict.User.Policy` | User still has attached policies | Detach all policies first |
-| `DeleteConflict.Role.Policy` | Role still has attached policies | Detach all policies first |
-| `DeleteConflict.Policy.Version` | Policy has multiple versions | Delete non-default versions first |
-| `InvalidParameter.UserName` | Invalid user name format | Fix to `^[a-zA-Z0-9_.@-]{1,64}$` |
-| `InvalidParameter.PolicyName` | Invalid policy name format | Fix to `^[a-zA-Z0-9_-]{1,128}$` |
-| `InvalidParameter.PolicyDocument` | Invalid policy JSON | Validate JSON structure; check Version="1" |
-| `InvalidParameter.AssumeRolePolicyDocument` | Invalid trust policy | Validate JSON; ensure Principal is correct |
-| `InvalidParameter.AccessKeyId.NotFound` | Access key not found | Verify key ID belongs to user |
-| `NoPermission` | Insufficient RAM permissions | User needs `AliyunRAMFullAccess` or scoped policy |
-| `NoPermission.STS` | Insufficient STS permissions | User needs `sts:AssumeRole` on role resource |
-| `LimitExceeded.AccessKey` | Max 2 access keys per user | Delete old key before creating new |
-| `LimitExceeded.Policy.Version` | Max 5 versions per policy | Delete old versions before creating new |
-| `MalformedPolicyDocument` | Policy syntax error | Check JSON validity, Action/Resource format |
-| `Throttling` | Rate limit exceeded | Back off exponentially; max 3 retries |
-| `InternalError` | Server-side error | Retry with 2s/4s/8s backoff; then HALT with RequestId |
+| `EntityAlreadyExists` / 409 | User/group/role/policy already exists | Ask reuse vs new name |
+| `EntityNotExist` / 404 | User/group/role/policy not found | Verify name; check region (RAM is global) |
+| `InvalidParameter` / 400 | Request failed validation | Check parameter format per OpenAPI spec |
+| `InvalidParameter.UserName` | Invalid user name format | 1-64 chars, letters/digits/.@-_ |
+| `InvalidParameter.PolicyDocument` | Invalid policy JSON | Validate JSON structure and RAM policy syntax |
+| `NoPermission` / 403 | Insufficient permissions to perform operation | User needs `ram:*` or specific RAM action |
+| `DeleteConflict` / 409 | Resource has dependencies | Remove dependencies first (AccessKey, login profile, group membership) |
+| `EntityQuotaExceeded` / 400 | Quota exceeded for this resource type | HALT; user raises quota or deletes unused resources |
+| `Throttling` / 429 | Rate limit exceeded | Back off exponentially; respect Retry-After |
+| `InternalError` / 500 | Server-side error | Retry with backoff; then HALT with RequestId |
 
-## Diagnostic Order
+---
 
-1. **Verify identity exists:**
-   ```bash
-   aliyun ram GetUser --UserName "{{user.user_name}}"
-   aliyun ram GetRole --RoleName "{{user.role_name}}"
-   aliyun ram GetPolicy --PolicyName "{{user.policy_name}}" --PolicyType Custom
-   ```
+## Symptom-to-Root-Cause Quick Reference
 
-2. **Check attached dependencies before delete:**
-   ```bash
-   # For users
-   aliyun ram ListPoliciesForUser --UserName "{{user.user_name}}"
-   aliyun ram ListGroupsForUser --UserName "{{user.user_name}}"
-   aliyun ram ListAccessKeys --UserName "{{user.user_name}}"
-   aliyun ram GetLoginProfile --UserName "{{user.user_name}}"
-   aliyun ram GetUserMFAInfo --UserName "{{user.user_name}}"
+When user reports a problem, use this table to narrow down the investigation path.
 
-   # For roles
-   aliyun ram ListPoliciesForRole --RoleName "{{user.role_name}}"
+| User Symptom | Most Likely Root Cause Category | First Check |
+|--------------|----------------------------------|-------------|
+| "访问被拒绝" / "AccessDenied" | 缺少对应资源的RAM权限 | GetCallerIdentity + 检查策略 |
+| "创建用户失败" / "EntityAlreadyExists" | 用户名已存在 | ListUsers 检查 |
+| "删除用户失败" / "DeleteConflict" | 用户仍有依赖资源 | 检查AccessKey/登录配置/组成员 |
+| "AssumeRole失败" | 信任策略配置错误 | GetRole 检查信任策略 |
+| "AccessKey无法使用" | 密钥状态为Inactive或已删除 | ListAccessKeys 检查状态 |
+| "控制台登录失败" | 登录配置未创建或密码错误 | GetLoginProfile 检查 |
+| "MFA绑定失败" | TOTP验证码错误或设备已绑定 | GetUserMFAInfo 检查 |
+| "策略不生效" | 策略语法错误或未正确附加 | GetPolicy 检查策略文档 |
+| "无法删除策略" | 策略被引用或版本问题 | ListEntitiesForPolicy 检查引用 |
+| "用户组删除失败" | 组内仍有用户 | ListUsersForGroup 检查组成员 |
+| "角色删除失败" | 角色被策略引用 | ListPoliciesForRole 检查 |
+| "跨账号访问不通" | 信任策略或附加策略错误 | GetRole + 信任策略检查 |
 
-   # For policies
-   aliyun ram ListEntitiesForPolicy --PolicyName "{{user.policy_name}}" --PolicyType Custom
-   ```
+---
 
-3. **Verify caller permissions:**
-   ```bash
-   aliyun sts GetCallerIdentity
-   ```
-   Check if caller has `AliyunRAMFullAccess` or equivalent custom policy.
+## Scenario-Based Diagnostic Playbooks
 
-4. **Verify policy syntax:**
-   ```bash
-   # Test by creating a minimal policy
-   aliyun ram CreatePolicy --PolicyName test-policy \
-     --PolicyDocument '{"Version":"1","Statement":[{"Effect":"Allow","Action":"ecs:DescribeInstances","Resource":"*"}]}'
-   ```
+### Scenario 1: "用户无法访问云资源" (Access Denied)
 
-5. **Check CLI metadata coverage:**
-   ```bash
-   aliyun ram --help
-   aliyun sts --help
-   ```
+**Symptoms:** RAM user reports "AccessDenied" when trying to access a cloud resource.
 
-## RAM-Specific Issues
+**Diagnostic Flow (execute in order, stop when root cause found):**
 
-### Issue: "NoPermission" when managing RAM
-
-**Cause:** The caller (RAM user or role) does not have permission to manage RAM
-resources.
-
-**Resolution:**
-- Attach `AliyunRAMFullAccess` system policy for full RAM management.
-- Or attach a custom policy with specific RAM actions:
-  ```json
-  {
-    "Version": "1",
-    "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "ram:Get*",
-          "ram:List*",
-          "ram:CreateUser",
-          "ram:DeleteUser",
-          "ram:CreateRole",
-          "ram:DeleteRole"
-        ],
-        "Resource": "*"
-      }
-    ]
-  }
-  ```
-
-### Issue: "DeleteConflict.User.Group" when deleting user
-
-**Cause:** User is still a member of one or more groups.
-
-**Resolution:**
 ```bash
-# List groups for user
-aliyun ram ListGroupsForUser --UserName "{{user.user_name}}"
+# Step 1: Verify the caller identity
+aliyun sts GetCallerIdentity
 
-# Remove from each group
-aliyun ram RemoveUserFromGroup --GroupName "group1" --UserName "{{user.user_name}}"
+# Step 2: List policies attached to the user
+aliyun ram ListPoliciesForUser --UserName "{{user.user_name}}" \
+  --output cols=PolicyName,PolicyType,DefaultVersion rows=Policies.Policy[].{PolicyName,PolicyType,DefaultVersion}
 
-# Then delete user
-aliyun ram DeleteUser --UserName "{{user.user_name}}"
+# Step 3: Check if user is in a group with policies
+aliyun ram ListGroupsForUser --UserName "{{user.user_name}}" \
+  --output cols=GroupName rows=Groups.Group[].GroupName
+
+# Step 4: For each group, list attached policies
+aliyun ram ListPoliciesForGroup --GroupName "{{user.group_name}}" \
+  --output cols=PolicyName,PolicyType rows=Policies.Policy[].{PolicyName,PolicyType}
+
+# Step 5: Check if the required action is in the policy
+aliyun ram GetPolicy --PolicyName "{{user.policy_name}}" --PolicyType "Custom"
+# Decode the URL-encoded PolicyDocument and check for required action
 ```
 
-### Issue: "DeleteConflict.User.AccessKey" when deleting user
+**Decision Tree:**
+- No policies attached → Attach required policy (e.g., `AliyunECSReadOnlyAccess`)
+- Policy exists but action not included → Update policy to include required action
+- Policy has `"Effect": "Deny"` with `"Resource": "*"` → Deny overrides Allow; remove deny
+- Policy has `"Condition"` that doesn't match request context → Check condition keys
+- User in group with correct policy → Check if group policy is correctly attached
+- All policies correct → Check resource-level policies (bucket policy, etc.)
 
-**Cause:** User still has active or inactive access keys.
+---
 
-**Resolution:**
+### Scenario 2: "AccessKey轮换" (Access Key Rotation)
+
+**Symptoms:** Need to rotate an access key due to security policy or suspected compromise.
+
+**Diagnostic Flow:**
+
 ```bash
-# List and delete all access keys
-aliyun ram ListAccessKeys --UserName "{{user.user_name}}"
-aliyun ram DeleteAccessKey --UserName "{{user.user_name}}" --AccessKeyId "AKxxx"
+# Step 1: List existing access keys
+aliyun ram ListAccessKeys --UserName "{{user.user_name}}" \
+  --output cols=AccessKeyId,Status,CreateDate rows=AccessKeys.AccessKey[].{AccessKeyId,Status,CreateDate}
+
+# Step 2: Check last used time for each key
+aliyun ram GetAccessKeyLastUsed --UserName "{{user.user_name}}" --UserAccessKeyId "{{user.access_key_id}}" \
+  --output cols=LastUsedDate rows=AccessKeyLastUsed.LastUsedDate
+
+# Step 3: Create new access key
+aliyun ram CreateAccessKey --UserName "{{user.user_name}}"
+# → Display AccessKeyId and AccessKeySecret ONCE
+
+# Step 4: After user confirms applications updated → disable old key
+aliyun ram UpdateAccessKey --UserName "{{user.user_name}}" --UserAccessKeyId "{{old_key}}" --Status Inactive
+
+# Step 5: After grace period → delete old key
+aliyun ram DeleteAccessKey --UserName "{{user.user_name}}" --UserAccessKeyId "{{old_key}}"
 ```
 
-### Issue: "MalformedPolicyDocument" when creating policy
+**Decision Tree:**
+- Key count = 2 (max) → Must delete one key before creating new one
+- Key unused > 90 days → Safe to delete immediately
+- Key used recently → Follow rotation flow with grace period
+- Suspected compromise → Disable immediately, create new key, then delete compromised key
 
-**Cause:** The policy document JSON has syntax errors or violates RAM policy rules.
+---
 
-**Diagnostic steps:**
-1. **Validate JSON syntax:**
-   ```bash
-   echo '{{user.policy_document}}' | jq .
-   ```
-2. **Check required fields:**
-   - `Version` MUST be exactly `"1"`
-   - `Statement` MUST be an array of objects
-   - Each statement MUST have `Effect` (`Allow` or `Deny`)
-   - Each statement MUST have `Action` (string or array)
-   - Each statement MUST have `Resource` (string or array)
-3. **Check common mistakes:**
-   - Trailing commas in JSON arrays/objects
-   - Unquoted keys or values
-   - `Effect` spelled incorrectly (e.g., `effect` instead of `Effect`)
-   - `Action` using wrong service prefix (e.g., `ec2:` instead of `ecs:`)
-4. **Test with minimal policy:**
-   ```bash
-   aliyun ram CreatePolicy --PolicyName test-policy \
-     --PolicyDocument '{"Version":"1","Statement":[{"Effect":"Allow","Action":"ecs:DescribeInstances","Resource":"*"}]}'
-   ```
+### Scenario 3: "跨账号角色扮演失败" (Cross-Account AssumeRole Failure)
 
-### Issue: PolicyDocument URL-encoded in response
+**Symptoms:** Cannot assume a RAM role from another account.
 
-**Cause:** RAM API returns `PolicyDocument` as URL-encoded string.
+**Diagnostic Flow:**
 
-**Resolution:**
 ```bash
-# Extract and decode
-aliyun ram GetPolicy --PolicyName my-policy --PolicyType Custom | \
-  jq -r '.Policy.PolicyDocument' | \
-  python3 -c "import sys,urllib.parse; print(urllib.parse.unquote(sys.stdin.read()))"
+# Step 1: Check if the role exists
+aliyun ram GetRole --RoleName "{{user.role_name}}" \
+  --output cols=RoleName,Arn,AssumeRolePolicyDocument rows='{RoleName,Arn,AssumeRolePolicyDocument}'
+
+# Step 2: Decode and check the trust policy
+# The AssumeRolePolicyDocument is URL-encoded; decode and check:
+# - Principal.RAM contains the correct account ID
+# - Action includes "sts:AssumeRole"
+# - Effect is "Allow"
+
+# Step 3: Check policies attached to the role
+aliyun ram ListPoliciesForRole --RoleName "{{user.role_name}}" \
+  --output cols=PolicyName,PolicyType rows=Policies.Policy[].{PolicyName,PolicyType}
+
+# Step 4: Test AssumeRole
+aliyun sts AssumeRole --RoleArn "{{output.role_arn}}" --RoleSessionName "test-session"
 ```
 
-### Issue: STS AssumeRole fails with "NoPermission.STS"
+**Decision Tree:**
+- Role not found → Create role with correct trust policy
+- Trust policy has wrong account ID → Update trust policy with correct account
+- Trust policy missing `sts:AssumeRole` → Add `sts:AssumeRole` action
+- No policies attached to role → Attach policies for resource access
+- AssumeRole returns `AccessDenied` → Check if source account has `sts:AssumeRole` permission
 
-**Cause:** The caller does not have `sts:AssumeRole` permission on the target
-role, or the role's trust policy does not trust the caller.
+---
 
-**Resolution:**
-1. Check role trust policy:
-   ```bash
-   aliyun ram GetRole --RoleName "{{user.role_name}}"
-   ```
-2. Ensure trust policy Principal includes the caller.
-3. Ensure caller has policy with `sts:AssumeRole` on the role ARN.
+### Scenario 4: "策略不生效" (Policy Not Taking Effect)
 
-### Issue: Access key secret lost after creation
+**Symptoms:** A RAM policy was attached but the expected permission change is not observed.
 
-**Cause:** `CreateAccessKey` returns the secret only once. There is no API to
-retrieve it later.
+**Diagnostic Flow:**
 
-**Resolution:**
-- If the secret is lost, create a new access key and delete the old one.
-- Use STS AssumeRole instead of long-term access keys where possible.
+```bash
+# Step 1: Get the policy document
+aliyun ram GetPolicy --PolicyName "{{user.policy_name}}" --PolicyType "Custom" \
+  --output cols=PolicyDocument rows=PolicyDocument
+
+# Step 2: Decode the URL-encoded policy document
+# Check for:
+# - Correct Action list
+# - Correct Resource ARN
+# - Effect is "Allow" (not "Deny")
+# - No Condition that might restrict access
+
+# Step 3: Check policy version (if multiple versions)
+aliyun ram ListPolicyVersions --PolicyName "{{user.policy_name}}" --PolicyType "Custom" \
+  --output cols=VersionId,IsDefaultVersion,CreateDate rows=PolicyVersions.PolicyVersion[].{VersionId,IsDefaultVersion,CreateDate}
+
+# Step 4: Verify the policy is attached to the correct entity
+aliyun ram ListEntitiesForPolicy --PolicyName "{{user.policy_name}}" --PolicyType "Custom" \
+  --output cols=EntityType,EntityName rows=Entities.Entity[].{EntityType,EntityName}
+```
+
+**Decision Tree:**
+- Policy not attached → Attach to user/group/role
+- Wrong policy version active → SetDefaultPolicyVersion to correct version
+- Policy has `"Effect": "Deny"` → Deny overrides Allow; remove deny statement
+- Policy has restrictive `"Condition"` → Check if request context matches condition
+- Policy attached to wrong entity → Detach and reattach to correct entity
+- Resource-level policy (OSS/SLS bucket policy) blocking → Check resource-level policy
+
+---
+
+## Diagnostic Order (Standard)
+
+1. **Verify caller identity:** `aliyun sts GetCallerIdentity`
+2. **Check user/group/role existence:** `GetUser`, `GetGroup`, `GetRole`
+3. **List attached policies:** `ListPoliciesForUser`, `ListPoliciesForGroup`, `ListPoliciesForRole`
+4. **Inspect policy document:** `GetPolicy` + decode URL-encoded document
+5. **Check policy version:** `ListPolicyVersions` to verify active version
+6. **Check access keys:** `ListAccessKeys` + `GetAccessKeyLastUsed`
+7. **Check login profile:** `GetLoginProfile` for console access
+8. **Check MFA status:** `GetUserMFAInfo` for MFA binding
+9. **Cross-skill delegation:** If resource access issue → delegate to product-specific skill (e.g., `alicloud-ecs-ops`)
+
+---
+
+## One-Shot Diagnostic Scripts
+
+### Script 1: Full RAM User Audit
+
+```bash
+#!/bin/bash
+# ram-user-audit.sh
+# Usage: ./ram-user-audit.sh <UserName>
+
+USER_NAME="$1"
+
+echo "=== User Details ==="
+aliyun ram GetUser --UserName "$USER_NAME" \
+  --output cols=UserId,UserName,DisplayName,CreateDate,LastLoginDate \
+  rows='{UserId,UserName,DisplayName,CreateDate,LastLoginDate}'
+
+echo ""
+echo "=== Attached Policies ==="
+aliyun ram ListPoliciesForUser --UserName "$USER_NAME" \
+  --output cols=PolicyName,PolicyType,AttachDate \
+  rows=Policies.Policy[].{PolicyName,PolicyType,AttachDate}
+
+echo ""
+echo "=== Group Memberships ==="
+aliyun ram ListGroupsForUser --UserName "$USER_NAME" \
+  --output cols=GroupName rows=Groups.Group[].GroupName
+
+echo ""
+echo "=== Access Keys ==="
+aliyun ram ListAccessKeys --UserName "$USER_NAME" \
+  --output cols=AccessKeyId,Status,CreateDate \
+  rows=AccessKeys.AccessKey[].{AccessKeyId,Status,CreateDate}
+
+echo ""
+echo "=== Login Profile ==="
+aliyun ram GetLoginProfile --UserName "$USER_NAME" 2>/dev/null || echo "No login profile"
+
+echo ""
+echo "=== MFA Status ==="
+aliyun ram GetUserMFAInfo --UserName "$USER_NAME" 2>/dev/null || echo "No MFA device"
+```
+
+### Script 2: Policy Impact Analysis
+
+```bash
+#!/bin/bash
+# ram-policy-impact-analysis.sh
+# Usage: ./ram-policy-impact-analysis.sh <PolicyName> <PolicyType>
+
+POLICY_NAME="$1"
+POLICY_TYPE="${2:-Custom}"
+
+echo "=== Policy Details ==="
+aliyun ram GetPolicy --PolicyName "$POLICY_NAME" --PolicyType "$POLICY_TYPE" \
+  --output cols=PolicyName,PolicyType,DefaultVersion,AttachmentCount,PolicyDocument \
+  rows='{PolicyName,PolicyType,DefaultVersion,AttachmentCount,PolicyDocument}'
+
+echo ""
+echo "=== Entities Using This Policy ==="
+aliyun ram ListEntitiesForPolicy --PolicyName "$POLICY_NAME" --PolicyType "$POLICY_TYPE" \
+  --output cols=EntityType,EntityName,AttachDate \
+  rows=Entities.Entity[].{EntityType,EntityName,AttachDate}
+
+echo ""
+echo "=== Policy Versions ==="
+aliyun ram ListPolicyVersions --PolicyName "$POLICY_NAME" --PolicyType "$POLICY_TYPE" \
+  --output cols=VersionId,IsDefaultVersion,CreateDate \
+  rows=PolicyVersions.PolicyVersion[].{VersionId,IsDefaultVersion,CreateDate}
+```

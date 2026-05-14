@@ -673,6 +673,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **UX Error Handling:** Error messages follow `[ERROR] code: summary → explanation → fix → next step` format per `references/user-experience-spec.md` Section 5.
 - [ ] **Prompt Library Alignment:** Generation process uses structured prompts from `references/prompt-library.md` with effectiveness tracking.
 - [ ] **Optimization Awareness:** Skill design considers Fault Diagnosis, Root Cause Localization, and Rapid Resolution dimensions per `references/optimization-analysis.md`.
+- [ ] **AIOps Compliance (if skill involves monitoring/alarm/diagnosis):** Skill implements multi-metric correlation, cross-skill diagnosis decision tree, delegation matrix, proactive inspection, and alarm storm handling per `references/aiops-best-practices.md`.
 
 ### P1 — SHOULD PASS
 
@@ -697,6 +698,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [Prompt library](references/prompt-library.md) — structured prompts for generation lifecycle
 - [Optimization analysis](references/optimization-analysis.md) — three-dimensional optimization framework
 - [User experience specification](references/user-experience-spec.md) — mandatory UX requirements for all generated skills
+- [AIOps best practices](references/aiops-best-practices.md) — mandatory AIOps patterns for monitoring/diagnosis skills
 - [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli)
 - [Alibaba Cloud SDK for Go](https://github.com/alibabacloud-go)
 - [Agent Skills Open Specification](https://agentskills.io/specification)

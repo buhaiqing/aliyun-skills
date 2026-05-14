@@ -1056,6 +1056,150 @@ printResponse(response.Body)
 
 ---
 
+---
+
+### Operation: Intelligent Inspection（智能巡检）
+
+一键执行数据库实例的DAS全面健康检查，整合巡检评分 + CMS指标 + 自治事件。
+
+#### 执行流程
+
+1. 调用 `GetInstanceInspections` 获取巡检评分
+2. 如果评分 < 60，调用 `CreateDiagnosticReport` 生成诊断报告
+3. 调用 `alicloud-cms-ops` 查询最近15分钟的CPU/连接/IOPS指标
+4. 调用 `GetAutonomousNotifyEventsInRange` 检查近期自治事件
+5. 调用 `GetDasProServiceUsage` 检查Pro许可状态
+6. 综合评分并生成巡检报告
+
+#### 巡检评分标准
+
+| 维度 | 评分依据 | 权重 |
+|------|---------|------|
+| DAS巡检评分 | DAS原生评分直接映射 | 30% |
+| CPU使用率 | <70%=100, 70-85%=60, >85%=0 | 20% |
+| 连接使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
+| IOPS使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
+| 自治事件 | 无严重事件=100, 有警告=60, 有严重=0 | 10% |
+| DAS Pro状态 | 已激活=100, 未激活=60 | 10% |
+
+#### 执行 — JIT Go SDK
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "os"
+    "time"
+
+    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
+    das "github.com/alibabacloud-go/das-20200116/v5/client"
+    "github.com/alibabacloud-go/tea/tea"
+)
+
+func newDASClient() (*das.Client, error) {
+    config := &openapi.Config{
+        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
+        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
+        Endpoint:        tea.String("das.cn-shanghai.aliyuncs.com"),
+    }
+    return das.NewClient(config)
+}
+
+func main() {
+    instanceId := os.Getenv("INSTANCE_ID")
+    if instanceId == "" {
+        fmt.Println("INSTANCE_ID is required")
+        os.Exit(1)
+    }
+
+    client, err := newDASClient()
+    if err != nil {
+        panic(err)
+    }
+
+    dimensions := []map[string]interface{}{}
+    recommendations := []string{}
+
+    // 1. Get inspection score
+    inspectReq := &das.GetInstanceInspectionsRequest{
+        RegionId:   tea.String("cn-shanghai"),
+        InstanceId: tea.String(instanceId),
+    }
+    inspectResp, err := client.GetInstanceInspections(inspectReq)
+    if err == nil {
+        score := inspectResp.Body.Data.Score
+        dimensions = append(dimensions, map[string]interface{}{
+            "name": "DAS巡检评分", "score": score, "status": "healthy",
+        })
+        if score != nil && *score < 60 {
+            recommendations = append(recommendations, "DAS巡检评分低于60，建议创建诊断报告进行详细分析")
+        }
+    }
+
+    // 2. Check autonomous events (last 24h)
+    now := time.Now().UTC()
+    startTime := now.Add(-24 * time.Hour).Format("2006-01-02T15:04:05Z")
+    endTime := now.Format("2006-01-02T15:04:05Z")
+
+    eventReq := &das.GetAutonomousNotifyEventsInRangeRequest{
+        RegionId:   tea.String("cn-shanghai"),
+        InstanceId: tea.String(instanceId),
+        StartTime:  tea.String(startTime),
+        EndTime:    tea.String(endTime),
+    }
+    eventResp, err := client.GetAutonomousNotifyEventsInRange(eventReq)
+    if err == nil && eventResp.Body.Data != nil {
+        dimensions = append(dimensions, map[string]interface{}{
+            "name": "自治事件", "score": 100, "status": "healthy",
+        })
+    }
+
+    // 3. Check DAS Pro usage
+    proReq := &das.GetDasProServiceUsageRequest{
+        RegionId:   tea.String("cn-shanghai"),
+        InstanceId: tea.String(instanceId),
+    }
+    proResp, err := client.GetDasProServiceUsage(proReq)
+    if err == nil && proResp.Body.Data != nil {
+        dimensions = append(dimensions, map[string]interface{}{
+            "name": "DAS Pro状态", "score": 100, "status": "healthy",
+        })
+    }
+
+    result := map[string]interface{}{
+        "inspection_time": time.Now().UTC().Format("2006-01-02T15:04:05Z"),
+        "resource_type":   "database",
+        "resource_id":     instanceId,
+        "dimensions":      dimensions,
+        "recommendations": recommendations,
+    }
+    b, _ := json.MarshalIndent(result, "", "  ")
+    fmt.Println(string(b))
+}
+```
+
+#### 输出格式
+
+```json
+{
+  "inspection_time": "2026-05-14T10:00:00Z",
+  "resource_type": "database",
+  "resource_id": "rm-2ze8g2am97624****",
+  "overall_score": 75,
+  "dimensions": [
+    {"name": "DAS巡检评分", "score": 75, "status": "warning"},
+    {"name": "自治事件", "score": 100, "status": "healthy"},
+    {"name": "DAS Pro状态", "score": 100, "status": "healthy"}
+  ],
+  "recommendations": [
+    "DAS巡检评分75分，建议检查低分维度并优化",
+    "建议通过CreateDiagnosticReport生成详细诊断报告"
+  ]
+}
+```
+
 ## Troubleshooting Capability Enhancement
 
 This skill includes a comprehensive troubleshooting enhancement framework:

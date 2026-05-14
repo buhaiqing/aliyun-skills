@@ -61,6 +61,72 @@ Evidence:
 | Billing / recharge | `alicloud-billing-ops` |
 | VPC / network configuration | `alicloud-vpc-ops` |
 
+## CloudMonitor (CMS) Integration
+
+### CMS Alarm-Driven Diagnosis
+
+DAS is the **secondary diagnosis skill** for database-related CMS alarms.
+When CloudMonitor triggers alarms for RDS, PolarDB, or Redis instances, DAS
+provides deep diagnostic analysis.
+
+### Delegation Triggers from CMS
+
+| CMS Alarm Namespace | CMS Alarm Metric | DAS Operations to Invoke |
+|--------------------|-----------------|--------------------------|
+| `acs_rds_dashboard` | ConnectionUsage | `CreateLatestDeadLockAnalysis`, `GetQueryOptimizeData` |
+| `acs_rds_dashboard` | CpuUsage | `CreateDiagnosticReport`, `GetPfsSqlSamples` |
+| `acs_rds_dashboard` | IOPSUsage | `CreateDiagnosticReport`, `GetPfsSqlSamples` |
+| `acs_rds_dashboard` | MemoryUsage | `CreateDiagnosticReport` |
+| `acs_polardb_dashboard` | CpuUsage | `CreateDiagnosticReport`, `GetPfsSqlSamples` |
+| `acs_polardb_dashboard` | ConnectionUsage | `CreateLatestDeadLockAnalysis`, `GetQueryOptimizeData` |
+| `acs_polardb_dashboard` | IOPSUsage | `CreateDiagnosticReport`, `GetPfsSqlSamples` |
+| `acs_kvstore_dashboard` | CpuUsage | `CreateCacheAnalysisJob` |
+| `acs_kvstore_dashboard` | MemoryUsage | `CreateCacheAnalysisJob` |
+| `acs_mongodb_dashboard` | CpuUsage | `CreateDiagnosticReport` |
+
+### Delegation Protocol
+
+```
+[CMS Alarm Fires]
+    │
+    ├── 1. Identify namespace + metric from alarm rule
+    ├── 2. Invoke primary diagnosis skill (e.g., alicloud-rds-ops)
+    ├── 3. If DAS diagnosis is Recommended or severity = Critical:
+    │       └── Invoke alicloud-das-ops for deep analysis
+    ├── 4. DAS performs:
+    │       ├── CreateDiagnosticReport (performance analysis)
+    │       ├── GetPfsSqlSamples (SQL-level diagnosis)
+    │       ├── CreateLatestDeadLockAnalysis (deadlock detection)
+    │       └── CreateCacheAnalysisJob (Redis cache analysis)
+    └── 5. Return diagnosis results to CMS for unified report
+```
+
+### DAS Diagnosis Flow Example
+
+When CMS detects high CPU usage on an RDS instance:
+
+```go
+// 1. CMS alarm triggers → alicloud-cms-ops identifies acs_rds_dashboard/CpuUsage
+// 2. alicloud-cms-ops invokes alicloud-rds-ops to check instance status
+// 3. alicloud-cms-ops invokes alicloud-das-ops for deep diagnosis
+
+// Create diagnostic report
+req := &das20200116.CreateDiagnosticReportRequest{
+    DBInstanceId: tea.String("rm-2ze8g2am97624****"),
+    StartTime:    tea.String("2026-05-14T09:00:00Z"),
+    EndTime:      tea.String("2026-05-14T10:00:00Z"),
+}
+resp, err := client.CreateDiagnosticReport(req)
+
+// Get SQL samples for performance analysis
+sqlReq := &das20200116.GetPfsSqlSamplesRequest{
+    InstanceId: tea.String("rm-2ze8g2am97624****"),
+    StartTime:  tea.Int64(1747198800000),
+    EndTime:    tea.Int64(1747202400000),
+}
+sqlResp, err := client.GetPfsSqlSamples(sqlReq)
+```
+
 ## DAS Pro (Enterprise Edition)
 
 DAS Pro provides advanced features:

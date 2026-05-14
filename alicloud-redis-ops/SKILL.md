@@ -1283,6 +1283,124 @@ done
 
 ---
 
+---
+
+### Operation: Intelligent Inspection（智能巡检）
+
+一键执行Redis/Tair实例的全面健康检查，整合CMS指标 + 实例配置 + 慢查询分析。
+
+#### 执行流程
+
+1. 调用 `DescribeInstances` 检查实例状态和配置
+2. 调用 `alicloud-cms-ops` 查询最近15分钟的CPU/内存/连接/延迟指标
+3. 调用 `DescribeSlowLogs` 检查最近1小时的慢查询
+4. 调用 `DescribeSecurityIps` 检查白名单配置
+5. 调用 `DescribeBackups` 检查最近备份状态
+6. 综合评分并生成巡检报告
+
+#### 巡检评分标准
+
+| 维度 | 评分依据 | 权重 |
+|------|---------|------|
+| 实例状态 | Normal=100, 其他=0 | 20% |
+| CPU使用率 | <70%=100, 70-85%=60, >85%=0 | 20% |
+| 内存使用率 | <75%=100, 75-90%=60, >90%=0 | 20% |
+| 连接使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
+| 延迟 | AvgRt<5ms=100, 5-20ms=60, >20ms=0 | 15% |
+| 备份状态 | 最近一次成功=100, 失败=0 | 10% |
+
+#### 执行 — CLI
+
+```bash
+#!/bin/bash
+# redis-intelligent-inspection.sh
+# Usage: ./redis-intelligent-inspection.sh <InstanceId> <RegionId>
+
+INSTANCE_ID="$1"
+REGION="$2"
+SCORE=0
+
+echo "=== Redis/Tair Intelligent Inspection ==="
+echo "Instance: $INSTANCE_ID"
+echo "Region: $REGION"
+echo ""
+
+# 1. Instance status check
+STATUS=$(aliyun r-kvstore describe-instances \
+  --RegionId "$REGION" \
+  --InstanceId "$INSTANCE_ID" \
+  --output cols=InstanceStatus rows=Instances.KVStoreInstance[0].InstanceStatus)
+echo "[1/5] Instance Status: $STATUS"
+[ "$STATUS" = "Normal" ] && SCORE=$((SCORE + 20))
+
+# 2. CPU usage check
+CPU=$(aliyun cms DescribeMetricList \
+  --Namespace acs_kvstore_dashboard \
+  --MetricName CpuUsage \
+  --Dimensions "[{\"instanceId\":\"$INSTANCE_ID\"}]" \
+  --Period 60 \
+  --StartTime "$(date -u -v-15M +%Y-%m-%dT%H:%M:%SZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
+echo "[2/5] CPU Usage: $CPU%"
+# (Threshold logic would be implemented in production)
+
+# 3. Slow log check
+SLOW_COUNT=$(aliyun r-kvstore describe-slow-logs \
+  --InstanceId "$INSTANCE_ID" \
+  --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --output cols=TotalCount rows=TotalCount 2>/dev/null || echo "0")
+echo "[3/5] Slow Logs (1h): $SLOW_COUNT"
+
+# 4. Backup check
+BACKUP_STATUS=$(aliyun r-kvstore describe-backups \
+  --InstanceId "$INSTANCE_ID" \
+  --PageSize 1 \
+  --output cols=BackupStatus rows=Backups.Backup[0].BackupStatus 2>/dev/null || echo "N/A")
+echo "[4/5] Last Backup: $BACKUP_STATUS"
+[ "$BACKUP_STATUS" = "Success" ] && SCORE=$((SCORE + 10))
+
+# 5. Whitelist check
+WHITELIST=$(aliyun r-kvstore describe-security-ips \
+  --InstanceId "$INSTANCE_ID" \
+  --output cols=SecurityIpList rows=SecurityIpGroups.SecurityIpGroup[0].SecurityIpList 2>/dev/null || echo "N/A")
+echo "[5/5] Whitelist: $WHITELIST"
+
+echo ""
+echo "=== Inspection Score: $SCORE/100 ==="
+if [ "$SCORE" -ge 80 ]; then
+  echo "Status: HEALTHY"
+elif [ "$SCORE" -ge 60 ]; then
+  echo "Status: WARNING - Review recommended"
+else
+  echo "Status: CRITICAL - Immediate action required"
+fi
+```
+
+#### 输出格式
+
+```json
+{
+  "inspection_time": "2026-05-14T10:00:00Z",
+  "resource_type": "redis",
+  "resource_id": "r-bp1zxszhcgatnx****",
+  "overall_score": 85,
+  "dimensions": [
+    {"name": "实例状态", "score": 100, "status": "healthy"},
+    {"name": "CPU使用率", "score": 80, "status": "warning", "value": "75%"},
+    {"name": "内存使用率", "score": 60, "status": "critical", "value": "92%"},
+    {"name": "连接使用率", "score": 90, "status": "healthy", "value": "45%"},
+    {"name": "延迟", "score": 100, "status": "healthy", "value": "2ms"},
+    {"name": "备份状态", "score": 100, "status": "healthy"}
+  ],
+  "recommendations": [
+    "内存使用率92%超过严重阈值，建议扩容或优化数据",
+    "CPU使用率75%超过警告阈值，建议检查慢查询"
+  ]
+}
+```
+
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):

@@ -316,6 +316,78 @@ Import CloudMonitor data source and create dashboards for:
 - Replication lag
 - Slow query analysis
 
+## CloudMonitor (CMS) Integration
+
+### Metric Query
+
+Redis/Tair metrics are available via CloudMonitor under the `acs_kvstore_dashboard` namespace.
+Delegate to `alicloud-cms-ops` for metric queries and alarm management.
+
+```bash
+# Query Redis CPU usage (delegate to alicloud-cms-ops)
+aliyun cms DescribeMetricList \
+  --Namespace acs_kvstore_dashboard \
+  --MetricName CpuUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --Period 60
+
+# Query Redis memory usage
+aliyun cms DescribeMetricList \
+  --Namespace acs_kvstore_dashboard \
+  --MetricName MemoryUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --Period 60
+
+# Query Redis connection usage
+aliyun cms DescribeMetricList \
+  --Namespace acs_kvstore_dashboard \
+  --MetricName ConnectionUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --Period 60
+```
+
+### Alarm Rule Management
+
+Create monitoring alarms for Redis/Tair instances via CMS:
+
+```bash
+# Create CPU usage alarm
+aliyun cms PutMetricAlarm \
+  --AlarmName "redis-{{user.instance_id}}-cpu-high" \
+  --Namespace acs_kvstore_dashboard \
+  --MetricName CpuUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --Statistics Average \
+  --ComparisonOperator ">=" \
+  --Threshold 80 \
+  --Period 300 \
+  --EvaluationCount 3 \
+  --ContactGroups '["{{user.contact_group}}"]'
+```
+
+### Alarm-to-Diagnosis Delegation
+
+When CMS alarms fire for Redis/Tair, the following delegation protocol applies:
+
+| Alarm Metric | Primary Diagnosis Skill | Secondary Diagnosis Skill |
+|-------------|------------------------|--------------------------|
+| CpuUsage | `alicloud-redis-ops` | `alicloud-das-ops` (cache analysis) |
+| MemoryUsage | `alicloud-redis-ops` | `alicloud-das-ops` (cache analysis) |
+| ConnectionUsage | `alicloud-redis-ops` | `alicloud-das-ops` |
+| IntranetInRatio / IntranetOutRatio | `alicloud-redis-ops` | `alicloud-vpc-ops` |
+
+### Delegation Protocol
+
+```
+[CMS Alarm Fires (acs_kvstore_dashboard)]
+    │
+    ├── 1. Identify metric from alarm rule
+    ├── 2. Invoke alicloud-redis-ops to check instance status
+    ├── 3. If resource abnormal → check config, slow logs, connections
+    ├── 4. If cache analysis needed → invoke alicloud-das-ops
+    └── 5. Compile unified diagnosis report
+```
+
 ## Security Integration
 
 ### SSL/TLS Configuration

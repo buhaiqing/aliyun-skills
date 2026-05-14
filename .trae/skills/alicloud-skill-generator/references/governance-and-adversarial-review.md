@@ -97,6 +97,38 @@ Review is REQUIRED when:
 **Pass Criteria:** Success/failure is always reported; state changes are visible.
 **Fail Action:** Add explicit success/failure feedback to all operations.
 
+### 2.4 AIOps Scenarios (NEW)
+
+#### Scenario 13: Missing Multi-Metric Correlation
+**Test:** Search for multi-metric inspection patterns in monitoring/diagnosis skills.
+**Pass Criteria:** Skill defines ≥ 4 anomaly patterns with detection logic and severity.
+**Fail Action:** Require multi-metric correlation per `aiops-best-practices.md` Section 2.
+
+#### Scenario 14: No Cross-Skill Delegation Matrix
+**Test:** Verify `integration.md` contains Alarm-to-Diagnosis delegation matrix.
+**Pass Criteria:** Matrix maps each alarm namespace/metric to primary/secondary diagnosis skill.
+**Fail Action:** Require delegation matrix per `aiops-best-practices.md` Section 4.
+
+#### Scenario 15: Missing DAS Integration
+**Test:** Check database-related skills for DAS delegation triggers.
+**Pass Criteria:** RDS/PolarDB/Redis skills define DAS trigger conditions and operations.
+**Fail Action:** Require DAS integration per `aiops-best-practices.md` Section 3.3.
+
+#### Scenario 16: No Alarm Storm Handling
+**Test:** Search for alarm storm detection and handling logic.
+**Pass Criteria:** Skill defines storm detection criteria and aggregation/suppression workflow.
+**Fail Action:** Require alarm storm handling per `aiops-best-practices.md` Section 6.
+
+#### Scenario 17: Missing Knowledge Base
+**Test:** Check if `references/knowledge-base.md` exists for diagnostic skills.
+**Pass Criteria:** Knowledge base contains ≥ 3 product fault patterns + ≥ 1 cascade pattern.
+**Fail Action:** Require knowledge base per `aiops-best-practices.md` Section 7.
+
+#### Scenario 18: No Multi-Round Reflection
+**Test:** Check troubleshooting.md for multi-round diagnosis review process.
+**Pass Criteria:** Document defines 3-round review with critical reflection questions.
+**Fail Action:** Require multi-round reflection per `aiops-best-practices.md` Section 11.
+
 ---
 
 ## 3. Governance Checklist
@@ -116,6 +148,10 @@ Review is REQUIRED when:
 - [ ] **Optimization:** Error taxonomy covers ≥ 10 product-specific codes
 - [ ] **Optimization:** Recovery table distinguishes auto-remediation vs HALT
 - [ ] **Optimization:** Dependency mapping documented in `core-concepts.md`
+- [ ] **AIOps Multi-Metric:** ≥ 4 anomaly patterns with detection logic (for monitoring skills)
+- [ ] **AIOps Delegation:** Alarm-to-Diagnosis delegation matrix in `integration.md` (for monitoring skills)
+- [ ] **AIOps DAS Integration:** DAS trigger conditions defined (for database skills)
+- [ ] **AIOps Knowledge Base:** `references/knowledge-base.md` with ≥ 3 fault patterns (for diagnostic skills)
 
 ### 3.2 Post-Merge Monitoring
 
@@ -184,6 +220,14 @@ Reviewer: _______________ Date: _______________ Result: PASS / FAIL
 - [ ] Scenario 10: Error messages are user-friendly
 - [ ] Scenario 11: Progress shown for long ops
 - [ ] Scenario 12: No silent failures
+
+### AIOps
+- [ ] Scenario 13: Multi-metric correlation patterns present (monitoring skills)
+- [ ] Scenario 14: Cross-skill delegation matrix defined (monitoring skills)
+- [ ] Scenario 15: DAS integration configured (database skills)
+- [ ] Scenario 16: Alarm storm handling defined (monitoring skills)
+- [ ] Scenario 17: Knowledge base with fault patterns (diagnostic skills)
+- [ ] Scenario 18: Multi-round reflection process (diagnostic skills)
 
 ### Reviewer Sign-off
 Reviewer: _______________ Date: _______________ Result: PASS / FAIL
