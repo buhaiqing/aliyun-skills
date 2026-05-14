@@ -6,33 +6,43 @@
 
 **Fallback path:** JIT Go SDK (dynamic script generation + `go run`)
 
-### Go Runtime Bootstrap
+### Enhanced Self-Healing Framework (MANDATORY)
 
-If Agent Runtime lacks Go, JIT download from official source:
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
-```bash
-# Check Go runtime
-if ! command -v go &> /dev/null; then
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
-    [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-    [ "$ARCH" = "aarch64" ] && ARCH="arm64"
+**Key Self-Healing Capabilities:**
+- **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
+- **Intelligent Error Classification:** Network, permission, resource, configuration errors
+- **Multi-Path Self-Healing:** Multiple recovery strategies per error type
+- **Health Verification:** Post-installation validation with health score ≥ 8/10
+- **Graceful Degradation:** Clear fallback paths when self-healing fails
 
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-    export PATH="/tmp/go-runtime/go/bin:$PATH"
-    export GOPATH="/tmp/go-workspace"
-    export GOCACHE="/tmp/go-cache"
-    export GOMODCACHE="/tmp/go-modcache"
-    export GOPROXY="https://goproxy.cn,direct"
-fi
+### Go Runtime Bootstrap (Enhanced Self-Healing)
 
-go version
-```
+The Agent MUST use enhanced self-healing for Go runtime JIT download:
 
-> **Go version strategy:**
-> - **JIT download:** Go 1.24+ (latest stable)
-> - **Script compatibility:** Go 1.21+ (minimum)
+**Multi-Version & Multi-Mirror Strategy:**
+- **Primary:** Go 1.24+ (latest stable)
+- **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
+- **Mirrors:** Official + China CDN mirrors (4 mirrors)
+
+**Self-Healing Capabilities:**
+
+| Error Type | Self-Healing Actions | Max Attempts |
+|------------|---------------------|--------------|
+| Download timeout | Mirror switch, timeout increase, version fallback | 4 versions × 4 mirrors |
+| Download incomplete | File size check (>100MB), re-download, cache clear | 3 |
+| Extract failure | Integrity check, re-download, clean workspace | 2 |
+| Version incompatible | Fallback to compatible version (go1.21+) | 4 versions |
+| PATH setup fail | Use absolute path, verify binary exists | 1 |
+
+**Health Check:**
+- Go binary exists and executable
+- Version ≥ go1.21
+- Workspace initialized
+- Dependencies cached
+
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
 
 ### JIT Go SDK Workflow
 

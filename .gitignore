@@ -81,3 +81,6 @@ ehthumbs.db
 
 # Compiled skill binaries (future distribution)
 # *.aliyun-sdk-*  # Keep pre-compiled binaries if we distribute them
+
+.trae/
+.agents/

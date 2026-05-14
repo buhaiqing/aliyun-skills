@@ -107,8 +107,19 @@ validation, and failure recovery.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning:** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-> (or any secret) in console output, debug messages, or logs.
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
+>
+> **Masking rules across all execution paths:**
+> | Execution Path | Safe Pattern | Unsafe Pattern |
+> |----------------|-------------|----------------|
+> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | Raw credential value in output |
+> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
+> | Log files | `[INFO] Credentials: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
+> | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
+> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
+> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
+>
+> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -1401,6 +1412,109 @@ fi
 }
 ```
 
+## Enhanced Pre-flight Check (MANDATORY)
+
+> **CRITICAL:** Before executing ANY Redis/Tair operation, MUST run the enhanced pre-flight check script to validate environment and detect potential issues early.
+
+### Why Enhanced Pre-flight Check?
+
+Based on real-world execution failures, this enhanced check addresses:
+1. **CLI plugin installation issues** (permission restrictions in CI environments)
+2. **Environment variable loading** (automatic .env file detection)
+3. **Go SDK version compatibility** (preventing runtime errors)
+4. **Network connectivity** (endpoint accessibility)
+5. **CI environment detection** (special handling for restricted environments)
+
+### Execution
+
+```bash
+# Run enhanced pre-flight check
+bash scripts/preflight-check.sh
+
+# Exit codes:
+# 0 = PASS (all checks passed, ready to execute)
+# 1 = FAIL (critical issues, cannot proceed)
+# 2 = WARNING (warnings present, proceed with caution)
+```
+
+### Check Categories
+
+| Category | Checks | Severity |
+|----------|--------|----------|
+| Environment Detection | CI/local, OS/arch | INFO |
+| CLI Installation | aliyun binary, version | CRITICAL |
+| **CLI Plugin Installation** | r-kvstore plugin, permissions, auto-install | **CRITICAL** |
+| Credentials | .env file, env vars, CLI config | CRITICAL |
+| Go Runtime | Go binary, version compatibility | WARNING |
+| Network Connectivity | Endpoint accessibility | WARNING |
+
+### Automatic Issue Detection and Resolution
+
+The script automatically:
+1. **Detects .env file** and loads environment variables
+2. **Checks plugin installation** and attempts auto-install if missing
+3. **Handles permission restrictions** gracefully (CI environments)
+4. **Validates Go version** for SDK fallback compatibility
+5. **Provides actionable suggestions** for each issue
+
+### Output Example
+
+```
+=== Enhanced Pre-flight Check for Redis/Tair Operations ===
+
+[1] Environment Detection
+[i] Running in CI environment
+[i] Operating System: Darwin (arm64)
+
+[2] Alibaba Cloud CLI Installation
+[✓] Alibaba Cloud CLI installed: 3.0.167
+
+[3] CLI Plugin Installation Check
+[✗] Redis/Tair plugin (aliyun-cli-r-kvstore) not installed
+[i] Attempting to install Redis/Tair plugin...
+[!] Plugin directory lacks write permission (common in CI/restricted environments)
+[!] Suggestion: Use Go SDK fallback path or fix permissions
+
+[4] Credentials Check
+[i] Found .env file: .env
+[✓] .env file loaded successfully
+[✓] ALIBABA_CLOUD_ACCESS_KEY_ID is set (length: 20)
+[✓] ALIBABA_CLOUD_ACCESS_KEY_SECRET is set (masked for security)
+[✓] ALIBABA_CLOUD_REGION_ID is set: cn-hangzhou
+
+[5] Go Runtime Check (Fallback Path)
+[✓] Go runtime installed: go1.24.0
+[✓] Go version meets minimum requirement (1.21+)
+
+[6] Network Connectivity Check
+[✓] Can reach Alibaba Cloud endpoint: r-kvstore.aliyuncs.com
+
+Overall Status: WARNING
+Recommended Execution Path: SDK Fallback (due to plugin permission issue)
+```
+
+### Integration with Execution Flows
+
+**Every operation MUST start with:**
+```bash
+# Step 1: Run pre-flight check
+bash scripts/preflight-check.sh
+PREFLIGHT_STATUS=$?
+
+# Step 2: Determine execution path based on status
+if [ $PREFLIGHT_STATUS -eq 0 ]; then
+    # Use CLI (Primary Path)
+    aliyun r-kvstore describe-instances --RegionId "$ALIBABA_CLOUD_REGION_ID"
+elif [ $PREFLIGHT_STATUS -eq 2 ]; then
+    # Use SDK Fallback (warnings present)
+    go run scripts/sdk-fallback.go
+else
+    # HALT - critical issues
+    echo "Cannot proceed. Fix critical issues first."
+    exit 1
+fi
+```
+
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):
@@ -1428,18 +1542,33 @@ fi
    go version
    ```
 
-3. **Configure Credentials**:
+3. **Configure Credentials** (automatic .env loading supported):
 
+   **Option A: Environment Variables**
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
 
-4. **Verify Configuration**:
+   **Option B: .env File (Recommended for CI)**
+   ```bash
+   # Create .env file in project root
+   cat > .env <<EOF
+   ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
+   ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+   ALIBABA_CLOUD_REGION_ID=cn-hangzhou
+   EOF
+   
+   # Pre-flight check will auto-load .env file
+   bash scripts/preflight-check.sh
+   ```
+
+4. **Verify Configuration** (via pre-flight check):
 
    ```bash
-   aliyun r-kvstore describe-regions
+   # Use enhanced pre-flight check instead of manual verification
+   bash scripts/preflight-check.sh
    ```
 
 > **CLI Polling with `--waiter`:** For operations that require waiting for state transitions, `aliyun` CLI supports `--waiter` (when available):

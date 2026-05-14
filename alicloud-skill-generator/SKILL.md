@@ -83,6 +83,29 @@ If the user wants **operational execution** (e.g. "create a resource"), load the
 
 5. **Secrets**
    - Only `{{env.*}}` **names** and documentation; never real keys or customer data.
+   - **Credential masking is MANDATORY.** Any console output or local log that references `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field MUST mask the actual value. See [Credential Security](#credential-security) below.
+
+### Credential Security (Mandatory)
+
+All generated skills MUST enforce the following credential security rules across **every** execution path (CLI, JIT Go SDK, verification scripts, debugging output):
+
+| Context | Required Behavior | Example |
+|---------|------------------|---------|
+| **Console output** (stdout/stderr) | Any field whose key matches `*secret*`, `*key*` (case-insensitive) MUST have its value replaced with `<masked>` or `***` | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` |
+| **Local log files** | Same masking rule; log entries MUST NOT contain raw credential values | `[INFO] Credentials: AKID=***, Secret=***` |
+| **Error messages** | Error objects containing credential fields MUST be sanitized before display | `Error: Request failed (credential omitted)` |
+| **Debug/verbose mode** (`aliyun --debug`) | If debug output is enabled, warn the user that credential values may appear; recommend using `--debug` only in isolated environments | `⚠️ Debug mode may expose credential values in output` |
+| **JIT Go SDK scripts** | The SDK script itself reads credentials from env vars (safe); but any `fmt.Println`, log, or error dump MUST NOT include the value of `AccessKeySecret` | `client, err := [product].NewClient(config)` — the config struct is never printed/logged |
+| **Template generation** | When generating skill docs, use `{{env.*}}` placeholders only; never include example values or real keys | `AccessKeySecret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"` |
+| **Credential verification** | Verify existence only (e.g., `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"` or `if os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET") != ""`); never `echo` or print the value | `✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET is set` (not the value) |
+
+**Masking patterns (use one of the following):**
+- `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>`
+- `AccessKeySecret=***`
+- `"accessKeySecret": "***"`
+- `secret=****`
+
+**Non-compliance consequence:** Any skill that outputs un-masked credential values in console or logs SHALL be treated as a **security incident** and blocked from merge.
 
 6. **CLI-first with JIT Go SDK fallback**
    - The **primary** execution path is the **`aliyun` CLI** (static Go binary, covers 90%+ APIs).
@@ -146,76 +169,150 @@ brew install aliyun-cli
 aliyun version
 ```
 
-##### Retry Logic (Up to 3 Attempts)
+##### Enhanced Self-Healing Installation (Mandatory)
 
-If `aliyun version` or any `aliyun` command fails, use the following retry procedure:
+The Agent MUST follow the **Enhanced Self-Healing Framework** defined in [references/enhanced-self-healing-framework.md](references/enhanced-self-healing-framework.md). This framework provides:
 
-```bash
-# Retry 1: re-run install script
-/bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-aliyun version && echo "OK" || echo "FAIL"
+1. **Pre-flight Checks** — Network connectivity, disk space, permissions, system compatibility
+2. **Intelligent Error Classification** — Network, permission, resource, configuration errors
+3. **Multi-Path Self-Healing** — Multiple recovery strategies per error type
+4. **Health Verification** — Post-installation validation and status tracking
+5. **Graceful Degradation** — Clear fallback paths when self-healing fails
 
-# Wait 2 seconds, then Retry 2
-sleep 2
-/bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-aliyun version && echo "OK" || echo "FAIL"
+**Self-Healing Decision Tree:**
 
-# Wait 4 seconds, then Retry 3
-sleep 4
-/bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-aliyun version && echo "OK" || echo "FAIL"
+```
+[CLI Installation Attempt]
+    │
+    ├── Phase 1: Pre-flight Checks
+    │   Network → Disk → Permissions → Compatibility
+    │   (Auto-heal: switch mirrors, clean temp, use user dir)
+    │
+    ├── Phase 2: Intelligent Download
+    │   Multi-mirror + Integrity check + Retry with adaptation
+    │   (Auto-heal: mirror switch, timeout adjustment, cache clear)
+    │
+    ├── Phase 3: Installation Execution
+    │   Script execution + Manual fallback
+    │   (Auto-heal: manual binary download, permission fix)
+    │
+    ├── Phase 4: Health Verification
+    │   Binary check → Permission check → PATH check → Functional test
+    │   (Auto-heal: chmod +x, PATH update, reinstall)
+    │
+    └── Self-Healing Exhausted → Proceed to Phase 2: JIT Go SDK Setup
 ```
 
-> Exponential backoff: retry 1 (instant) → retry 2 (2s delay) → retry 3 (4s delay).
+**Key Self-Healing Capabilities:**
 
-**If all 3 retries fail:**
+| Error Type | Self-Healing Actions | Max Attempts |
+|------------|---------------------|--------------|
+| Network timeout | Mirror switch, timeout increase, retry with backoff | 5 |
+| Permission denied | Use user directory, chmod +x, PATH update | 3 |
+| Disk full | Clean temp files, use alternative path | 2 |
+| Binary corrupt | Delete and re-download, integrity check | 3 |
+| PATH missing | Auto-add to PATH, provide permanent fix instruction | 1 |
+
+**Self-Healing Success Criteria:**
+- Health score ≥ 8/10 (binary exists, executable, in PATH, version works, API call works)
+- Self-healing duration < 30s
+- User intervention rate < 20%
+
+**If self-healing exhausted:**
 - Proceed to **Phase 2: JIT Go SDK Setup**
-- Phase 1 failure message: `aliyun CLI setup failed after 3 attempts. Falling back to JIT Go SDK mode.`
+- Log self-healing failure with error code and diagnostic info
+- Provide user guidance template with manual installation options
 
 #### Phase 2: JIT Go SDK Setup (Fallback Path)
 
 When `aliyun` CLI is unavailable or does not support a specific API, **JIT build a Go SDK script** on-demand.
 
-##### Step 2.1: Bootstrap Go Runtime
+##### Step 2.1: Bootstrap Go Runtime (Enhanced Self-Healing)
 
-Check if Go runtime exists. If not, JIT download from official source:
+The Agent MUST follow the **Enhanced Self-Healing Framework** for Go runtime JIT download. This includes:
+
+**Pre-flight Checks:**
+- Check existing Go runtime version compatibility (minimum: go1.21)
+- Verify system architecture support
+- Check disk space for Go runtime (~150MB)
+
+**Multi-Version & Multi-Mirror Strategy:**
 
 ```bash
-# Check Go runtime
-if ! command -v go &> /dev/null; then
-    echo "Go runtime not found. JIT downloading Go 1.24..."
+# Enhanced Go runtime bootstrap with self-healing
+bootstrap_go_runtime_enhanced() {
+    # Pre-check: existing Go runtime
+    if command -v go &> /dev/null; then
+        GO_VERSION=$(go version | awk '{print $3}')
+        GO_MAJOR=$(echo "$GO_VERSION" | sed 's/go//' | cut -d. -f1)
+        GO_MINOR=$(echo "$GO_VERSION" | sed 's/go//' | cut -d. -f2)
+        
+        if [ "$GO_MAJOR" -ge 1 ] && [ "$GO_MINOR" -ge 21 ]; then
+            echo "✅ Compatible Go runtime: $GO_VERSION"
+            return 0
+        fi
+    fi
     
-    # Detect OS and architecture
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
+    # Self-healing: Multi-version fallback
+    GO_VERSIONS=("go1.24.0" "go1.23.0" "go1.22.0" "go1.21.0")
     
-    # Map architecture names
-    if [ "$ARCH" = "x86_64" ]; then ARCH="amd64"; fi
-    if [ "$ARCH" = "aarch64" ]; then ARCH="arm64"; fi
+    # Self-healing: Multi-mirror fallback
+    GO_MIRRORS=(
+        "https://go.dev/dl"
+        "https://dl.google.com/go"
+        "https://mirrors.aliyun.com/golang"  # China mirror
+        "https://golang.google.cn/dl"        # China mirror
+    )
     
-    # Download Go runtime (~150MB, one-time)
-    GO_VERSION="go1.24.0"
-    GO_URL="https://go.dev/dl/${GO_VERSION}.${OS}-${ARCH}.tar.gz"
+    # Download with integrity check
+    for version in "${GO_VERSIONS[@]}"; do
+        for mirror in "${GO_MIRRORS[@]}"; do
+            URL="${mirror}/${version}.${OS}-${ARCH}.tar.gz"
+            
+            if curl -fsSL --max-time 120 "$URL" -o /tmp/go.tar.gz; then
+                # Integrity check: file size > 100MB
+                FILE_SIZE=$(stat -c%s /tmp/go.tar.gz)
+                if [ "$FILE_SIZE" -gt 100000000 ]; then
+                    # Extract and verify
+                    if tar -xzf /tmp/go.tar.gz -C /tmp/go-runtime; then
+                        if [ -f "/tmp/go-runtime/go/bin/go" ]; then
+                            export PATH="/tmp/go-runtime/go/bin:$PATH"
+                            export GOPROXY="https://goproxy.cn,direct"
+                            return 0
+                        fi
+                    fi
+                fi
+            fi
+            
+            # Self-healing: Clean failed download
+            rm -f /tmp/go.tar.gz
+        done
+    done
     
-    mkdir -p /tmp/go-runtime
-    curl -fsSL "$GO_URL" | tar -xz -C /tmp/go-runtime
-    
-    # Set environment variables
-    export PATH="/tmp/go-runtime/go/bin:$PATH"
-    export GOPATH="/tmp/go-workspace"
-    export GOCACHE="/tmp/go-cache"
-    export GOMODCACHE="/tmp/go-modcache"
-    export GOPROXY="https://goproxy.cn,direct"  # 国内镜像加速
-fi
-
-# Verify Go runtime
-go version
+    return 1  # All attempts failed
+}
 ```
 
+**Self-Healing Capabilities:**
+
+| Error Type | Self-Healing Actions | Max Attempts |
+|------------|---------------------|--------------|
+| Download timeout | Mirror switch, timeout increase, version fallback | 4 versions × 4 mirrors |
+| Download incomplete | File size check, re-download, cache clear | 3 |
+| Extract failure | Integrity check, re-download, clean workspace | 2 |
+| Version incompatible | Fallback to compatible version (go1.21+) | 4 versions |
+| PATH setup fail | Use absolute path, verify binary exists | 1 |
+
+**Health Check:**
+- Go binary exists and executable
+- Version ≥ go1.21
+- Workspace initialized
+- Dependencies cached
+
 > **Go version strategy:**
-> - **JIT download:** Go 1.24+ (latest stable, optimal performance)
-> - **Script compatibility:** Go 1.21+ (minimum, for Agent Runtime compatibility)
-> - **Download source:** Official `https://go.dev/dl/`
+> - **Primary:** Go 1.24+ (latest stable, optimal performance)
+> - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
+> - **Mirrors:** Official + China CDN mirrors for reliability
 > - **Module proxy:** `GOPROXY=https://goproxy.cn,direct` (China CDN mirror)
 
 ##### Step 2.2: Initialize Go Workspace
@@ -231,22 +328,72 @@ cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script
 ```
 
-##### Step 2.3: Get SDK Dependencies
+##### Step 2.3: Get SDK Dependencies (Enhanced Self-Healing)
 
-Download required Alibaba Cloud Go SDK packages:
+The Agent MUST use enhanced self-healing for SDK dependency download:
+
+**Multi-GOPROXY Strategy:**
 
 ```bash
-# Core dependencies (required for all SDK scripts)
-go get github.com/alibabacloud-go/darabonba-openapi/v2/client
-go get github.com/alibabacloud-go/tea
-go get github.com/alibabacloud-go/tea-utils/v2/service
-
-# Product-specific SDK (replace <product> with actual name)
-# ECS:     go get github.com/alibabacloud-go/ecs-20140526/v4/client
-# RDS:     go get github.com/alibabacloud-go/rds-20140815/v2/client
-# PolarDB: go get github.com/alibabacloud-go/polardb-20220530/v3/client
-# VPC:     go get github.com/alibabacloud-go/vpc-20160428/v3/client
+# Enhanced dependency download with self-healing
+download_sdk_dependencies_enhanced() {
+    # Core dependencies
+    CORE_DEPS=(
+        "github.com/alibabacloud-go/darabonba-openapi/v2/client"
+        "github.com/alibabacloud-go/tea"
+        "github.com/alibabacloud-go/tea-utils/v2/service"
+    )
+    
+    # Self-healing: Multi-proxy fallback
+    GOPROXY_MIRRORS=(
+        "https://goproxy.cn,direct"      # China CDN (primary)
+        "https://goproxy.io,direct"      # Alternative China CDN
+        "https://proxy.golang.org,direct" # Official proxy
+        "direct"                          # Direct download (fallback)
+    )
+    
+    for proxy in "${GOPROXY_MIRRORS[@]}"; do
+        export GOPROXY="$proxy"
+        SUCCESS=true
+        
+        for dep in "${CORE_DEPS[@]}"; do
+            # Self-healing: Timeout control + retry
+            if timeout 120 go get "$dep"; then
+                echo "✅ Downloaded: $dep"
+            else
+                echo "⚠️  Failed: $dep with proxy $proxy"
+                SUCCESS=false
+                break
+            fi
+        done
+        
+        if [ "$SUCCESS" = true ]; then
+            return 0
+        fi
+        
+        # Self-healing: Clean cache before next proxy
+        go clean -modcache
+    done
+    
+    return 1  # All proxies failed
+}
 ```
+
+**Self-Healing Capabilities:**
+
+| Error Type | Self-Healing Actions | Max Attempts |
+|------------|---------------------|--------------|
+| Proxy timeout | Switch GOPROXY, increase timeout, retry | 4 proxies |
+| Version not found | Use latest stable version, fallback to direct | 3 |
+| Network failure | Proxy switch, cache clean, retry with backoff | 4 |
+| Permission denied | Use /tmp directory, clean cache | 2 |
+| Build failure | Check Go version, clean cache, retry | 3 |
+
+**Health Check:**
+- All core dependencies downloaded
+- Module cache populated
+- Go.mod updated
+- Dependencies compilable
 
 > **SDK package naming:** `github.com/alibabacloud-go/<product>-<YYYYMMDD>/v<version>/client`
 > Find package names at: https://github.com/alibabacloud-go or SDK Center
@@ -336,15 +483,13 @@ The `aliyun` CLI supports **multiple authentication methods**:
 
 **AK (Simple):**
 ```bash
-# Interactive setup
+# Interactive setup (safe — no credential visible in process list)
 aliyun configure
-
-# Or pass flags directly
-aliyun configure --mode AK --access-key-id {{env.ALIBABA_CLOUD_ACCESS_KEY_ID}} \
-  --access-key-secret {{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}} --region cn-hangzhou
 ```
 
-**Env vars (Agent Runtime preferred — aliyun reads these natively):**
+> **Security:** Prefer `aliyun configure` interactive mode or env vars. Passing `--access-key-secret` as a CLI flag exposes the credential value in the process listing (`ps aux`). If you must use the non-interactive form, run it in a secure/isolated environment and clear shell history afterward.
+
+**Env vars (Agent Runtime preferred — aliyun reads these natively; safest method):**
 ```bash
 export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
@@ -663,10 +808,13 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Flows:** Pre-flight → Execute → Validate → Recover for **each** critical operation; **each** flow documents **`aliyun` as primary path** and **SDK/API as fallback**.
 - [ ] **Failure recovery:** HALT vs retry; throttling; non-retryable business errors.
 - [ ] **API fidelity:** Fields and paths traceable to OpenAPI/SDK for the stated version.
-- [ ] **aliyun-first with fallback:** `references/cli-usage.md` present as primary path; `SKILL.md` execution sections include both `aliyun` and SDK/API paths; explicit **3-retry fallback** documented.
+- [ ] **aliyun-first with fallback:** `references/cli-usage.md` present as primary path; `SKILL.md` execution sections include both `aliyun` and SDK/API paths; explicit **enhanced self-healing** documented.
 - [ ] **CLI fidelity:** Default output is JSON (NO `--output json` needed), `--output` used for JMESPath only; commands match official CLI docs; JSON paths **verified** with a real CLI run.
 - [ ] **Safety gates** for destructive operations (before **each** documented path: `aliyun` **and** SDK fallback).
 - [ ] **Timeouts** for polling and long-running operations.
+- [ ] **Self-Healing Framework:** All installation flows follow [enhanced-self-healing-framework.md](references/enhanced-self-healing-framework.md) with pre-flight checks, error classification, multi-path recovery, health verification, and graceful degradation.
+- [ ] **Self-Healing Coverage:** CLI install, Go runtime JIT, dependency download all have ≥ 3 self-healing paths per error type.
+- [ ] **Self-Healing Metrics:** Health score ≥ 8/10, self-healing duration < 30s, user intervention rate < 20% documented as success criteria.
 - [ ] **UX Onboarding:** Quick Start section present; first-time user can execute first command within 60 seconds per `references/user-experience-spec.md` Section 2.1.
 - [ ] **UX Interaction:** Common operations require ≤ 3 prompts; smart defaults documented; destructive operations have explicit confirmation per `references/user-experience-spec.md` Section 3.
 - [ ] **UX Feedback:** Success/failure messages follow standardized format; progress shown for operations > 5s per `references/user-experience-spec.md` Section 4.
@@ -694,6 +842,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 ## See Also
 
 - [Skill template](references/alicloud-skill-template.md)
+- [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for CLI/Go/dependency installation
 - [Governance & adversarial review](references/governance-and-adversarial-review.md) (when present)
 - [Prompt library](references/prompt-library.md) — structured prompts for generation lifecycle
 - [Optimization analysis](references/optimization-analysis.md) — three-dimensional optimization framework

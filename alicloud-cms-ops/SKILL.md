@@ -113,10 +113,19 @@ complex request structures, JIT build a Go SDK script.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning:** **NEVER** log, print, or expose
-> `ALIBABA_CLOUD_ACCESS_KEY_SECRET` in console output, debug messages, or logs.
-> When verification is needed, check existence only without printing the actual
-> value. Use masked placeholders like `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>`.
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
+>
+> **Masking rules across all execution paths:**
+> | Execution Path | Safe Pattern | Unsafe Pattern |
+> |----------------|-------------|----------------|
+> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | Raw credential value in output |
+> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
+> | Log files | `[INFO] Credentials: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
+> | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
+> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
+> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
+>
+> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -163,7 +172,184 @@ complex request structures, JIT build a Go SDK script.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.0 | 2026-05-14 | Enhanced anomaly detection framework: CLI install diagnosis, 4-layer environment checks, intelligent root cause analysis, auto-heal engine, degradation strategies |
 | 2.0.0 | 2026-05-14 | Initial CMS skill with dual-path execution, metric queries, alarm management |
+
+## Enhanced Anomaly Detection & Self-Healing (Agent-Readable)
+
+> This section defines the **4-layer anomaly detection framework** for CLI installation issues, **intelligent root cause analysis engine**, and **auto-healing capabilities**. Refer to [cli-install-diagnosis.md](references/cli-install-diagnosis.md) for complete diagnostic scripts.
+
+### Anomaly Detection Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│               CLI 安装/调用异常检测引擎                          │
+├──────────────┬──────────────┬──────────────┬─────────────────┤
+│  Level 1     │  Level 2     │  Level 3     │  Level 4         │
+│  环境检测层   │  依赖检测层   │  网络检测层   │  权限检测层      │
+├──────────────┼──────────────┼──────────────┼─────────────────┤
+│ OS 兼容性    │ Go 运行时     │ DNS 解析     │ Credential 存在  │
+│ Shell 类型   │ SDK 包解析    │ CMS 端点     │ Credential 有效  │
+│ 包管理器     │ 版本冲突      │ CLI 下载源   │ RAM 策略         │
+│ 架构兼容     │ 构建工具      │ Go Proxy     │ CLI 二进制权限   │
+│ PATH 可写    │ GOPATH 配置   │ 下载速度     │ 磁盘写入权限     │
+│ 下载工具     │ Go Mod Cache │ 代理检测     │ sudo 权限        │
+└──────────────┴──────────────┴──────────────┴─────────────────┘
+       │              │              │              │
+       └──────────────┴──────────────┴──────────────┘
+                            │
+                    ┌───────▼───────────────────────────────────┐
+                    │  智能根因分析引擎                           │
+                    │  1. 异常关联 → 2. 模式匹配 → 3. 根因判定   │
+                    │  4. 可信度评分 → 5. 影响评估 → 6. 修复推荐  │
+                    └───────┬───────────────────────────────────┘
+                            │
+                    ┌───────▼───────────────────────────────────┐
+                    │  自动治愈引擎                               │
+                    │  heal_missing_cli  → 自动安装 CLI          │
+                    │  heal_missing_go   → 自动安装 Go           │
+                    │  heal_sdk_deps     → 自动修复 SDK 依赖      │
+                    │  heal_proxy_config → 配置 Go Proxy 加速    │
+                    │  heal_env_vars     → 检查/提示环境变量      │
+                    └───────┬───────────────────────────────────┘
+                            │
+                    ┌───────▼───────────────────────────────────┐
+                    │  降级策略矩阵                               │
+                    │  FULL    → CLI + SDK 均可用                 │
+                    │  NORMAL  → CLI-only 或 SDK-only            │
+                    │  DEGRADED→ 功能受限，人工提示               │
+                    │  BLOCKED → 上报错误，无法继续               │
+                    └──────────────────────────────────────────┘
+```
+
+### Anomaly Detection Execution Protocol
+
+When any CLI command fails or the agent encounters an unexpected error, execute the following protocol in order:
+
+```
+Step 1 — Quick Health Check (fast path):
+  Check if `aliyun` command exists and responds:
+  - PASS → Proceed to operation
+  - FAIL → Proceed to Step 2
+
+Step 2 — Level 1 Environment Check:
+  Execute environment diagnosis:
+  - OS compatibility, shell type, package manager
+  - Architecture support, PATH writability
+  - Download tool (curl/wget) availability
+  - Disk space, Xcode CLI tools (macOS)
+  If CRITICAL failure detected → Attempt auto-heal or report
+
+Step 3 — Level 2 Dependency Check:
+  Execute Go runtime and SDK dependency diagnosis:
+  - Go installed, version ≥ 1.21 (minimum), ≥ 1.24 (recommended for JIT)
+  - SDK package resolution (darabonba-openapi, cms-20190101, tea)
+  - GOPATH/bin in PATH, Go proxy configuration
+  - Build tools (gcc/clang) availability
+  If CRITICAL failure detected → Attempt auto-heal
+
+Step 4 — Level 3 Network Check:
+  Execute network connectivity diagnosis:
+  - DNS resolution for metrics.aliyuncs.com
+  - CMS API endpoint reachability
+  - CLI download server reachability
+  - GitHub/Go module proxy reachability
+  - Proxy detection, VPC internal endpoint availability
+  - Download speed test
+  If CRITICAL failure detected → Suggest proxy/mirror/heal
+
+Step 5 — Level 4 Permission Check:
+  Execute credential and permissions diagnosis:
+  - AK_ID, AK_SECRET, REGION environment variable existence
+  - Credential validity via DescribeProjectMeta dry-run
+  - RAM policy sufficiency (Forbidden → need AliyunCloudMonitorReadOnlyAccess)
+  - CLI binary executable permission
+  If CRITICAL failure detected → Prompt user for remediation
+
+Step 6 — Root Cause Analysis:
+  Execute anomaly correlation analysis:
+  - Cross-layer pattern matching (see anomaly patterns below)
+  - Confidence scoring for each matched pattern
+  - Impact assessment (FULL/NORMAL/DEGRADED/BLOCKED)
+  - Priority-ordered remediation recommendations
+
+Step 7 — Auto-Heal:
+  Execute automated healing based on root cause:
+  - heal_missing_cli: Auto-install aliyun CLI (brew/curl/wget)
+  - heal_missing_go: Auto-install Go runtime
+  - heal_sdk_deps: Auto-resolve SDK dependencies
+  - heal_proxy_config: Configure Go proxy for China region
+  - heal_env_vars: Guide user to set missing environment variables
+
+Step 8 — Degrade or Report:
+  If auto-heal succeeds → Retry the original operation
+  If auto-heal fails → Apply degradation strategy and report
+```
+
+### Root Cause Analysis — Pattern Matching Rules
+
+The anomaly analyzer correlates findings across all 4 layers. Below are the supported patterns:
+
+| Pattern ID | Rule | Confidence | Impact | Auto-Fix Available |
+|-----------|------|-----------|--------|-------------------|
+| `NET_ROOT_DNS` | DNS failure + CMS endpoint unreachable | 0.95 | ALL_OPERATIONS | Partial (add DNS) |
+| `NET_ROOT_ISOLATED` | CLI source + GitHub both unreachable | 0.90 | CLI_INSTALL_FAILED + SDK_DOWNLOAD_FAILED | Yes (proxy config) |
+| `PERM_ROOT_RAM` | AK set + API returns Forbidden | 0.95 | API_CALLS_FORBIDDEN | No (manual RAM policy) |
+| `DEP_ROOT_GO_MISSING` | Go not found + SDK resolve failed | 0.95 | JIT_SDK_FALLBACK_UNAVAILABLE | Yes (auto install Go) |
+| `PERM_ROOT_AK_INVALID` | CMS endpoint reachable + AK invalid | 0.95 | ALL_API_CALLS_FAIL | No (manual AK rotation) |
+| `ENV_ROOT_INSTALL_ENV` | Low disk + no download tool | 0.85 | CLI_INSTALL_FAILED | Yes (clean + install) |
+| `NET_ROOT_SLOW_BANDWIDTH` | Server reachable but slow | 0.80 | INSTALL_TIMEOUT | Yes (proxy/mirror) |
+| `ENV_ROOT_MULTI_WARN` | 3+ environment warnings | 0.70 | INSTALL_MAY_FAIL | Partial (sequential fix) |
+
+### Degradation Strategy Application
+
+After diagnosis, determine the execution mode:
+
+| System Health | Execution Mode | Behavior | Agent Action |
+|--------------|---------------|----------|-------------|
+| CLI + SDK both available | **FULL** | Normal dual-path execution | Use CLI primary, SDK fallback |
+| CLI only, SDK unavailable | **NORMAL_CLI** | CLI-only operations | Use CLI for covered ops; note SDK limitation |
+| SDK only, CLI unavailable | **NORMAL_SDK** | SDK-only operations | Use JIT Go SDK for all operations |
+| CLI install failed, Go available | **DEGRADED_SDK** | SDK with auto-install hint | Use SDK; suggest user install CLI |
+| AK invalid/expired | **CRIPPLED** | All API calls fail | HALT; guide user to rotate AK |
+| Network fully down | **BLOCKED** | No operation possible | HALT; report network diagnosis |
+| Partial network (VPC only) | **DEGRADED_VPC** | Internal endpoint only | Use metrics-intra.aliyuncs.com |
+
+Agent MUST log the degradation mode and notify the user when mode is not FULL.
+
+### Quick Health Check Snippet
+
+For any operation where the CLI is expected to be available:
+
+```bash
+# Quick health check — fast path before full diagnosis
+if ! command -v aliyun &>/dev/null; then
+  echo "[CMS-ENV] aliyun CLI not found. Running environment diagnosis..."
+  # Reference: cli-install-diagnosis.md for full diagnostic scripts
+  # Attempt auto-heal:
+  if command -v curl &>/dev/null || command -v brew &>/dev/null; then
+    echo "[CMS-HEAL] Attempting auto-install..."
+    # macOS: brew install aliyun-cli
+    # Linux/macOS: /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
+  else
+    echo "[CMS-HEAL] Cannot auto-install. Manual install required."
+    echo "  See: https://aliyuncli.alicdn.com/install.sh"
+    # Fall back to JIT Go SDK if Go is available
+    if command -v go &>/dev/null; then
+      echo "[CMS-DEGRADE] Falling back to JIT Go SDK..."
+    else
+      echo "[CMS-FATAL] Neither CLI nor Go runtime available."
+      echo "  Install Go 1.21+: https://go.dev/dl/"
+    fi
+  fi
+fi
+```
+
+### Reference Document
+
+For complete diagnostic scripts, anomaly patterns, and auto-heal implementations, see:
+
+- [CLI Install Diagnosis & Self-Healing](references/cli-install-diagnosis.md)
 
 ## Execution Flows (Agent-Readable)
 
@@ -180,8 +366,9 @@ Query time-series metric data for a specific cloud product and metric.
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
-| CLI / deps | `aliyun version` | Exit code 0 | Document CLI install |
-| Credentials | Env vars set | Non-empty keys | HALT; user configures env |
+| CLI / deps | `aliyun version` | Exit code 0 | Run **Enhanced Anomaly Detection** (see above): Level 1-2-3-4 checks → auto-heal → degrade |
+| Credentials | Env vars set | Non-empty keys | HALT; run **Level 4 Permission Check** → auto-heal env vars or user configures env |
+| CLI credential validity | `aliyun cms DescribeProjectMeta` dry-run | `"Code":"200"` | Run **Root Cause Analysis**: if Forbidden → RAM policy; if InvalidAK → rotate AK |
 | Namespace validity | Check against known namespaces table | Valid namespace | Suggest valid namespace |
 | Metric validity | Call DescribeMetricMetaList | Metric exists | Suggest valid metrics |
 | Time range | StartTime < EndTime, within retention | Valid range | Adjust range |
@@ -275,12 +462,16 @@ go run ./main.go
 
 #### Recovery
 
-| Error | Action |
-|-------|--------|
-| `Throttling.User` | Backoff 5s, retry up to 3 times |
-| `InvalidParameter` | Verify Namespace, MetricName, Dimensions |
-| `ResourceNotFound` | Verify instance exists in target region |
-| `Forbidden` | Check RAM policy for `AliyunCloudMonitorReadOnlyAccess` |
+| Error | Action | Auto-Heal |
+|-------|--------|-----------|
+| `Throttling.User` | Backoff 5s, retry up to 3 times | Built-in retry with exponential backoff |
+| `Request was denied due to user flow control` | Backoff 5s, retry up to 3 times | Built-in retry |
+| `InvalidParameter` | Verify Namespace, MetricName, Dimensions | Check against metric metadata |
+| `InvalidAccessKeyId` / `SignatureDoesNotMatch` | AK invalid or expired | Run **Level 4 Permission Check** → guide user to rotate AK |
+| `ResourceNotFound` | Verify instance exists in target region | Check via product-specific skill |
+| `Forbidden` | Check RAM policy for `AliyunCloudMonitorReadOnlyAccess` | Run **Root Cause Analysis** → `PERM_ROOT_RAM` pattern |
+| CLI not found | CLI unavailable | Run **Quick Health Check** → auto-heal `heal_missing_cli` → degrade to JIT SDK |
+| Network timeout | CMS endpoint unreachable | Run **Level 3 Network Check** → auto-heal proxy/DNS → degrade to VPC endpoint |
 
 ---
 
@@ -292,8 +483,9 @@ Create or update a metric-based alarm rule.
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
-| CLI / deps | `aliyun version` | Exit code 0 | Document CLI install |
-| Credentials | Env vars set | Non-empty keys | HALT |
+| CLI / deps | `aliyun version` | Exit code 0 | Run **Enhanced Anomaly Detection**: Level 1-2-3-4 → auto-heal → degrade |
+| Credentials | Env vars set | Non-empty keys | HALT; run **Level 4 Permission Check** |
+| CLI credential validity | `aliyun cms DescribeProjectMeta` dry-run | `"Code":"200"` | Run **Root Cause Analysis** → auto-heal or report |
 | Resource exists | Describe resource via product skill | Resource found | HALT; create resource first |
 | Contact group | DescribeContactGroupList | Group exists | Create contact group first |
 | Alarm name | DescribeMetricAlarmList | Name not conflict | Proceed (PutMetricAlarm overwrites) |
@@ -385,12 +577,14 @@ func main() {
 
 #### Recovery
 
-| Error | Action |
-|-------|--------|
-| `InvalidParameter` | Verify Statistics, ComparisonOperator, Threshold values |
-| `ResourceNotFound` | Verify Namespace, MetricName, or Dimensions |
-| `ContactGroupNotFound` | Create contact group via PutContactGroup |
-| `QuotaExceeded` | Check alarm rule quota; delete unused rules |
+| Error | Action | Auto-Heal |
+|-------|--------|-----------|
+| `InvalidParameter` | Verify Statistics, ComparisonOperator, Threshold values | Check against metric metadata |
+| `ResourceNotFound` | Verify Namespace, MetricName, or Dimensions | Check via product-specific skill |
+| `ContactGroupNotFound` | Create contact group via PutContactGroup | Auto-create via PutContactGroup if user confirms |
+| `QuotaExceeded` | Check alarm rule quota; delete unused rules | List and identify stale rules for cleanup |
+| `Forbidden` | Check RAM policy for write permissions | Run **Root Cause Analysis** → `PERM_ROOT_RAM` → suggest `AliyunCloudMonitorFullAccess` |
+| CLI not found | CLI unavailable | Run **Quick Health Check** → auto-heal → degrade to JIT SDK |
 
 ---
 
@@ -438,6 +632,8 @@ Delete one or more metric alarm rules.
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
+| CLI / deps | `aliyun version` | Exit code 0 | Run **Enhanced Anomaly Detection** → auto-heal → degrade |
+| Credentials | Env vars set | Non-empty keys | HALT; run **Level 4 Permission Check** |
 | Alarm exists | DescribeMetricAlarmList | Alarm found | HALT; alarm not found |
 | User confirmation | Prompt user | Confirmed | HALT |
 
@@ -471,10 +667,11 @@ aliyun cms DeleteMetricAlarm \
 
 #### Recovery
 
-| Error | Action |
-|-------|--------|
-| `ResourceNotFound` | Alarm already deleted or ID invalid |
-| `Forbidden` | Check RAM policy for delete permissions |
+| Error | Action | Auto-Heal |
+|-------|--------|-----------|
+| `ResourceNotFound` | Alarm already deleted or ID invalid | Verify via DescribeMetricAlarmList |
+| `Forbidden` | Check RAM policy for delete permissions | Run **Root Cause Analysis** → `PERM_ROOT_RAM` → suggest delete permission |
+| CLI not found | CLI unavailable | Run **Quick Health Check** → auto-heal → degrade to JIT SDK |
 
 ---
 
@@ -534,6 +731,8 @@ Delete a monitor group. **Requires user confirmation.**
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
+| CLI / deps | `aliyun version` | Exit code 0 | Run **Enhanced Anomaly Detection** → auto-heal → degrade |
+| Credentials | Env vars set | Non-empty keys | HALT; run **Level 4 Permission Check** |
 | Group exists | DescribeMonitorGroups | Group found | HALT; group not found |
 | No active alarms | DescribeMetricAlarmList with group filter | No alarms reference group | Warn user; proceed with caution |
 | User confirmation | Prompt user | Confirmed | HALT |
@@ -595,10 +794,12 @@ func main() {
 
 #### Recovery
 
-| Error | Action |
-|-------|--------|
-| `ResourceNotFound` | Group already deleted or ID invalid |
-| `Forbidden` | Check RAM policy for delete permissions |
+| Error | Action | Auto-Heal |
+|-------|--------|-----------|
+| `InvalidParameter` | Verify GroupId | Check via DescribeMonitorGroups |
+| `ResourceNotFound` | Group already deleted or ID invalid | Verify via DescribeMonitorGroups |
+| `Forbidden` | Check RAM policy for delete permissions | Run **Root Cause Analysis** → `PERM_ROOT_RAM` pattern |
+| CLI not found | CLI unavailable | Run **Quick Health Check** → auto-heal → degrade to JIT SDK |
 
 ---
 

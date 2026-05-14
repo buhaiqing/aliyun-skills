@@ -554,16 +554,10 @@ aliyun version
 ### Authentication failures
 
 ```bash
-# Verify credentials are set
-echo $ALIBABA_CLOUD_ACCESS_KEY_ID
-echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET
-echo $ALIBABA_CLOUD_REGION_ID
-
-# Or verify config file
-cat ~/.aliyun/config.json
-
-# Test with a simple command
-aliyun slb DescribeRegions
+# Verify credentials are set (existence check only, NEVER echo the actual value)
+test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" && echo "✅ AK ID is set" || echo "❌ AK ID is missing"
+test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" && echo "✅ Secret is set" || echo "❌ Secret is missing"
+echo "Region: ${ALIBABA_CLOUD_REGION_ID}"
 ```
 
 ### JSON parsing errors

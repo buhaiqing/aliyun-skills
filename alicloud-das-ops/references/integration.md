@@ -1,5 +1,28 @@
 # DAS Integration Reference
 
+## Enhanced Self-Healing Framework (MANDATORY)
+
+**DAS is CLI-unsupported — JIT Go SDK is the ONLY execution path.**
+
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+
+**Critical for DAS:**
+- **Pre-flight Checks:** Network connectivity, disk space, permissions, Go runtime compatibility
+- **Intelligent Error Classification:** Network, permission, resource, configuration errors
+- **Multi-Path Self-Healing:** Multiple recovery strategies per error type (especially for Go runtime JIT)
+- **Health Verification:** Post-installation validation with health score ≥ 8/10
+- **Graceful Degradation:** Clear fallback paths when self-healing fails
+
+**Self-Healing Priority for DAS:**
+Since DAS has NO CLI fallback, Go runtime JIT download MUST succeed. The Agent MUST:
+1. Use multi-version fallback (go1.24→1.23→1.22→1.21)
+2. Use multi-mirror fallback (4 mirrors)
+3. Implement aggressive retry logic (up to 16 attempts: 4 versions × 4 mirrors)
+4. Verify Go runtime health before proceeding
+5. Provide clear user guidance if all attempts fail
+
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
+
 ## API Profile
 
 - **Product:** Database Autonomy Service (DAS)

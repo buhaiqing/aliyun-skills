@@ -107,8 +107,19 @@ and failure recovery.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning:** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-> (or any secret) in console output, debug messages, or logs.
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
+>
+> **Masking rules across all execution paths:**
+> | Execution Path | Safe Pattern | Unsafe Pattern |
+> |----------------|-------------|----------------|
+> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | Raw credential value in output |
+> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
+> | Log files | `[INFO] Credentials: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
+> | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
+> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
+> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
+>
+> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
 
 ## API and Response Conventions (Agent-Readable)
 

@@ -54,8 +54,8 @@ aliyun-skills/
 
 ```bash
 # 方式一：环境变量（推荐）
-export ALIBABA_CLOUD_ACCESS_KEY_ID="your_access_key_id"
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET="your_access_key_secret"
+export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 # 方式二：交互式配置

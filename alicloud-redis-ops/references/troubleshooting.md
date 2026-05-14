@@ -1,5 +1,222 @@
 # Troubleshooting Alibaba Cloud Redis / Tair (KVStore)
 
+## Enhanced Error Handling (NEW!)
+
+> **CRITICAL:** Before troubleshooting any Redis/Tair issue, run the enhanced pre-flight check to detect environment issues early.
+
+### Pre-flight Check Execution
+
+```bash
+bash scripts/preflight-check.sh
+```
+
+### Common Environment Errors (NEW!)
+
+| Error Pattern | Root Cause | Solution |
+|---------------|------------|----------|
+| `Plugin 'aliyun-cli-r-kvstore' is required but not installed` | CLI plugin missing | Run pre-flight check for auto-install or use SDK fallback |
+| `ERROR: mkdir ~/.aliyun/plugins: operation not permitted` | Permission restriction (CI environment) | Use SDK fallback or fix permissions |
+| `ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set` | Credentials not loaded | Create .env file or set environment variables |
+| `cannot use config (variable of type *v2/client.Config) as *client.Config` | Go SDK version mismatch | Use Go 1.21+ and correct import paths |
+| `Cannot reach Alibaba Cloud endpoint` | Network connectivity issue | Check firewall/proxy settings |
+
+### CLI Plugin Installation Issues (NEW!)
+
+#### Issue: Plugin Installation Permission Denied
+
+**Symptom:**
+```
+ERROR: mkdir ~/.aliyun/plugins/aliyun-cli-r-kvstore: operation not permitted
+```
+
+**Root Cause:**
+- macOS system permission restrictions
+- CI environment file system restrictions
+- Home directory read-only or limited write access
+
+**Diagnostic Flow:**
+```bash
+# Step 1: Check plugin directory permissions
+ls -la ~/.aliyun/plugins/
+
+# Step 2: Test write permission
+touch ~/.aliyun/plugins/test-write && rm ~/.aliyun/plugins/test-write
+
+# Step 3: Check if running in CI environment
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+    echo "Running in CI environment - permission restrictions expected"
+fi
+```
+
+**Solutions:**
+
+**Option A: Use SDK Fallback (Recommended for CI)**
+```bash
+cd scripts
+go run sdk-fallback.go
+```
+
+**Option B: Fix Permissions (Local Environment)**
+```bash
+chmod 755 ~/.aliyun/plugins
+aliyun plugin install --names aliyun-cli-r-kvstore
+```
+
+**Option C: Use Temporary Directory**
+```bash
+export ALIBABA_CLOUD_PLUGIN_DIR=/tmp/aliyun-plugins
+mkdir -p "$ALIBABA_CLOUD_PLUGIN_DIR"
+aliyun plugin install --names aliyun-cli-r-kvstore --plugin-dir "$ALIBABA_CLOUD_PLUGIN_DIR"
+```
+
+#### Issue: Plugin Installation Fails Silently
+
+**Symptom:**
+```
+Downloading aliyun-cli-r-kvstore 0.2.0...
+(no further output, command hangs or fails)
+```
+
+**Root Cause:**
+- Network connectivity issue
+- Plugin repository unavailable
+- Download timeout
+
+**Diagnostic Flow:**
+```bash
+# Step 1: Test network connectivity
+ping -c 3 aliyuncli.alicdn.com
+
+# Step 2: Check CLI version
+aliyun version
+
+# Step 3: Try with verbose output
+aliyun plugin install --names aliyun-cli-r-kvstore --verbose
+```
+
+**Solutions:**
+```bash
+# Use SDK fallback instead
+go run scripts/sdk-fallback.go
+
+# Or retry with different network settings
+export GOPROXY=https://goproxy.cn,direct
+aliyun plugin install --names aliyun-cli-r-kvstore
+```
+
+### Credentials Loading Issues (NEW!)
+
+#### Issue: Environment Variables Not Set
+
+**Symptom:**
+```
+ERROR: ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set
+ERROR: ALIBABA_CLOUD_ACCESS_KEY_SECRET is NOT set
+ERROR: ALIBABA_CLOUD_REGION_ID is NOT set
+```
+
+**Root Cause:**
+- .env file not found
+- Environment variables not exported
+- Shell configuration not loaded
+
+**Diagnostic Flow:**
+```bash
+# Step 1: Check if .env file exists
+ls -la .env
+
+# Step 2: Check environment variables
+test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" && echo "ACCESS_KEY_ID is set" || echo "NOT set"
+test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" && echo "SECRET is set" || echo "NOT set"
+test -n "$ALIBABA_CLOUD_REGION_ID" && echo "REGION is set" || echo "NOT set"
+
+# Step 3: Check CLI config file
+ls -la ~/.aliyun/config.json
+```
+
+**Solutions:**
+
+**Option A: Create .env File (Recommended)**
+```bash
+cat > .env <<EOF
+ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
+ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+ALIBABA_CLOUD_REGION_ID=cn-hangzhou
+EOF
+
+# Pre-flight check will auto-load .env
+bash scripts/preflight-check.sh
+```
+
+**Option B: Set Environment Variables**
+```bash
+export ALIBABA_CLOUD_ACCESS_KEY_ID="your_access_key_id"
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="your_access_key_secret"
+export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
+```
+
+**Option C: Use CLI Config**
+```bash
+aliyun configure
+# Follow prompts to enter credentials
+```
+
+### Go SDK Compatibility Issues (NEW!)
+
+#### Issue: SDK Version Mismatch
+
+**Symptom:**
+```
+cannot use config (variable of type *"github.com/alibabacloud-go/darabonba-openapi/v2/client".Config) 
+as *"github.com/alibabacloud-go/darabonba-openapi/client".Config value
+```
+
+**Root Cause:**
+- Go version too old (< 1.21)
+- SDK import path version mismatch
+- Missing dependencies
+
+**Diagnostic Flow:**
+```bash
+# Step 1: Check Go version
+go version
+
+# Step 2: Check Go version compatibility
+GO_MAJOR=$(go version | sed -n 's/go\([0-9]*\).*/\1/p')
+GO_MINOR=$(go version | sed -n 's/go[0-9]*\.\([0-9]*\).*/\1/p')
+[ "$GO_MAJOR" -ge 1 ] && [ "$GO_MINOR" -ge 21 ] && echo "Go version OK" || echo "Go version too old"
+
+# Step 3: Check dependencies
+cd scripts
+go mod download
+go list -m all | grep alibabacloud
+```
+
+**Solutions:**
+
+**Option A: Upgrade Go**
+```bash
+# Install Go 1.24+
+curl -fsSL "https://go.dev/dl/go1.24.0.darwin-arm64.tar.gz" | tar -xz -C /tmp
+export PATH="/tmp/go/bin:$PATH"
+```
+
+**Option B: Use Correct Import Paths**
+```go
+// Use v1 import path (not v2)
+import openapi "github.com/alibabacloud-go/darabonba-openapi/client"
+
+// Use v2 import path for r-kvstore
+import rkvstore "github.com/alibabacloud-go/r-kvstore-20150101/v2/client"
+```
+
+**Option C: Use Pre-built SDK Fallback Script**
+```bash
+# Use the provided sdk-fallback.go script
+cd scripts
+go run sdk-fallback.go
+```
+
 ## Common API Error Codes
 
 | Code / HTTP | Meaning | Agent Action |

@@ -1,5 +1,18 @@
 # Integration Guide for alicloud-cms-ops
 
+## Enhanced Self-Healing Framework (MANDATORY)
+
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+
+**Key Self-Healing Capabilities:**
+- **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
+- **Intelligent Error Classification:** Network, permission, resource, configuration errors
+- **Multi-Path Self-Healing:** Multiple recovery strategies per error type
+- **Health Verification:** Post-installation validation with health score ≥ 8/10
+- **Graceful Degradation:** Clear fallback paths when self-healing fails
+
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+
 ## API/SDK Profile
 
 | Attribute | Value |
@@ -46,8 +59,8 @@ product-specific skill:
 ### Required Environment Variables
 
 ```bash
-export ALIBABA_CLOUD_ACCESS_KEY_ID="your-access-key-id"
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET="your-access-key-secret"
+export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 ```
 

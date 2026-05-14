@@ -38,9 +38,17 @@ Review is REQUIRED when:
 **Pass Criteria:** Every destructive operation has explicit user confirmation with resource identifier.
 **Fail Action:** Block merge until confirmation pattern added.
 
-#### Scenario 2: Credential Echo
-**Test:** Search for `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, password fields in output.
-**Pass Criteria:** No secret value printed, logged, or echoed in any flow.
+#### Scenario 2: Credential Echo / Masking Failure
+**Test:** Search all execution flows (CLI output, JIT Go SDK stdout/stderr, log statements, error messages, debug/verbose output, verification scripts) for:
+- `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, `Secret` (as field value context)
+- Any case where credential values might leak (e.g., `fmt.Println(config)`, `log.Printf("%+v", ...)`, `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET`)
+- JSON/YAML/INI output that includes un-masked credential fields
+**Pass Criteria:**
+1. No secret value is printed, logged, or echoed in any execution path.
+2. ALL credential-related output uses masking: `***`, `<masked>`, or equivalent.
+3. Verification scripts check existence only (e.g., `test -n "$var"`), never echo the value.
+4. JIT Go SDK scripts never print the `config` struct or `AccessKeySecret` field.
+5. `aliyun --debug` output includes a warning about potential credential exposure.
 **Fail Action:** Block merge; treat as security incident.
 
 #### Scenario 3: API Hallucination
@@ -129,6 +137,31 @@ Review is REQUIRED when:
 **Pass Criteria:** Document defines 3-round review with critical reflection questions.
 **Fail Action:** Require multi-round reflection per `aiops-best-practices.md` Section 11.
 
+#### Scenario 19: Missing Self-Healing Framework (NEW)
+**Test:** Verify all installation flows reference `enhanced-self-healing-framework.md`.
+**Pass Criteria:** CLI install, Go runtime JIT, dependency download all follow enhanced self-healing framework with pre-flight checks, error classification, multi-path recovery, health verification, and graceful degradation.
+**Fail Action:** Require self-healing framework implementation per `enhanced-self-healing-framework.md`.
+
+#### Scenario 20: Insufficient Self-Healing Coverage (NEW)
+**Test:** Check self-healing paths per error type in installation flows.
+**Pass Criteria:** Each error type (network, permission, resource, configuration) has ≥ 3 self-healing paths documented.
+**Fail Action:** Add missing self-healing paths per error category.
+
+#### Scenario 21: Missing Health Verification (NEW)
+**Test:** Verify post-installation health check exists.
+**Pass Criteria:** Health check script validates binary existence, permissions, PATH, version, and basic functionality with health score ≥ 8/10.
+**Fail Action:** Add health verification step to installation flow.
+
+#### Scenario 22: No Self-Healing Metrics (NEW)
+**Test:** Check if self-healing success criteria are documented.
+**Pass Criteria:** Self-healing duration < 30s, user intervention rate < 20%, health score ≥ 8/10 documented as success criteria.
+**Fail Action:** Add self-healing metrics to success criteria section.
+
+#### Scenario 23: Missing Graceful Degradation (NEW)
+**Test:** Verify degradation path exists when self-healing exhausted.
+**Pass Criteria:** Clear fallback path (JIT Go SDK → Console → Manual) with user guidance template.
+**Fail Action:** Add graceful degradation path and user guidance template.
+
 ---
 
 ## 3. Governance Checklist
@@ -137,6 +170,10 @@ Review is REQUIRED when:
 
 - [ ] All `{{env.*}}` placeholders use correct environment variable names
 - [ ] No secret literals in any generated file
+- [ ] **Credential masking enforced** — every console/log output path masks `ALIBABA_CLOUD_ACCESS_KEY_SECRET` (or any credential field) with `***` / `<masked>`
+- [ ] No `fmt.Println`, `log.Print`, `echo`, or `printf` of credential values in any execution script
+- [ ] JIT Go SDK scripts never print the SDK `Config` struct or `AccessKeySecret` field
+- [ ] Verification commands check credential existence only (e.g., `test -n`), never echo the value
 - [ ] Both `aliyun` and SDK paths documented for each operation (dual-path skills)
 - [ ] Safety gates present before destructive operations
 - [ ] Retry and timeout policies consistent across operations
@@ -152,6 +189,11 @@ Review is REQUIRED when:
 - [ ] **AIOps Delegation:** Alarm-to-Diagnosis delegation matrix in `integration.md` (for monitoring skills)
 - [ ] **AIOps DAS Integration:** DAS trigger conditions defined (for database skills)
 - [ ] **AIOps Knowledge Base:** `references/knowledge-base.md` with ≥ 3 fault patterns (for diagnostic skills)
+- [ ] **Self-Healing Framework:** All installation flows reference `enhanced-self-healing-framework.md`
+- [ ] **Self-Healing Coverage:** ≥ 3 self-healing paths per error type (network, permission, resource, config)
+- [ ] **Self-Healing Health Check:** Post-installation health verification with score ≥ 8/10
+- [ ] **Self-Healing Metrics:** Success criteria documented (duration < 30s, intervention < 20%)
+- [ ] **Self-Healing Degradation:** Graceful fallback path with user guidance template
 
 ### 3.2 Post-Merge Monitoring
 
@@ -205,7 +247,9 @@ Reviewer: _______________ Date: _______________ Result: PASS / FAIL
 
 ### Security
 - [ ] Scenario 1: Destructive operations have confirmation
-- [ ] Scenario 2: No credential echo
+- [ ] Scenario 2: No credential echo — ALL outputs use `***` / `<masked>` masking
+- [ ] Scenario 2a: Verification scripts check existence only, never echo the value
+- [ ] Scenario 2b: JIT Go SDK scripts never print `Config` struct or `AccessKeySecret`
 - [ ] Scenario 3: All APIs traceable to OpenAPI
 
 ### Resilience
@@ -228,6 +272,13 @@ Reviewer: _______________ Date: _______________ Result: PASS / FAIL
 - [ ] Scenario 16: Alarm storm handling defined (monitoring skills)
 - [ ] Scenario 17: Knowledge base with fault patterns (diagnostic skills)
 - [ ] Scenario 18: Multi-round reflection process (diagnostic skills)
+
+### Self-Healing (NEW)
+- [ ] Scenario 19: Self-healing framework referenced in all installation flows
+- [ ] Scenario 20: ≥ 3 self-healing paths per error type (network, permission, resource, config)
+- [ ] Scenario 21: Health verification with score ≥ 8/10 after installation
+- [ ] Scenario 22: Self-healing metrics documented (duration < 30s, intervention < 20%)
+- [ ] Scenario 23: Graceful degradation path with user guidance template
 
 ### Reviewer Sign-off
 Reviewer: _______________ Date: _______________ Result: PASS / FAIL
@@ -255,11 +306,13 @@ If a skill cannot meet a requirement:
 
 ## See Also
 
+- [Enhanced Self-Healing Framework](enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for installation flows
 - [User Experience Specification](user-experience-spec.md)
 - [Optimization Analysis](optimization-analysis.md)
 - [Prompt Library](prompt-library.md)
+- [AIOps Best Practices](aiops-best-practices.md)
 - [Agent Skills Open Specification](https://agentskills.io/specification)
 
 ---
 
-*This governance document is mandatory. No skill may be merged without passing all three review stages.*
+*This governance document is mandatory. No skill may be merged without passing all three review stages including self-healing compliance.*

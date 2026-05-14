@@ -52,8 +52,8 @@ command namespace.
 
 ```bash
 # Via environment variables (preferred)
-export ALIBABA_CLOUD_ACCESS_KEY_ID="your-ak-id"
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET="your-ak-secret"
+export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 # Via CLI profile
