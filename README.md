@@ -6,6 +6,8 @@
 
 本项目是阿里云（Alibaba Cloud）运维 Agent Skills 集合，提供云产品的自动化运维、监控和管理能力。
 
+> **需求与开发文档**：参见 [REQUIREMENTS.md](REQUIREMENTS.md)，包含所有 Skill 的功能需求详情、架构设计、技术规范与开发指南。
+
 ## 核心价值
 
 **Skills Farm 是一套 Meta Skill（元技能）体系**——将运维知识转化为结构化的、AI Agent 可解析、可执行、可验证的声明式规范。
@@ -26,19 +28,25 @@
 ```
 aliyun-skills/
 ├── README.md                          # 本文件
+├── REQUIREMENTS.md                    # 需求开发文档（功能详情、架构设计、技术规范）
 ├── go.mod                              # Go 模块配置（可选）
 ├── .env.example                       # 环境变量示例
 ├── .gitignore                         # Git 排除规则
+├── alicloud-jit-setup.sh              # JIT Go SDK 一键部署脚本
 ├── alicloud-skill-generator/          # Skill 生成器（Meta Skill）
 │   ├── SKILL.md
 │   ├── assets/
 │   └── references/
 │       ├── alicloud-skill-template.md   # Skill 模板
 │       └── governance-and-adversarial-review.md
-└── alicloud-<product>-ops/            # 产品级运维 Skill（待生成）
-    ├── SKILL.md
-    ├── references/
-    └── assets/
+├── alicloud-ecs-ops/                  # 云服务器 ECS
+├── alicloud-rds-ops/                  # 云数据库 RDS
+├── alicloud-redis-ops/                # 云数据库 Redis/Tair
+├── alicloud-ack-ops/                  # 容器服务 ACK
+├── alicloud-slb-ops/                  # 负载均衡 SLB/CLB
+├── alicloud-ram-ops/                  # 访问控制 RAM
+├── alicloud-cms-ops/                  # 云监控 CMS
+└── alicloud-das-ops/                  # 数据库自治服务 DAS
 ```
 
 ## 快速开始
@@ -181,6 +189,15 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 | Skill 和 MCP Server 关系？ | Skill 是文档，MCP 是执行服务 |
 | 一个 Skill 覆盖多产品？ | 建议单一职责，通过 Reference 互相引用 |
 | 如何更新 Skill？ | 修改后更新 version 和变更历史 |
+
+---
+
+### 关联文档
+
+| 文档 | 说明 |
+|------|------|
+| [REQUIREMENTS.md](REQUIREMENTS.md) | **需求开发文档** — 所有 Skill 的功能需求详情、架构设计、技术规范与开发指南 |
+| [alicloud-skill-generator/SKILL.md](alicloud-skill-generator/SKILL.md) | Skill 生成器完整使用说明 |
 
 ---
 
