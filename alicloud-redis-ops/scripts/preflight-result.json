@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-05-14T15:59:23Z",
+  "overall_status": "WARNING",
+  "summary": {
+    "passed": 13,
+    "failed": 0,
+    "warnings": 1
+  },
+  "capabilities": {
+    "cli_installed": true,
+    "plugin_installed": true,
+    "cli_param_style": "long-hyphen",
+    "sdk_available": true,
+    "credentials_valid": true,
+    "endpoint_reachable": true
+  },
+  "environment": {
+    "shell": "zsh",
+    "os": "Darwin",
+    "arch": "arm64",
+    "env_file": "/Users/bohaiqing/opensource/git/aliyun-skills/.env"
+  },
+  "issues": [{"severity":"WARNING","issue":"zsh shell may interpret [] as glob patterns","suggestion":"Quote CLI --output arguments: --output 'cols=... rows=...'"}],
+  "recommended_path": "sdk-fallback",
+  "note": "Source scripts/preflight-env.sh to export detected capabilities into your environment"
+}

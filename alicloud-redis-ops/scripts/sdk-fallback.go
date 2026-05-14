@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -31,14 +32,38 @@ type InstanceInfo struct {
 	EndTime          string `json:"EndTime"`
 }
 
+type InstanceListResult struct {
+	Success   bool           `json:"success"`
+	Region    string         `json:"region"`
+	Total     int            `json:"total"`
+	Instances []InstanceInfo `json:"instances"`
+	Error     string         `json:"error,omitempty"`
+}
+
+type DescribeInstancesResponse struct {
+	Instances struct {
+		KVStoreInstance []InstanceInfo `json:"KVStoreInstance"`
+	} `json:"Instances"`
+	TotalCount int `json:"TotalCount"`
+}
+
 func main() {
-	fmt.Println("=== SDK Fallback Path for Redis/Tair Operations ===")
-	fmt.Println("")
+	jsonOutput := flag.Bool("json", false, "Output in JSON format (machine-readable)")
+	flag.Parse()
+
+	if !*jsonOutput {
+		fmt.Println("=== SDK Fallback Path for Redis/Tair Operations ===")
+		fmt.Println()
+	}
 
 	credentials := loadCredentials()
 	if credentials == nil {
-		fmt.Fprintf(os.Stderr, "ERROR: Failed to load credentials\n")
-		fmt.Fprintf(os.Stderr, "Suggestion: Create .env file or set environment variables\n")
+		if *jsonOutput {
+			printJSONError("credentials missing", "Create .env file or set ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET, ALIBABA_CLOUD_REGION_ID")
+		} else {
+			fmt.Fprintf(os.Stderr, "ERROR: Failed to load credentials\n")
+			fmt.Fprintf(os.Stderr, "Suggestion: Create .env file or set environment variables\n")
+		}
 		os.Exit(1)
 	}
 
@@ -51,39 +76,56 @@ func main() {
 
 	c, err := rkvstore.NewClient(config)
 	if err != nil {
-		handleError("Client creation failed", err, "Check credentials and network connectivity")
+		if *jsonOutput {
+			printJSONError("client creation failed", "Check credentials and network connectivity")
+		} else {
+			handleError("Client creation failed", err, "Check credentials and network connectivity")
+		}
 		os.Exit(1)
 	}
 
 	req := &rkvstore.DescribeInstancesRequest{
 		RegionId: tea.String(credentials.RegionId),
+		PageSize: tea.Int32(100),
 	}
 
 	resp, err := c.DescribeInstances(req)
 	if err != nil {
-		handleError("DescribeInstances failed", err, "Check region and credentials")
+		if *jsonOutput {
+			printJSONError("describe instances failed",
+				fmt.Sprintf("Region=%s, check region validity and RAM permissions", credentials.RegionId))
+		} else {
+			handleError("DescribeInstances failed", err,
+				fmt.Sprintf("Region=%s, check region validity and RAM permissions", credentials.RegionId))
+		}
 		os.Exit(1)
 	}
 
 	data, err := json.Marshal(resp.Body)
 	if err != nil {
-		handleError("JSON marshaling failed", err, "Internal error")
+		if *jsonOutput {
+			printJSONError("JSON marshal failed", "Internal error")
+		} else {
+			handleError("JSON marshaling failed", err, "Internal error")
+		}
 		os.Exit(1)
 	}
 
-	var result struct {
-		Instances struct {
-			KVStoreInstance []InstanceInfo `json:"KVStoreInstance"`
-		} `json:"Instances"`
-		TotalCount int `json:"TotalCount"`
-	}
-
+	var result DescribeInstancesResponse
 	if err := json.Unmarshal(data, &result); err != nil {
-		handleError("JSON unmarshaling failed", err, "Internal error")
+		if *jsonOutput {
+			printJSONError("JSON unmarshal failed", "Internal error")
+		} else {
+			handleError("JSON unmarshaling failed", err, "Internal error")
+		}
 		os.Exit(1)
 	}
 
-	displayResults(result)
+	if *jsonOutput {
+		displayJSONResult(credentials.RegionId, result)
+	} else {
+		displayResults(credentials.RegionId, result)
+	}
 }
 
 type Credentials struct {
@@ -100,24 +142,20 @@ func loadCredentials() *Credentials {
 	cred.RegionId = os.Getenv("ALIBABA_CLOUD_REGION_ID")
 
 	if cred.AccessKeyId == "" || cred.AccessKeySecret == "" || cred.RegionId == "" {
-		fmt.Fprintf(os.Stderr, "ERROR: Missing credentials\n")
-		fmt.Fprintf(os.Stderr, "  ALIBABA_CLOUD_ACCESS_KEY_ID: %s\n", maskCredential(cred.AccessKeyId))
-		fmt.Fprintf(os.Stderr, "  ALIBABA_CLOUD_ACCESS_KEY_SECRET: %s\n", maskCredential(cred.AccessKeySecret))
-		fmt.Fprintf(os.Stderr, "  ALIBABA_CLOUD_REGION_ID: %s\n", cred.RegionId)
 		return nil
 	}
 
 	return cred
 }
 
-func maskCredential(cred string) string {
-	if cred == "" {
-		return "<NOT SET>"
+func printJSONError(context, suggestion string) {
+	result := InstanceListResult{
+		Success: false,
+		Region:  os.Getenv("ALIBABA_CLOUD_REGION_ID"),
+		Error:   fmt.Sprintf("%s: %s", context, suggestion),
 	}
-	if len(cred) <= 8 {
-		return "***"
-	}
-	return cred[:4] + "***" + cred[len(cred)-4:]
+	out, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(out))
 }
 
 func handleError(context string, err error, suggestion string) {
@@ -129,15 +167,25 @@ func handleError(context string, err error, suggestion string) {
 	fmt.Fprintf(os.Stderr, "2. Check .env file exists and contains valid credentials\n")
 	fmt.Fprintf(os.Stderr, "3. Verify network connectivity to r-kvstore.aliyuncs.com\n")
 	fmt.Fprintf(os.Stderr, "4. Check RAM permissions for r-kvstore:* actions\n")
+	fmt.Fprintf(os.Stderr, "5. Source preflight env: source scripts/preflight-env.sh\n")
 }
 
-func displayResults(result struct {
-	Instances struct {
-		KVStoreInstance []InstanceInfo `json:"KVStoreInstance"`
-	} `json:"Instances"`
-	TotalCount int `json:"TotalCount"`
-}) {
-	region := os.Getenv("ALIBABA_CLOUD_REGION_ID")
+func displayJSONResult(region string, result DescribeInstancesResponse) {
+	instances := result.Instances.KVStoreInstance
+	if instances == nil {
+		instances = []InstanceInfo{}
+	}
+	output := InstanceListResult{
+		Success:   true,
+		Region:    region,
+		Total:     len(instances),
+		Instances: instances,
+	}
+	out, _ := json.MarshalIndent(output, "", "  ")
+	fmt.Println(string(out))
+}
+
+func displayResults(region string, result DescribeInstancesResponse) {
 	fmt.Printf("\n=== Redis/Tair 实例列表 (区域: %s) ===\n", region)
 	fmt.Printf("总计: %d 个实例\n\n", result.TotalCount)
 

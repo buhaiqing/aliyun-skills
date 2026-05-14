@@ -184,6 +184,9 @@ generate_script() {
     REGION="${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}"
     SDK_PACKAGE=$(get_sdk_package "${PRODUCT}")
 
+    # 从 SDK 包路径提取产品别名（如 ecs-20140526 -> ecs）
+    PRODUCT_ALIAS=$(echo "$SDK_PACKAGE" | sed 's|.*/\([a-z]*\)-[0-9]*/.*|\1|')
+
     cd "${WORKSPACE}"
 
     cat > main.go << GOEOF
@@ -196,8 +199,8 @@ import (
 
 	"github.com/joho/godotenv"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	ecs "github.com/alibabacloud-go/ecs-20140526/v4/client"
 	"github.com/alibabacloud-go/tea/tea"
+	productClient "${SDK_PACKAGE}"
 )
 
 func main() {
@@ -218,19 +221,19 @@ func main() {
 	config := &openapi.Config{
 		AccessKeyId:     tea.String(ak),
 		AccessKeySecret: tea.String(sk),
-		Endpoint:        tea.String("ecs." + region + ".aliyuncs.com"),
+		Endpoint:        tea.String("${PRODUCT_ALIAS}." + region + ".aliyuncs.com"),
 	}
 
-	client, err := ecs.NewClient(config)
+	client, err := productClient.NewClient(config)
 	if err != nil {
 		fmt.Printf("错误: SDK 客户端初始化失败: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Region: %s\n", region)
-	request := &ecs.DescribeRegionsRequest{}
+	fmt.Printf("Region: %s  Product: ${PRODUCT_ALIAS}\n", region)
+	request := &productClient.${OPERATION}Request{}
 
-	response, err := client.DescribeRegions(request)
+	response, err := client.${OPERATION}(request)
 	if err != nil {
 		fmt.Printf("错误: API 调用失败: %v\n", err)
 		os.Exit(1)
