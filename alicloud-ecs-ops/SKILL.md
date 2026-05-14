@@ -1,10 +1,20 @@
 ---
 name: alicloud-ecs-ops
 description: >-
-  Use when you need to deploy, configure, troubleshoot, or monitor Alibaba Cloud
-  ECS (Elastic Compute Service) instances, disks, images, snapshots, security groups,
-  or related resources via official `aliyun` CLI or JIT Go SDK; user mentions ECS,
-  云服务器, Elastic Compute Service, or tasks target ECS instances/disks/images/snapshots/security groups.
+  Use this skill to manage the full lifecycle of Alibaba Cloud ECS instances
+  (Elastic Compute Service) — create, start, stop, restart, delete, resize,
+  replace system disks, and manage disks (attach, detach, resize, delete).
+  Manage images, snapshots, security groups and rules, and resource tags.
+  Run commands, scripts, and send files via Cloud Assistant. Diagnose
+  connectivity issues. Reach for this skill when the user needs a VM, reports
+  "my server won't start", "disk is full", "can't connect", "help me migrate",
+  "change the OS", "expand storage", or wants to deploy, monitor, troubleshoot,
+  or automate Alibaba Cloud compute resources — even if they just say "云服务器",
+  "主机", "虚拟机", "弹性计算" without naming ECS explicitly. Keywords: ECS,
+  云服务器, 弹性计算, 主机, 虚拟机, 实例, 磁盘, 快照, 镜像, 安全组, 云助手,
+  VM, instance, disk, snapshot, image. Do NOT use for databases (RDS),
+  networking/load balancing (VPC/SLB/ALB), containers (ACK/ASK),
+  billing/accounting, or RAM-only tasks.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime

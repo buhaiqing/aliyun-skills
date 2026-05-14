@@ -311,6 +311,8 @@ If a skill cannot meet a requirement:
 - [Optimization Analysis](optimization-analysis.md)
 - [Prompt Library](prompt-library.md)
 - [AIOps Best Practices](aiops-best-practices.md)
+- [Execution Environment Setup](execution-environment.md) — CLI install, Go JIT, credential config
+- [CLI Behavioral Reference](cli-behavior.md) — Verified `aliyun` CLI behavioral notes
 - [Agent Skills Open Specification](https://agentskills.io/specification)
 
 ---

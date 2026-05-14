@@ -1,11 +1,20 @@
 ---
 name: alicloud-rds-ops
 description: >-
-  Use when you need to deploy, configure, troubleshoot, or monitor Alibaba Cloud
-  RDS (Relational Database Service) instances, accounts, databases, backups,
-  performance metrics, slow query logs, or related resources via official `aliyun`
-  CLI or JIT Go SDK; user mentions RDS, 云数据库, 关系型数据库, MySQL,
-  PostgreSQL, SQL Server, MariaDB, or tasks target RDS instances/accounts/databases/backups.
+  Use this skill to manage Alibaba Cloud RDS instances
+  (MySQL/PostgreSQL/SQL Server/MariaDB) — create, modify, describe, delete,
+  restart, or monitor them, along with accounts, databases, backups, restores,
+  parameter groups, binlog files, read replicas, and security whitelists.
+  Diagnose slow queries, analyze performance metrics
+  (CPU/memory/IOPS/connections/TPS/QPS), check disk and resource usage, and
+  inspect HA or network configuration. Also reach for this skill when the user
+  reports a slow or unreachable database, wants to upgrade an instance, migrate
+  from self-hosted to RDS, plan a backup strategy, or automate any RDS
+  operation — even if they just say "my Alibaba database" without naming RDS
+  explicitly. Match against keywords: RDS, 云数据库, 关系型数据库, 数据库,
+  实例, 备份, 慢查询, 白名单, 监控, 参数, 只读, binlog, performance,
+  connection, migration, failover, upgrade. Do NOT use for PolarDB, Redis/Tair,
+  MongoDB, or billing/accounting/RAM-only tasks.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime

@@ -1,12 +1,17 @@
 ---
 name: alicloud-das-ops
 description: >-
-  Use when you need to operate, diagnose, monitor, or optimize Alibaba Cloud
-  Database Autonomy Service (DAS) via official OpenAPI / JIT Go SDK.
-  User mentions DAS, 数据库自治服务, HDM, or tasks target DAS instance
-  registration, inspection, SQL diagnosis, cache analysis, deadlock analysis,
-  session management, space analysis, SQL throttling, auto-scaling, event
-  subscription, or autonomous event handling.
+  Use this skill when a user needs to diagnose why an Alibaba Cloud database
+  is slow, investigate connection or session issues, analyze Redis/Tair memory
+  usage, review disk space, find deadlocks, or set up automatic protections
+  like SQL throttling and auto-scaling. Also covers registering databases for
+  DAS monitoring, subscribing to event notifications, and reviewing
+  DAS-triggered events. Trigger on any database performance problem —
+  slowness, connection spikes, disk alerts, or unexplained degradation — even
+  without mentioning DAS, 数据库自治服务, or HDM. Do NOT use for creating,
+  deleting, or modifying database instances or their configurations (delegate
+  to RDS, PolarDB, Redis, MongoDB, or other engine-specific skills) or for
+  billing, account, or RAM permission tasks.
 license: MIT
 compatibility: >-
   Alibaba Cloud Go SDK (github.com/alibabacloud-go/das-20200116/v5/client),

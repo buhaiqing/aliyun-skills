@@ -1,11 +1,17 @@
 ---
 name: alicloud-redis-ops
 description: >-
-  Use when you need to deploy, configure, troubleshoot, or monitor Alibaba Cloud
-  Redis / Tair (KVStore) instances, accounts, backups, whitelists, parameters,
-  performance metrics, or related resources via official `aliyun` CLI or JIT Go
-  SDK; user mentions Redis, Tair, KVStore, 云数据库Redis, 云数据库Tair,
-  缓存, or tasks target Redis/Tair instances/accounts/backups/whitelists.
+  Use when deploying, configuring, troubleshooting, or monitoring Alibaba Cloud
+  Redis / Tair (KVStore) instances — create, modify, delete, restart, scale,
+  migrate, upgrade, or flush instances; manage accounts, backups, whitelists,
+  SSL, parameters, and maintenance windows; monitor CPU, memory, connections,
+  QPS, latency, and cache hit rate; analyze slow queries, big keys, and hot
+  keys; diagnose connection timeouts, high latency, OOM, CPU spikes, and
+  replication lag. Also covers Tair enterprise (persistent memory, disk type).
+  Trigger even without explicit "Redis" or "Tair" — Chinese terms: 缓存, 实例,
+  备份, 白名单, 参数, 监控, 慢查询, 大Key, 热Key, 连接超时, 延迟高,
+  云数据库Redis, 云数据库Tair. NOT for RDS, PolarDB, MongoDB, self-managed
+  Redis on ECS, or billing/RAM-only tasks.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime

@@ -1,10 +1,13 @@
 ---
 name: alicloud-[product-name]-ops
 description: >-
-  Use when you need to deploy, configure, troubleshoot, or monitor Alibaba Cloud
-  [Product Name] via official `aliyun` CLI or JIT Go SDK; user mentions
-  [Product Name], [Product Chinese Name], or [Product Alias], or tasks target
-  [Resource Type].
+  Use when the user needs to deploy, configure, troubleshoot, or monitor Alibaba
+  Cloud [Product Name] — [Resource Type] lifecycle, configuration, and
+  diagnostics. User mentions [Product Name], [Product Chinese Name],
+  [Product Alias], or describes product-specific scenarios (e.g., connection
+  drops, performance degradation, resource creation failures) even without
+  naming the product directly. Not for billing, RAM, or related products that
+  have their own ops skills.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime
@@ -42,6 +45,20 @@ metadata:
 
 - **`cli_applicability: dual-path`:** Official `aliyun` supports this product. You **MUST** ship **`references/cli-usage.md`** and, in **each** execution flow below, document **both** the SDK step **and** the `aliyun` step for every operation the CLI exposes. If the CLI covers **only part** of the API, add a **coverage gap** table (SDK-only operations) in `references/cli-usage.md`.
 - **`cli_applicability: sdk-only`:** Official `aliyun` does **not** expose this product. **Omit** `references/cli-usage.md`. Keep **`cli_support_evidence`** pointing at official proof. SDK/API remains mandatory for all operations.
+
+## Five Core Standards (Quality Gates)
+
+Every generated skill MUST satisfy these five standards. Use them as a design checklist during population:
+
+| # | Standard | How This Skill Fulfills It |
+|---|----------|---------------------------|
+| 1 | **Clear Boundaries** | SHOULD/SHOULD NOT Use conditions with precise triggers and delegation rules |
+| 2 | **Structured I/O** | Placeholder conventions (`{{env.*}}`, `{{user.*}}`, `{{output.*}}`) with type and source documented |
+| 3 | **Explicit Actionable Steps** | Every operation: Pre-flight → Execute → Validate → Recover, with numbered imperative steps |
+| 4 | **Complete Failure Strategies** | Error taxonomy table with ≥ 10 product-specific codes; HALT vs retry per error type |
+| 5 | **Absolute Single Responsibility** | One product, one primary resource model; cross-product delegation to other skills |
+
+Refer to the [meta-skill](../SKILL.md#five-core-standards-quality-gates) for detailed descriptions of each standard.
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -444,6 +461,9 @@ Poll describe (or head/get) until **404**, **NotFound**, or status indicates del
 - [User Experience Specification](references/user-experience-spec.md) — mandatory UX compliance reference
 - [AIOps Best Practices](references/aiops-best-practices.md) — mandatory AIOps patterns for monitoring/diagnosis skills
 - [Optimization Analysis](references/optimization-analysis.md) — three-dimensional optimization framework
+- [Execution Environment Setup](references/execution-environment.md) — CLI install, Go JIT download, credential config, verification
+- [CLI Behavioral Reference](references/cli-behavior.md) — verified `aliyun` CLI conventions (JSON output, env vars, invocation patterns)
+- [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for all installation flows
 
 ## Operational Best Practices
 

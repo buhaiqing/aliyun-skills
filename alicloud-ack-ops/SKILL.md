@@ -1,9 +1,12 @@
 ---
 name: alicloud-ack-ops
 description: >-
-  Deploy, scale, upgrade, and troubleshoot Alibaba Cloud ACK clusters and node
-  pools via aliyun CLI or JIT Go SDK. Invoke when user mentions ACK,
-  Kubernetes, 容器服务, K8s, or cluster lifecycle operations.
+  Use this skill when the user needs to set up, manage, or troubleshoot a
+  Kubernetes cluster on Alibaba Cloud (ACK). Catches tasks like "create a
+  cluster", "add nodes", "upgrade K8s version", "集群健康检查", "节点 NotReady",
+  "获取 kubeconfig" — even when the user just says "帮我弄个 K8s 集群" or "my
+  Alibaba cluster is broken" without naming ACK. Does NOT handle VPC, SLB, ECS,
+  RAM, or billing — those belong to their own skills.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+

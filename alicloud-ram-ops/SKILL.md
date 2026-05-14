@@ -1,11 +1,17 @@
 ---
 name: alicloud-ram-ops
 description: >-
-  Use when you need to manage Alibaba Cloud RAM (Resource Access Management)
-  identities, permissions, and access policies. Covers RAM users, user groups,
-  roles, policies, access keys, MFA, and login profiles. Invoke when the user
-  mentions RAM, access control, IAM, permissions, users, groups, roles,
-  policies, AK rotation, MFA setup, or least-privilege audits.
+  Use when the user wants to manage who can access their Alibaba Cloud account
+  and what they can do — including access keys, MFA, console login, password
+  policies, roles (cross-account or service-linked), custom/system policies,
+  STS temporary credentials, and least-privilege audits. Trigger on: RAM, IAM,
+  access control, permissions, authorization, security audit, key rotation,
+  compliance, 子账号, 授权, 权限管理, 密钥管理, AK轮换, 安全审计, 角色扮演,
+  合规检查, 密码策略, 登录设置. Also trigger when the user asks to create or
+  manage users/roles/keys, grant permissions, rotate keys, check access, set up
+  MFA, audit security, assign or switch roles, or configure password rules —
+  even without saying "RAM". Do NOT use for billing, CloudSSO, or non-RAM
+  resource management (ECS, RDS, OSS, etc.).
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime

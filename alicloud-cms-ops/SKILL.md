@@ -1,10 +1,17 @@
 ---
 name: alicloud-cms-ops
 description: >-
-  Use when you need to query metrics, configure monitoring alarms, manage alarm
-  rules, or troubleshoot monitoring issues for Alibaba Cloud resources via
-  CloudMonitor (CMS). User mentions CloudMonitor, 云监控, CMS, monitoring
-  metrics, alarm rules, or custom monitoring.
+  Use this skill when users need to monitor Alibaba Cloud resource health,
+  investigate why a resource is performing poorly, set up monitoring alerts,
+  troubleshoot alarm triggers, export monitoring data, or run proactive
+  inspections — even if they don't explicitly name CloudMonitor, CMS,
+  monitoring, or any specific metric names. Covers metric queries (CPU,
+  memory, disk, network, IOPS, connections), alarm rule CRUD, custom/event
+  monitoring, dashboards, anomaly pattern detection (CPU spikes, memory leaks,
+  disk bottlenecks), alarm storm handling, and cross-resource correlation
+  analysis. Also triggers on Chinese terms (云监控, 告警, 指标, 监控大盘,
+  性能巡检, 主动巡检, 异常检测), vague health questions ("is my server OK?",
+  "any anomalies?", "check metrics"), and monitoring data analysis requests.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime
@@ -65,12 +72,17 @@ complex request structures, JIT build a Go SDK script.
 ### SHOULD Use This Skill When
 
 - User mentions "CloudMonitor", "CMS", "云监控", "监控", "alarm", "告警",
-  "metric", "指标", "dashboard", "监控大盘"
-- Task involves querying resource metrics (CPU, memory, disk, network, etc.)
+  "metric", "指标", "dashboard", "监控大盘", "异常检测", "主动巡检"
+- Task involves monitoring resource health, investigating performance issues
+  (high CPU, memory pressure, disk bottlenecks, network saturation)
+- Task involves querying metrics (CPU, memory, disk, network, IOPS, connections)
 - Task involves creating, modifying, listing, or deleting alarm rules
 - Task involves configuring alarm contacts or contact groups
 - Task involves custom monitoring (PutCustomMetric, custom metrics)
 - Task involves monitoring data export or analysis
+- Task involves anomaly pattern detection or multi-metric correlation analysis
+- Task involves alarm storm handling or cross-resource incident aggregation
+- Task involves proactive monitoring inspection across resources
 
 ### SHOULD NOT Use This Skill When
 

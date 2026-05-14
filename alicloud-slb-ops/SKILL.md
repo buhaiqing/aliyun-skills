@@ -1,12 +1,14 @@
 ---
 name: alicloud-slb-ops
 description: >-
-  Use when you need to deploy, configure, troubleshoot, or monitor Alibaba Cloud
-  SLB (Classic Load Balancer / CLB) instances, listeners, virtual server groups,
-  backend servers, certificates, access control lists, or forwarding rules via
-  official `aliyun` CLI or JIT Go SDK; user mentions SLB, CLB, 负载均衡,
-  传统型负载均衡, Classic Load Balancer, or tasks target SLB instances/listeners/
-  vserver groups/certificates/ACLs.
+  Use when the user needs to deploy, configure, troubleshoot, or monitor Alibaba
+  Cloud SLB (Classic Load Balancer / CLB) — load balancer instances, listeners,
+  virtual server groups, backend servers, certificates, access control lists,
+  and forwarding rules. User mentions SLB, CLB, 负载均衡, 传统型负载均衡,
+  Classic Load Balancer, or describes load balancing issues (dropped connections,
+  unhealthy backends, certificate errors) even without naming the product
+  directly. Not for ALB (Application Load Balancer) or NLB (Network Load
+  Balancer) — those have separate skills when present.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime
