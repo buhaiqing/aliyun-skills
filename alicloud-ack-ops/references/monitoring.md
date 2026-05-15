@@ -127,6 +127,89 @@ kubectl describe node {{user.node_name}} | grep -A3 "Allocated resources"
 kubectl get pvc --all-namespaces
 ```
 
+## Multi-Metric Anomaly Inspection
+
+Execute joint巡检 on ACK clusters to identify compound anomaly patterns.
+
+### Supported Anomaly Patterns
+
+| Pattern | Metrics Involved | Detection Logic | Severity | Interpretation |
+|---------|-----------------|-----------------|----------|----------------|
+| CPU-Memory 集群过载 | `CpuUsage` + `MemoryUsage` | CPU > 85% AND Memory > 90% 持续 10 min | Critical | 集群资源耗尽，需扩缩容或驱逐低优先级 Pod |
+| 节点不可用风暴 | `NodeStatus` + `cpu.utilization` | NotReady nodes > 30% AND 存活节点 CPU 飙升 | Critical | 可能底层 ECS 故障、网络分区、或 kubelet 异常 |
+| Pod 大规模重启 | `PodStatus` (CrashLoopBackOff) + `NetworkInRate` | CrashLoop > 20 pods AND 网络流量突降 | Critical | 应用大规模异常，可能配置错误或镜像拉取失败 |
+| 磁盘-IO 瓶颈 | `DiskUsage` + `disk.utilization` | 集群磁盘 > 90% AND 节点磁盘 > 95% | Critical | 镜像/日志占满磁盘，需清理或扩盘 |
+| 网络-连接异常 | `NetworkInRate` + `NetworkOutRate` | 流量突降 > 60% AND NodeStatus 正常 | Warning | 可能 VPC 路由异常、安全组变更、或 CNI 插件异常 |
+| API Server 延迟 | `CpuUsage` (control plane) + Pod creation latency | CPU > 80% AND new pod scheduling > 30s | Warning | API Server 过载，可能大量 watch/leader election 竞争 |
+
+### Execution — CLI
+
+```bash
+# Fetch cluster-level metrics (delegate to alicloud-cms-ops for detailed queries)
+aliyun cms DescribeMetricList \
+  --Namespace acs_k8s_dashboard \
+  --MetricName CpuUsage \
+  --Dimensions '[{"clusterId":"c-xxx"}]' \
+  --Period 300
+
+aliyun cms DescribeMetricList \
+  --Namespace acs_k8s_dashboard \
+  --MetricName MemoryUsage \
+  --Dimensions '[{"clusterId":"c-xxx"}]' \
+  --Period 300
+
+# Check node-level metrics via ECS
+aliyun cms DescribeMetricList \
+  --Namespace acs_ecs_dashboard \
+  --MetricName cpu.utilization \
+  --Dimensions '[{"instanceId":"i-xxx"}]' \
+  --Period 300
+```
+
+### Recovery & Cross-Skill Delegation
+
+| Pattern | Primary Skill | Delegated Skill | Action |
+|---------|--------------|-----------------|--------|
+| CPU-Memory 过载 | `alicloud-ack-ops` | `alicloud-ecs-ops` (节点扩容) | 扩缩容 node pool |
+| 节点不可用 | `alicloud-ack-ops` | `alicloud-ecs-ops` + `alicloud-vpc-ops` | 检查 ECS 状态和网络 |
+| Pod 重启风暴 | `alicloud-ack-ops` | — | 检查 Pod events + 应用日志 |
+| 网络异常 | `alicloud-ack-ops` | `alicloud-vpc-ops` (检查 VPC 路由/CNI) | 排查网络配置 |
+
+## Alert Storm Handling
+
+When ACK generates >10 alarms within 5 minutes:
+
+1. **Aggregate by clusterId**: Coalesce node/pod-level alarms into cluster-level event
+2. **Identify root resource**: 
+   - If multiple nodes NotReady simultaneously → likely VPC/ECS infrastructure issue
+   - If multiple pods CrashLoopBackOff in same deployment → likely application issue
+3. **Suppress by namespace**: Group pod alarms by namespace to reduce noise
+4. **Cross-Skill trigger**: If node-level anomalies dominate → delegate to `alicloud-ecs-ops` immediately
+
+## Alert-Driven Diagnostic Decision Tree
+
+```
+[ACK Alarm Fires]
+    │
+    ├── Step 1: Verify alarm validity — Current metric vs threshold
+    │
+    ├── Step 2: Check cluster status — `acs_k8s_dashboard` state
+    │
+    ├── Step 3: Check node health — Describe node status via `alicloud-ecs-ops`
+    │       └── If multiple NotReady nodes → infrastructure issue
+    │
+    ├── Step 4: Check pod health — kubectl get pods + describe
+    │       └── If CrashLoopBackOff > X% → application config issue
+    │
+    ├── Step 5: Multi-metric correlation — CPU+Memory+Disk+PodStatus joint analysis
+    │
+    ├── Step 6: Cross-Skill diagnosis
+    │       ├── Node issue → `alicloud-ecs-ops` + `alicloud-vpc-ops`
+    │       └── App issue → Application logs (SLS)
+    │
+    └── Step 7: Generate unified diagnostic report
+```
+
 ## Log Collection
 
 ACK supports log collection via Logtail (SLS):

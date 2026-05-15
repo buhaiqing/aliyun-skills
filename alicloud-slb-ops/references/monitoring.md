@@ -104,6 +104,79 @@ aliyun slb SetAccessLogsDownloadAttribute \
 > **Note:** Access log configuration requires the `alicloud-oss-ops` skill for
 > OSS bucket management.
 
+## Multi-Metric Anomaly Inspection
+
+Execute joint巡检 on SLB instances to identify compound anomaly patterns. Anomaly patterns below use ≥2 metrics combined with detection logic for higher signal-to-noise ratio.
+
+### Supported Anomaly Patterns
+
+| Pattern | Metrics Involved | Detection Logic | Severity | Interpretation |
+|---------|-----------------|-----------------|----------|----------------|
+| 5xx 异常风暴 | `InstanceUpstreamCode5xx` + `InstanceStatusCode5xx` + `InstanceRt` | 5xx > 50/min AND Rt > 10s 持续 3 min | Critical | 后端服务大面积故障，可能数据库/依赖服务不可用 |
+| 连接数-丢包正相关 | `InstanceActiveConnection` + `InstanceDropConnection` | 连接数 > 80% 上限 AND DropConn > 100/min | Critical | SLB 达到连接上限，需扩容规格或启用多实例 |
+| 流量-带宽饱和 | `InstanceTrafficTX` + `InstanceDropTrafficTX` | 带宽 > 85% 规格限制 AND Drop 上升 | Warning | 带宽成为瓶颈，需升级规格 |
+| 健康检查异常联动 | `BackendServerHealthCheck` + `InstanceUpstreamCode5xx` | 不健康后端 > 30% AND 5xx 突增 | Critical | 后端实例批量异常，可能发布失败或资源过载 |
+| RT-QPS 背离 | `InstanceRt` + `InstanceQps` | QPS 不变或下降但 RT 突增 3x+ | Warning | 后端性能退化，可能数据库慢查询/锁等待 |
+| 4xx 异常突增 | `InstanceStatusCode4xx` + `InstanceUpstreamCode4xx` | 4xx > 200/min 持续 5 min | Warning | 可能配置错误、证书过期、或客户端行为异常 |
+
+### Execution — CLI
+
+```bash
+# Fetch instance-level metrics
+aliyun cms DescribeMetricList \
+  --Namespace acs_slb \
+  --MetricName InstanceStatusCode5xx \
+  --Dimensions '{"instanceId":"lb-xxx","port":"80","protocol":"http"}' \
+  --_period 300 --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)"
+
+# Fetch backend health status
+aliyun slb DescribeHealthStatus \
+  --LoadBalancerId lb-xxx \
+  --ListenerPort 80
+```
+
+### Recovery & Cross-Skill Delegation
+
+| Pattern | Primary Skill | Delegated Skill | Action |
+|---------|--------------|-----------------|--------|
+| 5xx 异常风暴 | `alicloud-slb-ops` | `alicloud-ecs-ops` (后端排查) | 检查后端 ECS 健康状态 |
+| 连接饱和 | `alicloud-slb-ops` | — | 升级 SLB 规格或启用多实例 |
+| 健康检查异常 | `alicloud-slb-ops` | `alicloud-ecs-ops` + `alicloud-vpc-ops` | 检查 ECS 状态 + 网络连通性 |
+| RT 突增 | `alicloud-slb-ops` | `alicloud-rds-ops` (如后端为数据库) | 排查数据库慢查询 |
+
+## Alert Storm Handling
+
+When >10 SLB alarms trigger within 5 minutes, enter storm mode:
+
+1. **Aggregate by instanceId + listener**: Coalesce multiple metric alarms of same listener into single event
+2. **Identify root resource**: Check if backend servers (ECS) are the root cause (health check failures often cascade)
+3. **Suppress duplicates**: Group alarms by listener; suppress per-metric secondary alarms
+4. **Focus diagnosis**: If ≥50% of alarms share the same SLB instance, focus on that instance's backend health
+5. **Cross-Skill trigger**: If backend-related, immediately delegate to `alicloud-ecs-ops` for instance-level diagnosis
+
+## Alert-Driven Diagnostic Decision Tree
+
+```
+[SLB Alarm Fires]
+    │
+    ├── Step 1: Verify alarm validity — Current metric vs threshold
+    │
+    ├── Step 2: Check SLB instance status — InstanceState (running/stopped)
+    │
+    ├── Step 3: Check backend health — DescribeHealthStatus for affected listener
+    │       └── If >50% backends abnormal → Root cause = backend health issue
+    │
+    ├── Step 4: Multi-metric correlation — 5xx + RT + Connection joint analysis
+    │       └── Match anomaly pattern from table above
+    │
+    ├── Step 5: Cross-Skill diagnosis
+    │       ├── If backend unhealthy → Delegate to `alicloud-ecs-ops`
+    │       ├── If network error → Delegate to `alicloud-vpc-ops`
+    │       └── If 5xx from RDS → Delegate to `alicloud-rds-ops`
+    │
+    └── Step 6: Generate unified diagnostic report
+```
+
 ## Fine-Grained Monitoring
 
 Enable second-level monitoring for more granular metrics:

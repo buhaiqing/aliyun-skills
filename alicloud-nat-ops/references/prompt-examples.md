@@ -1,0 +1,86 @@
+# Prompt Examples — NAT Operations
+
+> **Purpose:** Natural language prompts that should trigger the NAT skill.
+
+## NAT Gateway Creation
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 1 | "帮我创建一个NAT网关" | CreateNatGateway — prompt for VPC/vSwitch |
+| 2 | "Create an enhanced NAT gateway in VPC vpc-xxx" | CreateNatGateway --NatType Enhanced |
+| 3 | "给VPC创建一个增强型NAT，交换机选择vsw-xxx" | CreateNatGateway --NatType Enhanced --VSwitchId |
+| 4 | "Create a NAT Gateway with PayByActualUsage billing" | CreateNatGateway --BillingMethod PayByActualUsage |
+
+## SNAT (Outbound Internet Access)
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 5 | "给NAT配置SNAT，让10.0.1.0/24的机器能上网" | CreateSnatEntry --SourceCIDR 10.0.1.0/24 |
+| 6 | "Configure SNAT for the whole vSwitch" | CreateSnatEntry --VSwitchId |
+| 7 | "Add another EIP to the existing SNAT" | CreateSnatEntry with new SnatIp |
+| 8 | "删除SNAT条目" | DeleteSnatEntry |
+| 9 | "查看所有SNAT配置" | DescribeSnatTableEntries |
+
+## DNAT (Inbound Port Mapping)
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 10 | "配置DNAT，把公网的8080端口映射到10.0.1.5的80" | CreateForwardEntry TCP 8080→80 |
+| 11 | "Create a DNAT for SSH access on port 22 to internal 10.0.1.10:22" | CreateForwardEntry TCP 22→22 |
+| 12 | "把443端口映射到内网服务器" | CreateForwardEntry TCP 443→443 |
+| 13 | "查看所有DNAT条目" | DescribeForwardTableEntries |
+| 14 | "删除DNAT映射" | DeleteForwardEntry |
+
+## FullNAT
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 15 | "创建FULLNAT条目" | CreateFullNatEntry |
+| 16 | "查看FULLNAT配置" | DescribeFullNatEntries |
+| 17 | "删除FULLNAT" | DeleteFullNatEntry |
+
+## Listing & Discovery
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 18 | "列出所有NAT网关" | DescribeNatGateways |
+| 19 | "查看NAT网关 [nat-id] 的详细信息" | DescribeNatGateways --NatGatewayId |
+| 20 | "这个NAT网关有多少SNAT条目？" | DescribeSnatTableEntries + count |
+| 21 | "Check how many DNAT rules are configured" | DescribeForwardTableEntries + count |
+
+## Modification
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 22 | "修改NAT网关名称" | ModifyNatGatewayAttribute --Name |
+| 23 | "升级NAT网关规格" | ModifyNatGatewaySpec |
+| 24 | "Change NAT billing to PayByActualUsage" | ModifyNatGatewaySpec --BillingMethod |
+
+## Release
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 25 | "删除NAT网关" | Delete NAT (with safety gate: delete SNAT/DNAT/FullNat first) |
+| 26 | "释放这个NAT，先清理所有SNAT和DNAT" | Delete entries, then DeleteNatGateway |
+
+## Troubleshooting
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 27 | "SNAT配置了但内网机器上不了网" | Diagnose: SNAT entry, EIP status, security group, routing |
+| 28 | "DNAT端口映射不通" | Check: DNAT entry, protocol match, ECS firewall, security group |
+| 29 | "NAT网关删不掉" | Check: SNAT/DNAT/FullNat entries still exist |
+| 30 | "为什么NAT关联的EIP解绑不了？" | Check: EIP is SNAT/DNAT source IP |
+| 31 | "NAT连接数满了怎么办？" | Explain: Add more EIPs for SNAT capacity, each EIP ≈ 30K connections |
+| 32 | "SNAT能同时访问互联网的最大并发是多少？" | Explain: ~30K per EIP, scale by adding EIPs |
+
+## Negative: Should NOT Trigger
+
+| # | User Prompt | Should Delegate To |
+|---|-------------|-------------------|
+| 1 | "Allocate a new EIP" | `alicloud-eip-ops` |
+| 2 | "Create a VPC" | `alicloud-vpc-ops` |
+| 3 | "Start an ECS instance" | `alicloud-ecs-ops` |
+| 4 | "Check account balance" | `alicloud-billing-ops` |
+| 5 | "Bind EIP to ECS" | `alicloud-eip-ops` |
+| 6 | "Create a load balancer" | `alicloud-slb-ops` |

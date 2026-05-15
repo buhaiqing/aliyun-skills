@@ -144,3 +144,50 @@ aliyun actiontrail LookupInsightEvents \
 | Insight events | Daily | Review anomalies |
 | Governance score | Weekly | Improve configuration |
 | Trail count | Weekly | Clean up unused trails |
+
+## Multi-Metric Anomaly Inspection
+
+### Supported Anomaly Patterns
+
+| Pattern | Metrics Involved | Detection Logic | Severity | Interpretation |
+|---------|-----------------|-----------------|----------|----------------|
+| AK 篡改模式 | `IpInsight` + `AkInsight` + `ApiCallRateInsight` | 新 IP + 异常 AK 调用 + 调用率突增 3x+ | Critical | AccessKey 可能被盗用并正在执行批量操作 |
+| 权限提升+审计隐藏 | `PolicyChangeInsight` + `TrailConcealmentInsight` | 策略变更后 5 min 内 Trail 被禁用 | Critical | 攻击者提权后试图关闭审计 |
+| 密码重置+异地登录 | `PasswordChangeInsight` + `IpInsight` | 密码变更后来自新 IP 的登录 | Critical | 账户可能被接管 |
+| API 错误风暴 | `ApiErrorRateInsight` + `ApiCallRateInsight` | 错误率突增 AND 总调用量下降 | Warning | 可能资源删除导致级联依赖不可用 |
+| 大规模删除事件 | `eventName LIKE 'Delete%'` count + `DescribeTrailDeliveryMetricData` | 删除事件 > 10/5 min + 事件量突增 | Critical | 批量删除资源，可能是恶意操作或配置脚本错误 |
+| Root 账户异常活动 | `eventType = 'ConsoleSignin'` (root) + `IpInsight` | Root 登录 + 来自新 IP 或新区域 | Warning | Root 账户异常登录，需立即验证 |
+
+### Recovery & Cross-Skill Delegation
+
+| Pattern | Primary Skill | Delegated Skill | Action |
+|---------|--------------|-----------------|--------|
+| AK 篡改 | `alicloud-actiontrail-ops` | `alicloud-ram-ops` (禁用/旋转 AK) | 立即禁用可疑 AK |
+| 权限+审计隐藏 | `alicloud-actiontrail-ops` | `alicloud-ram-ops` (审计权限变更) | 恢复 Trail + 审计权限变更记录 |
+| 批量删除 | `alicloud-actiontrail-ops` | 产品 Skill (如 `alicloud-ecs-ops`) | 确认删除事件并恢复资源 |
+
+## Alert Storm Handling
+
+1. **Aggregate by userIdentity**: Multiple Insight events for same user → single security event
+2. **Prioritize by severity**: `TrailConcealmentInsight` and `PolicyChangeInsight` always take priority over `ApiErrorRateInsight`
+3. **Correlate time window**: Multiple Insight events within ±2 min of each other likely share the same root actor
+
+## Alert-Driven Diagnostic Decision Tree
+
+```
+[ActionTrail Alert/Insight Event]
+    │
+    ├── Step 1: Verify event — Check Insight event details and timestamp
+    │
+    ├── Step 2: Check user activity — Lookup all events for userIdentity in time window
+    │
+    ├── Step 3: Multi-insight correlation — Check if multiple Insight types fire for same user
+    │       └── Match anomaly pattern from table above
+    │
+    ├── Step 4: Cross-Skill diagnosis
+    │       ├── If user AK change → Delegate to `alicloud-ram-ops`
+    │       ├── If resource deletion → Delegate to affected product skill
+    │       └── If trail disabled → Re-enable trail immediately
+    │
+    └── Step 5: Generate security incident report
+```
