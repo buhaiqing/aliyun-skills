@@ -47,6 +47,7 @@ aliyun-skills/
 ├── alicloud-ram-ops/                  # 访问控制 RAM
 ├── alicloud-cms-ops/                  # 云监控 CMS
 └── alicloud-das-ops/                  # 数据库自治服务 DAS
+└── alicloud-topo-discovery/          # [发现类 Skill] 网络拓扑与资源清单
 ```
 
 ## 快速开始
@@ -132,14 +133,39 @@ brew install aliyun-cli
 
 ## 凭证配置
 
-**环境变量（Agent 执行推荐）：**
+### 方式一：从模板生成 .env 文件（推荐）
+
+```bash
+# 1. 复制模板
+cp .env.example .env
+
+# 2. 编辑配置，替换为实际凭证值
+vim .env
+```
+
+`.env.example` 包含以下变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `ALIBABA_CLOUD_ACCESS_KEY_ID` | AccessKey ID | `YOUR_ACCESS_KEY_ID` |
+| `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | AccessKey 密钥 | `YOUR_ACCESS_KEY_SECRET` |
+| `ALIBABA_CLOUD_REGION_ID` | 默认地域 | `cn-hangzhou` |
+
+**加载环境变量：**
+```bash
+source .env
+```
+
+### 方式二：直接导出环境变量
+
 ```bash
 export ALIBABA_CLOUD_ACCESS_KEY_ID="..."
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="..."
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 ```
 
-**交互式配置：**
+### 方式三：交互式配置
+
 ```bash
 aliyun configure
 ```
