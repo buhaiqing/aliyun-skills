@@ -757,6 +757,77 @@ response, err := client.LookupInsightEvents(request)
 | No insight enabled | `InsightTypeNotAvailable` | HALT; enable the InsightType first |
 | No events found | Empty array | Inform user: insight events may take up to 24 hours to generate after enabling |
 
+### Operation: Disable Insight
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+| Insight enabled | `aliyun actiontrail GetInsightTypes` | InsightType in list | HALT; insight already disabled |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail DisableInsight --InsightType IpInsight
+```
+
+#### SDK Execution (JIT Go Fallback)
+
+```go
+request := &actiontrail.DisableInsightRequest{
+    InsightType: tea.String("IpInsight"),
+}
+response, err := client.DisableInsight(request)
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Insight disabled | `aliyun actiontrail GetInsightTypes` | InsightType no longer in list |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Insight not enabled | `InsightTypeNotAvailable` | HALT; insight type was not enabled |
+| Invalid type | `InsightTypeNotAvailable` | HALT; use one of the valid types |
+
+### Operation: Get Insight Types
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetInsightTypes
+```
+
+#### SDK Execution (JIT Go Fallback)
+
+```go
+request := &actiontrail.GetInsightTypesRequest{}
+response, err := client.GetInsightTypes(request)
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Response received | `$.RequestId` | Non-empty |
+| Insight types list | `$.InsightTypes` | Array of enabled insight type strings |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Network error | `RequestError` | Retry with backoff |
+
 ### Operation: Create Compliance Trail (Best Practice)
 
 Creates a trail that meets compliance requirements: all regions, all event types,
