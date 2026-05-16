@@ -46,7 +46,10 @@ aliyun-skills/
 ├── alicloud-slb-ops/                  # 负载均衡 SLB/CLB
 ├── alicloud-ram-ops/                  # 访问控制 RAM
 ├── alicloud-cms-ops/                  # 云监控 CMS
-└── alicloud-das-ops/                  # 数据库自治服务 DAS
+├── alicloud-das-ops/                  # 数据库自治服务 DAS
+├── alicloud-polar-mysql-ops/          # PolarDB MySQL版
+├── alicloud-polar-pg-ops/             # PolarDB PostgreSQL版
+├── alicloud-polar-oracle-ops/         # PolarDB Oracle兼容版
 └── alicloud-topo-discovery/          # [发现类 Skill] 网络拓扑与资源清单
 ```
 

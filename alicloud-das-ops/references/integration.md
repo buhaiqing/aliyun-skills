@@ -77,7 +77,7 @@ Evidence:
 | Task | Delegate To |
 |------|-------------|
 | Create / delete RDS instance | `alicloud-rds-ops` |
-| Create / delete PolarDB instance | `alicloud-polardb-ops` |
+| Create / delete PolarDB instance | `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops` / `alicloud-polar-oracle-ops` |
 | Create / delete Tair instance | `alicloud-redis-ops` (or `alicloud-tair-ops` if exists) |
 | Create / delete MongoDB instance | `alicloud-mongodb-ops` |
 | RAM permission setup | `alicloud-ram-ops` |

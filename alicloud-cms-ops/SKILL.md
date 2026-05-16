@@ -1225,7 +1225,7 @@ func main() {
     │       ├─ acs_rds_dashboard → alicloud-rds-ops (DescribeDBInstances)
     │       ├─ acs_slb_dashboard → alicloud-slb-ops (DescribeLoadBalancerAttribute)
     │       ├─ acs_kvstore_dashboard → alicloud-redis-ops (DescribeInstances)
-    │       ├─ acs_polardb_dashboard → alicloud-polardb-ops (DescribeDBClusters)
+    │       ├─ acs_polardb_dashboard → alicloud-polar-mysql-ops (DescribeDBClusters)
     │       └─ acs_k8s_dashboard → alicloud-ack-ops (DescribeClusterDetail)
     │
     ├── Step 3: Multi-Metric Correlation

@@ -1,0 +1,12 @@
+[
+  { "query": "Create a PolarDB Oracle compatible cluster", "should_trigger": true },
+  { "query": "创建 PolarDB O引擎 集群", "should_trigger": true },
+  { "query": "PolarDB Oracle 巡检", "should_trigger": true },
+  { "query": "Oracle migration to PolarDB IO", "should_trigger": true },
+  { "query": "Add nodes to my PolarDB O cluster", "should_trigger": true },
+  { "query": "Describe PolarDB IO cluster attributes", "should_trigger": true },
+  { "query": "PolarDB IO backup management", "should_trigger": true },
+  { "query": "Create standalone Oracle database", "should_trigger": false },
+  { "query": "My RDS MySQL is slow", "should_trigger": false },
+  { "query": "Configure Alibaba Cloud billing", "should_trigger": false }
+]

@@ -692,9 +692,9 @@ Step 7: 提交 PR
 
 | 触发场景 | 源 Skill | 目标 Skill | 传递数据 |
 |----------|----------|------------|----------|
-| DAS 实例未找到 | alicloud-das-ops | alicloud-rds-ops / alicloud-polardb-ops | instance_id, engine |
+| DAS 实例未找到 | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | instance_id, engine |
 | 连通性诊断失败 | alicloud-das-ops | alicloud-vpc-ops | instance_id, src_ip, failure_reason |
-| 实例状态异常 | alicloud-das-ops | alicloud-rds-ops / alicloud-polardb-ops | instance_id, status, engine |
+| 实例状态异常 | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | instance_id, status, engine |
 | 余额不足 | alicloud-das-ops | alicloud-billing-ops | instance_id, feature_name |
 | RAM 权限不足 | 任意 Skill | alicloud-ram-ops | instance_id, required_permission |
 | 创建 ECS 需 VPC | alicloud-ecs-ops | alicloud-vpc-ops | vpc_id, vswitch_id |

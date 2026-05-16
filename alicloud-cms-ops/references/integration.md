@@ -42,7 +42,7 @@ product-specific skill:
 | OSS Bucket | alicloud-oss-ops | GetBucketInfo |
 | Redis Instance | alicloud-redis-ops | DescribeInstances |
 | MongoDB Instance | alicloud-mongodb-ops | DescribeDBInstances |
-| PolarDB Cluster | alicloud-polardb-ops | DescribeDBClusters |
+| PolarDB MySQL Cluster | alicloud-polar-mysql-ops | DescribeDBClusters |
 | Kubernetes | alicloud-ack-ops | DescribeClusters |
 
 ### Notification Dependencies
@@ -199,9 +199,9 @@ visualization.
 | `acs_kvstore_dashboard` | ConnectionUsage | `alicloud-redis-ops` | — | Optional |
 | `acs_kvstore_dashboard` | CpuUsage | `alicloud-redis-ops` | — | Optional |
 | `acs_kvstore_dashboard` | MemoryUsage | `alicloud-redis-ops` | — | Optional |
-| `acs_polardb_dashboard` | CpuUsage | `alicloud-polardb-ops` | `alicloud-das-ops` | **Recommended** |
-| `acs_polardb_dashboard` | ConnectionUsage | `alicloud-polardb-ops` | `alicloud-das-ops` | **Recommended** |
-| `acs_polardb_dashboard` | IOPSUsage | `alicloud-polardb-ops` | `alicloud-das-ops` | **Recommended** |
+| `acs_polardb_dashboard` | CpuUsage | `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops` | `alicloud-das-ops` | **Recommended** |
+| `acs_polardb_dashboard` | ConnectionUsage | `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops` | `alicloud-das-ops` | **Recommended** |
+| `acs_polardb_dashboard` | IOPSUsage | `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops` | `alicloud-das-ops` | **Recommended** |
 | `acs_mongodb_dashboard` | CpuUsage | `alicloud-mongodb-ops` | `alicloud-das-ops` | Optional |
 | `acs_k8s_dashboard` | * | `alicloud-ack-ops` | `alicloud-ecs-ops` (node) | Optional |
 | `acs_oss_dashboard` | * | `alicloud-oss-ops` | — | Optional |

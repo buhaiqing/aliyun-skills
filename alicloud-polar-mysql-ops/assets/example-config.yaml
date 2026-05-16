@@ -1,0 +1,42 @@
+# PolarDB MySQL Example Configuration
+
+# Cluster creation parameters
+db_cluster:
+  engine: "MySQL"
+  version: "8.0"
+  category: "Normal"
+  pay_type: "Postpaid"
+  node_class: "polar.mysql.x4.medium"
+  node_count: 2  # 1 primary + 1 read-only
+  storage_type: "PSLevel5"
+  storage_space: 50  # GB (auto-scalable)
+
+# Network
+network:
+  vpc_id: "vpc-xxxxxxxx"
+  vswitch_id: "vsw-xxxxxxxx"
+  security_ip_list: "10.0.0.0/8"
+
+# Security
+account:
+  name: "admin"
+  type: "Normal"
+
+database:
+  name: "production"
+  character_set: "utf8mb4"
+
+# Backup
+backup:
+  preferred_time: "02:00Z-03:00Z"
+  preferred_period: "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday"
+  retention_days: 30
+
+# Monitoring thresholds
+alerts:
+  cpu_warning: 80
+  cpu_critical: 95
+  memory_warning: 80
+  iops_warning: 80
+  connections_warning: 80
+  disk_warning: 85

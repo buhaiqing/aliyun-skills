@@ -1,0 +1,22 @@
+[
+  { "query": "Create a PolarDB MySQL cluster in cn-hangzhou", "should_trigger": true },
+  { "query": "我的 PolarDB 集群连接不上", "should_trigger": true },
+  { "query": "给 PolarDB for MySQL 添加只读节点", "should_trigger": true },
+  { "query": "查看 PolarDB 集群的备份列表", "should_trigger": true },
+  { "query": "PolarDB MySQL serverless pause", "should_trigger": true },
+  { "query": "Create a database account in my PolarDB cluster", "should_trigger": true },
+  { "query": "PolarDB for MySQL upgrade instance class", "should_trigger": true },
+  { "query": "Describe PolarDB MySQL cluster endpoints", "should_trigger": true },
+  { "query": "Check PolarDB MySQL cluster health status", "should_trigger": true },
+  { "query": "PolarDB集群 巡检", "should_trigger": true },
+  { "query": "Create an RDS MySQL instance", "should_trigger": false },
+  { "query": "Set up Redis cache", "should_trigger": false },
+  { "query": "My PolarDB PostgreSQL is slow", "should_trigger": false },
+  { "query": "Configure Alibaba Cloud billing", "should_trigger": false },
+  { "query": "Set up RAM permissions for developer", "should_trigger": false },
+  { "query": "Create a VPC network", "should_trigger": false },
+  { "query": "Describe my ECS instances", "should_trigger": false },
+  { "query": "Monitor SLB health checks", "should_trigger": false },
+  { "query": "Oracle database migration tools", "should_trigger": false },
+  { "query": "Setup MongoDB cluster", "should_trigger": false }
+]

@@ -4,13 +4,13 @@
 
 | 触发条件 | 当前技能 | 目标技能 | 传递数据 | 触发时机 |
 |----------|----------|----------|----------|----------|
-| InvalidDBInstanceId.NotFound | alicloud-das-ops | alicloud-rds-ops / alicloud-polardb-ops | instance_id, engine | 任何 DAS API 返回实例未找到 |
+| InvalidDBInstanceId.NotFound | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | instance_id, engine | 任何 DAS API 返回实例未找到 |
 | 连通性诊断失败（安全组/白名单） | alicloud-das-ops | alicloud-vpc-ops | instance_id, src_ip, failure_reason | GetDBInstanceConnectivityDiagnosis 返回 UNREACHABLE |
 | 连通性诊断失败（路由） | alicloud-das-ops | alicloud-vpc-ops | instance_id, vpc_id, route_table_id | 路由不可达 |
-| 实例状态异常 | alicloud-das-ops | alicloud-rds-ops / alicloud-polardb-ops | instance_id, status, engine | OperationDenied.InstanceStatus |
+| 实例状态异常 | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | instance_id, status, engine | OperationDenied.InstanceStatus |
 | 账户余额不足 | alicloud-das-ops | alicloud-billing-ops | instance_id, feature_name | InsufficientBalance |
 | RAM 权限不足 | alicloud-das-ops | alicloud-ram-ops | instance_id, required_permission | RAM 相关错误 |
-| 需要创建/删除实例 | alicloud-das-ops | alicloud-rds-ops / alicloud-polardb-ops | engine, region, spec | 用户要求创建底层实例 |
+| 需要创建/删除实例 | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | engine, region, spec | 用户要求创建底层实例 |
 
 ## 2. 跨技能上下文传递格式
 
