@@ -732,8 +732,63 @@ fi
    aliyun cs GET /clusters
    ```
 
-> **Security:** Never commit credentials. All credentials use `{{env.*}}`
-> placeholders — never real values.
+> **Security:** Never commit credentials. All credentials use `{{env.*}}` placeholders — never real values.
+
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to ACK.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `cs:Describe*`, `CreateCluster` scoped to `acs:cs:*:*:cluster/*` |
+| **Credentials** | Use `{{env.*}}` only. Use STS for temporary tokens on worker nodes |
+| **Network** | Private API server endpoint. Enable network policies (Calico/Terway). Node pools in VPC |
+| **Workload Security** | Enable PSS/OPA Gatekeeper. Restrict privileged containers. Enable audit logging |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Multi-AZ VSwitches for worker nodes. Auto-scaling node pools. Pod disruption budgets |
+| **面向精细的运维管控** | Monitor cluster API server latency, node memory/CPU pressure, pod restart rates |
+| **面向风险的应急快恢** | Snapshot etcd before upgrades. **RTO:** < 10 min for node failure. **RPO:** 0 (etcd backup) |
+
+#### DR Runbook
+```
+Phase 1: Verify — Check cluster API health, node status, pod distribution
+Phase 2: Restore — Replace unhealthy nodes or restore etcd from snapshot
+Phase 3: Validate — Pod scheduling, service connectivity, application health
+```
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| 按量付费 ECS | Dev/test, volatile workloads | N/A |
+| 包年包月 ECS | Stable production nodes | Up to 85% |
+| Spot instances | Fault-tolerant/batch workloads | Up to 90% |
+
+**Waste:** Nodes with CPU < 10% for 7d → downsize. Idle LoadBalancers → delete. Over-provisioned resource quotas → reduce.
+
+### 效率 (Efficiency)
+
+- **Auto-scaling:** HPA for pods, cluster autoscaler for nodes
+- **GitOps:** Cluster state managed via Helm/GitOps pipelines
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| cpu_utilization | `acs_k8s_dashboard` | > 80% | < 30% | 5 min |
+| memory_utilization | `acs_k8s_dashboard` | > 85% | < 50% | 5 min |
+| pod_status | `acs_k8s_dashboard` | Failed pods > 0 | — | 5 min |
+
+**Key guidance:** Use managed node pools for automatic OS/container image updates. Set resource requests/limits per workload. Monitor `kubeapiserver` latency for API performance.
 
 ## Reference Directory
 

@@ -1760,6 +1760,62 @@ echo "Apply correlation matrix and engine-specific diagnostic tree to identify r
 
 ---
 
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to RDS.
+
+### 安全 (Security)
+
+| Assessment Area | Guidance |
+|-----------------|----------|
+| **IAM** | Never use `AdministratorAccess`. Require: `rds:Describe*`, `rds:Create*` scoped to `acs:rds:*:*:dbinstance/*` |
+| **Credentials** | Use `{{env.*}}` only. Never print secrets |
+| **Network** | VPC-only deployment. White-list application IPs — never `0.0.0.0/0` |
+| **Data at Rest** | Enable TDE for compliance. SSL for in-transit encryption |
+| **SQL Security** | Use parameterized queries. Review slow logs for suspicious patterns |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | HighAvailability edition with primary+standby. Cross-AZ. Auto-failover < 30s |
+| **面向精细的运维管控** | Daily backup + binlog incremental. Monitor CPU/Memory/IOPS/Disk at 80% |
+| **面向风险的应急快恢** | Point-in-time restore via `RestoreDBInstance`. **RTO:** < 30 min. **RPO:** 0 (binlog streaming) |
+
+#### DR Runbook
+```
+Phase 1: Verify — Check status, recent backups, binlog retention
+Phase 2: Restore — Restore to NEW instance (never overwrite production)
+Phase 3: Validate — Data integrity, application smoke tests, traffic switch
+```
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| 按量付费 | Dev/test | N/A |
+| 包年包月 | Production | Up to 80% |
+| Serverless | Unpredictable workloads | Pay per request |
+
+**Waste:** CPU < 10% AND IOPS < 50 for 7d → downgrade. Unused databases → consolidate.
+
+### 效率 (Efficiency)
+
+- **Automated Backups:** Set `BackupPeriod` for scheduled daily backups
+- **Parameter Groups:** `ModifyParameter` with scheduled apply to avoid interruption
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| CpuUsage | `acs_rds_dashboard` | > 80% | < 40% | 5 min |
+| IOPSUsage | `acs_rds_dashboard` | > 80% | < 50% | 5 min |
+| MemoryUsage | `acs_rds_dashboard` | > 85% | < 60% | 5 min |
+| ActiveSession | `acs_rds_dashboard` | > 20 | < 5 | 5 min |
+
+**Key guidance:** Use `DescribeDBInstancePerformance` for baselines. `DescribeSlowLogRecords` for > 1s queries. Distribute reads across RO nodes if connection limits reached.
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

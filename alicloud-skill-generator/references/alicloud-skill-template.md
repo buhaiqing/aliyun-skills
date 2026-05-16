@@ -15,13 +15,13 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "2.0.0"
+  version: "3.0.0"
   last_updated: "2026-05-14"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
   api_profile: "[Paste OpenAPI title/version or doc link]"
-  cli_applicability: cli-first
+  cli_applicability: "dual-path"  # Choose: cli-first / dual-path / sdk-only / cli-only
   cli_support_evidence: >-
     [If CLI covers this product: cite confirmation via `aliyun help <product>`.
     If CLI does NOT cover: note JIT Go SDK fallback required.]
@@ -43,8 +43,10 @@ metadata:
 
 ### CLI applicability (repository policy)
 
+- **`cli_applicability: cli-first`:** Official `aliyun` fully supports this product. CLI is the **primary** execution path. JIT Go SDK is the **fallback** only for edge-case operations CLI doesn't expose. Omit `references/cli-usage.md` content gaps unless partial coverage exists.
 - **`cli_applicability: dual-path`:** Official `aliyun` supports this product. You **MUST** ship **`references/cli-usage.md`** and, in **each** execution flow below, document **both** the SDK step **and** the `aliyun` step for every operation the CLI exposes. If the CLI covers **only part** of the API, add a **coverage gap** table (SDK-only operations) in `references/cli-usage.md`.
 - **`cli_applicability: sdk-only`:** Official `aliyun` does **not** expose this product. **Omit** `references/cli-usage.md`. Keep **`cli_support_evidence`** pointing at official proof. SDK/API remains mandatory for all operations.
+- **`cli_applicability: cli-only`:** Read-only/discovery skills that ONLY query cloud resources (e.g., `alicloud-topo-discovery`). No write operations, no SDK fallback needed. No `references/cli-usage.md` required beyond basic usage examples.
 
 ## Five Core Standards (Quality Gates)
 
@@ -59,6 +61,20 @@ Every generated skill MUST satisfy these five standards. Use them as a design ch
 | 5 | **Absolute Single Responsibility** | One product, one primary resource model; cross-product delegation to other skills |
 
 Refer to the [meta-skill](../SKILL.md#five-core-standards-quality-gates) for detailed descriptions of each standard.
+
+### Well-Architected Framework Integration (卓越架构)
+
+In addition to the Five Core Standards, every generated skill MUST map its operations to Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html) five pillars:
+
+| Pillar | Skill Integration | Reference |
+|--------|-------------------|-----------|
+| **安全 (Security)** | IAM permissions, credential masking, network isolation | `references/well-architected-assessment.md` §2.1 |
+| **稳定 (Stability)** | Backup/restore, multi-AZ, DR runbook, failure-oriented design | `references/well-architected-assessment.md` §2.2 |
+| **成本 (Cost)** | Billing model comparison, waste detection, right-sizing | `references/well-architected-assessment.md` §2.3 |
+| **效率 (Efficiency)** | Batch operations, CI/CD integration, automation patterns | `references/well-architected-assessment.md` §2.4 |
+| **性能 (Performance)** | Metrics, auto-scaling, performance baselines | `references/well-architected-assessment.md` §2.5 |
+
+See [references/well-architected-assessment.md](references/well-architected-assessment.md) for the complete specification.
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -195,7 +211,7 @@ Every operation: **Pre-flight → Execute (SDK/API and, when applicable, `aliyun
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | SDK / deps | Import client; version matches `metadata.api_profile` | No import error | Document install pin |
-| CLI / deps | `aliyun version` (**required** when `cli_applicability: dual-path`) | Exit code 0 | Document CLI install |
+| CLI / deps | `aliyun version` (**required** when `cli_applicability: cli-first` / `dual-path` / `cli-only`) | Exit code 0 | Document CLI install |
 | Credentials | Construct credential from env (SDK) or CLI config/env per official CLI docs | Non-empty keys / valid config | HALT; user configures env |
 | Region | Call **DescribeRegions** (or equivalent) if applicable | `{{user.region}}` supported | Suggest valid region |
 | Quota | Call quota/describe API per OpenAPI | Sufficient quota | HALT; user raises quota |
@@ -328,7 +344,7 @@ for i := 0; i < maxAttempts; i++ {
 
 #### Execution
 
-Use the SDK **describe** or **get** API matching OpenAPI. When **`cli_applicability: dual-path`**, also document the equivalent `aliyun [product] Describe[Resource] ...`, passing `{{user.resource_id}}` and region.
+Use the SDK **describe** or **get** API matching OpenAPI. When **`cli_applicability`** is `cli-first` / `dual-path` / `cli-only`, also document the equivalent `aliyun [product] Describe[Resource] ...`, passing `{{user.resource_id}}` and region.
 
 ```bash
 # CLI — plain JSON (default output format)
@@ -357,11 +373,125 @@ aliyun [product] Describe[Resource] --RegionId cn-hangzhou --[IdName] "{{user.re
 
 #### Execution
 
-Call delete API per OpenAPI. When **`cli_applicability: dual-path`**, also document the `aliyun` delete subcommand; capture `requestId`, success flag, or error per **verified** output shape for **each** path.
+Call delete API per OpenAPI (skip for `cli-only`). When **`cli_applicability`** is `cli-first` / `dual-path`, also document the `aliyun` delete subcommand; capture `requestId`, success flag, or error per **verified** output shape for **each** path.
 
 #### Post-execution Validation
 
 Poll describe (or head/get) until **404**, **NotFound**, or status indicates deleted—per API semantics—within **max wait**.
+
+### Operation: Backup [Resource]
+
+> **Stability Pillar:** Following Alibaba Cloud Well-Architected Framework §面向风险的应急快恢 (Emergency Recovery), every writable skill MUST document backup and recovery operations.
+
+#### When to Use
+- Before any destructive operation (delete, resize, engine upgrade)
+- Scheduled per organizational RPO requirements
+- Migration or region transfer prerequisites
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Resource exists | Describe[Resource] with ID | Resource in stable state (Running/Available) | HALT — cannot backup non-existent or transitioning resource |
+| Backup window | Check current time vs maintenance window | Within allowed backup window | Warn user; proceed with confirmation |
+| Storage quota | Describe quota for snapshots/backups | Sufficient backup storage | HALT — user must free space or raise quota |
+| Existing backup | DescribeBackups with resource filter | None or list existing backups | Inform user of existing backups |
+
+#### Execution — CLI (`aliyun`) (Primary Path)
+
+```bash
+# Create backup/snapshot (adjust per product API)
+aliyun [product] Create[Backup/Snapshot] \
+  --[ResourceIdName] "{{user.resource_id}}" \
+  --[BackupName] "auto-backup-$(date +%Y%m%d-%H%M%S)"
+
+# For cross-region backup (if supported)
+aliyun [product] Copy[Snapshot/Backup] \
+  --[SourceIdName] "{{output.backup_id}}" \
+  --DestRegionId "{{user.dest_region}}"
+```
+
+#### Execution — JIT Go SDK (Fallback Path)
+
+```go
+// main.go — backup operation
+request := &[product].Create[Backup/Snapshot]Request{
+    [ResourceIdName]: tea.String(os.Getenv("[RESOURCE_ID]")),
+    [BackupName]:     tea.String("auto-backup-" + time.Now().Format("20060102-150405")),
+}
+
+response, err := client.Create[Backup/Snapshot](request)
+if err != nil {
+    panic(err)
+}
+fmt.Println(tea.ToString(response.Body))
+```
+
+#### Post-execution Validation
+
+1. Capture `{{output.backup_id}}` from response
+2. Poll backup status until terminal state (`Success`/`Completed`):
+
+```bash
+# Poll backup status
+aliyun [product] Describe[Backups/Snapshots] \
+  --[BackupIdName] "{{output.backup_id}}" \
+  --waiter expr='[Backups/Snapshots].[0].Status' to=Success timeout=600 interval=10
+```
+
+3. Record backup metadata: creation time, size, retention policy
+
+#### Failure Recovery
+
+| Error pattern | Max retries | Agent Action | UX Feedback |
+|--------------|-------------|--------------|-------------|
+| `BackupInProgress` / `OperationConflict` | 3, 30s backoff | Wait for conflicting operation; retry | `⚠️ Another operation is in progress. Retrying after completion...` |
+| `QuotaExceeded.Backup` | 0 | HALT | `[ERROR] Backup quota exceeded. How to fix: Delete old backups or raise quota.` |
+| `InvalidResourceStatus` | 0 | HALT | `[ERROR] Resource not in a backup-ready state. How to fix: Wait for resource to reach stable state.` |
+
+---
+
+### Operation: Restore from Backup
+
+> **Stability Pillar — Emergency Recovery:** Follow the Phase 1 → Phase 2 → Phase 3 runbook structure per `well-architected-assessment.md` §2.2.3.
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** warn user: restore overwrites current data; suggest pre-restore backup
+- **MUST** confirm: target resource `{{user.resource_id}}`, backup source `{{user.backup_id}}`, expected data loss window
+
+#### Execution — CLI (`aliyun`) (Primary Path)
+
+```bash
+# Restore from backup (adjust per product API)
+aliyun [product] Restore[Resource] \
+  --[ResourceIdName] "{{user.resource_id}}" \
+  --[BackupIdName] "{{user.backup_id}}"
+```
+
+#### Execution — JIT Go SDK (Fallback Path)
+
+```go
+request := &[product].Restore[Resource]Request{
+    [ResourceIdName]: tea.String(os.Getenv("RESOURCE_ID")),
+    [BackupIdName]:   tea.String(os.Getenv("BACKUP_ID")),
+}
+```
+
+#### Post-execution Validation
+
+1. Poll restore operation until terminal state (same intervals as create)
+2. **Recovery verification:** run connectivity check against restored resource
+3. Verify data integrity: compare row counts, checksums, or product-specific validation
+4. Document actual recovery time vs RTO target
+
+#### Failure Recovery
+
+| Error pattern | Agent Action | UX Feedback |
+|--------------|--------------|-------------|
+| `BackupNotFound` | HALT | `[ERROR] Backup not found. How to fix: Verify backup ID with DescribeBackups.` |
+| `RestoreConflict` | Wait and retry | `⚠️ Resource has conflicting operation. Retrying...` |
+| `DataIntegrityError` | HALT + suggest support | `[ERROR] Data integrity check failed post-restore. Escalate with RequestId.` |
 
 ## Prerequisites
 
@@ -436,11 +566,6 @@ Poll describe (or head/get) until **404**, **NotFound**, or status indicates del
 
 4. **Verify Configuration**:
    ```bash
-   aliyun ecs DescribeRegions
-   ```
-
-4. **Verify Configuration**:
-   ```bash
    # Quick validation (JSON output by default)
    aliyun ecs DescribeRegions
    ```
@@ -451,7 +576,7 @@ Poll describe (or head/get) until **404**, **NotFound**, or status indicates del
 
 - [Core Concepts](references/core-concepts.md)
 - [API & SDK Usage](references/api-sdk-usage.md)
-- [CLI Usage](references/cli-usage.md) (**required** when `cli_applicability: dual-path`; omit only for `sdk-only` with evidence in frontmatter)
+- [CLI Usage](references/cli-usage.md) (**required** when `cli_applicability: cli-first` or `dual-path`; omit for `sdk-only`; basic examples for `cli-only`)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
@@ -464,6 +589,7 @@ Poll describe (or head/get) until **404**, **NotFound**, or status indicates del
 - [Execution Environment Setup](references/execution-environment.md) — CLI install, Go JIT download, credential config, verification
 - [CLI Behavioral Reference](references/cli-behavior.md) — verified `aliyun` CLI conventions (JSON output, env vars, invocation patterns)
 - [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for all installation flows
+- [Well-Architected Assessment](references/well-architected-assessment.md) — **MANDATORY** Alibaba Cloud Well-Architected Framework five-pillar integration
 
 ## Operational Best Practices
 

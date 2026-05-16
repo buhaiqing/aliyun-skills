@@ -626,6 +626,54 @@ For comprehensive cluster health assessment when user requests "巡检" or "heal
 | "集群宕机" / "连不上" | Availability |
 | "巡检异常" / "健康检查失败" | General Health |
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to PolarDB MySQL.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `polardb:Describe*`, `polardb:CreateDBCluster` scoped to `acs:polardb:*:*:dbcluster/*` |
+| **Network** | VPC-only. White-list application IPs — never `0.0.0.0/0`. SSL encryption for in-transit data |
+| **Data at Rest** | Enable TDE. Use cluster-level encryption keys |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Deploy read-write nodes + multiple read-only nodes across zones. Auto-failover < 30s |
+| **面向精细的运维管控** | Monitor CPU, connections, IOPS, storage. CMS alerts at 80% |
+| **面向风险的应急快恢** | Point-in-time restore via backup. **RTO:** < 10 min. **RPO:** 0 (binlog) |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| Postpaid (按量) | Dev/test, variable workloads | N/A |
+| Prepaid (包年包月) | Stable production | Up to 60% |
+| Serverless | Unpredictable workloads | Pay per capacity unit |
+| Storage Pack | Large storage needs | Lower per-GB cost |
+
+**Waste:** Read-only nodes with < 5% query routing → remove or consolidate. Storage > 70% free → consider downgrade at next cycle.
+
+### 效率 (Efficiency)
+
+- **Read-Write Splitting:** Automatic routing to read-only nodes
+- **Parallel Query:** Enable for analytical queries on large datasets
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| CpuUsage | `acs_polardb_dashboard` | > 80% | < 40% | 5 min |
+| ConnectionUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+| IopsUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+| StorageUsage | `acs_polardb_dashboard` | > 85% | < 60% | 5 min |
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

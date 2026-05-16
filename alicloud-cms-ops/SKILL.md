@@ -1483,6 +1483,58 @@ fi
 
 ---
 
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to CMS.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `cms:Describe*` for read-only. `cms:Put*`, `cms:Create*` for write ops. Scope to `acs:cms:*:*:*` |
+| **Credentials** | `{{env.*}}` only. Never print secrets |
+| **Alert Data** | Alert contact/phone numbers are sensitive — mask in output |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Multi-metric alerts reduce false positives. Use `EvaluationCount ≥ 3` for production. Set `Escalations` for tiered response |
+| **面向精细的运维管控** | CMS IS the operational control layer for all other products. EffectiveInterval to suppress maintenance windows |
+| **面向风险的应急快恢** | Alert-driven diagnosis via cross-skill delegation matrix. Escalation → DAS for DB, ECS for compute |
+
+#### DR Runbook
+```
+Phase 1: Detect — CMS alert triggers on metric threshold
+Phase 2: Diagnose — Cross-skill delegation (DAS for DB, ECS for compute, SLB for network)
+Phase 3: Resolve — Auto-remediation or escalate to human with full diagnostic report
+```
+
+### 成本 (Cost)
+
+| Item | Cost | Optimization |
+|------|------|-------------|
+| API Calls | 1,000,000/month free | Use Period=300s to reduce volume |
+| Custom Metrics | Pay per datapoint | Consolidate metrics; reduce frequency |
+| Alert Notifications | Free (SMS extra) | Use webhooks over SMS for cost control |
+
+**Waste:** Unused alert rules (never triggered in 30d) → disable or delete. Over-frequent metric polling → increase Period.
+
+### 效率 (Efficiency)
+
+- **Multi-Metric Alarms:** Combine CPU, memory, disk into single alert to reduce noise
+- **Alarm Templates:** Use alarm rule templates for consistent thresholds across resource groups
+- **CI/CD:** JSON output by default. `DescribeMetricList` compatible with dashboards
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Alert Threshold | Window |
+|--------|--------------|-----------------|--------|
+| Per-product metrics | `acs_{product}_dashboard` | Per product guidance | Period=300s |
+| API Throttling | — | > 50 calls/second | Immediate |
+
+**Key guidance:** Use longer Period values (300s vs 60s) to reduce API volume. Group resources using MonitorGroup for batch monitoring. Use DescribeMetricLast instead of DescribeMetricList for latest single value.
+
 ## Reference Directory
 
 - [CLI Usage Guide](references/cli-usage.md)

@@ -124,16 +124,22 @@ If the user wants **operational execution** (e.g. "create a resource"), load the
 
 ### Output
 
-| Artifact | Description |
-|----------|-------------|
-| `alicloud-[product]-ops/SKILL.md` | Main skill runbook — triggers, flows, recovery, safety gates |
-| `references/core-concepts.md` | Architecture, limits, regions, quotas |
-| `references/api-sdk-usage.md` | Operation map, required fields, pagination, request/response snippets |
-| `references/cli-usage.md` | `aliyun` CLI cheat sheet (primary path) — when `cli_applicability: dual-path` |
-| `references/troubleshooting.md` | Error codes, ordered diagnostics |
-| `references/monitoring.md` | Metrics, dashboards, alerts (when monitoring in scope) |
-| `references/integration.md` | Go bootstrap, JIT SDK setup, env vars |
-| `assets/example-config.yaml` | Example configuration |
+| Artifact | Description | Required When |
+|----------|-------------|---------------|
+| `alicloud-[product]-ops/SKILL.md` | Main skill runbook — triggers, flows, recovery, safety gates, Well-Architected assessment | Always |
+| `references/core-concepts.md` | Architecture, limits, regions, quotas, dependency graph, SPOF analysis | Always |
+| `references/api-sdk-usage.md` | Operation map, required fields, pagination, request/response snippets | Always |
+| `references/cli-usage.md` | `aliyun` CLI command map, coverage gap table, invocation patterns | `cli_applicability: cli-first` / `dual-path` / `cli-only` |
+| `references/troubleshooting.md` | Error codes (≥ 10), ordered diagnostics, multi-round diagnosis | Always |
+| `references/monitoring.md` | Metrics, dashboards, alerts, cost & performance metrics | Product has CMS metrics |
+| `references/integration.md` | JIT SDK setup, env vars, cross-skill delegation matrix | Always |
+| `references/well-architected-assessment.md` | Five-pillar assessment: Security, Stability, Cost, Efficiency, Performance | Always |
+| `references/enhanced-self-healing-framework.md` | Self-healing patterns for installation flows | Always (referenced) |
+| `references/knowledge-base.md` | Fault pattern library for diagnostic skills | AIOps/diagnosis skills |
+| `references/observability.md` | Metrics→Logs→Traces linkage | Monitoring/AIOps skills |
+| `references/idempotency-checklist.md` | Idempotent behavior for retries/automation | Automation-heavy products |
+| `assets/example-config.yaml` | Example configuration with UX and optimization settings | Always |
+| `assets/eval_queries.json` | Trigger accuracy evaluation queries for the generated skill | Always |
 
 ---
 
@@ -224,6 +230,9 @@ Before generating anything, define **3-5 evaluation cases** for the target skill
 | E3 | API returns QuotaExceeded | Skill returns clear error message with remediation steps | Error follows `[ERROR] code → explanation → fix → next step` |
 | E4 | User asks about a non-existent resource | Skill checks existence first, returns "not found" with list suggestion | Resource existence check in pre-flight |
 | E5 | User asks for a related product operation (e.g., VPC when using ECS) | Skill delegates to the correct skill or documents the limitation | Delegation rule present in Trigger & Scope |
+| E6 | Backup before destructive operation | Skill reminds user to backup or validates existing backup | Pre-backup reminder in Delete/Modify flows |
+| E7 | Cost optimization suggestion | Skill detects idle resource pattern and recommends right-sizing | Cost assessment section present in skill |
+| E8 | Well-Architected security check | Skill documents minimum RAM permissions for operations | IAM section in `well-architected-assessment.md` |
 ```
 
 **Purpose:** These cases anchor the generation process. Every feature in the generated skill must trace back to at least one evaluation case.
@@ -240,12 +249,14 @@ Extract from OpenAPI and official docs:
 - **Error codes**: Product-specific error taxonomy (≥ 10 codes)
 - **Async behavior**: Polling intervals, terminal state names
 - **CLI coverage**: Which operations `aliyun` supports vs SDK-only
+- **API version drift** (updating existing skills): Compare current OpenAPI against `metadata.api_profile`; flag changed signatures, deprecations, new parameters
 
 **Validation checkpoint:** Before proceeding, confirm:
 - [ ] All operationIds are real (not invented)
 - [ ] JSON paths are from actual response schemas
 - [ ] Error codes are documented in OpenAPI or official docs
-- [ ] `cli_applicability` is correctly determined (`dual-path` vs `sdk-only`)
+- [ ] `cli_applicability` is correctly determined (`cli-first` / `dual-path` / `sdk-only` / `cli-only` for read-only skills)
+- [ ] API version drift report generated (if updating existing skill)
 
 ---
 
@@ -257,12 +268,15 @@ alicloud-[product]-ops/
 ├── references/
 │   ├── core-concepts.md
 │   ├── api-sdk-usage.md
-│   ├── cli-usage.md              # Required when cli_applicability: dual-path
+│   ├── cli-usage.md              # Required when cli_applicability: cli-first or dual-path
 │   ├── troubleshooting.md
 │   ├── monitoring.md              # When monitoring in scope
-│   └── integration.md
+│   ├── integration.md
+│   ├── well-architected-assessment.md  # MANDATORY: five-pillar assessment
+│   └── idempotency-checklist.md  # When retries/automation required
 ├── assets/
-│   └── example-config.yaml
+│   ├── example-config.yaml
+│   └── eval_queries.json         # MANDATORY: trigger accuracy eval queries
 ```
 
 Add `references/idempotency-checklist.md` when retries or automation require idempotent behavior.
@@ -280,7 +294,7 @@ Replace all `[Placeholder]` with product-specific content derived from Step 2. E
 |-------|------|
 | `name` | `alicloud-[product]-ops` — lowercase, hyphens, ≤ 64 chars |
 | `description` | Third person, triggers only (per OpenSpec) |
-| `cli_applicability` | `dual-path` (CLI available) or `sdk-only` (JIT Go SDK only) |
+| `cli_applicability` | `cli-first` (CLI covers most APIs, SDK for edges), `dual-path` (both paths required per operation), `sdk-only` (JIT Go SDK only), or `cli-only` (read-only/discovery skills) |
 | `cli_support_evidence` | Cite confirmation via `aliyun help <product>` or official docs |
 
 **Validation checkpoint (Five Core Standards):**
@@ -426,7 +440,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Trigger & Scope** with SHOULD-use / SHOULD-NOT-use and delegation rules
 - [ ] **Variables:** `{{env.*}}` vs `{{user.*}}`; no secret literals; `{{env.*}}` never collected from user
 - [ ] **Flows:** Pre-flight → Execute → Validate → Recover for **each** critical operation
-- [ ] **Each flow** documents **`aliyun` as primary path** and **SDK/API as fallback** (when `cli_applicability: dual-path`)
+- [ ] **Each flow** documents the correct primary path per `cli_applicability` (`cli-first`/`dual-path` → `aliyun` primary + SDK fallback; `sdk-only` → SDK only; `cli-only` → CLI read-only)
 - [ ] **Failure recovery:** HALT vs retry; throttling with exponential backoff; non-retryable business errors (QuotaExceeded, InsufficientBalance, InvalidParameter)
 - [ ] **API fidelity:** Fields and paths traceable to OpenAPI/SDK for the stated version
 - [ ] **CLI fidelity:** Default output is JSON (NO `--output json` needed); `--output` used for JMESPath columns only; commands match official CLI docs; JSON paths verified with a real CLI run or official docs
@@ -444,6 +458,11 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Eval Queries:** `assets/eval_queries.json` created or updated with should-trigger/should-not-trigger queries for the generated skill
 - [ ] **Optimization Awareness:** Skill design considers Fault Diagnosis, Root Cause Localization, and Rapid Resolution dimensions per [optimization-analysis.md](references/optimization-analysis.md)
 - [ ] **AIOps Compliance (when skill involves monitoring/alarm/diagnosis):** Skill implements multi-metric correlation, cross-skill diagnosis decision tree, delegation matrix, proactive inspection, and alarm storm handling per [aiops-best-practices.md](references/aiops-best-practices.md)
+- [ ] **Well-Architected — Security Pillar:** Minimum RAM permissions documented; credential masking enforced; VPC endpoint recommendation present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.1
+- [ ] **Well-Architected — Stability Pillar:** Backup/recovery operations documented with RTO/RPO; DR runbook included; explicit confirmation on all destructive operations per [well-architected-assessment.md](references/well-architected-assessment.md) §2.2
+- [ ] **Well-Architected — Cost Pillar:** Billing model comparison table present; idle resource detection pattern documented per [well-architected-assessment.md](references/well-architected-assessment.md) §2.3
+- [ ] **Well-Architected — Performance Pillar:** Key performance metrics with thresholds documented; auto-scaling trigger table present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.5
+- [ ] **Well-Architected Reference:** SKILL.md links to `well-architected-assessment.md` for pillar-specific assessment patterns
 
 ### P1 — SHOULD PASS
 
@@ -454,6 +473,9 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Adversarial scenarios** considered using the governance doc (when present)
 - [ ] **Path preference:** SKILL.md states when to prefer `aliyun` vs SDK fallback if non-obvious
 - [ ] **Metadata:** Ops skill frontmatter includes `cli_applicability`, `cli_support_evidence`, `go_version_minimum`, `environment` vars
+- [ ] **Well-Architected — Multi-AZ:** Cross-AZ/region deployment recommendation present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.2.1
+- [ ] **Well-Architected — Right-Sizing:** Resource utilization → recommendation mapping documented per [well-architected-assessment.md](references/well-architected-assessment.md) §2.3.2
+- [ ] **Well-Architected — Batch:** Batch operation pattern documented for ≥ 3 resources per [well-architected-assessment.md](references/well-architected-assessment.md) §2.4.1
 
 ---
 
@@ -478,6 +500,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 | [optimization-analysis.md](references/optimization-analysis.md) | Three-dimensional optimization framework |
 | [user-experience-spec.md](references/user-experience-spec.md) | Mandatory UX requirements for all generated skills |
 | [aiops-best-practices.md](references/aiops-best-practices.md) | Mandatory AIOps patterns for monitoring/diagnosis skills |
+| [well-architected-assessment.md](references/well-architected-assessment.md) | **NEW** Alibaba Cloud Well-Architected Framework five-pillar assessment integration |
 | [assets/eval_queries.json](assets/eval_queries.json) | Eval queries for testing the meta-skill's description trigger accuracy |
 
 ### External References

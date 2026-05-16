@@ -643,6 +643,55 @@ aliyun vpc ReleaseEipAddress \
 
 > **Security:** Never commit `.env` to version control (already in `.gitignore`). All credentials use `{{env.*}}` placeholders — never real values.
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to VPC.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `vpc:Describe*`, `vpc:Create*` scoped to `acs:vpc:*:*:vpc/*` |
+| **Credentials** | `{{env.*}}` only. Never print secrets |
+| **Network** | Use route tables for traffic isolation. Enable FlowLog on critical VPCs for audit. Security groups per tier |
+| **CIDR Planning** | Plan non-overlapping CIDR blocks with on-premise networks before creating VPCs |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Deploy resources across multi-AZ VSwitches. NAT Gateway HA mode for cross-zone resilience |
+| **面向精细的运维管控** | Monitor VPC network health, EIP binding status, bandwidth utilization. Set CMS alerts |
+| **面向风险的应急快恢** | Peering connection failover plan. **RTO:** < 5 min for EIP rebind. **RPO:** N/A |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| PayByTraffic (按使用量) | Variable traffic, bursty workloads | Pay for actual GB |
+| PayByBandwidth (按固定带宽) | Stable, predictable traffic | Predictable cost |
+| Common Bandwidth Package | Multiple EIPs sharing bandwidth | Up to 40% vs individual |
+
+**Waste:** Unused EIPs (unattached for 3d) → release. Idle NAT Gateways (no SNAT rules) → delete. Over-provisioned bandwidth (usage < 30%) → downgrade.
+
+### 效率 (Efficiency)
+
+- **Terraform/IaC:** VPC templates for reproducible network infrastructure
+- **Resource Groups:** Organize VPC resources by project/environment
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| DropTrafficPackageRate | `acs_vpc_dashboard` | > 0 | — | 5 min |
+| BandwidthUsage | `acs_vpc_dashboard` | > 80% | < 40% | 5 min |
+| ConnectionUsage | `acs_vpc_dashboard` | > 80% | < 50% | 5 min |
+
+**Key guidance:** Plan VPC CIDR blocks with adequate subnet space (reserve at least 50% of CIDR for growth). Use VPC Peering or CEN for cross-VPC connectivity.
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

@@ -1211,6 +1211,62 @@ func main() {
 }
 ```
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to DAS.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `das:Get*`, `das:Describe*`. Write ops: `das:Create*`, `das:Set*`. Scoped to `acs:das:*:*:instance/*` |
+| **Credentials** | `{{env.*}}` only. Endpoint is cn-shanghai (global for DAS) |
+| **Diagnostic Data** | SQL samples and query optimization data may contain sensitive queries. Mask in output |
+| **Diagnostic Connections** | NEVER use production admin credentials for connectivity diagnosis. Use temporary test accounts |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | DAS IS the stability layer for database products. Inspection score + autonomous events provide proactive fault detection |
+| **面向精细的运维管控** | DAS Pro enables SQL throttling, auto-scaling, dead lock analysis — all proactive controls |
+| **面向风险的应急快恢** | Dead lock analysis → kill session. Space summary → free space. SQL throttling → protect DB from runaway queries |
+
+#### DR Runbook
+```
+Phase 1: Detect — DAS inspection score < 60 or CMS alert triggers
+Phase 2: Diagnose — GetInstanceInspections + CreateDiagnosticReport + CMS metrics
+Phase 3: Resolve — Auto-scaling, SQL throttling, session kill, or escalate with full diagnostic report
+```
+
+### 成本 (Cost)
+
+| Item | Cost | Optimization |
+|------|------|-------------|
+| DAS Basic | Free for RDS instances | Always enabled |
+| DAS Pro | Paid per instance/month | Evaluate per-database need; enable only for production DBs |
+
+**Waste:** Pro subscription on non-critical DBs (dev/test) → disable. Unused SQL insight storage → clean up.
+
+### 效率 (Efficiency)
+
+- **Auto-Scaling Config:** `SetAutoScalingConfig` for automatic storage/spec scaling based on usage
+- **SQL Throttling:** `CreateSqlLimitTask` to automatically throttle runaway SQL patterns
+- **Cross-Skill Delegation:** DAS can trigger ECS/VPC/SLB skills for network-related database issues
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Alert Threshold | Window |
+|--------|--------------|-----------------|--------|
+| CpuUsage | `acs_rds_dashboard` / `acs_polardb_dashboard` | > 80% | 5 min |
+| IOPSUsage | `acs_rds_dashboard` | > 85% | 5 min |
+| ActiveConnection | `acs_rds_dashboard` | > 80% | 5 min |
+| SlowQueries | DAS `GetInstanceInspections` | > 10/min | 15 min |
+
+**Key guidance:** Use `GetQueryOptimizeData` for slow query analysis. `GetPfsSqlSamples` for Performance Insight deep analysis. Regular `GetInstanceInspections` for health scoring.
+
 ## Troubleshooting Capability Enhancement
 
 This skill includes a comprehensive troubleshooting enhancement framework:

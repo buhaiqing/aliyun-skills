@@ -403,6 +403,51 @@ aliyun polardb-io UpgradeDBCluster \
 2. **Configure Credentials**: export `ALIBABA_CLOUD_ACCESS_KEY_*` env vars
 3. **Verify**: `aliyun polardb-io DescribeDBClusters`
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to PolarDB Oracle-compatible.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `polardb:Describe*` scoped to `acs:polardb:*:*:dbcluster/*` |
+| **Network** | VPC-only. White-list app IPs. SSL encryption |
+| **Migration Security** | Use ADAM for Oracle→PolarDB migration assessment. Test schema compatibility before production cutover |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Multi-AZ deployment. Auto-failover < 30s. Compatible with Oracle HA patterns |
+| **面向精细的运维管控** | Cruise health check: backup status, node health, account audit |
+| **面向风险的应急快恢** | Point-in-time restore. **RTO:** < 15 min. **RPO:** 0 |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| Prepaid (包年包月) | Stable Oracle migration workloads | Up to 60% |
+| Postpaid (按量) | Migration testing phase | N/A |
+
+**Waste:** Oracle-compatible features unused after migration → disable. Idle clusters after cutover → decommission original Oracle.
+
+### 效率 (Efficiency)
+
+- **Oracle Compatibility:** Reduce migration effort with high Oracle syntax compatibility
+- **ADAM:** Use Alibaba Cloud Database Autonomy Management for migration assessment
+- **CI/CD:** JSON output by default
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| CpuUsage | `acs_polardb_dashboard` | > 80% | < 40% | 5 min |
+| ConnectionUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+| IopsUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

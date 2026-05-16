@@ -466,6 +466,54 @@ aliyun vpc DescribeEipAddresses --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
 github.com/alibabacloud-go/vpc-20160428/v3/client
 ```
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to EIP.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `vpc:Describe*`, `vpc:AllocateEipAddress`, `vpc:ReleaseEipAddress` scoped to `acs:vpc:*:*:eipaddress/*` |
+| **Network Security** | EIP exposes resources to the internet. Verify security group rules are properly configured before binding |
+| **Credential Security** | `{{env.*}}` only. Never print secrets |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | EIPs can be rebound to healthy instances for failover. Use health checks + automatic rebind |
+| **面向精细的运维管控** | Monitor bandwidth utilization continuously. Alert at 80% |
+| **面向风险的应急快恢** | **RTO:** < 1 min for EIP unbind/rebind. **RPO:** N/A |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| PayByBandwidth (按固定带宽) | Stable, high-traffic workloads | Predictable cost |
+| PayByTraffic (按实际流量计) | Bursty/variable traffic | Pay per GB |
+| Common Bandwidth Package | 2+ EIPs sharing pool | 30-50% savings |
+
+**Waste:** Unattached EIPs (Available for 3d) → release. Idle bandwidth (< 10% usage) → switch to PayByTraffic.
+
+### 效率 (Efficiency)
+
+- **Bandwidth Plans:** Common Bandwidth Package for centralized bandwidth management
+- **Auto-Rebind:** EIP can be programmatically rebound for HA failover scenarios
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| BandwidthTX | `acs_vpc_dashboard` | > 80% capacity | < 30% | 5 min |
+| BandwidthRX | `acs_vpc_dashboard` | > 80% capacity | < 30% | 5 min |
+| DropTrafficPackageRate | `acs_vpc_dashboard` | > 0 | — | 5 min |
+
+**Key guidance:** One EIP supports up to 5 Gbps. For higher throughput, use multiple EIPs with SLB.
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

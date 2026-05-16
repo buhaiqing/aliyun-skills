@@ -1579,13 +1579,115 @@ fi
    bash scripts/preflight-check.sh
    ```
 
-> **CLI Polling with `--waiter`:** For operations that require waiting for state transitions, `aliyun` CLI supports `--waiter` (when available):
-> ```bash
-> aliyun r-kvstore describe-instances \
->   --InstanceId "{{user.instance_id}}" \
->   --waiter expr='Instances.KVStoreInstance[0].InstanceStatus' to=Normal timeout=600 interval=10
-> ```
-> Use `--waiter` when documented for the product; otherwise use shell loop polling as shown in execution flows.
+> **Note:** The `--waiter` flag is supported by the `aliyun` CLI. See [CLI Usage](references/cli-usage.md) for details.
+
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to Redis/Tair.
+
+### 安全 (Security)
+
+| Assessment Area | Guidance |
+|-----------------|----------|
+| **IAM Permissions** | Never use `AdministratorAccess`. Required: `r-kvstore:Describe*`, `r-kvstore:CreateInstance`, scoped to `acs:r-kvstore:*:*:instance/*` |
+| **Credential Security** | Use `{{env.*}}` placeholders only. Never print or log credentials |
+| **Network Isolation** | Always deploy in VPC. Use VPC endpoints. Set SecurityIPList to application server IPs only — never `0.0.0.0/0` |
+| **Data at Rest** | Enable SSL/TLS encrypted connections. Use TDE for disk instances. Set `EnableSSL=true` |
+| **Account Security** | Create separate accounts per application. Use least-privilege Redis ACL. Regularly rotate passwords |
+
+### 稳定 (Stability)
+
+| Assessment Area | Guidance |
+|-----------------|----------|
+| **面向失败的架构设计** | Use cluster edition or standard edition with read-only replicas. Enable auto-failover (< 30s) |
+| **面向精细的运维管控** | Monitor `ConnectionUsage`, `MemoryUsage`, `QPSUse`, `KeyCount`. Set CloudMonitor alerts at 80% |
+| **面向风险的应急快恢** | Daily backup + AOF persistence. Test restore quarterly. **RTO:** < 10 min. **RPO:** < 1 hour |
+
+### 成本 (Cost)
+
+| Billing Model | Best For | Savings |
+|--------------|----------|---------|
+| **按量付费** | Dev/test, short-term | N/A |
+| **包年包月** | Production caches | Up to 70% |
+| **Read-Only Replicas** | Read-heavy workloads (avoid over-provisioning primary) | Cost-effective scaling |
+
+**Waste Detection:** Memory usage < 30% for 7+ days → downgrade. Connection count consistently < 10 → downgrade.
+
+### 效率 (Efficiency)
+
+| Pattern | Guidance |
+|---------|----------|
+| **Auto-Renewal** | Enable auto-renewal to avoid service interruption |
+| **Hot-Reload Config** | Use `ModifyInstanceConfig` for parameter changes without restart |
+| **CI/CD** | All outputs are JSON by default. Compatible with pipeline parsing |
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| CpuUsage | `acs_kvstore_dashboard` | > 80% | < 40% | 5 min |
+| MemoryUsage | `acs_kvstore_dashboard` | > 85% | < 50% | 5 min |
+| ConnectionUsage | `acs_kvstore_dashboard` | > 80% | < 40% | 5 min |
+| QPSUse | `acs_kvstore_dashboard` | > 80% | < 50% | 5 min |
+
+**Key guidance:** Use Tair data types (e.g., TairString, TairHash) for optimized memory. Monitor `SlowLogCount`. Consider sharding (cluster edition) when single-node QPS exceeds 100k.
+
+---
+
+## Prerequisites
+
+1. **Install `aliyun` CLI** (primary execution path):
+
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
+    ```
+
+2. **Bootstrap Go runtime** (for JIT SDK fallback):
+
+    ```bash
+    if ! command -v go &> /dev/null; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+        ARCH=$(uname -m)
+        [ "$ARCH" = "x86_64" ] && ARCH="amd64"
+        [ "$ARCH" = "aarch64" ] && ARCH="arm64"
+        mkdir -p /tmp/go-runtime
+        curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
+        export PATH="/tmp/go-runtime/go/bin:$PATH"
+        export GOPATH="/tmp/go-workspace"
+        export GOCACHE="/tmp/go-cache"
+        export GOMODCACHE="/tmp/go-modcache"
+        export GOPROXY="https://goproxy.cn,direct"
+    fi
+    go version
+    ```
+
+3. **Configure Credentials** (automatic .env loading supported):
+
+    **Option A: Environment Variables**
+    ```bash
+    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
+    ```
+
+    **Option B: .env File (Recommended for CI)**
+    ```bash
+    cat > .env <<EOF
+    ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
+    ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+    ALIBABA_CLOUD_REGION_ID=cn-hangzhou
+    EOF
+    
+    bash scripts/preflight-check.sh
+    ```
+
+4. **Verify Configuration** (via pre-flight check):
+
+    ```bash
+    bash scripts/preflight-check.sh
+    ```
 
 ## Reference Directory
 

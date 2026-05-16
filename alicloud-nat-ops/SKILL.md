@@ -400,6 +400,53 @@ aliyun vpc DescribeForwardTableEntries --RegionId "{{env.ALIBABA_CLOUD_REGION_ID
 github.com/alibabacloud-go/vpc-20160428/v3/client
 ```
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to NAT Gateway.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `vpc:Describe*`, `vpc:CreateNatGateway`, `vpc:DeleteNatGateway` scoped to `acs:vpc:*:*:natgateway/*` |
+| **Network Security** | DNAT only exposes explicitly configured ports. Use enhanced NAT for fine-grained SNAT rules |
+| **Credential Security** | `{{env.*}}` only. Never print secrets |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Enhanced NAT Gateway is AZ-scoped. Deploy in multiple vSwitches across AZs for HA |
+| **面向精细的运维管控** | Monitor NAT CU utilization. Upgrade spec if CU exceeds 80% consistently |
+| **面向风险的应急快恢** | **RTO:** < 5 min for EIP unbind/rebind. **RPO:** N/A (stateless) |
+
+### 成本 (Cost)
+
+| Billing | Best For | Notes |
+|---------|----------|-------|
+| Enhanced NAT + PayByTraffic | Variable workloads | Pay per GB |
+| Enhanced NAT + PayByBandwidth | Stable traffic | Predictable cost |
+
+**Waste:** Idle NAT Gateways (no SNAT/DNAT rules for 7d) → delete. Underutilized specs → downgrade. Common Bandwidth Package for multiple EIPs saves up to 40%.
+
+### 效率 (Efficiency)
+
+- **Enhanced NAT preferred:** Better performance, more SNAT IPs, vSwitch-level SNAT
+- **EIP Integration:** Coordinate with `alicloud-eip-ops` for EIP lifecycle management
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down |
+|--------|--------------|----------|------------|
+| NAT CU | `acs_nat_dashboard` | > 80% | < 40% |
+| Bandwidth Usage | `acs_nat_dashboard` | > 80% | < 40% |
+| SNAT Connection | `acs_nat_dashboard` | > 80% | < 50% |
+
+**Key guidance:** One EIP ≈ 30K concurrent connections. Scale by adding multiple EIPs to SNAT pool. Enhanced NAT supports large-scale SNAT connections.
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

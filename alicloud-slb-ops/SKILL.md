@@ -1499,6 +1499,55 @@ fi
 > **Security:** Never commit `.env` to version control (already in `.gitignore`).
 > All credentials use `{{env.*}}` placeholders in generated Skills — never real values.
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to SLB/CLB.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `slb:Describe*`, `slb:Create*` scoped to `acs:slb:*:*:loadbalancer/*` |
+| **Credentials** | `{{env.*}}` only. Never print secrets |
+| **Network** | Intranet SLB for internal traffic. ACLs to restrict access. DropConnection monitoring for suspicious traffic |
+| **HTTPS** | Always use HTTPS for public-facing services. Regular certificate rotation. Use `UploadServerCertificate` |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Multi-AZ load balancing. Health checks per backend. Session persistence only when required |
+| **面向精细的运维管控** | Monitor 5xx codes, ActiveConnection, QPS. Set alerts on backend health check failures |
+| **面向风险的应急快恢** | Failover to backup listener group. **RTO:** < 1 min (DNS TTL). **RPO:** N/A (stateless) |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| PayBySpecification (按规格) | Stable, predictable traffic | N/A |
+| PayByCLCU (按规格2.0) | Variable traffic, auto-scaling | Pay for usage |
+
+**Waste:** Idle LoadBalancers (no backend, no connections for 7d) → delete. Over-provisioned specs → downgrade.
+
+### 效率 (Efficiency)
+
+- **Auto-scaling:** Use with ECS Auto Scaling group. Health checks drive instance addition/removal
+- **Terraform:** SLB supports IaC for reproducible configs
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| ActiveConnection | `acs_slb_dashboard` | > 80% capacity | < 30% | 5 min |
+| QPS (MaxConnection) | `acs_slb_dashboard` | > 80% rated | < 40% | 5 min |
+| 5xx Code Count | `acs_slb_dashboard` | > 10/min | — | 5 min |
+| DropConnection | `acs_slb_dashboard` | > 0 | — | 5 min |
+
+**Key guidance:** Set health check interval ≤ 5s for production. Use HTTP/HTTPS health checks for L7 accuracy. Monitor backend response times.
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md) — SLB/CLB product concepts, key terminology, quotas, and limits

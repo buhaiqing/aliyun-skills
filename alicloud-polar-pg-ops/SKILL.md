@@ -420,6 +420,49 @@ aliyun polardb-pg StartDBCluster --DBClusterId "{{user.db_cluster_id}}"
 2. **Configure Credentials**: export `ALIBABA_CLOUD_ACCESS_KEY_*` env vars
 3. **Verify**: `aliyun polardb-pg DescribeDBClusters --DBVersion PostgreSQL`
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to PolarDB PostgreSQL.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `polardb:Describe*` scoped to `acs:polardb:*:*:dbcluster/*` |
+| **Network** | VPC-only. White-list app IPs — never `0.0.0.0/0`. SSL encryption |
+| **Data at Rest** | Enable TDE for compliance |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Multi-AZ deployment. Auto-failover < 30s. Read-only replicas for read scaling |
+| **面向精细的运维管控** | Cruise health check: verify backup status, node health, account audit |
+| **面向风险的应急快恢** | Point-in-time restore. **RTO:** < 15 min. **RPO:** 0 (WAL streaming) |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| Prepaid (包年包月) | Stable production | Up to 60% |
+| Postpaid (按量) | Dev/test | N/A |
+
+### 效率 (Efficiency)
+
+- **Read-Write Splitting:** Automatic routing to read-only nodes
+- **Parallel Query:** PostgreSQL native parallel query for analytical workloads
+- **CI/CD:** JSON output by default
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| CpuUsage | `acs_polardb_dashboard` | > 80% | < 40% | 5 min |
+| ConnectionUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+| IopsUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)

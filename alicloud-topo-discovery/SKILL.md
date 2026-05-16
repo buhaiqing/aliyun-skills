@@ -257,6 +257,47 @@ wait $PID_VPC $PID_VSW $PID_SLB $PID_NAT $PID_EIP
 | `InvalidVpcId.NotFound` | 0 | - | Skip VPC, continue scanning. |
 | Command Timeout (>30s) | 1 | - | Kill process; log timeout; continue with other resources. |
 
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to network topology discovery.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `AliyunReadOnlyAccess` only. Principle: least privilege, read-only access |
+| **Credentials** | `{{env.*}}` only. All AK/Secret values in output must be masked (e.g., `LTAI***`) |
+| **Data Sensitivity** | VPC IDs, instance IDs, and IP ranges are sensitive infrastructure data. Restrict report distribution |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Skip individual VPCs on error but continue scanning. Partial results are still valuable |
+| **面向精细的运维管控** | Regular topology discovery enables change tracking and drift detection |
+| **面向风险的应急快恢** | N/A (read-only skill). Use reports as baseline for post-incident infrastructure comparison |
+
+### 成本 (Cost)
+
+This skill uses read-only Describe APIs which are free. Minimal API call volume:
+- **Optimization:** Use batch APIs where possible. Set `PageSize` to 50 to minimize calls
+- **Waste:** N/A for read-only discovery
+
+### 效率 (Efficiency)
+
+- **Parallel Collection:** ECS/RDS/SLB/VPC APIs can be queried simultaneously
+- **CI/CD Integration:** Run in CI pipeline for regular topology drift detection
+- **JSON Output:** Compatible with jq for automated analysis
+
+### 性能 (Performance)
+
+| Operation | Expected API Calls | Time Estimate |
+|-----------|-------------------|---------------|
+| Full scan (all VPCs) | ~10-20 Describe calls | < 30s |
+| Brief mode | ~5 Describe calls | < 10s |
+
 ## Changelog
 
 | Version | Date | Changes |

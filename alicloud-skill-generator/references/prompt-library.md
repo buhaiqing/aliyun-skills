@@ -126,7 +126,7 @@ Replace all [Placeholders] with product-specific content derived from OpenAPI.
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
-| `cli_applicability` | enum | Yes | `dual-path` or `sdk-only` |
+| `cli_applicability` | enum | Yes | `cli-first` (CLI primary), `dual-path` (both required), `sdk-only` (SDK only), or `cli-only` (read-only) |
 
 **Effectiveness Evaluation:**
 - **Success Metric:** All P0-required files present; no missing references/
