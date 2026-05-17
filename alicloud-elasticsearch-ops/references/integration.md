@@ -229,43 +229,354 @@ func checkClusterHealth(client *elasticsearch.Client, instanceId string) (string
 
 ---
 
-## 5. Cross-Skill Delegation Matrix
+## 6. Cross-Skill Diagnosis Decision Tree (AIOps Pattern)
 
-| Dependency | Required Skill | Delegation Pattern |
-|------------|----------------|-------------------|
-| VPC creation | `alicloud-vpc-ops` | Create VPC → Get VPC ID → Create ES |
-| VSwitch creation | `alicloud-vpc-ops` | Create VSwitch → Get VSwitch ID → Create ES |
-| Security group | `alicloud-ecs-ops` | Create SG → Get SG ID → Configure ES whitelist |
-| RAM policy | `alicloud-ram-ops` | Create policy → Attach to RAM user |
-| Monitoring alerts | `alicloud-cms-ops` | Create alert rule → Link to ES instance |
+### 6.1 5-Step Cross-Skill Diagnosis Workflow
 
-### Delegation Flow Example
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Step 1: Error Classification (Local Diagnosis)                    │
+│  ├── Classify error code (Throttling, InstanceNotFound, etc.)      │
+│  ├── Identify if error is Elasticsearch-specific                   │
+│  └── Determine cross-skill dependency need                         │
+├─────────────────────────────────────────────────────────────────────┤
+│  Step 2: Dependency Analysis (Cross-Skill Check)                   │
+│  ├── Check VPC dependency: Does error involve VPC/VSwitch?        │
+│  ├── Check RAM dependency: Is Forbidden.RAM error?                │
+│  ├── Check CMS dependency: Need monitoring/alert integration?     │
+│  └── Check ActionTrail dependency: Need audit trail?              │
+│  Decision Matrix:                                                   │
+│  ┌─────────────────────┬───────────────────────────────────────┐  │
+│  │ Error Code          │ Required Skill                         │  │
+│  ├─────────────────────┼───────────────────────────────────────┤  │
+│  │ VpcNotFound         │ alicloud-vpc-ops (create VPC)          │  │
+│  │ VswitchNotFound     │ alicloud-vpc-ops (create VSwitch)      │  │
+│  │ Forbidden.RAM       │ alicloud-ram-ops (fix permissions)     │  │
+│  │ Connection issues   │ alicloud-vpc-ops + alicloud-ecs-ops    │  │
+│  │ Monitoring setup    │ alicloud-cms-ops                       │  │
+│  │ Audit trail         │ alicloud-actiontrail-ops               │  │
+│  └─────────────────────┴───────────────────────────────────────┘  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Step 3: Cross-Skill Delegation (Execute)                          │
+│  ├── Prepare delegation input (instance_id, error context)         │
+│  ├── Call target skill with specific operation                     │
+│  ├── Monitor delegation progress                                   │
+│  └── Capture output for integration                                │
+│  Example:                                                           │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ VpcNotFound → Delegate to alicloud-vpc-ops                    │ │
+│  │   Execute: CreateVpc(regionId, vpcName)                       │ │
+│  │   Output: {{output.vpc_id}}                                   │ │
+│  │   Return: Resume CreateInstance with {{output.vpc_id}}        │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────┤
+│  Step 4: Integration & Verification (Post-Delegation)              │
+│  ├── Integrate delegation output into local operation               │
+│  ├── Execute local operation with integrated inputs                │
+│  ├── Verify operation success                                      │
+│  └── Validate cross-skill resolution effectiveness                 │
+│  Verification Checklist:                                           │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ □ Delegation output received and valid                        │ │
+│  │ □ Local operation executed successfully                      │ │
+│  │ □ DescribeInstance → Status = Normal                         │ │
+│  │ □ Cluster health verified                                    │ │
+│  │ □ Cross-skill issue resolved                                 │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────────────┤
+│  Step 5: Report & Escalation (Closure)                             │
+│  ├── Generate diagnostic report with cross-skill details           │
+│  ├── Document cross-skill dependency resolution                    │
+│  ├── Update skill knowledge base with pattern                      │
+│  └── Escalate if unresolved after delegation                      │
+│  Report Fields:                                                     │
+│  ┌───────────────────────────────────────────────────────────────┐ │
+│  │ cross_skill_dependencies:                                     │ │
+│  │   - skill_name: alicloud-vpc-ops                              │ │
+│  │     dependency_type: required                                 │ │
+│  │     status: resolved                                          │ │
+│  │     operation: CreateVpc                                      │ │
+│  │     output: vpc-abc123                                        │ │
+│  └───────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-```yaml
-# Create Elasticsearch instance with dependencies
+### 6.2 Cross-Skill Diagnosis Code Template
 
-Step 1: Create VPC (alicloud-vpc-ops)
-  - Execute: CreateVpc
-  - Output: {{output.vpc_id}}
+```go
+func crossSkillDiagnosis(client *elasticsearch.Client, instanceId string, errorCode string) *DiagnosisResult {
+    result := &DiagnosisResult{
+        InstanceId:    instanceId,
+        ErrorCode:     errorCode,
+        Timestamp:     time.Now(),
+    }
+    
+    // Step 1: Error Classification
+    fmt.Println("=== Step 1: Error Classification ===")
+    classification := classifyError(errorCode)
+    fmt.Printf("Error: %s | Category: %s | CrossSkillNeed: %v\n",
+        errorCode, classification.Category, classification.RequiresCrossSkill)
+    
+    if !classification.RequiresCrossSkill {
+        result.DiagnosisPath = "Local"
+        return result
+    }
+    
+    // Step 2: Dependency Analysis
+    fmt.Println("=== Step 2: Dependency Analysis ===")
+    dependencies := analyzeDependencies(errorCode)
+    for _, dep := range dependencies {
+        fmt.Printf("Dependency: %s | Skill: %s | Type: %s\n",
+            dep.Dependency, dep.RequiredSkill, dep.DependencyType)
+        result.CrossSkillDependencies = append(result.CrossSkillDependencies, dep)
+    }
+    
+    // Step 3: Cross-Skill Delegation
+    fmt.Println("=== Step 3: Cross-Skill Delegation ===")
+    for _, dep := range dependencies {
+        delegationResult := delegateToSkill(dep.RequiredSkill, dep.Operation, instanceId)
+        fmt.Printf("Delegation to %s: %s\n", dep.RequiredSkill, delegationResult.Status)
+        
+        if delegationResult.Status == "Success" {
+            result.DelegationOutputs = append(result.DelegationOutputs, delegationResult)
+        } else {
+            result.Status = "DelegationFailed"
+            return result
+        }
+    }
+    
+    // Step 4: Integration & Verification
+    fmt.Println("=== Step 4: Integration & Verification ===")
+    integrationSuccess := integrateDelegationOutputs(client, instanceId, result.DelegationOutputs)
+    if !integrationSuccess {
+        result.Status = "IntegrationFailed"
+        return result
+    }
+    
+    // Verify resolution
+    inst, _ := client.DescribeInstance(&elasticsearch.DescribeInstanceRequest{
+        InstanceId: tea.String(instanceId),
+    })
+    status := tea.ToString(inst.Body.Result.Status)
+    fmt.Printf("Verification: Instance status=%s\n", status)
+    
+    if status == "Normal" {
+        result.Status = "Resolved"
+    } else {
+        result.Status = "VerificationFailed"
+    }
+    
+    // Step 5: Report & Escalation
+    fmt.Println("=== Step 5: Report & Escalation ===")
+    report := generateDiagnosticReport(instanceId, "cross_skill_diagnosis", result)
+    result.ReportId = report.ReportId
+    
+    if result.Status != "Resolved" {
+        result.EscalationRequired = true
+        result.EscalationReason = "Cross-skill diagnosis unresolved"
+    }
+    
+    return result
+}
 
-Step 2: Create VSwitch (alicloud-vpc-ops)
-  - Execute: CreateVSwitch
-  - Input: {{output.vpc_id}}, zoneId
-  - Output: {{output.vswitch_id}}
+type DiagnosisResult struct {
+    InstanceId           string
+    ErrorCode            string
+    Timestamp            time.Time
+    Status               string
+    DiagnosisPath        string
+    CrossSkillDependencies []CrossSkillDependency
+    DelegationOutputs    []DelegationOutput
+    ReportId             string
+    EscalationRequired   bool
+    EscalationReason     string
+}
 
-Step 3: Create Elasticsearch (this skill)
-  - Execute: CreateInstance
-  - Input: {{output.vpc_id}}, {{output.vswitch_id}}
-  - Output: {{output.instance_id}}
+type CrossSkillDependency struct {
+    Dependency       string
+    RequiredSkill    string
+    DependencyType   string // required, optional, fallback
+    Operation        string
+}
 
-Step 4: Configure whitelist (optional)
-  - Execute: ModifyWhiteIps
-  - Input: {{output.instance_id}}, user.ip_list
+type DelegationOutput struct {
+    Skill    string
+    Operation string
+    Status   string
+    Output   string
+}
 ```
 
 ---
 
-## 6. Error Handling & Retry
+## 7. Cross-Skill Delegation Matrix (Enhanced)
+
+### 7.1 Extended Delegation Matrix for AIOps
+
+| Primary Issue | Dependency Analysis | Required Skill | Delegation Operation | Return Criteria |
+|---------------|--------------------|----------------|--------------------|-----------------|
+| **VpcNotFound** | VPC infrastructure missing | alicloud-vpc-ops | CreateVpc | VPC ID returned |
+| **VswitchNotFound** | VSwitch missing in zone | alicloud-vpc-ops | CreateVSwitch | VSwitch ID returned |
+| **Forbidden.RAM** | Permission denied | alicloud-ram-ops | AttachPolicyToUser | Policy attached |
+| **ConnectionTimeout** | Network ACL/SG blocking | alicloud-ecs-ops | ModifySecurityGroupRule | SG rule updated |
+| **MonitoringSetup** | Need alert rules | alicloud-cms-ops | CreateAlertRule | Alert rule active |
+| **AuditTrail** | Need operation history | alicloud-actiontrail-ops | LookupEvents | Events retrieved |
+| **CostEstimation** | Need pricing info | alicloud-bss-ops | GetPrice | Price retrieved |
+
+### 7.2 Cross-Skill Delegation Templates
+
+```yaml
+Template: VpcNotFound Resolution
+
+Trigger: Error code = "VpcNotFound"
+Analysis:
+  - VPC ID invalid or deleted
+  - Region mismatch possible
+  
+Delegation:
+  Skill: alicloud-vpc-ops
+  Operations:
+    1. DescribeVpc → Check if VPC exists
+    2. If not exists: CreateVpc → {{output.vpc_id}}
+  
+Integration:
+  Resume: CreateInstance with {{output.vpc_id}}
+  
+Verification:
+  DescribeInstance → Status = Normal
+  
+Report:
+  cross_skill_dependencies:
+    - skill_name: alicloud-vpc-ops
+      status: resolved
+      operation: CreateVpc
+      output: {{output.vpc_id}}
+
+---
+
+Template: Forbidden.RAM Resolution
+
+Trigger: Error code = "Forbidden.RAM"
+Analysis:
+  - RAM policy missing elasticsearch permissions
+  - User/role lacks required actions
+  
+Delegation:
+  Skill: alicloud-ram-ops
+  Operations:
+    1. GetPolicyForUser → Check current policy
+    2. CreatePolicy → Define Elasticsearch policy
+    3. AttachPolicyToUser → Attach to user
+  
+Integration:
+  Retry: Original operation after policy attach
+  
+Verification:
+  DescribeInstance → Success (no Forbidden.RAM)
+  
+Report:
+  cross_skill_dependencies:
+    - skill_name: alicloud-ram-ops
+      status: resolved
+      operation: AttachPolicyToUser
+      output: policy-attached
+
+---
+
+Template: ConnectionTimeout Resolution
+
+Trigger: Connection refused to ES endpoint
+Analysis:
+  - Whitelist blocking client IP
+  - Security group rules blocking
+  - VPC routing issue
+  
+Delegation:
+  Skills: [alicloud-vpc-ops, alicloud-ecs-ops]
+  Operations:
+    1. (alicloud-vpc-ops) DescribeVpc → Check VPC routing
+    2. (alicloud-ecs-ops) DescribeSecurityGroupRules → Check SG
+    3. (alicloud-ecs-ops) ModifySecurityGroupRule → Allow ES port
+  
+Integration:
+  Retry: Connection test after SG update
+  
+Verification:
+  Connection established successfully
+  
+Report:
+  cross_skill_dependencies:
+    - skill_name: alicloud-vpc-ops
+      status: resolved
+      operation: DescribeVpc
+    - skill_name: alicloud-ecs-ops
+      status: resolved
+      operation: ModifySecurityGroupRule
+```
+
+---
+
+## 8. Cross-Skill Dependency Tracking
+
+### 8.1 Dependency Resolution Tracking
+
+```go
+func trackDependencyResolution(result *DiagnosisResult) *DependencyReport {
+    report := &DependencyReport{
+        InstanceId:    result.InstanceId,
+        Timestamp:     time.Now(),
+        TotalDeps:     len(result.CrossSkillDependencies),
+    }
+    
+    resolved := 0
+    pending := 0
+    failed := 0
+    
+    for _, dep := range result.CrossSkillDependencies {
+        for _, output := range result.DelegationOutputs {
+            if output.Skill == dep.RequiredSkill {
+                if output.Status == "Success" {
+                    resolved++
+                    report.ResolvedDeps = append(report.ResolvedDeps, dep)
+                } else if output.Status == "Failed" {
+                    failed++
+                    report.FailedDeps = append(report.FailedDeps, dep)
+                } else {
+                    pending++
+                    report.PendingDeps = append(report.PendingDeps, dep)
+                }
+            }
+        }
+    }
+    
+    report.ResolvedCount = resolved
+    report.PendingCount = pending
+    report.FailedCount = failed
+    
+    if failed > 0 {
+        report.OverallStatus = "Failed"
+    } else if pending > 0 {
+        report.OverallStatus = "InProgress"
+    } else {
+        report.OverallStatus = "Resolved"
+    }
+    
+    return report
+}
+
+type DependencyReport struct {
+    InstanceId     string
+    Timestamp      time.Time
+    TotalDeps      int
+    ResolvedCount  int
+    PendingCount   int
+    FailedCount    int
+    OverallStatus  string
+    ResolvedDeps   []CrossSkillDependency
+    PendingDeps    []CrossSkillDependency
+    FailedDeps     []CrossSkillDependency
+}
+```
 
 ### Retry Strategy
 

@@ -345,4 +345,304 @@ Support Channel: https://workorder.console.aliyun.com/
 
 ---
 
-*For monitoring and alerting setup, see [monitoring.md](monitoring.md).*
+## 6. Multi-Round Self-Reflection Process (AIOps Pattern)
+
+### 6.1 Self-Reflection Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Multi-Round Self-Reflection Process                                │
+│  Purpose: Iteratively refine diagnosis until satisfactory result     │
+├─────────────────────────────────────────────────────────────────────┤
+│  Round 1: Initial Diagnosis                                         │
+│  ├── Run standard diagnostic procedure (§2)                         │
+│  ├── Collect all observable symptoms                                │
+│  ├── Generate initial root cause hypothesis                         │
+│  ├── Confidence threshold: 0.5                                      │
+│  └── Output: findings_1, hypothesis_1, confidence_1                 │
+├─────────────────────────────────────────────────────────────────────┤
+│  Round 2: Hypothesis Validation                                     │
+│  ├── Test hypothesis_1 with targeted diagnostics                    │
+│  ├── Gather evidence to support/refute hypothesis                   │
+│  ├── If confidence < 0.7: Generate alternative hypothesis           │
+│  ├── Cross-skill dependency check                                   │
+│  └── Output: findings_2, hypothesis_2, confidence_2, new_findings   │
+├─────────────────────────────────────────────────────────────────────┤
+│  Round 3: Deep Analysis (if needed)                                 │
+│  ├── If confidence < 0.85: Deep dive into logs/metrics              │
+│  ├── Multi-metric correlation analysis                              │
+│  ├── Historical pattern comparison                                  │
+│  ├── Generate remediation action plan                               │
+│  └── Output: findings_3, root_cause_final, remediation_plan         │
+├─────────────────────────────────────────────────────────────────────┤
+│  Round 4: Remediation Execution                                     │
+│  ├── Execute remediation actions                                    │
+│  ├── Monitor remediation progress                                   │
+│  ├── Verify resolution                                              │
+│  ├── If unresolved: Escalate or iterate                             │
+│  └── Output: remediation_result, verification_status                │
+├─────────────────────────────────────────────────────────────────────┤
+│  Round 5: Post-Resolution Reflection                                │
+│  ├── Validate issue fully resolved                                  │
+│  ├── Update knowledge base with pattern                             │
+│  ├── Document lessons learned                                       │
+│  ├── Generate final diagnostic report                               │
+│  ├── Output: final_report, satisfaction_status                      │
+├─────────────────────────────────────────────────────────────────────┤
+│  Satisfaction Criteria:                                              │
+│  ├── confidence >= 0.85 AND                                         │
+│  ├── remediation executed AND                                        │
+│  ├── verification passed (status=Normal, health=green)              │
+│  └── If unsatisfied: Return to Round 3 or escalate                  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 6.2 Self-Reflection Implementation
+
+```go
+func multiRoundSelfReflection(client *elasticsearch.Client, instanceId string, initialError error) *ReflectionResult {
+    result := &ReflectionResult{
+        InstanceId:    instanceId,
+        InitialError:  initialError,
+        StartTime:     time.Now(),
+        Rounds:        []ReflectionRound{},
+    }
+    
+    // Round 1: Initial Diagnosis
+    round1 := runInitialDiagnosis(client, instanceId, initialError)
+    result.Rounds = append(result.Rounds, round1)
+    
+    if round1.Confidence >= 0.85 {
+        result.SatisfactionStatus = "Satisfied"
+        result.FinalHypothesis = round1.Hypothesis
+        return result
+    }
+    
+    // Round 2: Hypothesis Validation
+    round2 := validateHypothesis(client, instanceId, round1)
+    result.Rounds = append(result.Rounds, round2)
+    
+    if round2.Confidence >= 0.85 {
+        result.SatisfactionStatus = "Satisfied"
+        result.FinalHypothesis = round2.Hypothesis
+        return result
+    }
+    
+    // Round 3: Deep Analysis
+    round3 := deepAnalysis(client, instanceId, round2)
+    result.Rounds = append(result.Rounds, round3)
+    
+    if round3.Confidence >= 0.85 {
+        result.SatisfactionStatus = "Satisfied"
+        result.FinalHypothesis = round3.Hypothesis
+        // Execute remediation
+        result.RemediationResult = executeRemediation(client, instanceId, round3.RemediationActions)
+        return result
+    }
+    
+    // Round 4: Remediation Execution (even with lower confidence)
+    round4 := executeRemediationRound(client, instanceId, round3)
+    result.Rounds = append(result.Rounds, round4)
+    
+    // Round 5: Post-Resolution Reflection
+    round5 := postResolutionReflection(client, instanceId, round4)
+    result.Rounds = append(result.Rounds, round5)
+    
+    if round5.VerificationPassed {
+        result.SatisfactionStatus = "Satisfied"
+    } else {
+        result.SatisfactionStatus = "NeedsIteration"
+        result.EscalationRequired = true
+    }
+    
+    result.EndTime = time.Now()
+    result.TotalDuration = result.EndTime.Sub(result.StartTime)
+    
+    return result
+}
+
+type ReflectionResult struct {
+    InstanceId         string
+    InitialError       error
+    StartTime          time.Time
+    EndTime            time.Time
+    TotalDuration      time.Duration
+    Rounds             []ReflectionRound
+    FinalHypothesis    string
+    RemediationResult  *RemediationResult
+    SatisfactionStatus string // Satisfied, NeedsIteration, Escalate
+    EscalationRequired bool
+    FinalReportId      string
+}
+
+type ReflectionRound struct {
+    RoundNumber      int
+    Findings         []Finding
+    NewFindingsCount int
+    Hypothesis       string
+    Confidence       float64
+    Actions          []string
+    Timestamp        time.Time
+    Duration         time.Duration
+}
+
+func runInitialDiagnosis(client *elasticsearch.Client, instanceId string, err error) ReflectionRound {
+    round := ReflectionRound{
+        RoundNumber: 1,
+        Timestamp:   time.Now(),
+    }
+    
+    // Standard diagnostic procedure
+    findings := standardDiagnostic(client, instanceId, err)
+    round.Findings = findings
+    
+    // Generate hypothesis from findings
+    hypothesis, confidence := generateHypothesis(findings)
+    round.Hypothesis = hypothesis
+    round.Confidence = confidence
+    
+    round.Duration = time.Since(round.Timestamp)
+    return round
+}
+
+func validateHypothesis(client *elasticsearch.Client, instanceId string, prevRound ReflectionRound) ReflectionRound {
+    round := ReflectionRound{
+        RoundNumber:      2,
+        Timestamp:        time.Now(),
+        Findings:         prevRound.Findings,
+        Hypothesis:       prevRound.Hypothesis,
+    }
+    
+    // Test hypothesis with targeted checks
+    evidence := testHypothesis(client, instanceId, prevRound.Hypothesis)
+    
+    // Calculate new confidence
+    round.Confidence = calculateConfidence(prevRound.Confidence, evidence)
+    
+    // If low confidence, generate alternative hypothesis
+    if round.Confidence < 0.7 {
+        altHypothesis := generateAlternativeHypothesis(round.Findings)
+        round.Hypothesis = altHypothesis
+        round.Actions = append(round.Actions, "Generated alternative hypothesis")
+    }
+    
+    // Cross-skill check
+    crossSkillDeps := checkCrossSkillDependencies(instanceId, round.Findings)
+    if len(crossSkillDeps) > 0 {
+        round.Actions = append(round.Actions, "Cross-skill delegation required")
+    }
+    
+    // Count new findings
+    round.NewFindingsCount = countNewFindings(round.Findings, prevRound.Findings)
+    
+    round.Duration = time.Since(round.Timestamp)
+    return round
+}
+
+func deepAnalysis(client *elasticsearch.Client, instanceId string, prevRound ReflectionRound) ReflectionRound {
+    round := ReflectionRound{
+        RoundNumber:      3,
+        Timestamp:        time.Now(),
+        Findings:         prevRound.Findings,
+        Hypothesis:       prevRound.Hypothesis,
+    }
+    
+    // Multi-metric correlation
+    correlations := analyzeMetricCorrelations(instanceId)
+    for _, corr := range correlations {
+        round.Findings = append(round.Findings, Finding{
+            Category:  "Correlation",
+            Message:   corr.Description,
+            Severity:  corr.Severity,
+        })
+    }
+    
+    // Historical pattern comparison
+    historicalPatterns := compareHistoricalPatterns(instanceId, round.Findings)
+    if len(historicalPatterns) > 0 {
+        round.Actions = append(round.Actions, "Historical pattern matched")
+    }
+    
+    // Generate remediation actions
+    round.RemediationActions = generateRemediationActions(round.Hypothesis, round.Findings)
+    
+    round.Confidence = calculateFinalConfidence(prevRound.Confidence, correlations, historicalPatterns)
+    round.NewFindingsCount = len(correlations)
+    
+    round.Duration = time.Since(round.Timestamp)
+    return round
+}
+```
+
+### 6.3 Satisfaction Criteria Matrix
+
+| Criterion | Threshold | Measurement |
+|-----------|-----------|-------------|
+| **Confidence level** | ≥ 0.85 | Hypothesis validation score |
+| **Root cause identified** | Yes | Clear, actionable hypothesis |
+| **Remediation planned** | Yes | Specific action steps defined |
+| **Cross-skill resolved** | Yes (if applicable) | Dependencies addressed |
+| **Verification passed** | Yes | Status=Normal, Health=green |
+
+### 6.4 Escalation Triggers
+
+| Trigger | Condition | Action |
+|---------|-----------|--------|
+| **Low confidence** | Confidence < 0.5 after Round 3 | Escalate to specialist |
+| **Cross-skill failure** | Delegation unsuccessful | Escalate with dependency details |
+| **Remediation failed** | Action unsuccessful after 3 attempts | Escalate with error history |
+| **Time threshold** | Duration > 30 minutes | Escalate to prevent extended downtime |
+| **Verification failed** | Status != Normal after remediation | Iterate or escalate |
+
+### 6.5 Self-Reflection Report Template
+
+```markdown
+# Multi-Round Self-Reflection Report
+
+**Instance:** {{instance_id}}
+**Initial Error:** {{initial_error}}
+**Duration:** {{total_duration}}
+**Satisfaction Status:** {{satisfaction_status}}
+
+## Round Summary
+
+| Round | New Findings | Confidence | Key Action |
+|-------|--------------|------------|------------|
+{{#each rounds}}
+| {{round_number}} | {{new_findings_count}} | {{confidence}}% | {{primary_action}} |
+{{/each}}
+
+## Final Hypothesis
+
+{{final_hypothesis}}
+
+## Remediation Executed
+
+{{#each remediation_result.actions}}
+- {{name}}: {{status}}
+{{/each}}
+
+## Verification
+
+- Instance Status: {{verification.status}}
+- Cluster Health: {{verification.health}}
+- Result: {{verification.result}}
+
+## Lessons Learned
+
+{{#each lessons}}
+- {{.}}
+{{/each}}
+
+## Escalation Required
+
+{{#if escalation_required}}
+Yes - Reason: {{escalation_reason}}
+{{else}}
+No - Issue resolved through self-reflection
+{{/if}}
+```
+
+---
+
+*For diagnostic report schema, see [../reports/diagnostic-report-schema.md](../reports/diagnostic-report-schema.md).*
