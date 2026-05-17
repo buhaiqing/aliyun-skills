@@ -1,0 +1,33 @@
+[
+  // SHOULD trigger Elasticsearch skill (10 queries)
+  { "query": "创建阿里云 Elasticsearch 实例", "should_trigger": true },
+  { "query": "我需要一个 ES 集群用于日志分析", "should_trigger": true },
+  { "query": "查看我的 Elasticsearch 实例状态", "should_trigger": true },
+  { "query": "ES实例 es-cn-xxx 的健康状态是什么", "should_trigger": true },
+  { "query": "升级 Elasticsearch 到 8.9 版本", "should_trigger": true },
+  { "query": "阿里云 ES 快照备份怎么创建", "should_trigger": true },
+  { "query": "Elasticsearch 集群重启", "should_trigger": true },
+  { "query": "安装 Elasticsearch 插件", "should_trigger": true },
+  { "query": "删除 ES 实例 es-cn-abcdef", "should_trigger": true },
+  { "query": "我的搜索集群 CPU 使用率太高怎么办", "should_trigger": true },
+  { "query": "配置 Elasticsearch 白名单 IP", "should_trigger": true },
+  { "query": "ES 集群节点扩容", "should_trigger": true },
+  { "query": "Logstash 实例管理", "should_trigger": true },
+  { "query": "全文检索服务配置", "should_trigger": true },
+
+  // SHOULD NOT trigger Elasticsearch skill (10 queries)
+  { "query": "创建阿里云 ECS 实例", "should_trigger": false },
+  { "query": "我的账单本月多少钱", "should_trigger": false },
+  { "query": "RDS 数据库性能优化", "should_trigger": false },
+  { "query": "创建 VPC 网络", "should_trigger": false },
+  { "query": "配置 RAM 用户权限", "should_trigger": false },
+  { "query": "Redis 集群监控", "should_trigger": false },
+  { "query": "SLB 负载均衡配置", "should_trigger": false },
+  { "query": "OSS 存储桶管理", "should_trigger": false },
+  { "query": "PolarDB 实例创建", "should_trigger": false },
+  { "query": "云监控告警规则设置", "should_trigger": false },
+  { "query": "ACK 容器集群部署", "should_trigger": false },
+  { "query": "添加 RAM policy 允许访问所有资源", "should_trigger": false },
+  { "query": "查看我的账户余额", "should_trigger": false },
+  { "query": "ActionTrail 操作审计查询", "should_trigger": false }
+]
