@@ -678,7 +678,7 @@ jobs:
 
 | Context | Required Behavior |
 |---------|-------------------|
-| Console output | Mask all credential values with `<masked>` or `***` |
+| Console output | Mask all credential values with first 4 chars + `****` (e.g., `abcd****`) |
 | Log files | Never log `AccessKeySecret` |
 | Error messages | Sanitize credential fields before display |
 | CI/CD secrets | Use secret store, never commit credentials |
@@ -700,8 +700,8 @@ func verifyCredentials() error {
     }
     
     // Masked output
-    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_ID: %s***\n", ak[:4])
-    fmt.Println("✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET: <masked>")
+    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_ID: %s****\n", ak[:4])
+    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET: %s****\n", sk[:4])
     
     return nil
 }

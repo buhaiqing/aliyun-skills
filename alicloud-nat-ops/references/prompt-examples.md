@@ -84,3 +84,29 @@
 | 4 | "Check account balance" | `alicloud-billing-ops` |
 | 5 | "Bind EIP to ECS" | `alicloud-eip-ops` |
 | 6 | "Create a load balancer" | `alicloud-slb-ops` |
+
+## FinOps — Cost Optimization
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 33 | "检查是否有闲置的NAT网关" | Scan all NAT Gateways; flag those with 0 SNAT + 0 DNAT entries |
+| 34 | "NAT网关成本太高了，帮我分析优化" | Check billing mode, spec utilization, EIP waste; generate optimization report |
+| 35 | "这个NAT应该用PayBySpec还是PayByActualUsage？" | Query 7-day CU utilization; recommend billing mode per decision tree |
+| 36 | "帮我做NAT网关规格右调" | Query CU trend (7d); compare against spec limits; recommend upgrade/downgrade |
+| 37 | "NAT关联的EIP有没有浪费？" | List EIPs on NAT; check traffic metrics; flag orphaned/low-traffic EIPs |
+| 38 | "生成NAT网关月度成本优化报告" | Full FinOps scan: idle NATs, underutilized specs, billing mode fit, EIP waste, CBWP opportunity |
+| 39 | "NAT成本突然涨了30%，帮我排查" | Compare MoM cost; check CU spike, EIP additions, spec changes, billing mode switch |
+| 40 | "5个EIP绑在NAT上，需要用共享带宽包吗？" | Calculate individual vs CBWP cost; recommend CBWP if 3+ EIPs |
+
+## SecurityOps — Security Audit
+
+| # | User Prompt | Expected Action |
+|---|-------------|-----------------|
+| 41 | "审计所有DNAT条目，检查高危端口暴露" | List all DNAT entries; flag ports 22/3306/6379/3389/27017/445/21/23 |
+| 42 | "检查SNAT源CIDR是否过于宽泛" | List SNAT entries; flag SourceCIDR = 0.0.0.0/0 |
+| 43 | "NAT网关安全基线检查" | Run P0 security checklist: high-risk ports, RAM scope, credential masking, SNAT scope, security groups |
+| 44 | "有DNAT把22端口映射到公网了，紧急处理" | DeleteForwardEntry for port 22 DNAT; verify removal; recommend Bastion host |
+| 45 | "查看NAT网关的操作审计日志" | Delegate to `alicloud-actiontrail-ops`; query NAT-related events |
+| 46 | "帮我配置NAT网关的最小权限RAM策略" | Generate scoped RAM policy per security-enhancement.md templates |
+| 47 | "检查DNAT是否有对应的安全组规则" | List DNAT entries → for each internal IP, check ECS security group inbound rules |
+| 48 | "执行NAT网关安全巡检" | Full security scan: DNAT exposure, SNAT scope, RAM policies, credential safety, audit trail |

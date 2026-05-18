@@ -218,8 +218,8 @@ func verifyCredentialsSecurely() error {
     }
     
     // Masked output (NEVER expose full values)
-    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_ID: %s***%s\n", ak[:4], ak[len(ak)-2:])
-    fmt.Println("✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET: <masked>")
+    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_ID: %s****\n", ak[:4])
+    fmt.Printf("✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET: %s****\n", sk[:4])
     
     if token != "" {
         fmt.Println("✅ ALIBABA_CLOUD_SECURITY_TOKEN: present (STS mode)")

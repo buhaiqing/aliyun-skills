@@ -115,14 +115,14 @@ validation, and failure recovery.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
 >
 > **Masking rules across all execution paths:**
 > | Execution Path | Safe Pattern | Unsafe Pattern |
 > |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | Raw credential value in output |
+> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` | Raw credential value in output |
 > | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
-> | Log files | `[INFO] Credentials: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
+> | Log files | `[INFO] Credentials: Secret=abcd****` | `[INFO] AK Secret: LTAI5t...` |
 > | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
 > | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
 > | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
@@ -1558,6 +1558,7 @@ fi
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
    **Option B: .env File (Recommended for CI)**
    ```bash
@@ -1592,7 +1593,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | Assessment Area | Guidance |
 |-----------------|----------|
 | **IAM Permissions** | Never use `AdministratorAccess`. Required: `r-kvstore:Describe*`, `r-kvstore:CreateInstance`, scoped to `acs:r-kvstore:*:*:instance/*` |
-| **Credential Security** | Use `{{env.*}}` placeholders only. Never print or log credentials |
+| **Credential Security** | Use `{{env.*}}` placeholders only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print or log credentials |
 | **Network Isolation** | Always deploy in VPC. Use VPC endpoints. Set SecurityIPList to application server IPs only — never `0.0.0.0/0` |
 | **Data at Rest** | Enable SSL/TLS encrypted connections. Use TDE for disk instances. Set `EnableSSL=true` |
 | **Account Security** | Create separate accounts per application. Use least-privilege Redis ACL. Regularly rotate passwords |
@@ -1671,6 +1672,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
     export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
     export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
     ```
+    > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
     **Option B: .env File (Recommended for CI)**
     ```bash

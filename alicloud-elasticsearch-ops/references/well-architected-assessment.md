@@ -142,7 +142,7 @@ request := &elasticsearch.CloseHttpsRequest{
 | Context | Required Pattern |
 |---------|-----------------|
 | SDK execution | Use `os.Getenv()` — never log or print |
-| Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` |
+| Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` |
 | Error messages | `Error: API failed (credential omitted)` |
 | Verification | `test -n "$SECRET"` — existence check only |
 

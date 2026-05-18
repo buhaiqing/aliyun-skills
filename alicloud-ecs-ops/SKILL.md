@@ -108,14 +108,14 @@ Alibaba Cloud ECS (Elastic Compute Service) provides scalable virtual servers in
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
 >
 > **Masking rules across all execution paths:**
 > | Execution Path | Safe Pattern | Unsafe Pattern |
 > |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | Raw credential value in output |
+> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` | Raw credential value in output |
 > | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
-> | Log files | `[INFO] Credentials: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
+> | Log files | `[INFO] Credentials: Secret=abcd****` | `[INFO] AK Secret: LTAI5t...` |
 > | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
 > | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
 > | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
@@ -1706,7 +1706,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | Assessment Area | Guidance | CLI Verification |
 |-----------------|----------|-----------------|
 | **IAM Permissions** | Never use `AdministratorAccess`. Required minimum: `ecs:Describe*`, `ecs:Create*`, `ecs:Delete*` scoped to `acs:ecs:*:*:instance/*` | Review RAM policies attached to the executing user/role |
-| **Credential Security** | Use `{{env.*}}` placeholders only. Never print or log credentials. Rotate AccessKeys every 90 days. | `test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" || echo "MISSING"` |
+| **Credential Security** | Use `{{env.*}}` placeholders only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print or log credentials. Rotate AccessKeys every 90 days. | `test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" \|\| echo "MISSING"` |
 | **Network Isolation** | Use VPC endpoints for API calls. Avoid public endpoints. Restrict security group inbound rules to minimum CIDRs. | `aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId <sg-id>` — scan for `0.0.0.0/0` |
 | **Data at Rest** | Enable disk encryption (`Encrypted=true`) for all data disks. Use `KMSKeyId` for custom keys. | `aliyun ecs DescribeDisks` → check `Encrypted` and `KMSKeyId` fields |
 | **Instance Security** | Restrict SSH/RDP access to specific source IPs via security group rules. Avoid `0.0.0.0/0` on ports 22/3389. | `aliyun ecs DescribeSecurityGroupAttribute` → verify no `0.0.0.0/0` on sensitive ports |
@@ -1801,6 +1801,7 @@ Phase 3: Validate — Confirm connectivity, application health, data integrity
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
 4. **Verify Configuration**:
 

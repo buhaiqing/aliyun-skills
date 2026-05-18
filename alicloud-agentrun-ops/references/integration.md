@@ -300,6 +300,31 @@ result = client.execute_code(sandbox_id, "print('Hello, World!')")
 
 ### 4.2 RAM Policy JSON
 
+#### Read-Only Policy (Monitoring)
+
+```json
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "fc:GetTemplate",
+        "fc:ListTemplates",
+        "fc:GetSandbox",
+        "fc:ListSandboxes"
+      ],
+      "Resource": [
+        "acs:agentrun:*:*:template/*",
+        "acs:agentrun:*:*:sandbox/*"
+      ]
+    }
+  ]
+}
+```
+
+#### Operator Policy (DevOps — Recommended)
+
 ```json
 {
   "Version": "1",
@@ -311,19 +336,35 @@ result = client.execute_code(sandbox_id, "print('Hello, World!')")
         "fc:GetTemplate",
         "fc:ListTemplates",
         "fc:UpdateTemplate",
-        "fc:DeleteTemplate",
         "fc:CreateSandbox",
         "fc:GetSandbox",
         "fc:ListSandboxes",
         "fc:StopSandbox",
-        "fc:DeleteSandbox",
         "fc:ExecuteSandboxCode"
+      ],
+      "Resource": [
+        "acs:agentrun:*:*:template/*",
+        "acs:agentrun:*:*:sandbox/*"
+      ],
+      "Condition": {
+        "IpAddress": {
+          "acs:SourceIp": ["${trusted_ip_range}"]
+        }
+      }
+    },
+    {
+      "Effect": "Deny",
+      "Action": [
+        "fc:DeleteTemplate",
+        "fc:DeleteSandbox"
       ],
       "Resource": "*"
     }
   ]
 }
 ```
+
+> **⚠️ Security Note:** Never use `Resource: "*"` with `Effect: Allow` for write operations. Always scope to `acs:agentrun:*:*:template/*` or specific resource ARNs. See [security-enhancement.md](security-enhancement.md) for full policy templates.
 
 ### 4.3 Create RAM User
 
@@ -368,10 +409,17 @@ result = client.execute_code(sandbox_id, "print('Hello, World!')")
 **Test Commands**:
 
 ```bash
-# Test credentials
-echo "AK: ${ALIBABA_CLOUD_ACCESS_KEY_ID}"
-echo "Region: ${ALIBABA_CLOUD_REGION_ID}"
-echo "Account: ${ALIBABA_CLOUD_ACCOUNT_ID}"
+# Test credentials (MASKED output — never echo full values)
+AK="${ALIBABA_CLOUD_ACCESS_KEY_ID}"
+if [ -n "$AK" ]; then
+  MASKED_AK="${AK:0:4}***${AK: -2}"
+  echo "✅ ALIBABA_CLOUD_ACCESS_KEY_ID: ${MASKED_AK}"
+else
+  echo "❌ ALIBABA_CLOUD_ACCESS_KEY_ID: not set"
+fi
+echo "✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET: <masked>"
+echo "✅ Region: ${ALIBABA_CLOUD_REGION_ID}"
+echo "✅ Account: ${ALIBABA_CLOUD_ACCOUNT_ID}"
 
 # Test network
 curl -I https://agentrun.${ALIBABA_CLOUD_REGION_ID}.aliyuncs.com

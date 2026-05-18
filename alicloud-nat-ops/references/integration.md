@@ -24,13 +24,29 @@ go get github.com/alibabacloud-go/vpc-20160428/v3/client
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
+    "strings"
     
     openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
     "github.com/alibabacloud-go/tea/tea"
     vpc "github.com/alibabacloud-go/vpc-20160428/v3/client"
 )
+
+// sanitizeError masks credential values in error messages before output
+func sanitizeError(err error) error {
+    msg := err.Error()
+    secret := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+    if secret != "" && len(secret) > 4 {
+        msg = strings.ReplaceAll(msg, secret, secret[:4]+"****")
+    }
+    ak := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+    if ak != "" && len(ak) > 4 {
+        msg = strings.ReplaceAll(msg, ak, ak[:4]+"****")
+    }
+    return fmt.Errorf("%s", msg)
+}
 
 func main() {
     config := &openapi.Config{
@@ -41,7 +57,7 @@ func main() {
     
     client, err := vpc.NewClient(config)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "NewClient error: %v\n", err)
+        fmt.Fprintf(os.Stderr, "NewClient error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
     
@@ -51,7 +67,7 @@ func main() {
     
     resp, err := client.DescribeNatGateways(request)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "DescribeNatGateways error: %v\n", err)
+        fmt.Fprintf(os.Stderr, "DescribeNatGateways error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
     

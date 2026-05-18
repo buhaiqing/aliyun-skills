@@ -18,8 +18,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-18"
+  version: "1.1.0"
+  last_updated: "2026-05-19"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -100,6 +100,27 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 - If restoring from backup, verify the backup exists via DescribeBackups before initiating RestoreDBInstance.
 - Multi-product requests: handle each product with its skill; do not merge unrelated APIs into one ambiguous flow.
 
+**Cross-Skill Verification Examples:**
+
+```bash
+# Verify VPC exists before creating MongoDB instance (delegate to alicloud-vpc-ops)
+aliyun vpc DescribeVpcs \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}" \
+  --output cols=VpcId,Status,VSwitchIds rows=Vpcs.Vpc[]
+
+# Verify VSwitch exists
+aliyun vpc DescribeVSwitches \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}" \
+  --VSwitchId "{{user.vswitch_id}}" \
+  --output cols=VSwitchId,Status,CidrBlock rows=VSwitches.VSwitch[]
+
+# For cost analysis, delegate to alicloud-billing-ops
+# aliyun bssopenapi QueryAccountBalance
+# aliyun bssopenapi QueryBillOverview --BillingCycle 2026-05
+```
+
 ## Key Concepts
 
 ### Instance Types
@@ -169,6 +190,34 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 
 **Account Types:** `root` (system admin) / `normal` (application accounts)
 
+**Password Policy:**
+- Minimum 8 characters; recommend 16+ for production
+- Must contain uppercase, lowercase, digit, and special character
+- Avoid common passwords and dictionary words
+- Rotate passwords every 90 days for production accounts
+
+**Least Privilege Best Practices:**
+
+| Practice | Recommendation | Risk if Ignored |
+|----------|----------------|-----------------|
+| **Application accounts** | Create dedicated `normal` accounts per application | Root compromise = full database access |
+| **Database scope** | Grant account access to only required databases | Over-permissioned accounts increase blast radius |
+| **Role assignment** | Use built-in roles: `read`, `readWrite`, `dbAdmin` | Custom roles may have excessive permissions |
+| **Root usage** | Reserve `root` for DBA operations only | Application bugs can destroy all data |
+
+**Example: Create Least-Privilege Application Account**
+```bash
+# Create a normal account with readWrite on a single database
+aliyun dds CreateAccount \
+  --DBInstanceId "{{user.db_instance_id}}" \
+  --AccountName "app_user" \
+  --AccountPassword "{{user.app_password}}" \
+  --AccountType "Normal"
+
+# After creation, grant specific database permissions via MongoDB shell
+# (Alibaba Cloud MongoDB may require console or additional API for role assignment)
+```
+
 ### Database Operations
 
 | Operation | API | CLI |
@@ -187,6 +236,24 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 
 **Backup Types:** `Automated` (scheduled) / `Manual` (user-initiated)
 **Backup Modes:** `Physical` / `Logical`
+
+**Backup Cost Considerations:**
+- Backup storage is billed separately from instance storage
+- Physical backups are typically larger than logical backups
+- Automated backups follow the instance retention policy (default 7 days)
+- Long-term retention increases storage costs; evaluate necessity
+
+**Cost-Efficient Backup Strategy:**
+```bash
+# Review backup sizes and retention
+aliyun dds DescribeBackups \
+  --DBInstanceId "{{user.db_instance_id}}" \
+  --output cols=BackupId,BackupSize,BackupType,BackupMode,BackupStartTime \
+  rows=Backups.Backup[]
+
+# Estimate: total backup storage cost ≈ Σ(BackupSize) × backup_storage_unit_price
+# Delegate to alicloud-billing-ops for precise cost breakdown
+```
 
 ### Monitoring & Diagnostics
 
@@ -240,11 +307,11 @@ c, err := dds.NewClient(config)
 
 ### Credential Security (MANDATORY)
 
-**NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET` or any credential value.
+**NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`). If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
 
 | Execution Path | Safe Pattern | Unsafe Pattern |
 |----------------|-------------|----------------|
-| Console output | `Secret=<masked>` | Raw credential value |
+| Console output | `Secret=abcd****` | Raw credential value |
 | Error messages | `credential omitted` | Error containing credential |
 | Verification | `test -n "$var"` (existence check) | `echo $SECRET` |
 
@@ -265,6 +332,49 @@ c, err := dds.NewClient(config)
 - **RestoreDBInstance** — data overwrite
 - **RestartDBInstance** — brief downtime
 - **ModifyDBInstanceSpec** — potential interruption
+
+### Cost Awareness (FinOps)
+
+> For comprehensive cost analysis and optimization, delegate to `alicloud-billing-ops` or `finops-analysis-aliyun`.
+
+**Billing Model Quick Reference:**
+
+| Model | Best For | Cost Characteristic |
+|-------|----------|---------------------|
+| **Subscription** (包年包月) | Long-running production | Lower unit cost; upfront commitment |
+| **Pay-As-You-Go** (按量付费) | Dev/test, short-term | Higher unit cost; no commitment |
+
+**Cost-Impacting Parameters on Create/Modify:**
+
+| Parameter | Cost Impact | Recommendation |
+|-----------|-------------|----------------|
+| `DBInstanceClass` | Primary driver | Start small, scale based on metrics |
+| `DBInstanceStorage` | Linear with size | Use ESSD PL1 for most workloads |
+| `ReplicationFactor` | Multiplies node cost | 3 for production, 1 for dev/test |
+| `NetworkType` | Cross-region traffic billed | Keep app and DB in same region/VPC |
+
+**Pre-creation Cost Check:**
+```bash
+# Query price before creating (reference only — actual billing varies)
+aliyun dds DescribePrice \
+  --RegionId "{{user.region}}" \
+  --DBInstanceClass "{{user.db_instance_class}}" \
+  --DBInstanceStorage "{{user.db_instance_storage}}" \
+  --PayType "{{user.pay_type|PrePaid}}"
+```
+
+**Resource Efficiency Check:**
+```bash
+# Identify underutilized instances for potential downsizing
+aliyun dds DescribeDBInstances \
+  --RegionId "{{user.region}}" \
+  --output cols=DBInstanceId,DBInstanceClass,DBInstanceStatus,CreationTime \
+  rows=DBInstances.DBInstance[]
+
+# For detailed utilization analysis (CPU < 5% for 7 days), delegate to:
+# - `finops-analysis-aliyun` for cross-resource cost optimization
+# - `alicloud-billing-ops` for billing and usage breakdown
+```
 
 ## Escalation Rules
 
@@ -323,4 +433,5 @@ Detailed documentation for specialized operations:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-05-19 | Security & FinOps enhancements: credential safety (chmod 600), network security checklist, cost awareness (billing models, backup costs), password policy & least privilege, audit log guidance, cross-skill delegation examples |
 | 1.0.0 | 2026-05-18 | Initial MongoDB/ApsaraDB skill with dual-path (CLI + SDK) support |

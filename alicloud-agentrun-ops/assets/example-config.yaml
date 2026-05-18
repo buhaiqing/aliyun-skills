@@ -1,0 +1,91 @@
+# AgentRun Sandbox Configuration Example
+# Copy and customize for your environment
+
+credentials:
+  environment_variables:
+    ALIBABA_CLOUD_ACCESS_KEY_ID: "${ALIBABA_CLOUD_ACCESS_KEY_ID}"
+    ALIBABA_CLOUD_ACCESS_KEY_SECRET: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET}"
+    ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"
+    ALIBABA_CLOUD_ACCOUNT_ID: "${ALIBABA_CLOUD_ACCOUNT_ID}"
+    # Optional: STS temporary credentials
+    # ALIBABA_CLOUD_SECURITY_TOKEN: "${ALIBABA_CLOUD_SECURITY_TOKEN}"
+
+templates:
+  code_interpreter:
+    templateName: "code-interpreter"
+    description: "Python/Node.js code execution sandbox"
+    cpu: 2
+    memory: 4096
+    diskSize: 10240
+    sandboxIdleTimeoutInSeconds: 1800
+    networkConfiguration:
+      networkMode: "PUBLIC"
+
+  browser_tool:
+    templateName: "browser-tool"
+    description: "Browser automation sandbox with Playwright"
+    templateType: "Browser"
+    cpu: 4
+    memory: 4096
+    diskSize: 20480
+    sandboxIdleTimeoutInSeconds: 1800
+    networkConfiguration:
+      networkMode: "PUBLIC"
+
+  aio_sandbox:
+    templateName: "aio-sandbox"
+    description: "All-In-One sandbox: code + browser + MCP"
+    templateType: "AIO"
+    cpu: 4
+    memory: 8192
+    diskSize: 20480
+    sandboxIdleTimeoutInSeconds: 3600
+    networkConfiguration:
+      networkMode: "PUBLIC"
+
+  private_sandbox:
+    templateName: "private-sandbox"
+    description: "VPC-isolated sandbox for internal service access"
+    cpu: 2
+    memory: 4096
+    diskSize: 10240
+    sandboxIdleTimeoutInSeconds: 1800
+    networkConfiguration:
+      networkMode: "PRIVATE"
+      vpcId: "${VPC_ID}"
+      securityGroupId: "${SECURITY_GROUP_ID}"
+      vSwitchId: "${VSWITCH_ID}"
+
+mcp:
+  default_enabled_tools:
+    - "health"
+    - "run_code"
+    - "list_contexts"
+    - "create_context"
+    - "read_file"
+    - "write_file"
+    - "file_system_list"
+    - "process_exec_cmd"
+  transport: "streamable-http"
+
+safety_gates:
+  delete_template: true
+  delete_sandbox: true
+  exec_command: "conditional"
+  websocket_tty: true
+  kill_process: true
+  filesystem_remove: "conditional"
+
+resource_limits:
+  cpu_range: [1, 8]
+  memory_range_mb: [1024, 16384]
+  disk_range_mb: [1024, 102400]
+  idle_timeout_range_s: [60, 21600]
+  max_file_upload_mb: 100
+  code_execution_timeout_s: 30
+  sandbox_max_lifecycle_h: 6
+
+rate_limits:
+  create_template_per_min: 10
+  create_sandbox_per_min: 50
+  execute_code_per_min: 100

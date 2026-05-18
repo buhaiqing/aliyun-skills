@@ -26,13 +26,16 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
 | **凭证管理** | AK/SK rotation, STS temporary credentials | ✅ Prefer STS over long-term AK |
 
 **Security Checklist**:
-- [ ] RAM policy grants minimum required actions
+- [ ] RAM policy grants minimum required actions (see [security-enhancement.md](security-enhancement.md) §1 for layered policies)
 - [ ] AK/SK stored securely (KMS, environment variables)
+- [ ] Credential format validated before signing (see [security-enhancement.md](security-enhancement.md) §2.1)
 - [ ] Signing implementation verified (no timing attacks)
 - [ ] PRIVATE network mode for sensitive workloads
 - [ ] Sandbox lifecycle < 6 hours (auto-termination)
+- [ ] Safety gates enforced for destructive operations (see [security-enhancement.md](security-enhancement.md) §4)
+- [ ] Input validation before all API calls (see [security-enhancement.md](security-enhancement.md) §3)
 
-**RAM Policy Template**:
+**RAM Policy Template (Operator — Recommended)**:
 ```json
 {
   "Version": "1",
@@ -43,11 +46,22 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
         "fc:CreateTemplate",
         "fc:GetTemplate",
         "fc:ListTemplates",
-        "fc:DeleteTemplate",
+        "fc:UpdateTemplate",
         "fc:CreateSandbox",
         "fc:GetSandbox",
         "fc:ListSandboxes",
         "fc:StopSandbox",
+        "fc:ExecuteSandboxCode"
+      ],
+      "Resource": [
+        "acs:agentrun:*:*:template/*",
+        "acs:agentrun:*:*:sandbox/*"
+      ]
+    },
+    {
+      "Effect": "Deny",
+      "Action": [
+        "fc:DeleteTemplate",
         "fc:DeleteSandbox"
       ],
       "Resource": "*"
@@ -55,6 +69,8 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
   ]
 }
 ```
+
+> See [security-enhancement.md](security-enhancement.md) for full Read-Only / Operator / Admin / Data-Plane-Only policy templates.
 
 ### 2.2 稳定 (Stability)
 

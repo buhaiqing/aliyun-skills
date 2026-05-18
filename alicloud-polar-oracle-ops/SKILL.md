@@ -83,6 +83,8 @@ credential rules, pre-flight checks, **dual-path execution** (official **SDK/API
 | `{{user.db_name}}` | Database name | Ask once |
 | `{{output.db_cluster_id}}` | From API response | Parse per OpenAPI |
 
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+
 ## API and Response Conventions
 
 - **ClientToken:** Generate UUID v4 for write operations for idempotency.
@@ -414,6 +416,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | Area | Guidance |
 |------|----------|
 | **IAM** | Require: `polardb:Describe*` scoped to `acs:polardb:*:*:dbcluster/*` |
+| **Credential Security** | `{{env.*}}` only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print secrets |
 | **Network** | VPC-only. White-list app IPs. SSL encryption |
 | **Migration Security** | Use ADAM for Oracle→PolarDB migration assessment. Test schema compatibility before production cutover |
 

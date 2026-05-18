@@ -92,12 +92,21 @@ aliyun dds DescribeDBInstances --RegionId cn-hangzhou --PageSize 1
 **Solutions:**
 
 **Option A: Create .env File**
+
+> **⚠️ SECURITY WARNING:** Never commit `.env` to version control. Restrict file permissions immediately after creation.
+
 ```bash
 cat > .env <<EOF
-ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
-ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
+ALIBABA_CLOUD_ACCESS_KEY_ID={{user.access_key_id}}
+ALIBABA_CLOUD_ACCESS_KEY_SECRET={{user.access_key_secret}}
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
 EOF
+
+# Restrict permissions so only owner can read
+chmod 600 .env
+
+# Add to .gitignore (if in a git repository)
+echo ".env" >> .gitignore
 ```
 
 **Option B: Configure CLI**
@@ -194,13 +203,17 @@ aliyun dds DescribeAccounts \
 
 # Expected: Account is Available. If Unavailable → reset password or recreate.
 
-# Step 4: Check connection string format
+# Step 4: Check connection string format and network type
 aliyun dds DescribeDBInstanceAttribute \
   --InstanceId "{{user.instance_id}}" \
-  --output cols=ConnectionString,Port,SSLStatus \
-  rows=DBInstanceAttribute.{ConnectionString,Port,SSLStatus}
+  --output cols=ConnectionString,Port,SSLStatus,NetworkType,VPCId,VSwitchId \
+  rows=DBInstanceAttribute.{ConnectionString,Port,SSLStatus,NetworkType,VPCId,VSwitchId}
 
-# Step 5: Check connection usage via CMS
+# Step 5: Check VPC and security group configuration (if applicable)
+# For VPC instances, verify the application ECS/container is in the same VPC
+# Delegate to alicloud-vpc-ops for detailed VPC routing checks if needed
+
+# Step 6: Check connection usage via CMS
 aliyun cms DescribeMetricList \
   --Namespace acs_mongodb_dashboard \
   --MetricName ConnectionUsage \
@@ -212,10 +225,22 @@ aliyun cms DescribeMetricList \
 - `DBInstanceStatus != Normal` → Wait for instance to stabilize; investigate if stuck
 - Source IP not in whitelist → Add IP/CIDR to whitelist via ModifySecurityIPs
 - Account status != `Available` → Reset password via ResetAccountPassword
-- SSL enabled but client not using SSL → Update connection string to use SSL
+- `NetworkType = VPC` but application not in same VPC → Use VPC peering or migrate application to same VPC
+- `SSLStatus = Open` but client not using SSL → Update connection string to enable SSL (`ssl=true`)
 - ConnectionUsage > 90% → Connection limit reached; scale up or optimize connection pool
 - Replica set connection string format incorrect → Use replica set connection string format
-- All above normal → Check VPC routing / security group / network path
+- All above normal → Check security group rules (port 27017), VPC routing tables, and network ACLs
+
+**Network Security Checklist:**
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Instance network type | `DescribeDBInstanceAttribute` | VPC preferred for production |
+| SSL enabled | `DescribeDBInstanceAttribute` | `SSLStatus = Open` |
+| Whitelist covers app IP | `DescribeSecurityIPs` | Application IP/CIDR in list |
+| Same VPC/region | `DescribeDBInstanceAttribute` + app config | Minimizes latency and cost |
+| Security group port 27017 | `alicloud-vpc-ops` / console | Inbound rule exists |
+| No public exposure | `DescribeDBInstanceAttribute` | `ConnectionDomain` should be internal |
 
 ---
 

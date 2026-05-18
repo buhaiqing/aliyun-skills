@@ -142,11 +142,81 @@
       "trigger_keywords": ["ECS", "创建", "实例"],
       "should_not_trigger": ["alicloud-agentrun-ops"],
       "confidence": 0.95
+    },
+    {
+      "id": "021",
+      "query": "更新模板 python-analyzer 的 CPU 为 4 核",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["更新", "模板", "CPU"],
+      "confidence": 0.95
+    },
+    {
+      "id": "022",
+      "query": "删除模板 old-template",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["删除", "模板"],
+      "confidence": 0.95
+    },
+    {
+      "id": "023",
+      "query": "给模板 my-template 启用 MCP 服务",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["MCP", "启用", "模板"],
+      "confidence": 0.95
+    },
+    {
+      "id": "024",
+      "query": "在沙箱里创建一个新的 Python 执行上下文",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "上下文", "Python"],
+      "confidence": 0.95
+    },
+    {
+      "id": "025",
+      "query": "暂停沙箱会话节省成本",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["暂停", "沙箱", "会话"],
+      "confidence": 0.95
+    },
+    {
+      "id": "026",
+      "query": "恢复深休眠的沙箱实例",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["恢复", "深休眠", "沙箱"],
+      "confidence": 0.95
+    },
+    {
+      "id": "027",
+      "query": "检查沙箱的健康状态",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "健康", "状态"],
+      "confidence": 0.95
+    },
+    {
+      "id": "028",
+      "query": "列出沙箱中所有正在运行的进程",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "进程", "列表"],
+      "confidence": 0.95
+    },
+    {
+      "id": "029",
+      "query": "在沙箱里创建一个目录 /workspace/data",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "目录", "创建"],
+      "confidence": 0.95
+    },
+    {
+      "id": "030",
+      "query": "把沙箱中的文件从 /tmp/old.txt 移动到 /workspace/new.txt",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "移动", "文件"],
+      "confidence": 0.95
     }
   ],
   "metadata": {
-    "version": "1.0.0",
-    "created_at": "2026-05-18",
+    "version": "1.1.0",
+    "created_at": "2026-05-19",
     "skill_name": "alicloud-agentrun-ops",
     "description": "Trigger test queries for AgentRun Sandbox operations skill"
   }

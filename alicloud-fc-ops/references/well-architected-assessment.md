@@ -20,6 +20,7 @@
 ### Credential Rotation
 - STS temporary credentials preferred over long-lived AccessKey
 - Rotate execution role credentials per security policy
+- **MANDATORY:** Never log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET` or any credential value. Mask to first 4 chars + `****` (e.g., `abcd****`) in all output channels
 
 ## 2.2 稳定支柱 Stability
 

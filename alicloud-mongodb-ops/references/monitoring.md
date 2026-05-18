@@ -310,3 +310,57 @@ When multiple alerts fire:
 - Replication lag + Oplog short: high write volume
 - Lock wait + Slow ops: query optimization needed
 - Connection high + Lock wait: connection pool issue
+
+---
+
+## Security Monitoring & Audit
+
+### Database Profiling (Slow Operations)
+
+Enable MongoDB profiling to capture slow operations for security and performance analysis:
+
+```javascript
+// Enable profiling for operations > 100ms (level 1)
+// Run via MongoDB shell connected to the instance
+db.setProfilingLevel(1, 100)
+
+// View recent slow operations
+db.system.profile.find().sort({ millis: -1 }).limit(20)
+
+// Check profiling status
+db.getProfilingStatus()
+```
+
+> **Note:** Profiling has performance overhead. Use level 1 (slow ops only) in production; disable (`level 0`) during high-traffic periods if needed.
+
+### Audit Log Considerations
+
+Alibaba Cloud MongoDB audit capabilities vary by instance type and version:
+
+| Capability | Availability | Enable Method |
+|------------|-------------|---------------|
+| **Operation Audit** | Enterprise / specific versions | Console or API (`ModifyAuditPolicy`) |
+| **ActionTrail** | All instances | Account-level via Alibaba Cloud ActionTrail |
+| **Slow Log Analysis** | All instances | `DescribeSlowLogRecords` API |
+
+**Recommended Security Monitoring Workflow:**
+
+1. **Enable ActionTrail** for all API calls to DDS (account-level)
+2. **Enable database profiling** (level 1, 100ms threshold) for operational visibility
+3. **Review slow logs daily** via `DescribeSlowLogRecords`
+4. **Set alerts** for unusual query patterns (e.g., high `ScanRowCount`)
+
+**Audit-Related Alerts:**
+
+```json
+{
+  "RuleName": "MongoDB-Unusual-Query-Pattern",
+  "MetricName": "QueryLatency",
+  "Namespace": "acs_mongodb_dashboard",
+  "Dimensions": [{"DBInstanceId": "{{user.db_instance_id}}"}],
+  "ComparisonOperator": "GreaterThanThreshold",
+  "Threshold": 500,
+  "EvaluationCount": 3,
+  "Action": "TriggerSecurityReview"
+}
+```

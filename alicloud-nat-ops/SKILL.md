@@ -103,6 +103,8 @@ Alibaba Cloud NAT (Network Address Translation) Gateway enables private instance
 | `{{user.source_cidr}}` | SNAT source CIDR | Ask once; reuse |
 | `{{user.eip_id}}` | User-supplied EIP Allocation ID | Ask once; reuse |
 
+> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+
 ## API and Response Conventions (Agent-Readable)
 
 ### Response Field Table
@@ -389,6 +391,7 @@ aliyun vpc DescribeForwardTableEntries --RegionId "{{env.ALIBABA_CLOUD_REGION_ID
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
 3. **Verify**:
    ```bash
@@ -408,11 +411,22 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 ### 安全 (Security)
 
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `vpc:Describe*`, `vpc:CreateNatGateway`, `vpc:DeleteNatGateway` scoped to `acs:vpc:*:*:natgateway/*` |
-| **Network Security** | DNAT only exposes explicitly configured ports. Use enhanced NAT for fine-grained SNAT rules |
-| **Credential Security** | `{{env.*}}` only. Never print secrets |
+| Area | Guidance | Detail Reference |
+|------|----------|-----------------|
+| **IAM (最小权限)** | Require scoped RAM policies; NEVER use `AliyunNATFullAccess` in production | [Security Enhancement §1](references/security-enhancement.md#1-ram-policy-templates-least-privilege) |
+| **DNAT Exposure Audit** | Audit DNAT entries for high-risk ports (22/3306/6379/3389/27017) | [Security Enhancement §2](references/security-enhancement.md#2-dnat-exposure-audit) |
+| **SNAT Scope Audit** | SNAT source CIDR must NOT be 0.0.0.0/0 | [Security Enhancement §3](references/security-enhancement.md#3-snat-security-assessment) |
+| **Network Security** | DNAT bypasses security groups; add explicit inbound rules on target ECS | [Security Enhancement §4](references/security-enhancement.md#4-network-security-hardening) |
+| **Credential Security** | `{{env.*}}` only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print secrets. STS preferred for automation | [Security Enhancement §5](references/security-enhancement.md#5-credential-security) |
+| **Audit Trail** | Delegate to `alicloud-actiontrail-ops` for NAT operation audit | [Security Enhancement §6](references/security-enhancement.md#6-audit--compliance) |
+| **Incident Response** | 5-phase runbook: Detect → Contain → Investigate → Recover → Post-Incident | [Security Enhancement §7](references/security-enhancement.md#7-security-incident-response) |
+
+**Security P0 Checklist:**
+- [ ] No high-risk ports (22/3306/6379/3389/27017) exposed via DNAT
+- [ ] RAM policy scoped to NAT Gateway operations only (not `*`)
+- [ ] Credential masking enforced (never print `ALIBABA_CLOUD_ACCESS_KEY_SECRET`)
+- [ ] SNAT source CIDR is not 0.0.0.0/0
+- [ ] DNAT entries have corresponding security group rules on target ECS
 
 ### 稳定 (Stability)
 
@@ -424,10 +438,28 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 ### 成本 (Cost)
 
+| Area | Guidance | Detail Reference |
+|------|----------|-----------------|
+| **Billing Mode Decision** | PayBySpec for steady traffic (> 60% CU); PayByActualUsage for bursty/low traffic | [FinOps Optimization §2](references/finops-optimization.md#2-billing-mode-decision-tree) |
+| **Idle Resource Detection** | NAT with 0 SNAT + 0 DNAT for 7d = idle → delete. Orphaned EIPs → release | [FinOps Optimization §3](references/finops-optimization.md#3-idle-resource-detection) |
+| **Right-Sizing** | Match spec to workload: Small (< 1K CU) → Medium (5K CU) → Large (10K CU) → XLarge (50K CU) | [FinOps Optimization §4](references/finops-optimization.md#4-right-sizing-guide) |
+| **EIP Cost Optimization** | Common Bandwidth Package for 3+ EIPs saves 20-42%. Match billing mode to traffic pattern | [FinOps Optimization §5](references/finops-optimization.md#5-eip-cost-optimization) |
+| **Cost Anomaly Detection** | NAT cost spike > 30% MoM, EIP count growing, bandwidth over-provisioned | [FinOps Optimization §6](references/finops-optimization.md#6-finops-inspection-workflow) |
+
+**Cost P0 Checklist:**
+- [ ] No idle NAT Gateways (0 SNAT + 0 DNAT for 7d)
+- [ ] No orphaned EIPs (allocated but not associated for 7d)
+- [ ] Billing mode matches traffic pattern (PayBySpec vs PayByActualUsage)
+- [ ] NAT spec matches actual CU utilization (not over-provisioned)
+- [ ] Multi-EIP NATs use Common Bandwidth Package (3+ EIPs)
+
+**Quick Cost Reference:**
+
 | Billing | Best For | Notes |
 |---------|----------|-------|
-| Enhanced NAT + PayByTraffic | Variable workloads | Pay per GB |
-| Enhanced NAT + PayByBandwidth | Stable traffic | Predictable cost |
+| Enhanced NAT + PayBySpec | Steady workloads (> 60% CU) | Fixed hourly rate, predictable |
+| Enhanced NAT + PayByActualUsage | Bursty/low traffic (< 30% CU) | Pay per CU, lower base cost |
+| CBWP + multiple EIPs | 3+ EIPs on NAT | Saves 20-42% vs individual EIP bandwidth |
 
 **Waste:** Idle NAT Gateways (no SNAT/DNAT rules for 7d) → delete. Underutilized specs → downgrade. Common Bandwidth Package for multiple EIPs saves up to 40%.
 
@@ -447,6 +479,26 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 **Key guidance:** One EIP ≈ 30K concurrent connections. Scale by adding multiple EIPs to SNAT pool. Enhanced NAT supports large-scale SNAT connections.
 
+### 敏感级系统 (Sensitivity-Aware Operations)
+
+NAT Gateway operations MUST be differentiated by system sensitivity level. Sensitive systems require stricter change controls, approval gates, and rollback plans.
+
+| Sensitivity Level | Name | Change Control | Rollback | Detail Reference |
+|-------------------|------|---------------|----------|-----------------|
+| **L0** | 核心生产 | CAB Approval + Change Window | Mandatory snapshot + rollback plan | [Sensitivity-Aware §2-4](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
+| **L1** | 生产 | Change Window + Notify | Snapshot recommended | [Sensitivity-Aware §2-4](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
+| **L2** | 预发 | Notify team | Best effort | [Sensitivity-Aware §2](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
+| **L3** | 开发/测试 | Auto | N/A | [Sensitivity-Aware §2](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
+
+**Key Rules for L0/L1 NAT Gateways:**
+- [ ] Tag NAT Gateway with `SensitivityLevel` tag (L0/L1/L2/L3)
+- [ ] Changes only during approved change window (L0: Tue-Thu 02:00-05:00)
+- [ ] Configuration snapshot before any modifying operation
+- [ ] Rollback plan documented before change
+- [ ] Post-change monitoring for 15-60 min
+- [ ] DeleteNatGateway requires CAB approval + dual confirmation (L0)
+- [ ] Emergency override requires verbal approval from CTO/Team lead
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)
@@ -454,6 +506,9 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [CLI Usage](references/cli-usage.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Prompt Examples](references/prompt-examples.md)
+- [FinOps Optimization](references/finops-optimization.md)
+- [Security Enhancement](references/security-enhancement.md)
+- [Sensitivity-Aware Operations](references/sensitivity-aware-operations.md)
 - [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
 - [CLI Behavioral Reference](../alicloud-skill-generator/references/cli-behavior.md)
 
