@@ -41,7 +41,8 @@ func main() {
     
     client, err := vpc.NewClient(config)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "NewClient error: %v\n", err)
+        // MUST NOT print err directly — SDK error may contain credential values
+        fmt.Fprintf(os.Stderr, "NewClient error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
     
@@ -51,7 +52,8 @@ func main() {
     
     resp, err := client.DescribeEipAddresses(request)
     if err != nil {
-        fmt.Fprintf(os.Stderr, "DescribeEipAddresses error: %v\n", err)
+        // MUST NOT print err directly — SDK error may contain credential values
+        fmt.Fprintf(os.Stderr, "DescribeEipAddresses error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
     
@@ -94,4 +96,4 @@ ALIBABA_CLOUD_ACCESS_KEY_SECRET=<your_secret>
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
 ```
 
-**Security:** Credential masking is MANDATORY. Never echo `ALIBABA_CLOUD_ACCESS_KEY_SECRET`.
+**Security:** Credential masking is MANDATORY. Never echo `ALIBABA_CLOUD_ACCESS_KEY_SECRET`. If credentials must be output for debugging, mask to first 4 chars + `****`. All error output (`fmt.Fprintf(os.Stderr, ...)`) MUST be sanitized to ensure SDK error messages do not leak credential values before printing.
