@@ -1,0 +1,153 @@
+{
+  "queries": [
+    {
+      "id": "001",
+      "query": "帮我创建一个 AgentRun 模板，名称叫 python-analyzer，2核4G内存",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["AgentRun", "模板", "创建"],
+      "confidence": 0.95
+    },
+    {
+      "id": "002",
+      "query": "查看我所有的 Sandbox 沙箱实例列表",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["Sandbox", "沙箱", "实例", "列表"],
+      "confidence": 0.95
+    },
+    {
+      "id": "003",
+      "query": "在沙箱里执行一段 Python 代码 print('hello world')",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "执行", "Python", "代码"],
+      "confidence": 0.95
+    },
+    {
+      "id": "004",
+      "query": "创建一个 Code Interpreter 代码解释器模板",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["Code Interpreter", "代码解释器", "模板"],
+      "confidence": 0.95
+    },
+    {
+      "id": "005",
+      "query": "停止 sandbox ID 为 01JCED8Z9Y6XQVK8M2NRST5WXY 的沙箱实例",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["sandbox", "停止", "沙箱"],
+      "confidence": 0.95
+    },
+    {
+      "id": "006",
+      "query": "删除模板 my-template",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["删除", "模板"],
+      "confidence": 0.90
+    },
+    {
+      "id": "007",
+      "query": "查看模板 test-template 的详细信息",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["模板", "详细信息"],
+      "confidence": 0.90
+    },
+    {
+      "id": "008",
+      "query": "在沙箱 sandbox-123 中上传一个文件",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "上传", "文件"],
+      "confidence": 0.95
+    },
+    {
+      "id": "009",
+      "query": "启动 BrowserTool 浏览器沙箱",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["BrowserTool", "浏览器", "沙箱"],
+      "confidence": 0.95
+    },
+    {
+      "id": "010",
+      "query": "通过 WebSocket TTY 连接到沙箱终端",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["WebSocket", "TTY", "终端", "沙箱"],
+      "confidence": 0.95
+    },
+    {
+      "id": "011",
+      "query": "启用 MCP 服务到模板 my-template",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["MCP", "启用", "模板"],
+      "confidence": 0.95
+    },
+    {
+      "id": "012",
+      "query": "检查沙箱 sandbox-abc 的健康状态",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "健康", "状态"],
+      "confidence": 0.90
+    },
+    {
+      "id": "013",
+      "query": "在沙箱里执行 ls -la 命令",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "执行", "命令"],
+      "confidence": 0.95
+    },
+    {
+      "id": "014",
+      "query": "读取沙箱中的文件 /workspace/data.txt",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "读取", "文件"],
+      "confidence": 0.95
+    },
+    {
+      "id": "015",
+      "query": "配置 AIO Sandbox 综合沙箱模板",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["AIO Sandbox", "综合沙箱", "模板"],
+      "confidence": 0.95
+    },
+    {
+      "id": "016",
+      "query": "清理所有已终止超过6小时的沙箱实例",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["沙箱", "清理", "终止"],
+      "confidence": 0.90
+    },
+    {
+      "id": "017",
+      "query": "实现 ACS3-HMAC-SHA256 签名",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["ACS3", "签名", "HMAC"],
+      "confidence": 0.85
+    },
+    {
+      "id": "018",
+      "query": "开发一个 Sidecar 代理 AgentRun API",
+      "expected_skill": "alicloud-sandbox-dev",
+      "trigger_keywords": ["Sidecar", "开发", "代理"],
+      "should_not_trigger": ["alicloud-agentrun-ops"],
+      "confidence": 0.95
+    },
+    {
+      "id": "019",
+      "query": "部署 FC 函数到阿里云",
+      "expected_skill": "alicloud-fc-ops",
+      "trigger_keywords": ["FC", "部署", "函数"],
+      "should_not_trigger": ["alicloud-agentrun-ops"],
+      "confidence": 0.95
+    },
+    {
+      "id": "020",
+      "query": "创建 ECS 实例",
+      "expected_skill": "alicloud-ecs-ops",
+      "trigger_keywords": ["ECS", "创建", "实例"],
+      "should_not_trigger": ["alicloud-agentrun-ops"],
+      "confidence": 0.95
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "created_at": "2026-05-18",
+    "skill_name": "alicloud-agentrun-ops",
+    "description": "Trigger test queries for AgentRun Sandbox operations skill"
+  }
+}

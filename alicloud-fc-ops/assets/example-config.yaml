@@ -1,0 +1,74 @@
+# Function Compute (FC 3.0) — Example Configuration
+# This file demonstrates optimal FC function settings for different workload patterns.
+
+# --- Workload: Latency-Critical API ---
+latency_critical:
+  memorySize: 1536          # MB — higher memory = faster init + execution
+  timeout: 10               # seconds — aggressive timeout for fast API
+  runtime: nodejs18         # Node.js has faster cold start than Java/Python
+  diskSize: 512             # MB — default ephemeral disk
+  provisioned:
+    enabled: true
+    target: 2               # Pre-warm 2 instances to eliminate cold start
+    qualifier: "prod"       # Target the prod alias
+  concurrency:
+    maxConcurrency: 100     # Per-function concurrency limit
+  vpcBinding:
+    enabled: false          # Avoid ENI setup latency (~200-300ms)
+  tags:
+    env: production
+    team: api
+    sla: "p99 < 100ms"
+
+# --- Workload: Batch/CPU-Intensive ---
+cpu_intensive:
+  memorySize: 3072          # Max memory for max vCPU (2 vCPU)
+  timeout: 3600             # 1 hour for long-running batch jobs
+  runtime: python3.10
+  diskSize: 10240           # 10 GB for large data processing
+  provisioned:
+    enabled: false          # On-demand for batch processing
+  concurrency:
+    reservedConcurrency: 50 # Reserve capacity for guaranteed execution
+  vpcBinding:
+    enabled: true
+    vpcId: "vpc-xxx"        # Access to internal data sources
+  tags:
+    env: production
+    team: data
+    workload: batch
+
+# --- Workload: Event-Driven/Infrequent ---
+event_driven:
+  memorySize: 256           # Minimal memory for infrequent invocations
+  timeout: 60               # seconds
+  runtime: python3.10
+  provisioned:
+    enabled: false          # No provisioned for cost-efficient sporadic usage
+  concurrency:
+    maxConcurrency: 10      # Low limit to prevent runaway costs
+  async:
+    maximumRetryAttempts: 3
+    maxAsyncEventAgeInSeconds: 7200  # 2 hours event retention
+    onFailure:
+      destination: "arn:acs:log:cn-hangzhou:..."  # DLQ
+  tags:
+    env: production
+    team: events
+    costOptimized: "true"
+
+# --- AIOps Monitoring Defaults ---
+monitoring:
+  cms:
+    namespace: "acs_fc"
+    period: 300             # 5-minute sampling
+  alerts:
+    functionErrors:
+      threshold: 10         # per 5 minutes
+      comparison: ">="
+      evaluationCount: 3    # consecutive periods
+    memoryUtilization:
+      threshold: 80         # percent
+      comparison: ">="
+    maxDuration:
+      thresholdPercent: 90  # percent of configured timeout

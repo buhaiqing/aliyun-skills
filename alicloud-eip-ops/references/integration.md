@@ -26,6 +26,7 @@ package main
 import (
     "fmt"
     "os"
+    "strings"
     
     openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
     "github.com/alibabacloud-go/tea/tea"
@@ -58,6 +59,20 @@ func main() {
     }
     
     fmt.Println(tea.Prettify(resp))
+}
+
+// sanitizeError masks credential values in error messages before output
+func sanitizeError(err error) error {
+    msg := err.Error()
+    secret := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+    if secret != "" && len(secret) > 4 {
+        msg = strings.ReplaceAll(msg, secret, secret[:4]+"****")
+    }
+    ak := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+    if ak != "" && len(ak) > 4 {
+        msg = strings.ReplaceAll(msg, ak, ak[:4]+"****")
+    }
+    return fmt.Errorf("%s", msg)
 }
 ```
 
