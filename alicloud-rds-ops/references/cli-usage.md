@@ -15,10 +15,34 @@
 - `--no-interactive` does NOT exist in `aliyun` CLI — all commands are non-interactive by default
 - Document **exact** JSON paths after verifying with a real invocation
 
+## SQL Execution (Important — Read First)
+
+**`aliyun rds` does NOT execute SQL** (no `--sql-file`, no multi-statement script runner).
+For `.sql` files with multiple statements on RDS **MySQL**, use the standard **`mysql` client**
+with connection info from `DescribeDBInstanceNetInfo`. For OpenAPI-only access without port 3306,
+use the **`aliyun-cli-rds-data` plugin** (`aliyun rds-data execute-statement` — one `--sql` string
+per call; `batch-execute-statement` is for parameterized bulk INSERT/UPDATE, not arbitrary scripts).
+
+**Full agent runbook:** [sql-execution.md](sql-execution.md)
+
+| Goal | Command family | Example |
+|------|----------------|---------|
+| Run `.sql` file (recommended) | `mysql` client | `mysql -h HOST -P 3306 -u USER -p DB < file.sql` |
+| Single SQL via Data API | `aliyun rds-data` + plugin | `aliyun rds-data execute-statement --sql "SELECT 1" ...` |
+| Data API credentials | `aliyun rds` | `CreateSecret` / `DescribeSecrets` |
+| Instance / network prep | `aliyun rds` | `DescribeDBInstanceNetInfo`, `ModifySecurityIps` |
+
+```bash
+# Prerequisite for rds-data subcommands (kebab-case, not CamelCase)
+aliyun plugin install --names aliyun-cli-rds-data
+```
+
 ## CLI vs API Coverage Gap
 
 | Operation (API / SDK) | Available via `aliyun`? | Notes |
 |------------------------|---------------------|-------|
+| Execute SQL / run `.sql` file | **no** (`rds`) / partial (`rds-data`) | Use `mysql` client for files; see [sql-execution.md](sql-execution.md) |
+| CreateSecret / DescribeSecrets (Data API) | yes (`aliyun rds`) | MySQL only; pairs with `rds-data` plugin |
 | CreateDBInstance | yes | Full support |
 | DescribeDBInstances | yes | Full support |
 | RestartDBInstance | yes | Full support |
@@ -47,8 +71,8 @@
 | UpgradeDBInstanceEngineVersion | yes | Full support |
 | DescribeAvailableZones | yes | Full support |
 
-> RDS is fully supported by the `aliyun` CLI. All operations documented in this skill
-> have CLI equivalents.
+> RDS **control-plane** APIs are fully supported by `aliyun rds`. **Data-plane SQL**
+> (running `.sql` files) is **not** part of `aliyun rds` — see [sql-execution.md](sql-execution.md).
 
 ## Command Map
 
@@ -87,3 +111,8 @@
 | Describe Read-only Instances | `aliyun rds DescribeReadDBInstances --DBInstanceId rm-xxx` | JSON output by default |
 | Create Backup | `aliyun rds CreateBackup --DBInstanceId rm-xxx --BackupMethod Physical --BackupType FullBackup` | JSON output by default |
 | Restore DB Instance | `aliyun rds RestoreDBInstance --DBInstanceId rm-xxx --BackupId 123456` | JSON output by default |
+| Describe Secrets (Data API) | `aliyun rds DescribeSecrets --RegionId cn-hangzhou --Engine MySQL --PageNumber 1 --PageSize 10` | For `secret-arn`; see sql-execution.md |
+| Create Secret (Data API) | `aliyun rds CreateSecret --RegionId cn-hangzhou --DbInstanceId rm-xxx --Engine MySQL --Username u --Password p --ResourceGroupId rg-xxx` | MySQL only |
+| Execute SQL (Data API) | `aliyun rds-data execute-statement --resource-arn acs:rds:... --secret-arn acs:rds:... --database db --sql "SELECT 1"` | Requires `aliyun-cli-rds-data` plugin |
+| Batch INSERT (Data API) | `aliyun rds-data batch-execute-statement --sql "INSERT ..." --parameter-sets '[[...]]'` | Not a general SQL file runner |
+| Get caller account (ARN) | `aliyun sts GetCallerIdentity` | Build `resource-arn` for Data API |

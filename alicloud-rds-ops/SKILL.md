@@ -7,13 +7,16 @@ description: >-
   parameter groups, binlog files, read replicas, and security whitelists.
   Diagnose slow queries, analyze performance metrics
   (CPU/memory/IOPS/connections/TPS/QPS), check disk and resource usage, and
-  inspect HA or network configuration. Also reach for this skill when the user
-  reports a slow or unreachable database, wants to upgrade an instance, migrate
-  from self-hosted to RDS, plan a backup strategy, or automate any RDS
-  operation — even if they just say "my Alibaba database" without naming RDS
-  explicitly. Match against keywords: RDS, 云数据库, 关系型数据库, 数据库,
-  实例, 备份, 慢查询, 白名单, 监控, 参数, 只读, binlog, performance,
-  connection, migration, failover, upgrade. Do NOT use for PolarDB, Redis/Tair,
+  inspect HA or network configuration, or run SQL / execute a `.sql` script file
+  against a MySQL instance (via `mysql` client or RDS Data API — see
+  references/sql-execution.md; `aliyun rds` alone cannot run SQL files). Also
+  reach for this skill when the user reports a slow or unreachable database,
+  wants to upgrade an instance, migrate from self-hosted to RDS, plan a backup
+  strategy, or automate any RDS operation — even if they just say "my Alibaba
+  database" without naming RDS explicitly. Match against keywords: RDS, 云数据库,
+  关系型数据库, 数据库, 实例, 备份, 慢查询, 白名单, 监控, 参数, 只读, binlog,
+  performance, connection, migration, failover, upgrade, SQL, 执行SQL, sql文件,
+  导入脚本, schema, migration script. Do NOT use for PolarDB, Redis/Tair,
   MongoDB, or billing/accounting/RAM-only tasks.
 license: MIT
 compatibility: >-
@@ -23,7 +26,7 @@ compatibility: >-
 metadata:
   author: alicloud
   version: "2.0.0"
-  last_updated: "2026-05-14"
+  last_updated: "2026-05-19"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -68,10 +71,14 @@ and failure recovery.
 - Task involves **backups** (create, describe, restore, delete)
 - Task involves **performance monitoring** (CPU, memory, IOPS, connections, TPS/QPS)
 - Task involves **slow query logs** (describe, analyze)
+- Task involves **executing SQL** or running a **`.sql` file** on RDS MySQL (use
+  `mysql` client or `aliyun rds-data` — see [SQL Execution](references/sql-execution.md);
+  **not** `aliyun rds` alone)
 - Task involves **parameter groups** (describe, modify)
 - Task involves **security groups / whitelists** (describe, modify)
-- Task keywords: 数据库, 实例, 备份, 慢查询, 参数, 白名单, 监控, database,
-  instance, backup, slow log, parameter, whitelist, monitor
+- Task keywords: 数据库, 实例, 备份, 慢查询, 参数, 白名单, 监控, SQL, sql文件,
+  执行SQL, 导入脚本, database, instance, backup, slow log, parameter, whitelist,
+  monitor, execute sql, sql file, schema
 - User asks to deploy, configure, troubleshoot, or monitor RDS **via API, SDK,
   CLI, or automation**
 
@@ -1817,11 +1824,27 @@ Phase 3: Validate — Data integrity, application smoke tests, traffic switch
 
 **Key guidance:** Use `DescribeDBInstancePerformance` for baselines. `DescribeSlowLogRecords` for > 1s queries. Distribute reads across RO nodes if connection limits reached.
 
+## SQL Execution (Agent Quick Reference)
+
+> **Full runbook:** [references/sql-execution.md](references/sql-execution.md)
+
+| User intent | Agent action |
+|-------------|--------------|
+| Run multi-statement `.sql` file | **Path A:** `mysql -h ... < file.sql` after `DescribeDBInstanceNetInfo` + whitelist |
+| "用阿里云 CLI 执行 SQL 文件" | Clarify: `aliyun rds` **cannot**; use `mysql` (Path A) or `rds-data` plugin (Path B, no native file flag) |
+| Single SQL without port 3306 | Install `aliyun-cli-rds-data`; `CreateSecret`/`DescribeSecrets`; `execute-statement --sql "..."` |
+| Bulk parameterized INSERT | `batch-execute-statement` — not a general SQL file runner |
+
+```bash
+aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subcommands
+```
+
 ## Reference Directory
 
 - [Core Concepts](references/core-concepts.md)
 - [API & SDK Usage](references/api-sdk-usage.md)
 - [CLI Usage](references/cli-usage.md)
+- [SQL Execution (mysql client & RDS Data API)](references/sql-execution.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md)

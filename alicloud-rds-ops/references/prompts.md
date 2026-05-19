@@ -15,6 +15,14 @@
 6. "创建数据库账号"
 7. "查看 RDS 中的数据库列表"
 
+## SQL 执行（见 references/sql-execution.md）
+
+30. "用阿里云 CLI 在 RDS MySQL 里执行 schema.sql（多条 SQL）"
+31. "帮我把初始化 SQL 文件导入到 RDS 实例"
+32. "没有 mysql 客户端，能用 OpenAPI 执行单条 SQL 吗？"
+33. "配置 RDS Data API 并执行 SELECT 1"
+34. "aliyun rds 能直接跑 sql 文件吗？"
+
 ## 备份恢复
 
 8. "创建手动备份"
