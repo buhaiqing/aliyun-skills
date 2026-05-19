@@ -7,7 +7,8 @@ description: >-
   "函数计算", "Function Compute", "FC 3.0", "Serverless函数", "冷启动", or
   describes product-specific scenarios (e.g., cold start latency, memory
   right-sizing, invocation throttling, timeout errors, idle function detection,
-  provisioned instance cost waste) even without naming the product directly.
+  provisioned instance cost waste, GPU function, vLLM inference, LLM batch
+  scoring) even without naming the product directly.
   Not for billing-only, RAM-only, or related products that have their own ops
   skills. For FC code deployment from source, delegate to CI/CD or deployment skills.
 license: MIT
@@ -17,8 +18,8 @@ compatibility: >-
   endpoints. FC 3.0 uses ROA-style API (`aliyun fc-open <METHOD> /2023-03-30/path`).
 metadata:
   author: alicloud
-  version: "3.0.0"
-  last_updated: "2026-05-18"
+  version: "3.1.0"
+  last_updated: "2026-05-19"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -80,6 +81,7 @@ Alibaba Cloud Function Compute (FC) is a fully managed, event-driven serverless 
 - User asks to analyze FC optimization: memory right-sizing, cold start reduction, idle function detection, provisioned instance tuning, cost analysis
 - User asks to diagnose FC issues: invocation failures, timeout errors, throttling, memory OOM, cold start latency, VPC connectivity failures
 - User asks for FC monitoring/AIOps: multi-metric anomaly inspection, alert-driven diagnosis, proactive inspection
+- User asks about **FC GPU functions**, **vLLM** / **SGLang** deployment, **LLM metrics**, or **batch / quasi-real-time inference** on Function Compute
 
 ### SHOULD NOT Use This Skill When
 
@@ -184,6 +186,7 @@ aliyun fc-open GET /2023-03-30/functions/{{user.function_name}}
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — FC 3.0 architecture, limits, dependency graph
+- [GPU Inference (vLLM & Batch)](references/gpu-inference.md) — GPU function paths, batching, warmup, LLM metrics
 - [Execution Flows](#execution-flows) — CRUD operations, CLI + SDK paths
 - [Monitoring](references/monitoring.md) — Multi-metric anomaly inspection, AIOps patterns
 - [Troubleshooting](references/troubleshooting.md) — FC error codes, 5-step diagnosis
@@ -210,11 +213,16 @@ aliyun fc-open GET /2023-03-30/functions/{{user.function_name}}
 | MultiMetricAnomaly | AIOps multi-metric anomaly inspection | High | None |
 | AlertDiagnosis | 5-step alert-driven diagnosis | High | None |
 | IdleDetection | Detect idle/underutilized functions | Low | None |
+| CreateGpuFunction | Create GPU custom-container function (vLLM image, gpuConfig) | High | Medium |
+| GpuScalingConfig | Set minInstances / resident pool for GPU elastic or warm capacity | Medium | Medium |
+| GpuHttpInference | HTTP trigger + OpenAI-compatible curl to vLLM endpoint | Medium | Low |
+| GpuBatchAsync | Async invoke + DLQ or OSS trigger for offline batch scoring | High | Medium |
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1.0 | 2026-05-19 | Add gpu-inference.md (vLLM/batch scenarios); CLI/API/SDK per scenario (§10); GPU ops in SKILL, cli-usage, api-sdk-usage; GPU fault patterns |
 | 1.0.0 | 2026-05-18 | Initial FC 3.0 skill: dual-path CLI/SDK, AIOps monitoring, Well-Architected 5-pillar, self-healing framework |
 
 ---
@@ -330,6 +338,111 @@ done
 | `Throttling` | 3, exponential | Back off | `⚠️ Rate limited, retrying...` |
 | `InternalError` | 3, 2s→4s→8s | Retry | `[ERROR] FC internal error. Retrying... If persists, escalate with RequestId.` |
 | `Forbidden.RAM` | 0 | HALT | `[ERROR] RAM permission denied. Add fc:* or specific fc:CreateFunction policy.` |
+
+### Operation: GPU Function (vLLM & Batch)
+
+**Scope:** Path **B** — self-managed GPU function via `fc-open` / Go SDK. Path **A** (Function AI Model Service) is console/Serverless Devs — see [gpu-inference.md §10.1](references/gpu-inference.md#101-path-a--function-ai-model-service-vllm).
+
+| Scenario | APIs (in order) | Detail |
+|----------|-----------------|--------|
+| Online vLLM API | CreateFunction → PutScalingConfig (`minInstances≥1`) → CreateTrigger (http) | [gpu-inference.md §10.2–10.4](references/gpu-inference.md#102-create-gpu-function-custom-container--vllm) |
+| Quasi-real-time | CreateFunction → PutScalingConfig (`minInstances: 0`) | [§10.3](references/gpu-inference.md#103-elastic-scaling--mininstances-online-vs-quasi-real-time) |
+| Offline batch | CreateFunction → PutAsyncInvokeConfig → InvokeFunction (Async) or OSS CreateTrigger | [§10.5–10.6](references/gpu-inference.md#105-offline-batch--async-invoke--dlq) |
+| Resident GPU | CreateFunction (console pool at create) → PutScalingConfig (`residentPoolId`) | [§10.3](references/gpu-inference.md#103-elastic-scaling--mininstances-online-vs-quasi-real-time) |
+
+#### Pre-flight (GPU-specific)
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| GPU quota | [Quota center](https://quotas.console.aliyun.com/products/fc/quotas) | Cards available in region | HALT; request quota |
+| ACR image | Image in same region as function | Pullable by FC | HALT; push image |
+| NAS/OSS for weights | Mount config valid | Model path reachable from container | HALT; fix mount |
+| SLS for LLM metrics | Custom `project` + `logstore` | Not `auto` if `enableLlmMetrics` | Use custom logConfig |
+
+#### Execution — Create GPU function (CLI excerpt)
+
+Full body: [gpu-inference.md §10.2](references/gpu-inference.md#102-create-gpu-function-custom-container--vllm).
+
+```bash
+aliyun fc-open POST /2023-03-30/functions --body "$(cat <<EOF
+{
+  "functionName": "{{user.function_name}}",
+  "runtime": "custom-container",
+  "handler": "index.handler",
+  "cpu": 8,
+  "memorySize": 65536,
+  "diskSize": 512,
+  "timeout": {{user.timeout|default:600}},
+  "instanceConcurrency": 1,
+  "role": "{{user.ram_role_arn}}",
+  "gpuConfig": {
+    "gpuType": "{{user.gpu_type|default:fc.gpu.ada.1}}",
+    "gpuMemorySize": {{user.gpu_memory_mb|default:49152}}
+  },
+  "customContainerConfig": {
+    "image": "{{user.acr_image}}",
+    "port": {{user.listen_port|default:8000}},
+    "command": {{user.container_command}}
+  },
+  "logConfig": {
+    "project": "{{user.sls_project}}",
+    "logstore": "{{user.sls_logstore}}",
+    "enableLlmMetrics": true
+  }
+}
+EOF
+)"
+```
+
+#### Execution — Scaling + HTTP inference
+
+```bash
+# Warm capacity (online API)
+aliyun fc-open PUT "/2023-03-30/functions/{{user.function_name}}/scaling-config?qualifier=LATEST" \
+  --body '{"minInstances": {{user.min_instances|default:1}}, "enableOnDemandScaling": true}'
+
+# HTTP trigger
+aliyun fc-open POST /2023-03-30/functions/{{user.function_name}}/triggers --body "$(cat <<EOF
+{
+  "triggerName": "http-vllm",
+  "triggerType": "http",
+  "triggerConfig": {"authType": "anonymous", "methods": ["GET","POST","PUT","DELETE","HEAD","OPTIONS"]}
+}
+EOF
+)"
+
+# Test (after ACTIVE) — use urlInternet from GetTrigger
+curl -sS "{{user.http_trigger_url}}/v1/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"{{user.model_name}}","messages":[{"role":"user","content":"ping"}],"max_tokens":32}'
+```
+
+#### Execution — Async batch job
+
+```bash
+aliyun fc-open PUT /2023-03-30/functions/{{user.function_name}}/async-invoke-config \
+  --body '{"maxAsyncEventAgeInSeconds": 86400, "maximumRetryAttempts": 2}'
+
+aliyun fc-open POST /2023-03-30/functions/{{user.function_name}}/invocations \
+  --header "x-fc-invocation-type=Async" \
+  --body '{{user.batch_payload}}'
+```
+
+#### Post-execution Validation
+
+1. `GetFunction` → `state == ACTIVE`, `gpuConfig` present
+2. `GetScalingConfig` → `minInstances` matches intent
+3. For HTTP: `GetTrigger` → call `/v1/chat/completions`, check TTFT in LLM metrics
+4. For async batch: `GET .../async-invocations` until terminal state
+
+#### Failure Recovery (GPU)
+
+| Error | Agent Action |
+|-------|--------------|
+| GPU quota exceeded | HALT; quota ticket or reduce `minInstances` |
+| Image pull failed | Verify ACR ACL, same region, image size ≤ 15 GB |
+| CUDA OOM in logs | Lower vLLM `--max-num-seqs`; see [knowledge-base.md](references/knowledge-base.md) FC-GPU-001 |
+| Cold start SLA miss | Raise `minInstances`; enable Initializer; see FC-GPU-002 |
 
 ### Operation: List Functions
 
@@ -860,6 +973,7 @@ See [references/execution-environment.md](references/execution-environment.md) f
 - [Integration](references/integration.md)
 - [Well-Architected Assessment](references/well-architected-assessment.md)
 - [Knowledge Base](references/knowledge-base.md)
+- [GPU Inference (vLLM & Batch)](references/gpu-inference.md)
 - [Observability](references/observability.md)
 - [Self-Healing Framework](references/enhanced-self-healing-framework.md)
 - [Enhanced Self-Healing](references/enhanced-self-healing-framework.md)

@@ -1,5 +1,35 @@
 # Knowledge Base — FC Fault Patterns
 
+> **GPU / vLLM / batch inference scenarios** (deployment paths, concurrency, warmup, LLM metrics): see [gpu-inference.md](gpu-inference.md).
+
+## fault_pattern: fc_gpu_vllm_oom
+
+| Attribute | Value |
+|-----------|-------|
+| **Pattern** | FC-GPU-001 — vLLM GPU OOM or instance crash |
+| **Trigger metric** | `FunctionFunctionErrors` spike; logs show CUDA OOM / vLLM engine died |
+| **Symptom** | 5xx from OpenAI-compatible endpoint; instances restart |
+| **Impact** | Inference unavailable until new instance healthy |
+| **Root cause** | 1. `--max-num-seqs` too high 2. `--gpu-memory-utilization` too high 3. FC instance concurrency > 1 with single vLLM process 4. Model too large for card |
+| **Diagnostic steps** | 1. Check LLM metrics / GPU logs 2. Review vLLM startup flags 3. Check FC instance concurrency (should be 1 for vLLM) 4. Verify model fits VRAM |
+| **Fix — temporary** | Lower `--max-num-seqs` or `--gpu-memory-utilization`; reduce client `max_tokens` |
+| **Fix — permanent** | Right-size GPU card; enable NAS-cached weights; cap `max-model-len` to SLA |
+| **Prevention** | Load test at 70–85% token throughput; alert on OOM log pattern |
+
+## fault_pattern: fc_gpu_cold_start_sla
+
+| Attribute | Value |
+|-----------|-------|
+| **Pattern** | FC-GPU-002 — LLM cold start violates TTFT SLA |
+| **Trigger metric** | LLM **Time to First Token** p99 high; `InitialDuration` spikes on GPU function |
+| **Symptom** | First request after idle very slow (~10–30s+); subsequent requests fast |
+| **Impact** | Poor user experience; timeout on sync callers |
+| **Root cause** | 1. `min instances=0` on elastic GPU 2. No Initializer warmup 3. Model loaded from remote OSS each cold start 4. Large container image |
+| **Diagnostic steps** | 1. Check min/provisioned instance count 2. Check Initializer config 3. Verify NAS mount for model weights 4. Measure cold vs warm TTFT in LLM metrics |
+| **Fix — temporary** | Set `min instances ≥ 1` |
+| **Fix — permanent** | Initializer model preload; NAS for weights; smaller image; resident pool for strict SLA |
+| **Prevention** | Monitor TTFT + cold start ratio; see [gpu-inference.md §5](gpu-inference.md#5-cold-start--warmup) |
+
 ## fault_pattern: fc_memory_oom
 
 | Attribute | Value |

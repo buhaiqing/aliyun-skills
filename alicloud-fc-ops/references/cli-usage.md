@@ -47,6 +47,26 @@ aliyun fc-open <METHOD> /2023-03-30/<path> [--body "..."] [--header "..."]
 | Upload to OSS | `aliyun oss cp <local> oss://<bucket>/<prefix>/<name>.zip --force` | Pre-deploy step |
 | Get function code | `aliyun fc-open GET /2023-03-30/functions/{name}/code` | Download code URL |
 
+## GPU Functions (vLLM & Batch)
+
+GPU functions use the same `fc-open` paths; request bodies include `gpuConfig` + `customContainerConfig` (no `code` ZIP). Full scenario examples: [gpu-inference.md §10](gpu-inference.md#10-cli--api--sdk-by-scenario).
+
+| Goal | Example `aliyun fc-open` invocation | Notes |
+|------|-------------------------------------|-------|
+| Create GPU + vLLM container | `POST /2023-03-30/functions --body '{...gpuConfig,customContainerConfig...}'` | See gpu-inference.md §10.2 |
+| Set min instances (warm) | `PUT "/2023-03-30/functions/{name}/scaling-config?qualifier=LATEST" --body '{"minInstances":1}'` | §10.3 |
+| Scale to zero (sparse) | Same with `"minInstances": 0` | Quasi-real-time |
+| Resident GPU pool | `PUT .../scaling-config` with `residentPoolId`, `enableOnDemandScaling: false` | Immutable instance type at create |
+| HTTP trigger (OpenAI API) | `POST /2023-03-30/functions/{name}/triggers` `triggerType: http` | §10.4; use `urlInternet` for curl |
+| OSS batch trigger | `POST .../triggers` `triggerType: oss` | §10.6 |
+| Async batch job | `POST .../invocations --header "x-fc-invocation-type=Async"` | §10.5 |
+| Async config + DLQ | `PUT /2023-03-30/functions/{name}/async-invoke-config` | §10.5 |
+| List GPU functions | `GET /2023-03-30/functions` + `jq 'select(.gpuConfig)'` | §10.7 |
+| Get scaling config | `GET "/2023-03-30/functions/{name}/scaling-config?qualifier=LATEST"` | |
+| Enable LLM metrics | `PUT /2023-03-30/functions/{name}` with `logConfig.enableLlmMetrics: true` | Custom SLS project required |
+
+**Not via `fc-open`:** Function AI Model Service (managed vLLM) — use [Function AI console](https://cap.console.aliyun.com/).
+
 ## CLI + SDK Coverage Gap
 
 | Operation | Available via `fc-open`? | Notes |

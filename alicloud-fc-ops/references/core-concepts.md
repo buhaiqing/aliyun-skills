@@ -57,7 +57,19 @@ In FC 3.0, functions are **top-level** resources — no more service wrapping la
 | Go | custom (compile to binary), custom-container |
 | PHP | php8.2 |
 | Custom | custom, custom-container (Docker image) |
-| GPU | custom-container (with GPU base images) |
+| GPU | custom-container (with GPU base images) — see [gpu-inference.md](gpu-inference.md) |
+
+### GPU Functions (LLM / vLLM / Batch)
+
+GPU workloads use a separate **GPU function** resource type (not CPU runtimes above):
+
+| Aspect | Detail |
+|--------|--------|
+| Runtime | `custom-container` only; image must expose an HTTP server |
+| vLLM | Managed via **Function AI Model Service**, or self-hosted in GPU function container |
+| Batching | **In-process**: vLLM continuous batching; **Cross-instance**: FC elastic scaling |
+| Instance modes | Elastic (pay-per-use) or resident (prepaid pool); **cannot switch after create** |
+| Ops guide | [gpu-inference.md](gpu-inference.md) — scenarios, concurrency, warmup, LLM metrics |
 
 ## Billing Model
 
@@ -117,3 +129,4 @@ FC is inherently multi-AZ — Alibaba Cloud manages instance distribution across
 | Layers | Additional download time | Use fewer, smaller layers |
 | Memory allocation | More memory = faster init | Increase memory for latency-sensitive |
 | Provisioned instances | Eliminates cold start | Configure for latency-critical functions |
+| GPU + LLM model load | 10–30s+ E2E cold start | Initializer warmup, NAS weights, `min instances≥1`; see [gpu-inference.md](gpu-inference.md) |

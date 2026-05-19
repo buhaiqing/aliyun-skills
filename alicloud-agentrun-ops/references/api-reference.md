@@ -1,6 +1,7 @@
 # API 参考文档
 
-> **目的**: FC Sandbox 全量 API 端点参考（控制面 + 数据面），包含请求/响应格式、参数说明和错误码。
+> **目的**: FC Sandbox 全量 API 端点参考（控制面 + 数据面），包含请求/响应格式、参数说明和错误码。  
+> **概念**（MCP 双路径、OSS/Skill 加载、Tool Hub）: 见 [knowledge-base.md](knowledge-base.md)。
 
 ## 1. 端点概述
 

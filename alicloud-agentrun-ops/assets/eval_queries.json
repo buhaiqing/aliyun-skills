@@ -212,10 +212,31 @@
       "expected_skill": "alicloud-agentrun-ops",
       "trigger_keywords": ["沙箱", "移动", "文件"],
       "confidence": 0.95
+    },
+    {
+      "id": "031",
+      "query": "OSS 上新增了自定义 Skill，运行中的 Sandbox 会自动加载吗",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["OSS", "Skill", "Sandbox", "加载"],
+      "confidence": 0.95
+    },
+    {
+      "id": "032",
+      "query": "ActivateTemplateMCP 的 enabledTools 有哪些",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["MCP", "enabledTools"],
+      "confidence": 0.95
+    },
+    {
+      "id": "033",
+      "query": "Sandbox 能从 Skill Hub 运行时下载外部 skill 吗",
+      "expected_skill": "alicloud-agentrun-ops",
+      "trigger_keywords": ["Sandbox", "Skill Hub", "skill"],
+      "confidence": 0.90
     }
   ],
   "metadata": {
-    "version": "1.1.0",
+    "version": "1.2.0",
     "created_at": "2026-05-19",
     "skill_name": "alicloud-agentrun-ops",
     "description": "Trigger test queries for AgentRun Sandbox operations skill"

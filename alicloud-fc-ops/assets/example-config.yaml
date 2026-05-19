@@ -57,6 +57,58 @@ event_driven:
     team: events
     costOptimized: "true"
 
+# --- Workload: GPU + vLLM (online API) ---
+gpu_vllm_online:
+  functionType: gpu              # GPU function — not CPU runtime
+  runtime: custom-container
+  instanceType: elastic          # elastic | resident — immutable after create
+  minInstances: 1                # Reduce cold start; use 0 for dev/cost
+  instanceConcurrency: 1         # Let vLLM continuous batching multiplex requests
+  listenPort: 8000
+  timeout: 600                   # seconds — allow long generations
+  initializer:
+    enabled: true
+    timeout: 300                 # Model load before first request
+  storage:
+    nas: true                    # Cache model weights across instance recycle
+    oss: true                    # Optional: input/output for RAG artifacts
+  llmMetrics:
+    enabled: true                # Requires custom log config (not auto)
+  vllmFlags:                     # Illustrative — tune per model/GPU
+    gpu_memory_utilization: 0.90
+    max_num_seqs: 64
+    max_model_len: 8192
+  tags:
+    env: production
+    team: ml-platform
+    workload: llm-inference
+
+# --- Workload: GPU + vLLM (offline batch scoring) ---
+gpu_vllm_batch:
+  functionType: gpu
+  runtime: custom-container
+  instanceType: elastic
+  minInstances: 0                # Cost-optimized; accept cold start on job start
+  instanceConcurrency: 1
+  timeout: 86400                 # Max 24h for large batch jobs
+  async:
+    maximumRetryAttempts: 2
+    onFailure:
+      destination: "arn:acs:log:cn-hangzhou:..."  # DLQ required for batch durability
+  trigger:
+    type: oss                    # Or EventBridge — read prompts from OSS, write results
+  storage:
+    oss:
+      inputPrefix: "batch-jobs/input/"
+      outputPrefix: "batch-jobs/output/"
+    nas: true
+  provisioned:
+    enabled: false
+  tags:
+    env: production
+    team: data
+    workload: llm-batch
+
 # --- AIOps Monitoring Defaults ---
 monitoring:
   cms:

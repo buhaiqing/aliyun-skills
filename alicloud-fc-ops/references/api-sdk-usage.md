@@ -42,6 +42,31 @@
 | Get scaling config | GetScalingConfig | `client.GetScalingConfig` | GET | `/2023-03-30/functions/{functionName}/scaling-config` |
 | Delete scaling config | DeleteScalingConfig | `client.DeleteScalingConfig` | DELETE | `/2023-03-30/functions/{functionName}/scaling-config` |
 
+## GPU Functions
+
+GPU workloads reuse the operations above. Additional request-body fields on **CreateFunction** / **UpdateFunction**:
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `gpuConfig.gpuType` | string | e.g. `fc.gpu.ada.1`, `fc.gpu.ampere.1`, `fc.gpu.tesla.1` |
+| `gpuConfig.gpuMemorySize` | integer | VRAM in MB (multiple of 1024) |
+| `customContainerConfig` | object | `image`, `port`, `command`, `entrypoint` — **required** for GPU |
+| `instanceConcurrency` | integer | Use **1** for vLLM continuous batching |
+| `instanceLifecycleConfig.initializer` | object | Model warmup before traffic |
+| `nasConfig` / `ossMountConfig` | object | Model weights / batch I/O |
+| `logConfig.enableLlmMetrics` | boolean | vLLM/SGLang metrics (custom log config only) |
+
+| Scenario | Key SDK calls |
+|----------|---------------|
+| Online vLLM | `CreateFunction` → `PutScalingConfig` → `CreateTrigger` (http) |
+| Quasi-real-time | `PutScalingConfig` with `minInstances: 0` |
+| Offline batch | `CreateFunction` → `PutAsyncInvokeConfig` → `InvokeFunction` (Async header) or OSS `CreateTrigger` |
+| Resident pool | `PutScalingConfig` with `residentPoolId` |
+
+CLI/SDK examples: [gpu-inference.md §10](gpu-inference.md#10-cli--api--sdk-by-scenario). Struct reference: [GpuConfig](https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-gpuconfig), [CreateFunctionInput](https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-createfunctioninput).
+
+**Out of scope:** Function AI managed model services (separate control plane, not `fc-20230330` client).
+
 ## Go SDK Usage
 
 ```go

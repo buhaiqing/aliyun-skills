@@ -6,7 +6,9 @@ description: >-
   and terminal operations. User mentions "AgentRun", "Sandbox", "Code Interpreter",
   "BrowserTool", "AIO Sandbox", "沙箱", "AgentRun", "代码解释器", or describes
   sandbox-related scenarios (e.g., create sandbox, execute code in sandbox,
-  manage sandbox templates, file operations in sandbox, terminal/tty access)
+  manage sandbox templates, file operations in sandbox, terminal/tty access,
+  MCP enabledTools, OSS-mounted custom Skills, Agent & Skills, Skill Hub vs OSS,
+  Sandbox GPU support)
   even without naming the product directly. Not for developing Sidecar middleware
   (use alicloud-sandbox-dev), RAM-only tasks, or billing operations.
 license: MIT
@@ -16,7 +18,7 @@ compatibility: >-
   endpoints. No official CLI or SDK — direct HTTP API calls required.
 metadata:
   author: alicloud
-  version: "1.2.0"
+  version: "1.3.0"
   last_updated: "2026-05-19"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   api_profile: "AgentRun 2025-09-10 / https://help.aliyun.com/zh/functioncompute/fc/sandbox-function"
@@ -40,6 +42,8 @@ metadata:
 ## Overview
 
 Alibaba Cloud AgentRun is a serverless sandbox service providing isolated execution environments for code interpretation, browser automation, and AI agent tasks. This skill is an **operational runbook** for agents: manage templates, create/stop/delete sandbox instances, execute code, manage files, and access terminal — all via **direct HTTP API calls** with ACS3-HMAC-SHA256 signing.
+
+> **Product knowledge** (MCP 双路径、20 个 `enabledTools`、OSS/Skill 加载语义、Tool Hub 对比): 见 [references/knowledge-base.md](references/knowledge-base.md).
 
 **Critical Note:** AgentRun has **NO official CLI (`aliyun agentrun`) or SDK**. All operations require:
 1. Constructing signed HTTP requests
@@ -81,8 +85,9 @@ Alibaba Cloud AgentRun is a serverless sandbox service providing isolated execut
 - Task involves **Code Execution** in sandbox (execute Python/Node.js/Go code)
 - Task involves **File System Operations** in sandbox (read, write, list, upload, download)
 - Task involves **Terminal/TTY** access to sandbox (run commands, WebSocket TTY)
-- Task involves **MCP Service** management (activate/stop MCP on templates)
-- Keywords: sandbox, template, execute code, tty, terminal, file system, 沙箱, 代码执行, 模板
+- Task involves **MCP Service** management (activate/stop MCP on templates, `enabledTools`)
+- Task involves **OSS-mounted custom Skills**, `enableAgent`, or whether OSS changes hot-reload
+- Keywords: sandbox, template, execute code, tty, terminal, file system, MCP, OSS, skills, 沙箱, 代码执行, 模板, 动态挂载
 
 ### SHOULD NOT Use This Skill When
 
@@ -269,6 +274,7 @@ curl -X POST "https://agentrun.${ALIBABA_CLOUD_REGION_ID}.aliyuncs.com/2025-09-1
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-05-19 | Docs: Add references/knowledge-base.md (AgentRun 定位, MCP 双路径, 20 enabledTools, 内置 Skills, OSS 三层加载与「非热更新」语义, Tool Hub vs OSS vs find_agent_on_skills, **Sandbox 不支持 GPU**). Expand core-concepts MCP/OSS/GPU sections; trigger keywords for OSS/Skills. |
 | 1.2.0 | 2026-05-19 | F24: Add Deep Hibernation (Pause/Resume) execution flow, add templateType/diskSize/containerConfiguration/PRIVATE network params to CreateTemplate/UpdateTemplate, add HIBERNATED state to state machine, add PauseSandbox/ResumeSandbox to API endpoints. Security2: Add ALIBABA_CLOUD_SECURITY_TOKEN env var, STS X-Acs-Security-Token header in Prerequisites, fix user-experience-spec.md dead link, add templateType/diskSize/networkMode/idleTimeout to Input Validation table. Eval: Add 10 new trigger test cases (021-030) for UpdateTemplate/DeleteTemplate/MCP/Context/DeepHibernation/HealthCheck/ProcessManagement/Mkdir/MoveFile |
 | 1.1.0 | 2026-05-19 | Security2: Add security-enhancement.md, fix RAM Policy Resource scoping, credential masking, Safety Gates for DeleteTemplate/ExecCommand/TTY/KillProcess, input validation, STS credential flow. F24: Add execution flows for UpdateTemplate, DeleteTemplate, MCP operations, Context Management, File System operations, ExecCommand, Process Management, HealthCheck, WebSocket TTY, List Resources pagination, example-config.yaml |
 | 1.0.0 | 2026-05-18 | Initial AgentRun ops skill — template/instance CRUD, code execution, file ops, TTY |
@@ -1081,6 +1087,7 @@ All operations MUST validate inputs before API calls. See [security-enhancement.
 
 ## Reference Directory
 
+- [Knowledge Base](references/knowledge-base.md) — AgentRun/Sandbox 产品知识：MCP、Skills、OSS 加载、Tool Hub（**优先查阅概念性问题**）
 - [API Reference](references/api-reference.md) — Full endpoint documentation
 - [API Signing Guide](references/api-signing.md) — ACS3-HMAC-SHA256 implementation
 - [Core Concepts](references/core-concepts.md) — Sandbox architecture and limits

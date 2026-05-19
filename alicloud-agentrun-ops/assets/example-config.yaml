@@ -36,6 +36,16 @@ templates:
     templateName: "aio-sandbox"
     description: "All-In-One sandbox: code + browser + MCP"
     templateType: "AIO"
+    enableAgent: true
+    # OSS custom Skills — loaded at instance startup (NOT hot-reload on running instance)
+    ossConfiguration:
+      - bucketName: "${OSS_BUCKET_NAME}"
+        prefix: "skills"
+        mountPoint: "/mnt/workspace"
+        permission: "READ_ONLY"
+        region: "${ALIBABA_CLOUD_REGION_ID}"
+    # executionRoleArn must include AliyunOSSReadOnlyAccess
+    # environmentVariables: set per console when enabling Agent & Skills
     cpu: 4
     memory: 8192
     diskSize: 20480

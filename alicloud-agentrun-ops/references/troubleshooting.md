@@ -305,6 +305,25 @@ curl -X GET "https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sa
 | Writing to `/` or system paths | Permission denied | Use `/home/user` or `/workspace` |
 | Not cleaning up files | Disk quota exceeded | Regular cleanup |
 
+### 7.4 OSS & Custom Skills Mistakes
+
+| Mistake | Consequence | Prevention |
+|---|---|---|
+| Expect OSS new Skill to appear on **running** instance | Skill list unchanged | **New sandbox instance** after OSS upload (or wait idle timeout) |
+| Only OSS mount, no `enableAgent` / env vars | Files visible, Agent ignores Skills | Enable Agent & Skills + console-required env vars |
+| Default `Agentrun-role` without OSS read | MCP fails / Skills not loaded | Add `AliyunOSSReadOnlyAccess` to execution role |
+| Wrong OSS path (`skills/<name>/SKILL.md` missing) | Custom Skill not listed | Match [dynamic Skills doc](https://help.aliyun.com/zh/functioncompute/fc/dynamically-mount-custom-skills-for-sandboxes) layout |
+| Confuse Tool Hub install with Sandbox hot-load | Skill not in sandbox | Tool Hub → Agent; Sandbox → OSS mount at **instance startup** |
+| Update template `ossConfiguration` while instance runs | Old instance unchanged | Stop instance; create new one |
+| Assume cross-instance OSS sync | Stale file view | Treat instances as independent (ossfs) |
+
+**Symptom: Agent only uses built-in Skills (docx/pdf), not custom OSS Skills**
+
+1. Verify OSS path and `SKILL.md` clarity in prompt
+2. Confirm env vars + OSS config on template detail page
+3. Create **new** sandbox instance; ask Agent to list available Skills
+4. See [knowledge-base.md](knowledge-base.md) §4.5
+
 ---
 
 ## 8. Debug Checklist
