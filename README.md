@@ -47,6 +47,7 @@ aliyun-skills/
 ├── alicloud-ram-ops/                  # 访问控制 RAM
 ├── alicloud-cms-ops/                  # 云监控 CMS
 ├── alicloud-das-ops/                  # 数据库自治服务 DAS
+├── alicloud-kms-ops/                  # 密钥管理服务 KMS
 ├── alicloud-polar-mysql-ops/          # PolarDB MySQL版
 ├── alicloud-polar-pg-ops/             # PolarDB PostgreSQL版
 ├── alicloud-polar-oracle-ops/         # PolarDB Oracle兼容版

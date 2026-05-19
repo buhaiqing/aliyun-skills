@@ -16,9 +16,10 @@
    - 3.5 [alicloud-slb-ops — 负载均衡 SLB/CLB](#35-alicloud-slb-ops--负载均衡-slbclb)
    - 3.6 [alicloud-ram-ops — 访问控制 RAM](#36-alicloud-ram-ops--访问控制-ram)
    - 3.7 [alicloud-cms-ops — 云监控 CMS](#37-alicloud-cms-ops--云监控-cms)
-   - 3.8 [alicloud-das-ops — 数据库自治服务 DAS](#38-alicloud-das-ops--数据库自治服务-das)
-   - 3.9 [alicloud-topo-discovery — 网络拓扑与资源清单](#39-alicloud-topo-discovery--网络拓扑与资源清单)
- 4. [Meta Skill — Skill 生成器](#4-meta-skill--skill-生成器)
+    - 3.8 [alicloud-das-ops — 数据库自治服务 DAS](#38-alicloud-das-ops--数据库自治服务-das)
+    - 3.9 [alicloud-kms-ops — 密钥管理服务 KMS](#39-alicloud-kms-ops--密钥管理服务-kms)
+    - 3.10 [alicloud-topo-discovery — 网络拓扑与资源清单](#310-alicloud-topo-discovery--网络拓扑与资源清单)
+  4. [Meta Skill — Skill 生成器](#4-meta-skill--skill-生成器)
 5. [跨技能协同协议](#5-跨技能协同协议)
 6. [技术规范](#6-技术规范)
 7. [开发与贡献指南](#7-开发与贡献指南)
@@ -598,7 +599,84 @@ CMS Skill 内置了 **4 层异常检测框架**，用于 CLI 安装问题的诊�
 - [assets/das-fault-pattern-library.yaml](alicloud-das-ops/assets/das-fault-pattern-library.yaml)
 - [assets/das-log-analysis-patterns.yaml](alicloud-das-ops/assets/das-log-analysis-patterns.yaml)
 
-### 3.9 alicloud-topo-discovery — 网络拓扑与资源清单
+### 3.9 alicloud-kms-ops — 密钥管理服务 KMS
+
+| 元数据 | 值 |
+|--------|------|
+| **版本** | 1.0.0 |
+| **API 版本** | KMS 2016-01-20 |
+| **执行策略** | dual-path |
+| **CLI 产品名** | `kms` |
+| **Go SDK 包** | `github.com/alibabacloud-go/kms-20160120/v3/client` |
+| **端点** | `kms.aliyuncs.com`（公有）/ `kms.{region}.aliyuncs.com`（区域） |
+
+#### 3.9.1 功能需求
+
+| 功能模块 | 操作列表 | 优先级 |
+|----------|----------|--------|
+| 服务管理 | DescribeRegions, OpenKmsService, DescribeAccountKmsStatus | P0 |
+| 密钥生命周期 | CreateKey, DescribeKey, ListKeys, EnableKey, DisableKey, UpdateKeyDescription | P0 |
+| 密钥删除 | ScheduleKeyDeletion, CancelKeyDeletion, SetDeletionProtection | P0 |
+| 别名管理 | CreateAlias, UpdateAlias, DeleteAlias, ListAliases, ListAliasesByKeyId | P0 |
+| 密码学操作 | Encrypt, Decrypt, GenerateDataKey, GenerateDataKeyWithoutPlaintext | P0 |
+| 非对称操作 | AsymmetricSign, AsymmetricVerify, AsymmetricEncrypt, AsymmetricDecrypt, GetPublicKey | P1 |
+| 密钥版本 | CreateKeyVersion, DescribeKeyVersion, ListKeyVersions, UpdateRotationPolicy | P1 |
+| BYOK | GetParametersForImport, ImportKeyMaterial, DeleteKeyMaterial | P1 |
+| Secret 管理 | CreateSecret, DescribeSecret, ListSecrets, UpdateSecret | P0 |
+| Secret 值操作 | GetSecretValue, PutSecretValue, ListSecretVersionIds, UpdateSecretVersionStage | P0 |
+| Secret 轮 | RotateSecret, UpdateSecretRotationPolicy, GetRandomPassword | P1 |
+| Secret 删除/恢复 | DeleteSecret, RestoreSecret | P0 |
+| 标签管理 | TagResource, UntagResource, ListResourceTags, TagResources, UntagResources, ListTagResources | P1 |
+| KMS 实例管理 | ListKmsInstances, GetKmsInstance, ConnectKmsInstance, UpdateKmsInstanceBindVpc | P1 |
+| 应用管理 | CreateApplicationAccessPoint, DeleteApplicationAccessPoint, DescribeApplicationAccessPoint, ListApplicationAccessPoints | P2 |
+| 网络规则 | CreateNetworkRule, DeleteNetworkRule, DescribeNetworkRule, ListNetworkRules, UpdateNetworkRule | P2 |
+
+#### 3.9.2 支持的密钥类型
+
+| KeySpec | 算法 | 用途 | 最大明文 |
+|---------|------|------|----------|
+| `Aliyun_AES_256` | AES-256 | ENCRYPT/DECRYPT | 4096 bytes |
+| `Aliyun_SM4` | SM4（国密） | ENCRYPT/DECRYPT | 4096 bytes |
+| `RSA_2048` | RSA-2048 | SIGN/VERIFY; AsymmetricEncrypt/Decrypt | N/A |
+| `EC_P256` | ECDSA P-256 | SIGN/VERIFY | N/A |
+| `EC_P256K` | ECDSA P-256K | SIGN/VERIFY | N/A |
+| `EC_SM2` | SM2（国密） | SIGN/VERIFY | N/A |
+
+#### 3.9.3 密钥状态
+
+| 状态 | 描述 | 可转换到 |
+|------|------|----------|
+| `Enabled` | 密钥处于启用状态，可用于密码运算 | Disabled, PendingDeletion |
+| `Disabled` | 密钥存在但不可使用 | Enabled, PendingDeletion |
+| `PendingDeletion` | 已进入预定删除状态（7–30 天等待期） | Enabled（通过 CancelKeyDeletion） |
+| `PendingImport` | 等待导入外部密钥材料（BYOK） | Enabled（导入后） |
+
+#### 3.9.4 状态轮询需求
+
+| 操作 | 轮询间隔 | 最大等待 |
+|------|----------|----------|
+| EnableKey → Enabled | 2s | 15s |
+| DisableKey → Disabled | 2s | 15s |
+| ScheduleKeyDeletion → PendingDeletion | N/A（异步） | N/A |
+| CancelKeyDeletion → Enabled | N/A（异步） | N/A |
+| CreateKey → Enabled | 2s | 30s |
+| CreateSecret → Available | 2s | 30s |
+
+#### 3.9.5 引用文档
+
+- [references/core-concepts.md](alicloud-kms-ops/references/core-concepts.md)
+- [references/api-sdk-usage.md](alicloud-kms-ops/references/api-sdk-usage.md)
+- [references/cli-usage.md](alicloud-kms-ops/references/cli-usage.md)
+- [references/troubleshooting.md](alicloud-kms-ops/references/troubleshooting.md)
+- [references/monitoring.md](alicloud-kms-ops/references/monitoring.md)
+- [references/integration.md](alicloud-kms-ops/references/integration.md)
+- [references/well-architected-assessment.md](alicloud-kms-ops/references/well-architected-assessment.md)
+- [references/enhanced-self-healing-framework.md](alicloud-kms-ops/references/enhanced-self-healing-framework.md)
+- [assets/example-config.yaml](alicloud-kms-ops/assets/example-config.yaml)
+
+---
+
+### 3.10 alicloud-topo-discovery — 网络拓扑与资源清单
 
 | 元数据 | 值 |
 |--------|------|

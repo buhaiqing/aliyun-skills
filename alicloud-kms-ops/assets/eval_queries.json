@@ -1,0 +1,22 @@
+[
+  { "query": "Generate a KMS skill for Alibaba Cloud key management", "should_trigger": true },
+  { "query": "Create encryption keys using KMS", "should_trigger": true },
+  { "query": "Rotate secrets in 密钥管理服务", "should_trigger": true },
+  { "query": "How to encrypt data with symmetric key on Alibaba Cloud", "should_trigger": true },
+  { "query": "Schedule deletion of a CMK key", "should_trigger": true },
+  { "query": "BYOK import key material KMS", "should_trigger": true },
+  { "query": "Sign data with EC_SM2 asymmetric key", "should_trigger": true },
+  { "query": "Generate data key for envelope encryption", "should_trigger": true },
+  { "query": "List all secrets in KMS region", "should_trigger": true },
+  { "query": "Create alias for KMS master key", "should_trigger": true },
+  { "query": "Create an ECS instance with encrypted disk", "should_trigger": false },
+  { "query": "Check my Alibaba Cloud monthly bill", "should_trigger": false },
+  { "query": "Set up RAM user permissions for developers", "should_trigger": false },
+  { "query": "Configure VPC network for my application", "should_trigger": false },
+  { "query": "Install aliyun CLI tool on my laptop", "should_trigger": false },
+  { "query": "Generate ECS ops skill from OpenAPI spec", "should_trigger": false },
+  { "query": "Deploy a new RDS MySQL database", "should_trigger": false },
+  { "query": "Set up nginx reverse proxy for my website", "should_trigger": false },
+  { "query": "Monitor Redis cache hit rates", "should_trigger": false },
+  { "query": "Create a new KMS instance with AAP", "should_trigger": true }
+]
