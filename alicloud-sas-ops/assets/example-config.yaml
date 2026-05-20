@@ -1,0 +1,53 @@
+# Security Center (SAS) — Example operational configuration
+
+security_center:
+  api:
+    product: sas
+    version: "2018-12-03"
+    endpoint: "tds.cn-shanghai.aliyuncs.com"
+    region_id: cn-shanghai
+
+  credentials:
+    # Use environment variables only — never commit real keys
+    access_key_id: "${ALIBABA_CLOUD_ACCESS_KEY_ID}"
+    access_key_secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET}"
+
+  asset_inventory:
+    default_machine_types: ecs
+    page_size: 50
+    use_next_token: true
+    default_criteria:
+      - name: riskStatus
+        value: "YES"
+
+  agent:
+    install_poll_interval_seconds: 30
+    install_max_wait_minutes: 10
+    require_online_before_scan: true
+
+  alerting:
+    query_window_hours: 24
+    page_size: 50
+    require_confirmation_for_handle: true
+
+  vulnerability:
+    default_types:
+      - cve
+      - sys
+    page_size: 100
+
+  baseline:
+    weekly_submit_check: true
+
+  access_key_leak:
+    auto_escalate_to_ram: true
+
+  monitoring:
+    offline_agent_warning_percent: 5
+    offline_agent_critical_percent: 15
+    export_alerts_to_sls: false  # enable when sls-ops skill configured
+
+  delegation:
+    actiontrail_skill: alicloud-actiontrail-ops
+    ram_skill: alicloud-ram-ops
+    ecs_skill: alicloud-ecs-ops
