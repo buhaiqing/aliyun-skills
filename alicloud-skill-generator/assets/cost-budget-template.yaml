@@ -1,0 +1,403 @@
+# 阿里云 Skill 成本预算配置模板
+# Cost Budget Configuration Template for Aliyun Skills
+#
+# Purpose: 定义月度成本预算、告警阈值和产品配额分配
+# Version: 1.0.0
+# Last Updated: 2026-05-20
+# Status: P0 - 高优先级
+
+---
+# 基础配置
+api_version: "v1"
+kind: "CostBudget"
+metadata:
+  name: "aliyun-skills-monthly-budget"
+  description: "阿里云 Skill 月度成本预算配置"
+  created_at: "2026-05-20T00:00:00Z"
+  updated_at: "2026-05-20T00:00:00Z"
+  labels:
+    environment: "production"
+    project: "aliyun-skills"
+    managed_by: "meta-skill"
+
+# === 月度总预算配置 ===
+budget:
+  # 月度总预算 (CNY)
+  # 根据实际使用情况调整
+  monthly_total: 1000
+
+  # 币种
+  currency: "CNY"
+
+  # 预算周期
+  cycle:
+    type: "monthly"  # monthly | quarterly | yearly
+    start_day: 1     # 每月开始日
+    reset_on: "first_day_of_month"
+
+  # 预算告警通知
+  notifications:
+    enabled: true
+    channels:
+      - type: "email"
+        recipients:
+          - "ops-team@company.com"
+          - "finance-team@company.com"
+      - type: "webhook"
+        url: "https://hooks.slack.com/services/xxx"
+        events:
+          - "threshold_warning"
+          - "threshold_critical"
+          - "budget_exceeded"
+      - type: "sms"
+        phone_numbers:
+          - "+86138xxxx"
+        enabled: false  # 仅在 critical 时启用
+
+# === 告警阈值配置 ===
+thresholds:
+  # 警告阈值 - 达到预算的 80% 时触发
+  warning:
+    percentage: 80
+    action: "notify"           # notify | throttle | block
+    frequency: "once_per_day"    # once | once_per_day | continuous
+    message_template: |
+      ⚠️ 成本预算警告
+
+      当前使用率: {{usage_percent}}%
+      已用金额: ¥{{used_amount}}
+      预算上限: ¥{{total_budget}}
+
+      建议关注高成本产品：{{top_products}}
+
+  # 严重阈值 - 达到预算的 90% 时触发
+  critical:
+    percentage: 90
+    action: "throttle"         # throttle 表示限制非关键调用
+    frequency: "continuous"
+    throttle_config:
+      # 限流策略
+      strategy: "adaptive"      # adaptive | fixed
+
+      # 自适应限流参数
+      adaptive:
+        # 当达到 90% 时，限制 50% 的非关键调用
+        rate_limit_percent: 50
+        # 当达到 95% 时，限制 80% 的非关键调用
+        emergency_rate_limit: 80
+
+      # 关键调用白名单 (即使超预算也允许)
+      critical_operations:
+        - "DescribeInstances"      # 查询类 - 必须允许
+        - "DescribeDBInstances"    # 查询类 - 必须允许
+        - "DescribeMetricList"     # 监控查询
+        - "CreateDiagnosticReport" # 诊断报告
+
+      # 非关键调用 (可被限制)
+      non_critical_operations:
+        - "RunInstances"           # 创建实例
+        - "CreateDatabase"         # 创建数据库
+        - "CreateLoadBalancer"     # 创建 SLB
+
+  # 超额阈值 - 达到预算的 100% 时触发
+  exceeded:
+    percentage: 100
+    action: "block"            # block 表示阻止所有非关键调用
+    allow_emergency: true        # 但允许紧急操作 (需二次确认)
+    emergency_operations:
+      - "StopInstance"           # 停止实例 (节省成本)
+      - "DeleteInstance"         # 删除实例 (紧急清理)
+      - "CreateDiagnosticReport" # 故障诊断
+
+# === 产品配额分配 ===
+# 按产品分配预算百分比
+allocations:
+  # CMS (云监控) - 30%
+  # 包含: DescribeMetricList, DescribeMetricData 等
+  # 注意: CMS 有 100万 次/月免费额度
+  cms:
+    percentage: 30
+    monthly_limit_cny: 300
+    description: "云监控 API 调用费用"
+    notes:
+      - "免费额度: 100万次/月"
+      - "超额后按量计费"
+    free_tier:
+      enabled: true
+      monthly_quota: 1000000    # 100万 次/月
+      alert_at_percent: 80      # 80% 时告警
+      alert_at_count: 800000    # 80万 次时告警
+    pricing:
+      unit: "per_1m_calls"
+      price_cny: 0.015          # 每百万次 0.015 元
+
+  # DAS (数据库自治服务) - 40%
+  # 包含: CreateDiagnosticReport, GetDasSQLLogHotKeys 等
+  das:
+    percentage: 40
+    monthly_limit_cny: 400
+    description: "数据库诊断服务费用"
+    notes:
+      - "DAS Pro 版按实例计费"
+      - "SQL 洞察按量计费"
+    free_tier:
+      enabled: false            # DAS 无免费额度
+    pricing:
+      unit: "per_instance_month"
+      price_cny: 50.0           # 每实例每月 50 元 (参考)
+
+  # ECS (弹性计算) - 10%
+  # 主要用于 API 调用，非实例费用
+  ecs:
+    percentage: 10
+    monthly_limit_cny: 100
+    description: "ECS API 调用费用"
+    notes:
+      - "Describe 类 API 通常免费"
+      - "创建/修改类 API 可能收费"
+    free_tier:
+      enabled: true
+      description: "Describe 类操作免费"
+    pricing:
+      unit: "per_1k_calls"
+      price_cny: 0.01
+
+  # RDS (关系型数据库) - 10%
+  rds:
+    percentage: 10
+    monthly_limit_cny: 100
+    description: "RDS API 调用费用"
+    free_tier:
+      enabled: true
+      description: "Describe 类操作免费"
+    pricing:
+      unit: "per_1k_calls"
+      price_cny: 0.01
+
+  # Others (其他产品) - 10%
+  # 包含: SLB, Redis, ACK, OSS, KMS 等
+  others:
+    percentage: 10
+    monthly_limit_cny: 100
+    description: "其他产品 API 调用费用"
+    sub_allocations:
+      - product: "slb"
+        percentage: 30           # 占 others 的 30% = 3%
+        monthly_limit_cny: 30
+      - product: "redis"
+        percentage: 20           # 占 others 的 20% = 2%
+        monthly_limit_cny: 20
+      - product: "ack"
+        percentage: 20           # 占 others 的 20% = 2%
+        monthly_limit_cny: 20
+      - product: "oss"
+        percentage: 15           # 占 others 的 15% = 1.5%
+        monthly_limit_cny: 15
+      - product: "kms"
+        percentage: 10           # 占 others 的 10% = 1%
+        monthly_limit_cny: 10
+      - product: "other"
+        percentage: 5            # 占 others 的 5% = 0.5%
+        monthly_limit_cny: 5
+
+# === 成本优化策略 ===
+cost_optimization:
+  # 是否启用自动优化
+  enabled: true
+
+  # 优化策略
+  strategies:
+    # 策略 1: 缓存优化
+    caching:
+      enabled: true
+      description: "通过缓存减少重复 API 调用"
+      target_products:
+        - "cms"
+        - "ecs"
+        - "rds"
+      expected_savings_percent: 30
+
+    # 策略 2: 批量操作
+    batching:
+      enabled: true
+      description: "批量查询替代单次查询"
+      target_operations:
+        - "DescribeInstances"
+        - "DescribeDBInstances"
+        - "DescribeMetricList"
+      expected_savings_percent: 20
+
+    # 策略 3: 智能轮询
+    smart_polling:
+      enabled: true
+      description: "动态调整轮询频率"
+      target_operations:
+        - "DescribeInstanceStatus"
+        - "DescribeDBInstanceStatus"
+      expected_savings_percent: 25
+
+    # 策略 4: 免费额度优先
+    free_tier_priority:
+      enabled: true
+      description: "优先使用免费额度"
+      priority_products:
+        - "cms"
+      expected_savings_percent: 15
+
+# === 报表配置 ===
+reporting:
+  # 日报表
+  daily:
+    enabled: true
+    send_time: "09:00"           # 每天上午 9 点
+    format: "markdown"           # markdown | json | html
+    include:
+      - "usage_summary"
+      - "product_breakdown"
+      - "top_operations"
+      - "alerts"
+
+  # 周报表
+  weekly:
+    enabled: true
+    send_day: "monday"           # monday | sunday
+    send_time: "09:00"
+    format: "markdown"
+    include:
+      - "usage_summary"
+      - "product_breakdown"
+      - "trend_analysis"
+      - "forecast"
+      - "optimization_recommendations"
+
+  # 月报表
+  monthly:
+    enabled: true
+    send_day: 1                  # 每月 1 日
+    send_time: "09:00"
+    format: "markdown"
+    include:
+      - "complete_usage_report"
+      - "budget_variance_analysis"
+      - "cost_optimization_summary"
+      - "next_month_forecast"
+
+# === 成本归因配置 ===
+attribution:
+  # 按用户归因
+  by_user:
+    enabled: true
+    track_users:
+      - "user_id"
+      - "username"
+
+  # 按任务归因
+  by_task:
+    enabled: true
+    track_tasks:
+      - "task_id"
+      - "task_type"
+      - "session_id"
+
+  # 按项目归因
+  by_project:
+    enabled: true
+    track_projects:
+      - "project_id"
+      - "project_name"
+      - "environment"
+
+# === API 调用限制 ===
+rate_limits:
+  # 全局速率限制
+  global:
+    max_calls_per_second: 100
+    max_calls_per_minute: 1000
+    max_calls_per_hour: 10000
+
+  # 按产品速率限制
+  by_product:
+    cms:
+      max_calls_per_second: 50
+      max_calls_per_minute: 500
+    das:
+      max_calls_per_second: 10
+      max_calls_per_minute: 100
+    ecs:
+      max_calls_per_second: 30
+      max_calls_per_minute: 300
+
+# === 审计与合规 ===
+audit:
+  # 审计日志
+  logging:
+    enabled: true
+    level: "info"                # debug | info | warn | error
+    retention_days: 90
+
+  # 成本变更审计
+  track_changes:
+    enabled: true
+    tracked_fields:
+      - "monthly_total"
+      - "thresholds.warning.percentage"
+      - "thresholds.critical.percentage"
+      - "allocations.*.percentage"
+
+# === 紧急预案 ===
+emergency:
+  # 紧急联系人
+  contacts:
+    - name: "运维值班"
+      phone: "+86138xxxx0001"
+      email: "ops-oncall@company.com"
+    - name: "财务负责人"
+      phone: "+86138xxxx0002"
+      email: "finance-lead@company.com"
+
+  # 紧急操作
+  actions:
+    # 当预算超支 150% 时触发
+    over_budget_150:
+      trigger: "usage > 150%"
+      actions:
+        - "notify_emergency_contacts"
+        - "pause_all_non_critical_operations"
+        - "generate_incident_report"
+
+    # 当单日费用异常时触发
+    abnormal_daily_spend:
+      trigger: "daily_cost > avg_daily_cost * 3"
+      actions:
+        - "notify_emergency_contacts"
+        - "investigate_usage_spike"
+
+# === 配置使用示例 ===
+#
+# 1. 加载配置:
+#    budget = load_budget_config("cost-budget-template.yaml")
+#
+# 2. 检查预算状态:
+#    status = check_budget_status("cms")
+#    # 返回: {usage: 65%, status: "ok", remaining: 35%}
+#
+# 3. 记录 API 调用:
+#    record_api_call("cms", "DescribeMetricList", cost=0.0001)
+#
+# 4. 生成报表:
+#    generate_cost_report(period="daily")
+#
+# 5. 触发限流:
+#    if should_throttle("das"):
+#        throttle_calls("das", rate=50%)
+
+# === 版本历史 ===
+changelog:
+  - version: "1.0.0"
+    date: "2026-05-20"
+    changes:
+      - "初始版本发布"
+      - "定义月度预算 1000 CNY"
+      - "配置三级告警阈值"
+      - "定义产品配额分配"
+      - "添加成本优化策略"

@@ -1282,6 +1282,127 @@ If all above checks pass but connectivity still fails:
 
 ---
 
+### Operation: Multi-Metric Anomaly Inspection
+
+Detect composite anomaly patterns across multiple ECS metrics for proactive alerting and auto-remediation.
+
+#### Supported Anomaly Patterns
+
+| Pattern ID | Pattern Name | Detection Criteria | Severity | Auto-Action |
+|------------|--------------|-------------------|----------|-------------|
+| 1 | **CPU-Memory 双高模式** | CPU > 90% AND Memory > 85% for 5+ minutes | Critical | Auto-scale / Restart instance |
+| 2 | **磁盘-IO 瓶颈模式** | DiskUsage > 90% AND IOPS > 80% of limit | High | Alert / Expand disk |
+| 3 | **突变检测模式** | Metric change rate > threshold/minute | Medium | Alert / Log analysis |
+| 4 | **Load-CPU 不匹配模式** | LoadAvg > CPU * 2 | High | Process analysis / Restart |
+| 5 | **网络流量突增模式** | NetworkIn/Out > 3x baseline for 3+ minutes | Medium | Traffic analysis / DDoS check |
+| 6 | **磁盘写入 Stall 模式** | DiskLatency > 100ms for 2+ minutes | Critical | IO optimization / Disk upgrade |
+
+#### CLI Detection (Batch Collection)
+
+```bash
+# Collect multi-metric data for anomaly detection
+aliyun cms DescribeMetricList \
+  --Namespace acs_ecs_dashboard \
+  --MetricName CPUUtilization \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --StartTime "$(date -u -v-10M +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%MZ)" \
+  --Period 60
+
+aliyun cms DescribeMetricList \
+  --Namespace acs_ecs_dashboard \
+  --MetricName MemoryUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
+  --StartTime "$(date -u -v-10M +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%MZ)" \
+  --Period 60
+
+aliyun cms DescribeMetricList \
+  --Namespace acs_ecs_dashboard \
+  --MetricName DiskUsage \
+  --Dimensions '[{"instanceId":"{{user.instance_id}}","device":"vda"}]' \
+  --StartTime "$(date -u -v-10M +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%MZ)" \
+  --Period 60
+```
+
+#### SDK Detection (Programmatic Pattern Analysis)
+
+```go
+// detectAnomalyPattern analyzes collected metrics for composite anomalies
+func detectAnomalyPattern(metrics map[string][]float64) []string {
+    var anomalies []string
+
+    // Pattern 1: CPU-Memory 双高
+    cpuValues := metrics["CPUUtilization"]
+    memValues := metrics["MemoryUsage"]
+    if len(cpuValues) >= 5 && len(memValues) >= 5 {
+        recentCPU := cpuValues[len(cpuValues)-5:]
+        recentMem := memValues[len(memValues)-5:]
+        highCPU := true
+        highMem := true
+        for _, v := range recentCPU {
+            if v < 90 { highCPU = false }
+        }
+        for _, v := range recentMem {
+            if v < 85 { highMem = false }
+        }
+        if highCPU && highMem {
+            anomalies = append(anomalies, "CPU-Memory-Double-High")
+        }
+    }
+
+    // Pattern 2: Disk-IO 瓶颈 (simplified check)
+    diskValues := metrics["DiskUsage"]
+    if len(diskValues) >= 5 {
+        recentDisk := diskValues[len(diskValues)-5:]
+        allHigh := true
+        for _, v := range recentDisk {
+            if v < 90 { allHigh = false }
+        }
+        if allHigh {
+            anomalies = append(anomalies, "Disk-IO-Bottleneck")
+        }
+    }
+
+    // Pattern 3: 突变检测
+    if len(cpuValues) >= 2 {
+        changeRate := cpuValues[len(cpuValues)-1] - cpuValues[len(cpuValues)-2]
+        if changeRate > 30 { // >30% change in 1 minute
+            anomalies = append(anomalies, "Sudden-Change-Spike")
+        }
+    }
+
+    // Pattern 4: Load-CPU 不匹配
+    // Requires LoadAverage from CloudMonitor or instance agent
+    // LoadAverage > CPU * 2 indicates process queue buildup
+
+    return anomalies
+}
+```
+
+#### Recovery Actions
+
+| Anomaly Pattern | Auto-Recovery | Manual Recovery |
+|-----------------|---------------|-----------------|
+| CPU-Memory 双高 | Trigger Auto Scaling (if configured) | Restart instance / Optimize processes |
+| 磁盘-IO 瓶颈 | Expand disk / Upgrade to SSD | Clean up / Archive old data |
+| 突变检测 | Send alert notification | Analyze application logs |
+| Load-CPU 不匹配 | Restart hung processes | Kill runaway processes |
+| 网络流量突增 | Enable DDoS protection | Review traffic sources |
+| 磁盘写入 Stall | Switch to higher IOPS disk | I/O scheduler tuning |
+
+#### Integration with Monitoring
+
+- **Alert Rules:** Create CMS alert rules for each pattern threshold
+- **Action Park:** Configure auto-scaling, message notifications (MNS), or O&M callbacks (Function Compute)
+- **Event Bridge:** Forward anomalies to Event Bridge for automated response workflows
+- **Service Linked Role:** Use `AliyunECSAutoScalingRole` for automatic scaling operations
+
+> **See also:** [Observability Integration](references/observability.md) for unified alerting and [Monitoring & Alerts](references/monitoring.md) for metric configuration.
+
+---
+
 ### Operation: Run Command (Cloud Assistant)
 
 #### Pre-flight Checks
@@ -1818,6 +1939,9 @@ Phase 3: Validate — Confirm connectivity, application health, data integrity
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
 - [Prompt Examples](references/prompt-examples.md) — 自然语言提示词示例，开箱即用
+- [Batch Operations](references/batch-operations.md) — 批量并行操作模板
+- [Observability](references/observability.md) — 可观测性联动规则
+- [API Call Counter](https://github.com/aliyun-skill-runner/alicloud-skill-generator/templates/api-call-counter.md) — API 调用计数集成
 
 ## Operational Best Practices
 

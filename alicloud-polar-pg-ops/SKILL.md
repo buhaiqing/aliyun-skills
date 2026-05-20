@@ -405,6 +405,119 @@ aliyun polardb-pg StartDBCluster --DBClusterId "{{user.db_cluster_id}}"
 
 ---
 
+### Operation: Intelligent Inspection（PolarDB PostgreSQL 智能巡检）
+
+**Purpose**: 主动发现 PolarDB PG 实例性能瓶颈、存储风险和连接池异常
+
+**Trigger**: User mentions "巡检", "健康检查", "主动巡检", "性能巡检", "intelligent inspection", "health check" for PolarDB PostgreSQL
+
+#### Five-Step Workflow
+
+| Step | Phase | Description | Key APIs |
+|------|-------|-------------|-----------|
+| 1 | **Discovery** | 列出所有 PG 集群 | `DescribeDBClusters` |
+| 2 | **Collection** | 批量采集 CPU/Memory/IOPS/Storage/Connections 指标 | `DescribeDBClusterPerformance` |
+| 3 | **Detection** | 应用已定义的4种异常模式检测 | Pattern matching |
+| 4 | **Diagnosis** | 深度分析慢查询、索引缺失、vacuum状态 | `DescribeSlowQueries` |
+| 5 | **Report** | 生成巡检报告 (Markdown格式) | Report generation |
+
+#### CLI Script Template
+
+```bash
+#!/bin/bash
+# polar-pg-intelligent-inspection.sh
+# Usage: ./polar-pg-intelligent-inspection.sh <RegionId>
+
+RegionId=${1:-cn-hangzhou}
+
+echo "=== PolarDB PostgreSQL 智能巡检 ==="
+echo "Region: $RegionId"
+echo "Time: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
+# Step 1: Discovery - 列出所有 PG 集群
+echo ">>> Step 1: Discovery - 发现 PolarDB PG 集群"
+aliyun polardb-pg DescribeDBClusters \
+  --DBVersion PostgreSQL \
+  --RegionId "$RegionId" \
+  --output cols=DBClusterId,DBClusterStatus,DBVersion,PayType rows=Items.DBCluster[].{DBClusterId,DBClusterStatus,DBVersion,PayType}
+
+# Step 2: Collection - 采集性能指标（示例单个集群）
+DBClusterId=${2:-"pg-xxxxx"}  # 指定集群ID
+
+echo ""
+echo ">>> Step 2: Collection - 采集性能指标"
+# 采集多个关键指标
+aliyun polardb-pg DescribeDBClusterPerformance \
+  --DBClusterId "$DBClusterId" \
+  --RegionId "$RegionId" \
+  --Key "CPUUsage,MemoryUsage,IOPSUsage,StorageUsage,ConnectionUsage"
+
+# Step 3: Detection - 异常检测（基于采集的指标）
+echo ""
+echo ">>> Step 3: Detection - 异常模式检测"
+# 异常模式定义：
+# - PG-01: CPU-IOPS双高 (CPU > 80% + IOPS > 80%)
+# - PG-02: 连接池异常 (ActiveConnections >= MaxConnections * 0.9)
+# - PG-03: 内存-缓冲池瓶颈 (Memory > 85% + BufferPoolHitRate < 95%)
+# - PG-04: 存储空间预警 (StorageUsage > 85%)
+
+# Step 4: Diagnosis - 深度诊断
+echo ""
+echo ">>> Step 4: Diagnosis - 深度分析"
+# 查询慢查询
+aliyun polardb-pg DescribeSlowQueries \
+  --DBClusterId "$DBClusterId" \
+  --StartTime "$(date -d '1 hour ago' '+%Y-%m-%dT%H:%MZ' -u)" \
+  --EndTime "$(date -u '+%Y-%m-%dT%H:%MZ')"
+
+# Step 5: Report - 生成报告
+echo ""
+echo ">>> Step 5: Report - 巡检报告"
+echo "## PolarDB PostgreSQL 巡检报告 - ${DBClusterId}"
+echo ""
+echo "| 指标 | 当前值 | 状态 | 建议 |"
+echo "|--------|---------|------|------|"
+echo "| CPU使用率 | XX% | 正常/警告/严重 | - |"
+echo "| 内存使用率 | XX% | 正常/警告/严重 | - |"
+echo "| IOPS使用率 | XX% | 正常/警告/严重 | - |"
+echo "| 存储使用率 | XX% | 正常/警告/严重 | - |"
+echo "| 连接使用率 | XX% | 正常/警告/严重 | - |"
+echo ""
+echo "### 异常检测结果"
+echo "无异常 / 发现 N 项异常"
+echo ""
+echo "### 优化建议"
+echo "1. [建议项]"
+```
+
+#### Inspection Scoring（巡检评分）
+
+| 检查项 | 正常阈值 | 得分 | 告警阈值 |
+|--------|---------|------|----------|
+| CPU使用率 | < 80% | 10分 | >= 90% |
+| 存储空间 | < 85% | 10分 | >= 95% |
+| 连接池使用 | < 80%上限 | 10分 | >= 95% |
+| 慢查询数 | < 5/hour | 10分 | >= 20/hour |
+| Vacuum延迟 | < 1000条 | 10分 | >= 10000条 |
+| 索引覆盖率 | > 90% | 10分 | < 70% |
+
+**总分判断**:
+- **60分以上**: 正常 (Normal)
+- **40-60分**: 警告 (Warning) — 建议关注
+- **< 40分**: 严重 (Critical) — **需立即优化**
+
+#### Anomaly Detection Patterns
+
+| Pattern ID | Pattern Name | Detection Criteria | Severity | Agent Action |
+|------------|--------------|-------------------|----------|--------------|
+| PG-01 | CPU-IOPS双高 | CPU > 80% + IOPS > 80% | High | Check slow queries, suggest scale-up |
+| PG-02 | 连接池异常 | ActiveConnections >= MaxConnections * 0.9 | High | Review connection leaks, suggest parameter tuning |
+| PG-03 | 内存-缓冲池瓶颈 | Memory > 85% + BufferPoolHitRate < 95% | Medium | Analyze memory usage, optimize buffer pool |
+| PG-04 | 存储空间预警 | StorageUsage > 85% | High | Alert for 扩容 or cleanup |
+
+---
+
 ## PolarDB PG Cruise (Health Check)
 
 | Step | Operation | Purpose | Alert Threshold |
@@ -415,6 +528,19 @@ aliyun polardb-pg StartDBCluster --DBClusterId "{{user.db_cluster_id}}"
 | 4 | **DescribeBackups** | Verify recent backup success | Alert if > 24h no backup |
 | 5 | **DescribeAccounts** | Audit accounts | Log |
 | 6 | **DescribeDatabases** | Check databases | Log |
+
+## Supported Anomaly Patterns
+
+The following multi-metric anomaly patterns are used for intelligent detection during health checks and monitoring:
+
+| Pattern ID | Pattern Name | Detection Criteria | Severity | Agent Action |
+|------------|--------------|-------------------|----------|--------------|
+| PG-01 | CPU-IOPS双高 | CPU > 80% + IOPS瓶颈 | High | Check slow queries, suggest scale-up |
+| PG-02 | 连接池异常 | ActiveConnections >= MaxConnections * 0.9 | High | Review connection leaks, suggest parameter tuning |
+| PG-03 | 内存-缓冲池瓶颈 | Memory > 85% + BufferPoolHitRate < 95% | Medium | Analyze memory usage, optimize buffer pool |
+| PG-04 | 存储空间预警 | StorageUsage > 85% | High | Alert for扩容 or cleanup |
+
+> **Pattern Detection Method:** Use `DescribeDBClusterPerformance` API with `PerformanceKeys` parameter to fetch multiple metrics simultaneously for cross-analysis.
 
 ## Prerequisites
 
@@ -473,6 +599,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [CLI Usage](references/cli-usage.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
+- [Anomaly Patterns](references/anomaly-patterns.md)
 - [Integration](references/integration.md)
 
 ## Operational Best Practices

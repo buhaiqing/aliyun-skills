@@ -626,6 +626,17 @@ For comprehensive cluster health assessment when user requests "巡检" or "heal
 | "集群宕机" / "连不上" | Availability |
 | "巡检异常" / "健康检查失败" | General Health |
 
+### Supported Anomaly Patterns
+
+| # | Pattern | Detection Criteria | Common Causes | Recommended Action |
+|---|---------|-------------------|---------------|-------------------|
+| 1 | **CPU-IOPS双高** | CPU > 80% + IOPS 接近上限 | 复杂查询/分析型SQL、短时间内大量并发 | 检查慢查询、优化SQL、增加只读节点 |
+| 2 | **连接-慢查询关联** | Connections 高 + SlowQueries 增加 | 连接池耗尽、慢查询积累阻塞 | 排查慢SQL、优化连接池、检查阻塞 |
+| 3 | **内存-缓冲池瓶颈** | Memory > 85% + BufferPoolHitRate < 95% | 缓冲池配置不足、大表全表扫描 | 扩容内存、优化SQL、调整缓冲池大小 |
+| 4 | **存储-延迟模式** | StorageUsage > 85% + Latency 突增 | 存储空间不足、写入阻塞 | 扩容存储、清理历史数据、归档冷数据 |
+
+> **Note:** For complex anomaly diagnosis (SQL throttling, deadlock analysis, auto-scaling), delegate to `alicloud-das-ops`.
+
 ---
 
 ## Well-Architected Assessment (卓越架构)
@@ -682,6 +693,11 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
+
+## Related Skills & References
+
+- See: [alicloud-das-ops](../alicloud-das-ops/SKILL.md) — DAS诊断联动 (SQL throttling, deadlock analysis, auto-scaling)
+- See: [Proactive Inspection Template](../alicloud-skill-generator/templates/proactive-inspection.md) — 主动巡检模板
 
 ## Operational Best Practices
 

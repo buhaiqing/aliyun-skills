@@ -388,6 +388,127 @@ aliyun polardb-io UpgradeDBCluster \
 
 ---
 
+### Operation: Intelligent Inspection (PolarDB Oracle 智能巡检)
+
+**Purpose**: 主动发现 PolarDB Oracle 实例性能瓶颈、存储风险和会话异常
+
+**Five-Step Workflow**:
+1. **Discovery**: `aliyun polardb-io DescribeDBClusters` 列出集群
+2. **Collection**: 批量采集 CPU/Memory/IOPS/Storage/Sessions 指标
+3. **Detection**: 应用已定义的4种异常模式检测
+4. **Diagnosis**: 深度分析慢SQL、表空间使用、会话状态
+5. **Report**: 生成巡检报告 (Markdown格式)
+
+#### CLI Script Template
+
+```bash
+#!/bin/bash
+# polar-oracle-intelligent-inspection.sh
+# Usage: ./polar-oracle-intelligent-inspection.sh <DBClusterId> <RegionId>
+
+set -e
+
+DBClusterId=${1}
+RegionId=${2:-cn-hangzhou}
+OUTPUT_DIR=${OUTPUT_DIR:-"./reports/polardb-inspection-$(date +%Y%m%d)"}
+
+mkdir -p "$OUTPUT_DIR"
+
+echo "## PolarDB Oracle 智能巡检报告 - ${DBClusterId}"
+echo "巡检时间: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
+# Step 1: Discovery - 列出集群信息
+echo "### 1. 集群信息"
+aliyun polardb-io DescribeDBClusterAttribute \
+  --DBClusterId "$DBClusterId" \
+  --RegionId "$RegionId" \
+  --output json | jq -r '.DBClusterId, .DBClusterStatus, .DBVersion, .DBNodeClass'
+
+# Step 2: Collection - 采集性能指标
+echo ""
+echo "### 2. 性能指标采集"
+
+# CPU 和内存使用率
+aliyun polardb-io DescribeDBClusterPerformance \
+  --DBClusterId "$DBClusterId" \
+  --RegionId "$RegionId" \
+  --Key "CPUUtilization,MemoryUtilization" \
+  --StartTime "$(date -d '1 hour ago' +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date +%Y-%m-%dT%H:%MZ)" \
+  --output json
+
+# IOPS 和连接数
+aliyun polardb-io DescribeDBClusterPerformance \
+  --DBClusterId "$DBClusterId" \
+  --RegionId "$RegionId" \
+  --Key "IOPS,Connections" \
+  --StartTime "$(date -d '1 hour ago' +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date +%Y-%m-%dT%H:%MZ)" \
+  --output json
+
+# Step 3: Detection - 存储空间检查
+echo ""
+echo "### 3. 存储空间检测"
+aliyun polardb-io DescribeDBClusters \
+  --DBClusterId "$DBClusterId" \
+  --RegionId "$RegionId" \
+  --output json | jq -r '.Items.DBCluster[] | select(.DBClusterId=="'"$DBClusterId"'") | .DBClusterId, .StorageUsed, .StorageMax'
+
+echo ""
+echo "### 4. 巡检得分"
+
+# 巡检评分规则
+echo "| 指标 | 阈值 | 得分 |"
+echo "|------|------|------|"
+echo "| CPU使用率 | < 80% | 10分 |"
+echo "| 存储空间使用率 | < 85% | 10分 |"
+echo "| 会话数 | < 80%上限 | 10分 |"
+echo "| 慢SQL | < 5/hour | 10分 |"
+echo ""
+echo "**总分 < 40分 → Critical 需要立即处理**"
+
+# Step 5: Report - 保存报告
+echo ""
+echo "---"
+echo "巡检完成，报告已保存至: $OUTPUT_DIR"
+```
+
+#### Inspection Scoring
+
+| 指标 | 阈值 | 得分 |
+|------|------|------|
+| CPU使用率 | < 80% | 10分 |
+| 存储空间使用率 | < 85% | 10分 |
+| 会话数 | < 80%上限 | 10分 |
+| 慢SQL | < 5/hour | 10分 |
+
+**总分 < 40分 → Critical** (需要立即处理)
+
+#### 异常检测规则
+
+| 规则名称 | 检测指标 | 阈值 | 级别 |
+|----------|----------|------|------|
+| CPU使用率过高 | CPUUtilization | > 80% | Warning |
+| CPU使用率严重过高 | CPUUtilization | > 95% | Critical |
+| 内存使用率过高 | MemoryUtilization | > 85% | Warning |
+| 存储空间不足 | StorageUsage | > 85% | Warning |
+| 连接数过高 | Connections | > 80% max | Warning |
+
+#### 使用示例
+
+```bash
+# 对单个集群进行巡检
+./polar-oracle-intelligent-inspection.sh pc-bp123456789abcde cn-hangzhou
+
+# 批量巡检所有集群
+for cluster in $(aliyun polardb-io DescribeDBClusters --output json | jq -r '.Items.DBCluster[].DBClusterId'); do
+  ./polar-oracle-intelligent-inspection.sh "$cluster" cn-hangzhou
+done
+```
+
+---
+
 ## PolarDB IO Cruise (Health Check)
 
 | Step | Operation | Purpose | Alert Threshold |

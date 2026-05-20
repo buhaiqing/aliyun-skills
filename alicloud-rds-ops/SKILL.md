@@ -1576,6 +1576,33 @@ echo "=== RDS Cruise Complete ==="
 | IP Whitelist | 0.0.0.0/0 present | — | Security alert; restrict access |
 | HA Sync Mode | Async | — | Warning; suggest Sync for critical workloads |
 
+### Supported Anomaly Patterns (Multi-Indicator Correlation)
+
+The following compound anomaly patterns are supported for advanced巡检 detection:
+
+| # | Pattern Name | Condition | Diagnosis Path | DAS Trigger |
+|---|--------------|-----------|----------------|-------------|
+| 1 | CPU-IOPS 双高 | CPU > 80% + IOPS接近上限 | Section 1.1 + 1.5 | IOPS持续5分钟→DAS分析 |
+| 2 | 连接-慢查询关联 | Connections > 80% + SlowQueries增加 | Section 1.3 + 8.1 | 慢查询>阈值→CreateDiagnosticReport |
+| 3 | 内存-缓冲池瓶颈 | Memory > 85% + BufferPoolHitRate < 95% | Section 1.2 | 内存异常持续5分钟→DAS SQL诊断 |
+| 4 | 磁盘-写入延迟 | DiskUsage > 85% + WriteLatency突增 | Section 1.4 + 1.5 | 磁盘写入延迟→DAS分析 |
+
+> **Note:** Multi-indicator patterns require correlation analysis. See [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md) Section 2.1 for the Multi-Dimensional Correlation Matrix.
+
+### DAS Diagnostic Delegation Triggers
+
+When the following conditions are met, automatically delegate to DAS (Database Autonomy Service) for advanced diagnosis:
+
+| Trigger Condition | DAS Action | Threshold |
+|-------------------|------------|-----------|
+| Slow query count exceeds threshold | DAS `CreateDiagnosticReport` | > 10 queries/hour |
+| Performance anomaly persists > 5 minutes | DAS SQL diagnosis | 连续5分钟 CPU/Memory/IOPS异常 |
+| Low execution efficiency detected | DAS `AnalyzePerformance` | SQL执行时间 > 1s 批量出现 |
+| Buffer pool hit rate drops | DAS `AnalyzeInstance` | BufferPoolHitRate < 95% |
+| Write latency spikes | DAS `AnalyzeIO` | WriteLatency 突增 > 100% |
+
+> **Note:** DAS delegation requires the RDS instance to have DAS access enabled. Use `aliyun rds ModifyDasFlag` to enable if needed.
+
 ---
 
 ## Prerequisites
@@ -1849,6 +1876,11 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Monitoring & Alerts](references/monitoring.md)
 - [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md)
 - [Integration](references/integration.md)
+
+## See Also
+
+- [Proactive Inspection Workflow Template](../alicloud-skill-generator/templates/proactive-inspection.md)
+- [API Call Counter Pattern](../alicloud-skill-generator/templates/api-call-counter.md)
 
 ## Operational Best Practices
 

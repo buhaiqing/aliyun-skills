@@ -265,6 +265,91 @@ aliyun dds DescribeBackups \
 
 **Key Metrics:** `CPUUsage`, `MemoryUsage`, `ConnectionUsage`, `IOPSUsage` (CMS namespace: `acs_mongodb_dashboard`)
 
+### DAS Integration (Database Autonomy Service)
+
+For advanced performance analysis, connect to DAS console or use DAS APIs:
+
+```bash
+# Query DAS for performance insights
+# Note: DAS provides additional AI-powered diagnostics beyond basic metrics
+```
+
+**Supported Anomaly Patterns:**
+
+| # | Pattern | Detection Criteria | Action |
+|---|---------|-------------------|--------|
+| 1 | **Memory-Connection双高** | MemoryUsage > 85% AND ConnectionUsage高 | Check connection leaks, query optimization |
+| 2 | **查询延迟异常** | QueryLatency突增 (>3x baseline) | Analyze slow queries, check indexes |
+| 3 | **索引缺失预警** | 慢查询 + 无索引覆盖 | Create covering indexes |
+| 4 | **存储空间预警** | StorageUsage > 85% | Archive/cleanup or scale storage |
+
+**DAS Diagnostic Commands:**
+```bash
+# For detailed slow query analysis, delegate to alicloud-das-ops
+# aliyun das DescribeSlowLogRecords
+```
+
+### Operation: Intelligent Inspection（MongoDB 智能巡检）
+
+**Purpose**: 主动发现 MongoDB 实例性能瓶颈、安全风险和容量问题
+
+**Five-Step Workflow**:
+1. **Discovery**: `aliyun dds DescribeDBInstances` 列出所有实例
+2. **Collection**: 批量采集 CPU/Memory/IOPS/Connections/Storage 指标
+3. **Detection**: 应用异常模式检测 (4种已定义模式)
+4. **Diagnosis**: 深度分析慢查询、索引缺失、连接池状态
+5. **Report**: 生成巡检报告 (Markdown格式)
+
+**CLI Script Template**:
+```bash
+#!/bin/bash
+# mongodb-intelligent-inspection.sh
+# Usage: ./mongodb-intelligent-inspection.sh <InstanceId> <RegionId>
+
+InstanceId=${1}
+RegionId=${2:-cn-hangzhou}
+
+# 采集指标
+aliyun dds DescribeDBInstancePerformance \
+  --DBInstanceId $InstanceId \
+  --RegionId $RegionId \
+  --Key "CPUUsage_MemoryUsage_IOPS_Connections"
+
+# 检查索引缺失
+aliyun dds DescribeIndexRecommendation \
+  --DBInstanceId $InstanceId
+
+# 生成报告
+echo "## MongoDB 巡检报告 - ${InstanceId}"
+echo "| 指标 | 当前值 | 状态 |"
+echo "|------|--------|------|"
+```
+
+**Inspection Scoring**:
+- CPU使用率 < 70%: 10分
+- 内存使用率 < 80%: 10分  
+- 连接数 < 80%上限: 10分
+- 慢查询 < 10/hour: 10分
+- 索引覆盖率 > 90%: 10分
+- 总分 < 40分 → Critical, 需立即优化
+
+**巡检触发条件**:
+- 定时任务: 每日/每周自动执行
+- 事件触发: 实例规格变更、告警阈值触发
+- 手动触发: 用户主动发起巡检请求
+
+**巡检报告内容**:
+- 实例概览: 规格、版本、架构、运行时间
+- 性能指标: CPU/内存/IOPS/连接数/存储使用趋势
+- 异常检测: 4种模式检测结果及风险等级
+- 诊断建议: 针对每个问题的优化方案
+- 历史对比: 与上次巡检结果对比分析
+
+**Delegation**:
+- 详细慢查询分析 → `alicloud-das-ops`
+- 索引优化建议 → `alicloud-mongodb-ops` (索引管理)
+- 容量规划 → `alicloud-billing-ops`
+
 ## CLI/SDK Dual-Path
 
 ### Primary Path: CLI (aliyun)
@@ -415,6 +500,8 @@ Detailed documentation for specialized operations:
 | [troubleshooting.md](references/troubleshooting.md) | Error codes, diagnostic playbooks, root cause analysis |
 | [monitoring.md](references/monitoring.md) | CloudWatch metrics, alert thresholds, dashboard setup |
 | [api-sdk-usage.md](references/api-sdk-usage.md) | Complete API operation mapping, SDK request/response patterns |
+| **See:** `../alicloud-skill-generator/templates/batch-operations.md` | Instance, collection, index batch queries |
+| **See:** `../alicloud-skill-generator/templates/api-call-counter.md` | API call counting for rate limiting |
 
 ## Capabilities at a Glance
 

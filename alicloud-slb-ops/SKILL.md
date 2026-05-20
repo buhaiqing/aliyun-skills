@@ -101,6 +101,22 @@ only when CLI lacks support for a specific edge-case operation.
 - Multi-product requests: handle each product with its skill; do not merge
   unrelated APIs into one ambiguous flow.
 
+#### ECS Delegation Rules (后端异常联动)
+
+| Scenario | Condition | Delegate To | Action |
+|----------|-----------|-------------|--------|
+| 后端异常 | Backend server health check failure | `alicloud-ecs-ops` | ECS 实例诊断 |
+| 健康检查失败 | Health check status abnormal | `alicloud-ecs-ops` | ECS 实例网络/端口检查 |
+
+#### Multi-Index Anomaly Patterns (多指标异常模式)
+
+| Pattern ID | Description | Detection Logic | Recommended Action |
+|------------|-------------|-----------------|---------------------|
+| 1 | 连接数-响应延迟瓶颈 | ActiveConnection 持续 > 80% 且 LatencyP50 > 500ms | 检查后端服务器性能 |
+| 2 | 健康检查失败率突增 | HealthCheck failed ratio > 50% in 5min | 检查后端服务可用性 |
+| 3 | 后端服务器不均衡 | Server weight imbalance > 3x | 调整后端权重 |
+| 4 | 流量突增异常 | QPS 突增 > 200% baseline | 排查异常流量/攻击 |
+
 ## Variable Convention (Agent-Readable)
 
 | Placeholder | Meaning | Agent Action |
@@ -1558,6 +1574,11 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md) — Common errors, diagnostic order, RAM policies
 - [Monitoring & Alerts](references/monitoring.md) — CloudMonitor metrics, health checks, alert recommendations
 - [Integration](references/integration.md) — Environment setup, JIT Go SDK bootstrap, cross-product integration
+- [Batch Operations](batch-operations.md) — 批量并行操作模板 (See: ../alicloud-skill-generator/templates/batch-operations.md)
+
+### API 调用计数
+
+See: [../alicloud-skill-generator/templates/api-counting.md](../alicloud-skill-generator/templates/api-counting.md)
 
 ### Assets
 

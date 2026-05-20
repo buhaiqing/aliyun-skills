@@ -706,6 +706,18 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
 - [CLI Behavioral Reference](../alicloud-skill-generator/references/cli-behavior.md)
 - [Enhanced Self-Healing Framework](../alicloud-skill-generator/references/enhanced-self-healing-framework.md)
+- [Batch Operations Template](../alicloud-skill-generator/templates/batch-operations.md) — VPC、交换机、路由表批量查询
+- [Proactive Inspection Template](../alicloud-skill-generator/templates/proactive-inspection.md) — 网络拓扑主动巡检
+- [API Call Counter Template](../alicloud-skill-generator/templates/api-call-counter.md) — API调用计数
+
+## Supported Anomaly Patterns
+
+| # | Pattern | Detection Criteria | Severity |
+|---|---------|-------------------|----------|
+| 1 | VPC流量突增 | 流量 > 3x baseline | High |
+| 2 | 路由表变更异常 | 频繁修改路由规则 | Medium |
+| 3 | 交换机容量不足 | 可用IP < 10% | Medium |
+| 4 | 网络连通性中断 | Ping/连通性检查失败 | Critical |
 
 ## Operational Best Practices
 

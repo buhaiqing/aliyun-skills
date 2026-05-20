@@ -1420,6 +1420,28 @@ fi
 }
 ```
 
+### Supported Anomaly Patterns
+
+```yaml
+Supported Anomaly Patterns:
+  1. 内存-连接数双高: Memory>85% + Connections>阈值
+  2. 响应延迟-吞吐瓶颈: Latency突增 + Throughput下降
+  3. 缓存命中率突降: HitRate从95%降至80%
+  4. 键空间-内存碎片: Keyspace大 + Memory碎片率高
+```
+
+### DAS 联动引用
+
+See: [DAS Cache Analysis Integration](../alicloud-skill-generator/templates/das-cache-analysis.md)
+
+### 批量操作引用
+
+See: [Batch Operations](../alicloud-skill-generator/templates/batch-operations.md)
+
+### API计数引用
+
+See: [API Usage Metrics](../alicloud-skill-generator/templates/api-usage-metrics.md)
+
 ## Enhanced Pre-flight Check (MANDATORY)
 
 > **CRITICAL:** Before executing ANY Redis/Tair operation, MUST run the enhanced pre-flight check script to validate environment and detect potential issues early.
