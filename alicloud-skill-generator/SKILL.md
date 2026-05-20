@@ -174,6 +174,94 @@ Every generated skill MUST satisfy these five standards. Reference them througho
 
 ---
 
+## Post-Generation Self-Check (生成后自检 — 宪章执行)
+
+> **机制：生成完成后自动执行，不符合则循环修复直到通过。**
+> **参考：** `references/governance-and-adversarial-review.md` §0 Charter
+
+### Self-Check Flowchart
+
+```
+生成完成 → 执行宪章检查 (C1-C5)
+  ↓
+C1-C5 全通过？
+  ↓ YES          ↓ NO
+报告成功    → HALT + 报告违规项
+  ↓              ↓
+结束        → 自动修复（填充模板内容）
+                 ↓
+              → 重新执行宪章检查
+                 ↓
+              → 循环直到通过
+```
+
+### Charter Compliance Checklist (强制执行)
+
+| # | Check | Command | Pass Criteria | Auto-Fix Template |
+|---|-------|---------|--------------|-------------------|
+| C1 | Frontmatter | `head -3 SKILL.md | grep "^---"` | Starts with `---`, has `name`, `description`, `license`, `compatibility`, `metadata` | Use `alicloud-skill-template.md` frontmatter |
+| C2 | SHOULD/SHOULD NOT | `grep -c "SHOULD Use" SKILL.md` | ≥ 1 match for each | Add Trigger & Scope section from template |
+| C3 | Five Core Standards | `grep -c "Five Core Standards" SKILL.md` | ≥ 1 match | Add Five Core Standards table from template |
+| C4 | Well-Architected | `grep -c "Well-Architected Framework" SKILL.md` | ≥ 1 match | Add Well-Architected Framework table |
+| C5 | Variables | `grep -c "^## Variables" SKILL.md` | ≥ 1 match | Add Variables section with `{{env.*}}`/`{{user.*}}`/`{{output.*}}` |
+
+### Self-Remediation Template (自动修复模板)
+
+当检测到违规时，使用以下模板内容自动填充：
+
+```yaml
+# C1: Frontmatter template (填充到文件开头)
+---
+name: alicloud-[product]-ops
+description: >-
+  Use when the user needs to [trigger description]...
+license: MIT
+compatibility: >-
+  Official Alibaba Cloud CLI (`aliyun`), Go 1.21+ runtime...
+metadata:
+  author: alicloud
+  version: "1.0.0"
+  last_updated: "YYYY-MM-DD"
+  runtime: Harness AI Agent, Claude Code, Cursor...
+  go_version_minimum: "1.21"
+  go_version_jit: "1.24+"
+  api_profile: "[API version — doc link]"
+  cli_applicability: "dual-path"
+  cli_support_evidence: >-
+    [CLI operation evidence]
+  environment:
+    - ALIBABA_CLOUD_ACCESS_KEY_ID
+    - ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    - ALIBABA_CLOUD_REGION_ID
+---
+```
+
+```markdown
+# C2-C5: Missing sections (填充到 Overview 之后)
+
+## Trigger & Scope (Agent-Readable)
+
+### SHOULD Use This Skill When
+- [Product triggers — match template format]
+
+### SHOULD NOT Use This Skill When
+- [Negative cases → delegate to other skills]
+
+## Variables
+
+| Variable | Source | Description | Example |
+|----------|--------|-------------|---------|
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` | Environment | Alibaba Cloud AK | `LTAI...` |
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` | Environment | Alibaba Cloud SK | `***` (masked) |
+| `{{env.ALIBABA_CLOUD_REGION_ID}}` | Environment | Region code | `cn-hangzhou` |
+| `{{user.*}}` | User | [interactive placeholders] | ... |
+| `{{output.*}}` | API Response | [response capture] | ... |
+```
+
+> **原则：自解优先于人工介入。Agent 必须在报告问题前尝试自动修复。**
+
+---
+
 ## Anti-Pattern Checklist
 
 Before and during generation, check against these common anti-patterns:

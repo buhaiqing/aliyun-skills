@@ -1,9 +1,32 @@
 # Governance & Adversarial Review
 
 > **Purpose:** Provides a minimal adversarial review framework for generated skills, catching destructive-action shortcuts, credential leaks, API hallucination, and UX gaps **before** merge. All generated skills MUST pass this review.
-> **Version:** 1.0.0
-> **Last Updated:** 2026-05-14
+> **Version:** 1.1.0
+> **Last Updated:** 2026-05-21
 > **Status:** MANDATORY — no skill may be merged without passing this review
+
+---
+
+## 0. Charter (不可违背的基本原则)
+
+> **地位：宪章条款 — 所有生成的 SKILL.md 必须遵守，否则视为无效技能。**
+> **自解机制：Agent 在生成完成后自动执行合规检查，不符合则自动触发修复。**
+
+以下 5 条为不可违背的基本原则（INVIOLABLE PRINCIPLES）：
+
+| # | 原则 | 检查方法 | 违背后果 |
+|---|------|----------|----------|
+| **C1** | **YAML Frontmatter 存在且格式正确** | 文件开头必须是 `---`，包含 `name`、`description`、`license`、`compatibility`、`metadata` 字段 | **自动修复** — Agent 必须添加完整 frontmatter |
+| **C2** | **SHOULD/SHOULD NOT Use 章节存在** | 搜索 `### SHOULD Use` 和 `### SHOULD NOT Use` | **自动修复** — Agent 必须添加触发条件章节 |
+| **C3** | **Five Core Standards 表格存在** | 搜索 `## Five Core Standards` 表格 | **自动修复** — Agent 必须添加质量门表格 |
+| **C4** | **Well-Architected Framework 表格存在** | 搜索 `Well-Architected Framework Integration` | **自动修复** — Agent 必须添加五支柱表格 |
+| **C5** | **Variables 章节存在** | 搜索 `## Variables` 表格 | **自动修复** — Agent 必须添加占位符表格 |
+
+> **自解规则**：如果任何 C1-C5 不满足，Agent 必须：
+> 1. 立即停止，报告违规项
+> 2. 自动修复缺失章节（使用模板内容填充）
+> 3. 重新执行合规检查
+> 4. 循环直到全部通过
 
 ---
 
@@ -162,9 +185,52 @@ Review is REQUIRED when:
 **Pass Criteria:** Clear fallback path (JIT Go SDK → Console → Manual) with user guidance template.
 **Fail Action:** Add graceful degradation path and user guidance template.
 
+### 2.5 Template Compliance Scenarios (宪章检查 — 最高优先级)
+
+> **重要性：所有其他检查的前提条件，必须在其他场景之前执行**
+
+#### Scenario 24: Missing Frontmatter (C1)
+**Test:** Check first 3 lines start with `---` and contain YAML with required fields.
+**Pass Criteria:** Frontmatter exists with `name`, `description`, `license`, `compatibility`, `metadata`.
+**Fail Action:** **自动修复** — Add complete frontmatter from `alicloud-skill-template.md`.
+
+#### Scenario 25: Missing SHOULD/SHOULD NOT (C2)
+**Test:** Search for `### SHOULD Use` and `### SHOULD NOT Use` sections.
+**Pass Criteria:** Both trigger sections present with product-specific conditions.
+**Fail Action:** **自动修复** — Add Trigger & Scope section from template.
+
+#### Scenario 26: Missing Five Core Standards (C3)
+**Test:** Search for `## Five Core Standards (Quality Gates)` table.
+**Pass Criteria:** 5-row table present with Clear Boundaries, Structured I/O, Actionable Steps, Failure Strategies, Single Responsibility.
+**Fail Action:** **自动修复** — Add Five Core Standards table from template.
+
+#### Scenario 27: Missing Well-Architected Framework (C4)
+**Test:** Search for `Well-Architected Framework Integration` table.
+**Pass Criteria:** 5-pillar table present (安全/稳定/成本/效率/性能).
+**Fail Action:** **自动修复** — Add Well-Architected Framework table from template.
+
+#### Scenario 28: Missing Variables (C5)
+**Test:** Search for `## Variables` section with placeholder table.
+**Pass Criteria:** Table with `{{env.*}}`, `{{user.*}}`, `{{output.*}}` placeholders.
+**Fail Action:** **自动修复** — Add Variables section with standard placeholders.
+
+> **自解流程**：检测到 Scenario 24-28 失败时，Agent 必须 HALT → REPORT → REMEDIATE → RE-CHECK → LOOP 直到通过。
+
 ---
 
 ## 3. Governance Checklist
+
+### 3.0 Charter Pre-Check (宪章检查 — 最高优先级)
+
+> **必须在所有其他检查之前执行。不通过则禁止继续。**
+
+- [ ] **C1:** YAML frontmatter exists with `name`, `description`, `license`, `compatibility`, `metadata`
+- [ ] **C2:** SHOULD/SHOULD NOT Use sections present
+- [ ] **C3:** Five Core Standards (Quality Gates) table present
+- [ ] **C4:** Well-Architected Framework Integration table present
+- [ ] **C5:** Variables table with `{{env.*}}`, `{{user.*}}`, `{{output.*}}` present
+
+> **自解触发**：如果任何 C1-C5 未通过，Agent 必须立即自动修复，不允许跳过。
 
 ### 3.1 Pre-Merge Checklist
 
@@ -244,6 +310,15 @@ Reviewer: _______________ Date: _______________ Result: PASS / FAIL
 
 ```markdown
 ## Adversarial Review: alicloud-[product]-ops
+
+### Charter Pre-Check (宪章检查 — MUST PASS FIRST)
+- [ ] **C1:** YAML frontmatter complete (name/description/license/compatibility/metadata)
+- [ ] **C2:** SHOULD Use / SHOULD NOT Use sections present
+- [ ] **C3:** Five Core Standards (Quality Gates) table present
+- [ ] **C4:** Well-Architected Framework Integration table present
+- [ ] **C5:** Variables table present
+
+> If any C1-C5 fails → **HALT and auto-remediate before proceeding**
 
 ### Security
 - [ ] Scenario 1: Destructive operations have confirmation
