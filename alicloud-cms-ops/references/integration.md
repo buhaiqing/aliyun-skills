@@ -207,6 +207,24 @@ visualization.
 | `acs_oss_dashboard` | * | `alicloud-oss-ops` | — | Optional |
 | `acs_fc_dashboard` | * | `alicloud-fc-ops` | — | Optional |
 
+### Security Namespace Delegation
+
+| Alarm Namespace | Alarm Metric | Primary Diagnosis Skill | Secondary Diagnosis Skill | DAS Delegation |
+|----------------|--------------|------------------------|--------------------------|----------------|
+| `acs_sas_dashboard` | SuspiciousEventCount | `alicloud-sas-ops` | `alicloud-actiontrail-ops` | Optional |
+| `acs_sas_dashboard` | VulCount | `alicloud-sas-ops` | — | Optional |
+| `acs_sas_dashboard` | RiskScore | `alicloud-sas-ops` | — | Optional |
+| `acs_ram_dashboard` | PermissionChangeRate | `alicloud-ram-ops` | `alicloud-actiontrail-ops` | Optional |
+
+### FinOps Namespace Delegation
+
+| Alarm Namespace | Alarm Metric | Primary Diagnosis Skill | Secondary Diagnosis Skill | DAS Delegation |
+|----------------|--------------|------------------------|--------------------------|----------------|
+| `acs_billing_dashboard` | DailyBillAmount | `alicloud-ecs-ops` (idle) | `alicloud-rds-ops` (idle) | Optional |
+| `acs_billing_dashboard` | MonthlyBillForecast | `alicloud-ecs-ops` | — | Optional |
+| `acs_ecs_dashboard` | IdleInstanceRate | `alicloud-ecs-ops` | — | Optional |
+| `acs_rds_dashboard` | UnderutilizedInstanceRate | `alicloud-rds-ops` | — | Optional |
+
 ### Delegation Protocol
 
 ```
@@ -230,6 +248,9 @@ visualization.
 | Performance degradation | `CreateDiagnosticReport`, `GetPfsSqlSamples` |
 | Cache/Redis alarm | `CreateCacheAnalysisJob` |
 | Autonomous event suspected | `GetAutonomousNotifyEventsInRange` |
+| Security anomaly detected | `GetAutonomousNotifyEventsInRange` |
+| Cost spike detected | `CreateDiagnosticReport` (resource correlation) |
+| Compliance violation | `GetAutonomousNotifyEventsInRange` |
 
 ### Diagnosis Result Correlation
 
@@ -267,3 +288,18 @@ Action: Scale i-001 or optimize app
 - [CMS 2.0 API Documentation](https://help.aliyun.com/zh/cms/cloudmonitor-2-0/developer-reference/api-reference/)
 - [Alibaba Cloud Go SDK](https://github.com/alibabacloud-go/cms-20190101)
 - [Metric Reference](https://help.aliyun.com/document_detail/163515.html)
+
+---
+
+## Confidence Scoring Integration
+
+### Confidence-Based Delegation Protocol
+
+```
+[Alarm Fires + Confidence Score]
+    │
+    ├── 1. If confidence ≥ 0.9 → Immediate delegation to primary skill
+    ├── 2. If confidence 0.7-0.9 → Validate with secondary skill before delegation
+    ├── 3. If confidence < 0.7 → Gather additional metrics, recalculate
+    └── 4. If confidence < 0.4 → Suppress alarm, mark for review
+```

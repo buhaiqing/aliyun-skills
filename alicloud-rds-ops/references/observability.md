@@ -65,3 +65,84 @@ aliyun das DescribeDiagnosticReport \
 1. 直接连接 RDS 使用 `SHOW PROCESSLIST`、`EXPLAIN`、`SHOW ENGINE INNODB STATUS` 排查
 2. 查询慢 SQL 日志文件
 3. 使用 RDS 控制台的 SQL 洞察功能
+
+---
+
+## 4. 预测性可观测性
+
+> **Purpose:** 从 Metrics → Prediction 联动，实现事前预警而非事后诊断。
+
+### Metrics → Prediction 联动
+
+| CMS 指标 | 预测目标 | 预测算法 | 提前预警 | 置信度 |
+|----------|----------|----------|----------|--------|
+| DiskUsage 趋势 | 磁盘满预测 | 线性回归 | 7 天 | 85% |
+| Connections 趋势 | 连接耗尽预测 | 指数平滑 | 3 天 | 80% |
+| TPS 增长趋势 | 容量瓶颈预测 | ARIMA | 14 天 | 75% |
+| CPU 增长趋势 | CPU 饱和预测 | 线性回归 | 24 小时 | 90% |
+
+### 异常检测联动
+
+| 异常类型 | 检测方法 | 置信度阈值 | Action |
+|----------|----------|------------|--------|
+| 基线偏离 | 3σ 规则 | 95% | 自动触发诊断工作流 |
+| 季节偏离 | 同期对比 (W-1) | 80% | 业务关联分析 |
+| 突发峰值 | CUSUM 检测 | 90% | 紧急诊断 |
+| 渐进增长 | 趋势分析 | 85% | 容量预警 |
+
+### DAS 智能诊断增强
+
+```bash
+# DAS 容量预测
+aliyun das CreateCapacityPrediction \
+  --DBInstanceId "{{user.db_instance_id}}" \
+  --PredictionType "DiskFull" \
+  --PredictionDays 30 \
+  --StartTime "2026-05-01T00:00:00Z" \
+  --EndTime "2026-05-30T00:00:00Z"
+
+# DAS 异常检测
+aliyun das DetectAnomaly \
+  --DBInstanceId "{{user.db_instance_id}}" \
+  --MetricName "CpuUsage" \
+  --Algorithm "BaselineDeviation" \
+  --Threshold "3σ"
+
+# DAS 智能诊断报告
+aliyun das CreateDiagnosticReport \
+  --InstanceIds "[\"{{user.db_instance_id}}\"]" \
+  --DiagnosticType "AnomalyAnalysis" \
+  --StartTime "2026-05-16T00:00:00Z" \
+  --EndTime "2026-05-16T01:00:00Z"
+```
+
+### 预测报告解读
+
+| 预测报告字段 | 含义 | Agent Action |
+|--------------|------|--------------|
+| `PredictionResult` | 预测结论 | Severity ≥ P1 → 立即响应 |
+| `ConfidenceLevel` | 置信度 | > 90% → 执行建议；60-90% → 监控 |
+| `DaysToThreshold` | 达到阈值天数 | < 7 天 → P1；< 3 天 → P0 |
+| `GrowthTrend` | 增长趋势类型 | Linear → 正常；Exponential → 异常 |
+| `Recommendation` | 建议行动 | 按优先级执行 |
+
+### 预测 → 告警 → 诊断 联动流程
+
+```
+预测性分析触发
+│
+├─ 磁盘增长预测 → Days_to_90 < 7
+│  ├─ 触发 CloudMonitor 预测告警
+│  ├─ 触发诊断 (alert-diagnosis.md §1.4)
+│  └─ 建议: 扩容申请流程
+│
+├─ CPU 增长预测 → 预计 24h 内饱和
+│  ├─ 触发诊断 (alert-diagnosis.md §1.1)
+│  └─ 建议: 规格升级计划
+│
+└─ 连接增长预测 → 预计 6h 内耗尽
+   ├─ 触发诊断 (alert-diagnosis.md §1.3)
+   └─ 建议: 连接泄漏排查 + 紧急扩容
+```
+
+> **详细预测分析**: 参考 [AIOps Prediction & Anomaly Detection](references/aiops-prediction.md)

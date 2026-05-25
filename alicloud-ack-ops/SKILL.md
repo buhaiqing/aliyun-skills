@@ -569,6 +569,455 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 ---
 
+## Kubernetes 资源诊断流程 (Kubernetes Resource Diagnosis)
+
+以下诊断流程使用 `kubectl` 命令，需要先获取集群 kubeconfig。Agent 应确保 kubeconfig 已配置后再执行。
+
+### Operation: Pod Diagnosis（Pod 诊断）
+
+诊断 Pod 异常状态，包括 CrashLoopBackOff、Pending、Evicted、OOMKilled 等。
+
+#### 前置条件
+
+- kubeconfig 已配置：`export KUBECONFIG=~/.kube/ack-{{user.cluster_id}}`
+- 验证连接：`kubectl cluster-info`
+
+#### 诊断流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Pod 异常诊断流程                          │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 1: 状态收集                                           │
+│  ├── kubectl get pods -A --field-selector=status.phase!=Running │
+│  ├── kubectl get pods -A \| grep -E "CrashLoop|Pending|Evicted" │
+│  └── 统计异常 Pod 数量                                        │
+│                                                              │
+│  Phase 2: 详细诊断                                           │
+│  ├── Pending → describe pod → 检查事件/资源请求               │
+│  ├── CrashLoopBackOff → logs + describe → 检查退出原因        │
+│  ├── Evicted → describe → 检查节点压力条件                    │
+│  └── OOMKilled → describe → 检查内存 Limit                   │
+│                                                              │
+│  Phase 3: 根因分析                                           │
+│  ├── 资源不足 → 扩容节点/调整 Request                         │
+│  ├── 应用异常 → 检查日志/修复代码                             │
+│  ├── 配置错误 → 检查配置文件                                  │
+│  └── 镜像问题 → 检查镜像存在性                                │
+│                                                              │
+│  Phase 4: 修复验证                                           │
+│  ├── 执行修复动作                                            │
+│  ├── 验证 Pod 状态恢复                                       │
+│  └── 记录修复结果                                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 执行 — kubectl
+
+```bash
+#!/bin/bash
+# pod-diagnosis.sh
+# Pod 异常诊断脚本
+
+NAMESPACE="${1:-default}"
+echo "=== Pod Diagnosis in namespace: $NAMESPACE ==="
+echo ""
+
+# 1. 统计 Pod 状态
+echo "[1] Pod Status Summary:"
+kubectl get pods -n $NAMESPACE -o json | jq -r '.items[] | .status.phase' | sort | uniq -c
+echo ""
+
+# 2. 异常 Pod 列表
+echo "[2] Abnormal Pods:"
+kubectl get pods -n $NAMESPACE --field-selector=status.phase!=Running -o wide
+echo ""
+
+# 3. CrashLoopBackOff Pods
+echo "[3] CrashLoopBackOff Pods:"
+CRASH_PODS=$(kubectl get pods -n $NAMESPACE | grep CrashLoopBackOff | awk '{print $1}')
+if [ -n "$CRASH_PODS" ]; then
+  for POD in $CRASH_PODS; do
+    echo "--- Pod: $POD ---"
+    kubectl describe pod $POD -n $NAMESPACE | grep -A5 "Events:"
+    kubectl logs $POD -n $NAMESPACE --tail=20 --previous 2>/dev/null || kubectl logs $POD -n $NAMESPACE --tail=20
+  done
+else
+  echo "No CrashLoopBackOff pods found."
+fi
+echo ""
+
+# 4. Pending Pods
+echo "[4] Pending Pods:"
+PENDING_PODS=$(kubectl get pods -n $NAMESPACE | grep Pending | awk '{print $1}')
+if [ -n "$PENDING_PODS" ]; then
+  for POD in $PENDING_PODS; do
+    echo "--- Pod: $POD ---"
+    kubectl describe pod $POD -n $NAMESPACE | grep -A10 "Events:"
+  done
+else
+  echo "No Pending pods found."
+fi
+echo ""
+
+# 5. Evicted Pods
+echo "[5] Evicted Pods:"
+EVICTED_PODS=$(kubectl get pods -n $NAMESPACE | grep Evicted | awk '{print $1}')
+if [ -n "$EVICTED_PODS" ]; then
+  echo "Found evicted pods, checking node conditions..."
+  kubectl describe pod $EVICTED_PODS -n $NAMESPACE | grep -B5 -A5 "The node was low on"
+else
+  echo "No Evicted pods found."
+fi
+```
+
+#### 常见 Pod 异常诊断表
+
+| 状态 | 常见原因 | 诊断命令 | 修复方案 |
+|------|---------|---------|---------|
+| **Pending** | 资源不足、节点选择器限制、污点/容忍 | `kubectl describe pod` | 扩容节点池、调整 Request、修改选择器 |
+| **CrashLoopBackOff** | 应用异常、启动命令错误、配置错误 | `kubectl logs --previous` | 修复代码、修正启动命令、检查配置 |
+| **Evicted** | 节点磁盘/内存/PID 压力 | `kubectl describe node` | 清理节点资源、扩容节点 |
+| **OOMKilled** | 内存超限、内存泄漏 | `kubectl describe pod` | 增加内存 Limit、修复内存泄漏 |
+| **ImagePullBackOff** | 镜像不存在、认证失败、网络不通 | `kubectl describe pod` | 修正镜像标签、配置 imagePullSecret |
+| **CreateContainerConfigError** | ConfigMap/Secret 不存在 | `kubectl describe pod` | 创建缺失的配置资源 |
+
+---
+
+### Operation: Service Diagnosis（Service 诊断）
+
+诊断 Service 网络问题，包括 Endpoints 空缺、无法访问、DNS 解析异常等。
+
+#### 诊断流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Service 异常诊断流程                       │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 1: Service 状态检查                                   │
+│  ├── kubectl get svc -A                                      │
+│  ├── kubectl get endpoints -A                                │
+│  └── 检查 Endpoints 是否为空                                  │
+│                                                              │
+│  Phase 2: 后端 Pod 检查                                      │
+│  ├── 检查 Service Selector 与 Pod Label 匹配                 │
+│  ├── 检查 Pod Ready 状态                                     │
+│  └── 检查 Pod IP 地址                                        │
+│                                                              │
+│  Phase 3: 网络连通性测试                                     │
+│  ├── ClusterIP Service: 内部 Pod 访问测试                    │
+│  ├── NodePort Service: 节点端口访问测试                       │
+│  └── LoadBalancer Service: SLB 状态检查                      │
+│                                                              │
+│  Phase 4: DNS 解析检查                                       │
+│  ├── 检查 CoreDNS Pod 状态                                   │
+│  ├── 测试 Service DNS 解析                                   │
+│  └── 检查 Pod DNS 配置                                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 执行 — kubectl
+
+```bash
+#!/bin/bash
+# service-diagnosis.sh
+# Service 异常诊断脚本
+
+NAMESPACE="${1:-default}"
+SERVICE="${2:-}"
+echo "=== Service Diagnosis in namespace: $NAMESPACE ==="
+echo ""
+
+# 1. Service 列表
+echo "[1] Services in namespace:"
+kubectl get svc -n $NAMESPACE
+echo ""
+
+# 2. Endpoints 检查
+echo "[2] Endpoints status:"
+kubectl get endpoints -n $NAMESPACE
+echo ""
+
+# 3. 如果指定了 Service，详细诊断
+if [ -n "$SERVICE" ]; then
+  echo "[3] Detailed diagnosis for service: $SERVICE"
+  
+  # Service 详情
+  kubectl describe svc $SERVICE -n $NAMESPACE
+  
+  # Endpoints 详情
+  echo ""
+  echo "--- Endpoints Details ---"
+  kubectl describe endpoints $SERVICE -n $NAMESPACE
+  
+  # 检查后端 Pod
+  SELECTOR=$(kubectl get svc $SERVICE -n $NAMESPACE -o json | jq -r '.spec.selector')
+  if [ -n "$SELECTOR" ] && [ "$SELECTOR" != "null" ]; then
+    echo ""
+    echo "--- Backend Pods (Selector: $SELECTOR) ---"
+    kubectl get pods -n $NAMESPACE -l $(echo $SELECTOR | jq -r 'to_entries | map("\(.key)=\(.value)") | join(",")')
+    
+    # 检查 Pod Ready 状态
+    NOT_READY=$(kubectl get pods -n $NAMESPACE -l $(echo $SELECTOR | jq -r 'to_entries | map("\(.key)=\(.value)") | join(",")') | grep -v Running | grep -v "1/1" || true)
+    if [ -n "$NOT_READY" ]; then
+      echo ""
+      echo "WARNING: Some backend pods are not ready:"
+      echo "$NOT_READY"
+    fi
+  else
+    echo ""
+    echo "WARNING: Service has no selector defined (ExternalName or manual endpoints)"
+  fi
+fi
+
+# 4. CoreDNS 检查
+echo ""
+echo "[4] CoreDNS status:"
+kubectl get pods -n kube-system -l k8s-app=coredns
+```
+
+#### 常见 Service 异常诊断表
+
+| 问题 | 常见原因 | 诊断命令 | 修复方案 |
+|------|---------|---------|---------|
+| **Endpoints 空** | Selector 与 Pod Label 不匹配、Pod 未 Ready | `kubectl describe svc` | 修正 Selector、等待 Pod Ready |
+| **ClusterIP 无法访问** | Pod 网络不通、iptables 异常 | `kubectl exec` 测试 | 检查 CNI、重启 Pod |
+| **NodePort 无法访问** | 节点防火墙、安全组限制 | 节点端口测试 | 配置安全组规则 |
+| **LoadBalancer 无法访问** | SLB 异常、后端健康检查失败 | 检查 SLB 状态 | 委托 `alicloud-slb-ops` |
+| **DNS 解析失败** | CoreDNS 异常、Pod DNS 配置错误 | `kubectl get pods -n kube-system \| grep coredns` | 重启 CoreDNS、修正 Pod DNS 配置 |
+
+---
+
+### Operation: Ingress Diagnosis（Ingress 诊断）
+
+诊断 Ingress 路由问题，包括 502/503 错误、路由不匹配、证书问题等。
+
+#### 诊断流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Ingress 异常诊断流程                       │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 1: Ingress 状态检查                                   │
+│  ├── kubectl get ingress -A                                  │
+│  ├── 检查 Ingress Controller Pod 状态                        │
+│  └── 检查 Ingress 资源配置                                   │
+│                                                              │
+│  Phase 2: 后端检查                                           │
+│  ├── 检查 Ingress 关联的 Service                             │
+│  ├── 检查 Service Endpoints                                  │
+│  └── 检查后端 Pod 健康状态                                   │
+│                                                              │
+│  Phase 3: 路由验证                                           │
+│  ├── 验证域名/路径匹配                                       │
+│  ├── 检查 Ingress Controller 日志                            │
+│  └── 检查 Nginx 配置                                         │
+│                                                              │
+│  Phase 4: SLB 检查（委托）                                   │
+│  ├── 检查 SLB 后端服务器状态                                 │
+│  ├── 检查健康检查配置                                        │
+│  └── 委托 alicloud-slb-ops 处理                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 执行 — kubectl
+
+```bash
+#!/bin/bash
+# ingress-diagnosis.sh
+# Ingress 异常诊断脚本
+
+NAMESPACE="${1:-default}"
+echo "=== Ingress Diagnosis ==="
+echo ""
+
+# 1. Ingress 列表
+echo "[1] Ingress resources:"
+kubectl get ingress -A
+echo ""
+
+# 2. Ingress Controller Pod 状态
+echo "[2] Ingress Controller Pods:"
+kubectl get pods -n kube-system | grep -E "nginx-ingress|ingress-controller"
+echo ""
+
+# 3. Ingress Controller 日志（最近错误）
+echo "[3] Ingress Controller recent errors:"
+INGRESS_POD=$(kubectl get pods -n kube-system | grep nginx-ingress-controller | head -1 | awk '{print $1}')
+if [ -n "$INGRESS_POD" ]; then
+  kubectl logs $INGRESS_POD -n kube-system --tail=50 | grep -i error || echo "No errors in recent logs"
+fi
+echo ""
+
+# 4. 检查指定 namespace 的 Ingress
+if [ "$NAMESPACE" != "all" ]; then
+  echo "[4] Ingress details in namespace $NAMESPACE:"
+  kubectl get ingress -n $NAMESPACE -o wide
+  
+  for ING in $(kubectl get ingress -n $NAMESPACE -o json | jq -r '.items[].metadata.name'); do
+    echo ""
+    echo "--- Ingress: $ING ---"
+    kubectl describe ingress $ING -n $NAMESPACE
+    
+    # 检查关联 Service
+    SERVICE=$(kubectl get ingress $ING -n $NAMESPACE -o json | jq -r '.spec.rules[].http.paths[].backend.service.name' | head -1)
+    if [ -n "$SERVICE" ]; then
+      echo ""
+      echo "Backend Service: $SERVICE"
+      kubectl get endpoints $SERVICE -n $NAMESPACE
+    fi
+  done
+fi
+
+# 5. 检查 SLB（如果使用 LoadBalancer）
+echo ""
+echo "[5] LoadBalancer Services:"
+kubectl get svc -A -o json | jq -r '.items[] | select(.spec.type=="LoadBalancer") | "\(.metadata.namespace)/\(.metadata.name): \(.status.loadBalancer.ingress[0].ip // "pending")"'
+```
+
+#### 常见 Ingress 异常诊断表
+
+| 问题 | 常见原因 | 诊断命令 | 修复方案 |
+|------|---------|---------|---------|
+| **502 Bad Gateway** | 后端 Pod 不健康、Service 无 Endpoints | 检查 Service/Pod | 修复后端应用、确保 Pod Ready |
+| **503 Service Unavailable** | Ingress Controller 过载、后端全部不可用 | 检查 Ingress Controller 资源 | 扩容 Ingress Controller、修复后端 |
+| **路由不匹配** | Ingress 路径/域名配置错误 | `kubectl describe ingress` | 修正 Ingress 配置 |
+| **证书问题** | TLS Secret 不存在或过期 | `kubectl get secret` | 创建/更新 TLS Secret |
+| **SLB 不可达** | SLB 后端健康检查失败 | 检查 SLB 状态 | 委托 `alicloud-slb-ops` |
+
+---
+
+### Operation: Storage Diagnosis（存储诊断）
+
+诊断 PVC/PV 存储问题，包括 PVC Pending、挂载失败、扩容失败等。
+
+#### 诊断流程
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PVC/PV 异常诊断流程                        │
+├─────────────────────────────────────────────────────────────┤
+│  Phase 1: PVC/PV 状态检查                                    │
+│  ├── kubectl get pvc -A                                      │
+│  ├── kubectl get pv                                          │
+│  └── 识别 Pending PVC                                        │
+│                                                              │
+│  Phase 2: StorageClass 检查                                  │
+│  ├── 检查 PVC 指定的 StorageClass 是否存在                   │
+│  ├── 检查 StorageClass 配置                                  │
+│  └── 检查 Provisioner 状态                                   │
+│                                                              │
+│  Phase 3: CSI 驱动检查                                       │
+│  ├── kubectl get pods -n kube-system \| grep csi             │
+│  ├── 检查 CSI Controller 日志                                │
+│  └── 检查云盘 API 响应                                       │
+│                                                              │
+│  Phase 4: 云盘状态检查（委托）                                │
+│  ├── 检查云盘是否存在                                        │
+│  ├── 检查云盘状态和容量                                      │
+│  └── 委托 alicloud-ecs-ops 处理云盘问题                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 执行 — kubectl
+
+```bash
+#!/bin/bash
+# storage-diagnosis.sh
+# PVC/PV 异常诊断脚本
+
+echo "=== Storage Diagnosis ==="
+echo ""
+
+# 1. PVC 状态统计
+echo "[1] PVC Status Summary:"
+kubectl get pvc -A -o json | jq -r '.items[] | .status.phase' | sort | uniq -c
+echo ""
+
+# 2. Pending PVC 详情
+echo "[2] Pending PVCs:"
+PENDING_PVC=$(kubectl get pvc -A | grep Pending)
+if [ -n "$PENDING_PVC" ]; then
+  echo "$PENDING_PVC"
+  echo ""
+  
+  # 详细诊断
+  for LINE in "$PENDING_PVC"; do
+    NS=$(echo $LINE | awk '{print $1}')
+    PVC_NAME=$(echo $LINE | awk '{print $2}')
+    echo "--- PVC: $PVC_NAME in $NS ---"
+    kubectl describe pvc $PVC_NAME -n $NS | grep -A10 "Events:"
+  done
+else
+  echo "No Pending PVCs found."
+fi
+echo ""
+
+# 3. PV 状态
+echo "[3] PV Status:"
+kubectl get pv | grep -v Bound || echo "All PVs are Bound."
+echo ""
+
+# 4. StorageClass 检查
+echo "[4] Available StorageClasses:"
+kubectl get storageclass
+echo ""
+
+# 5. CSI Driver 状态
+echo "[5] CSI Driver Pods:"
+kubectl get pods -n kube-system | grep csi
+echo ""
+
+# 6. CSI Controller 日志（错误）
+CSI_POD=$(kubectl get pods -n kube-system | grep csi-controller | head -1 | awk '{print $1}')
+if [ -n "$CSI_POD" ]; then
+  echo "[6] CSI Controller recent errors:"
+  kubectl logs $CSI_POD -n kube-system --tail=30 | grep -i error || echo "No errors in recent logs"
+fi
+```
+
+#### 常见 PVC/PV 异常诊断表
+
+| 问题 | 常见原因 | 诊断命令 | 修复方案 |
+|------|---------|---------|---------|
+| **PVC Pending** | StorageClass 不存在、PV 不足、可用区不匹配 | `kubectl describe pvc` | 创建 StorageClass、扩容 PV 配额 |
+| **MountVolume 失败** | 云盘不存在、CSI 异常、挂载点冲突 | 检查 CSI Pod 日志 | 恢复云盘、重启 CSI Pod |
+| **Volume 扩容失败** | 云盘类型不支持在线扩容 | `kubectl describe pvc` | 使用 ESSD 云盘、手动扩容 |
+| **云盘释放后 PVC 异常** | PV reclaimPolicy 为 Delete | `kubectl get pv -o yaml` | 修改 reclaimPolicy 为 Retain |
+
+---
+
+### 跨 Skill 委托协议 (Cross-Skill Delegation)
+
+当 Kubernetes 资源诊断发现底层云产品问题时，应按以下协议委托相关 Skill：
+
+| 委托场景 | 目标 Skill | 委托信息 |
+|----------|------------|---------|
+| **节点 ECS 异常** | `alicloud-ecs-ops` | ECS InstanceId、异常现象 |
+| **SLB 不可达** | `alicloud-slb-ops` | SLB LoadBalancerId、健康检查状态 |
+| **VPC/ENI 问题** | `alicloud-vpc-ops` | VPC ID、ENI 配额不足现象 |
+| **云盘/存储问题** | `alicloud-ecs-ops` | DiskId、挂载失败现象 |
+| **RDS 连接问题** | `alicloud-rds-ops` | RDS InstanceId、连接数暴涨现象 |
+| **OSS Bucket 问题** | `alicloud-oss-ops` | Bucket Name、访问失败现象 |
+
+#### 委托示例
+
+```
+# 节点 ECS 异常委托
+节点 i-ecs-xxx 状态异常，请委托 alicloud-ecs-ops 检查：
+- InstanceId: i-ecs-xxx
+- 异常现象: 状态 Stopped，无法启动
+- 背景: ACK Node NotReady，kubelet 无法连接
+
+# SLB 委托
+Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-ops：
+- LoadBalancerId: lb-xxx
+- 异常现象: 后端服务器状态异常
+- 背景: Ingress 返回 502，Service 正常
+```
+
+---
+
 ### Operation: Intelligent Inspection（智能巡检）
 
 一键执行ACK集群的全面健康检查，整合集群状态 + 节点状态 + CMS指标。
@@ -774,6 +1223,311 @@ Phase 3: Validate — Pod scheduling, service connectivity, application health
 | Spot instances | Fault-tolerant/batch workloads | Up to 90% |
 
 **Waste:** Nodes with CPU < 10% for 7d → downsize. Idle LoadBalancers → delete. Over-provisioned resource quotas → reduce.
+
+---
+
+## FinOps Operations (成本优化运维)
+
+### Operation: Resource Optimization Analysis (资源优化分析)
+
+分析集群资源利用率，识别浪费和优化机会。
+
+#### 执行流程
+
+1. 收集节点资源使用率指标 (CMS)
+2. 分析 Pod 资源请求 vs 实际使用
+3. 识别闲置节点 (CPU < 10% 持续 7天)
+4. 识别过度配置的 Pod (请求 > 实际使用 50%)
+5. 生成优化建议报告
+
+#### 执行 — CLI
+
+```bash
+#!/bin/bash
+# ack-resource-optimization.sh
+# Usage: ./ack-resource-optimization.sh <ClusterId> <RegionId>
+
+CLUSTER_ID="$1"
+REGION="$2"
+
+echo "=== ACK Resource Optimization Analysis ==="
+
+# 1. Get node metrics from CMS
+START=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
+END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+echo ""
+echo "### Node Resource Utilization (7-day average) ###"
+
+# Get node list
+NODES=$(aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq -r '.nodes[] | .instance_id')
+
+for NODE_ID in $NODES; do
+  CPU=$(aliyun cms DescribeMetricList \
+    --Namespace acs_ecs_dashboard \
+    --MetricName cpu.utilization \
+    --Dimensions "[{\"instanceId\":\"$NODE_ID\"}]" \
+    --Period 86400 \
+    --StartTime "$START" \
+    --EndTime "$END" \
+    --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
+  
+  MEM=$(aliyun cms DescribeMetricList \
+    --Namespace acs_ecs_dashboard \
+    --MetricName memory.utilization \
+    --Dimensions "[{\"instanceId\":\"$NODE_ID\"}]" \
+    --Period 86400 \
+    --StartTime "$START" \
+    --EndTime "$END" \
+    --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
+  
+  echo "Node: $NODE_ID | CPU: ${CPU}% | Memory: ${MEM}%"
+  
+  # Flag idle nodes
+  if [ "${CPU}" != "N/A" ] && [ $(echo "${CPU} < 10" | bc) -eq 1 ]; then
+    echo "  ⚠️  IDLE NODE: CPU < 10% for 7 days - Consider downsizing"
+  fi
+done
+
+# 2. Pod resource request vs usage analysis (via kubeconfig)
+echo ""
+echo "### Pod Resource Over-provisioning ###"
+aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig-$CLUSTER_ID
+export KUBECONFIG=/tmp/kubeconfig-$CLUSTER_ID
+
+kubectl top pods -A --sort-by=cpu | head -20
+kubectl get pods -A -o custom-columns='NAMESPACE:.metadata.namespace,POD:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,MEM_REQ:.spec.containers[*].resources.requests.memory' | head -30
+
+# 3. PVC utilization analysis
+echo ""
+echo "### PVC Storage Utilization ###"
+kubectl get pvc -A -o custom-columns='NAMESPACE:.metadata.namespace,PVC:.metadata.name,STATUS:.status.phase,CAPACITY:.spec.resources.requests.storage'
+
+echo ""
+echo "=== Optimization Recommendations ==="
+echo "1. Review idle nodes for downsizing or removal"
+echo "2. Adjust Pod resource requests to match actual usage"
+echo "3. Resize PVCs that are over-provisioned"
+```
+
+#### 输出格式
+
+```json
+{
+  "analysis_time": "2026-05-26T10:00:00Z",
+  "cluster_id": "c-xxx",
+  "optimization_score": 65,
+  "idle_resources": [
+    {"type": "node", "id": "i-xxx", "cpu_avg": "8%", "recommendation": "downsize or remove"}
+  ],
+  "over_provisioned_pods": [
+    {"namespace": "default", "pod": "web-app", "cpu_request": "4", "cpu_usage": "1.2", "waste_ratio": "70%"}
+  ],
+  "storage_over_provisioned": [
+    {"namespace": "data", "pvc": "data-pvc", "capacity": "500Gi", "usage_estimate": "100Gi"}
+  ],
+  "estimated_monthly_savings": "¥2,400",
+  "actions": [
+    "Remove 2 idle nodes → Save ¥800/month",
+    "Reduce Pod CPU requests → Save ¥600/month",
+    "Resize PVCs → Save ¥1,000/month"
+  ]
+}
+```
+
+---
+
+### Operation: Idle Resource Detection (闲置资源检测)
+
+识别集群中闲置的节点、Pod、PVC、SLB。
+
+#### 闲置判定标准
+
+| 资源类型 | 闲置判定标准 | 建议操作 |
+|----------|-------------|----------|
+| Node | CPU < 10% 持续 7天 | 缩容节点池或删除 |
+| Pod | Running 但无流量 24小时 | 检查应用状态，停止 |
+| PVC | Bound 但 Pod 无挂载 7天 | 检查使用，删除 |
+| SLB | 无后端健康服务器 24小时 | 检查关联，删除 |
+
+#### 执行 — CLI
+
+```bash
+#!/bin/bash
+# ack-idle-resource-detection.sh
+# Usage: ./ack-idle-resource-detection.sh <ClusterId>
+
+CLUSTER_ID="$1"
+echo "=== ACK Idle Resource Detection ==="
+
+# 1. Idle nodes
+echo ""
+echo "### Idle Nodes (CPU < 10% for 7 days) ###"
+aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig
+export KUBECONFIG=/tmp/kubeconfig
+
+kubectl top nodes --sort-by=cpu
+
+# 2. Idle pods (no network traffic)
+echo ""
+echo "### Potentially Idle Pods ###"
+kubectl get pods -A -o wide | awk '{print $1, $2, $7}' | while read NS POD IP; do
+  if [ "$IP" != "<none>" ]; then
+    # Check if pod has recent logs
+    LAST_LOG=$(kubectl logs $POD -n $NS --since=24h 2>/dev/null | wc -l)
+    if [ "$LAST_LOG" -eq 0 ]; then
+      echo "Pod: $NS/$POD - No logs in 24h - Potentially idle"
+    fi
+  fi
+done
+
+# 3. Idle PVCs
+echo ""
+echo "### Idle PVCs (Bound but unused) ###"
+kubectl get pvc -A -o json | jq -r '.items[] | select(.status.phase=="Bound") | "\(.metadata.namespace)/\(.metadata.name)"' | while read PVC; do
+  NS=$(echo $PVC | cut -d/ -f1)
+  NAME=$(echo $PVC | cut -d/ -f2)
+  # Check if any pod mounts this PVC
+  MOUNTED=$(kubectl get pods -n $NS -o json | jq -r '.items[] | select(.spec.volumes[]?.persistentVolumeClaim?.claimName=="$NAME")' | wc -l)
+  if [ "$MOUNTED" -eq 0 ]; then
+    echo "PVC: $PVC - No pods mounting - Potentially idle"
+  fi
+done
+
+# 4. Idle SLBs (delegate to alicloud-slb-ops)
+echo ""
+echo "### SLBs Associated with Cluster ###"
+aliyun cs GET /clusters/$CLUSTER_ID | jq -r '.cluster_id'
+echo "Note: For SLB idle detection, delegate to alicloud-slb-ops"
+```
+
+---
+
+### Operation: Cost Allocation by Namespace (Namespace 成本分摊)
+
+计算各 Namespace 的资源消耗和成本分摊。
+
+#### 成本分摊公式
+
+```
+Namespace_Cost = Σ(Pod_CPU_Request / Node_CPU_Total × Node_Hourly_Cost) + Σ(Pod_Memory_Request / Node_Memory_Total × Node_Hourly_Cost) + Σ(PVC_Size × Disk_Price_GB_Month / Month_Days)
+```
+
+#### 执行 — CLI
+
+```bash
+#!/bin/bash
+# ack-cost-allocation.sh
+# Usage: ./ack-cost-allocation.sh <ClusterId> <NodeHourlyCost> <DiskPriceGB>
+
+CLUSTER_ID="$1"
+NODE_COST="$2"  # e.g., ¥1.5/hour
+DISK_COST="$3"  # e.g., ¥0.35/GB/month
+
+aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig
+export KUBECONFIG=/tmp/kubeconfig
+
+echo "=== Namespace Cost Allocation ==="
+echo "Node Hourly Cost: ¥$NODE_COST"
+echo "Disk Cost: ¥$DISK_COST/GB/month"
+
+# Get namespace resource requests
+kubectl get pods -A -o json | jq -r '
+  .items[] | 
+  {
+    ns: .metadata.namespace,
+    cpu_req: .spec.containers[].resources.requests.cpu,
+    mem_req: .spec.containers[].resources.requests.memory
+  } | 
+  group_by(.ns) | 
+  map({namespace: .[0].ns, total_pods: length})
+' > /tmp/ns-stats.json
+
+echo ""
+echo "### Resource Requests by Namespace ###"
+kubectl top pods -A | awk 'NR>1 {ns[$1]++; cpu[$1]+=$2; mem[$1]+=$3} END {for (n in ns) print n, ns[n], cpu[n], mem[n]}'
+
+echo ""
+echo "### PVC Usage by Namespace ###"
+kubectl get pvc -A -o custom-columns='NAMESPACE:.metadata.namespace,PVC:.metadata.name,CAPACITY:.spec.resources.requests.storage' | awk 'NR>1 {ns[$1]++; cap[$1]+=$2} END {for (n in ns) print n, ns[n], cap[n]}'
+
+echo ""
+echo "Note: For precise cost calculation, integrate with billing data via alicloud-billing-ops"
+```
+
+---
+
+### Operation: Spot Instance Optimization (竞价实例优化)
+
+分析竞价实例使用情况和优化建议。
+
+#### 竞价实例最佳实践
+
+| 场景 | 建议 | 风险控制 |
+|------|------|----------|
+| 批处理任务 | 使用 Spot | 多 AZ 分布 + 重试机制 |
+| 无状态服务 | Spot + 按量混合 | 混合节点池配置 |
+| 有状态服务 | 避免 Spot | 使用包年包月或按量 |
+| 关键数据库 | 禁止 Spot | 专用节点池 |
+
+#### 执行 — CLI
+
+```bash
+#!/bin/bash
+# ack-spot-optimization.sh
+# Usage: ./ack-spot-optimization.sh <ClusterId>
+
+CLUSTER_ID="$1"
+echo "=== ACK Spot Instance Optimization ==="
+
+# Get node pools
+echo ""
+echo "### Node Pool Spot Instance Usage ###"
+aliyun cs GET /clusters/$CLUSTER_ID/nodepools | jq '.nodepools[] | {name, nodepool_id, spot_strategy, instance_type, desired_size}'
+
+# Check spot instances in cluster
+echo ""
+echo "### Spot Instances in Cluster ###"
+aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq '.nodes[] | select(.spot_strategy=="SpotAsPriceGo" or .spot_strategy=="SpotWithPriceLimit") | {instance_id, instance_type, spot_strategy}'
+
+echo ""
+echo "### Recommendations ###"
+echo "1. Use Spot instances for batch/stateless workloads"
+echo "2. Mix Spot + On-demand for resilience (e.g., 70% Spot + 30% On-demand)"
+echo "3. Configure spot-autoscaler-addon for automatic spot instance management"
+echo "4. Multi-AZ distribution to reduce spot interruption impact"
+```
+
+---
+
+### Operation: Budget Alert Integration (预算告警集成)
+
+配置集群成本预算告警。
+
+#### 预算告警配置
+
+```bash
+# Budget threshold alerts via CloudMonitor
+# Configure alert when cluster cost exceeds budget threshold
+
+aliyun cms PutMetricRuleTargets \
+  --RuleId "ack-cost-alert" \
+  --Namespace "acs_user_dashboard" \
+  --MetricName "cluster_monthly_cost" \
+  --Threshold "500" \
+  --ComparisonOperator "GreaterThanThreshold" \
+  --Statistics "Average" \
+  --Period "86400" \
+  --ContactGroups "ops-team"
+```
+
+#### 成本告警规则建议
+
+| 告警 | 阈值 | 严重等级 | 响应 |
+|------|------|----------|------|
+| 月度成本超标 | >80% 预算 | P2 | 审查资源使用，识别浪费 |
+| 日成本激增 | >150% 基线 | P3 | 检查自动扩缩容活动 |
+| 闲置资源累积 | >3个闲置节点 | P3 | 执行闲置资源清理 |
 
 ### 效率 (Efficiency)
 

@@ -67,6 +67,21 @@ complex request structures, JIT build a Go SDK script.
 - CLI coverage gaps: CloudMonitor 2.0 advanced features (context stores,
   memory stores, ExecuteQuery) are SDK-only.
 
+## Capabilities at a Glance
+
+| Operation | Description | Complexity | Risk Level |
+|-----------|-------------|------------|------------|
+| DescribeMetricList | Query time-series metric data | Low | None |
+| DescribeMetricLast | Query latest metric value | Low | None |
+| PutMetricAlarm | Create or update alarm rule | Medium | Low |
+| DescribeMetricAlarmList | List alarm rules | Low | None |
+| DeleteMetricAlarm | Delete alarm rule | Medium | Medium |
+| DescribeAnomalyConfidence | Anomaly confidence scoring for detected issues | Medium | Low |
+| DescribeMetricPrediction | Predictive metric alerting with ML | Medium | Low |
+| DescribeComplianceAlarms | Security compliance monitoring alarms | Low | None |
+| DescribeIdleResources | Idle/underutilized resource detection | Low | None |
+| DescribeCostOptimization | Cost optimization suggestions | Medium | Low |
+
 ## Trigger & Scope (Agent-Readable)
 
 ### SHOULD Use This Skill When
@@ -121,6 +136,10 @@ complex request structures, JIT build a Go SDK script.
 | `{{user.topic_name}}` | MNS topic name for alarm actions | Ask once; reuse |
 | `{{output.metric_data}}` | Metric query result | Parse per OpenAPI spec |
 | `{{output.alarm_id}}` | Alarm rule ID from API response | Parse per OpenAPI spec |
+| `{{user.prediction_period}}` | Prediction time window (seconds) | Ask once; reuse |
+| `{{user.confidence_threshold}}` | Minimum confidence for action | Ask once; reuse |
+| `{{user.cost_threshold}}` | Cost anomaly threshold ($) | Ask once; reuse |
+| `{{output.confidence_score}}` | Anomaly confidence score | Parse from prediction API |
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
@@ -1547,6 +1566,9 @@ Phase 3: Resolve — Auto-remediation or escalate to human with full diagnostic 
 - [Knowledge Base](references/knowledge-base.md) — 常见故障模式库
 - [Observability Integration](references/observability.md) — Metrics/Logs/Traces 联动
 - [Prompts Handbook](references/prompts.md) — 常用提示词手册
+- [AIOps Prediction](references/aiops-prediction.md)
+- [SecOps Monitoring](references/secops-monitoring.md)
+- [FinOps Analysis](references/finops-analysis.md)
 
 ## Operational Best Practices
 

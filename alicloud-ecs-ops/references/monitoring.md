@@ -114,6 +114,166 @@ When >10 ECS alarms trigger within 5 minutes from the same cluster/region, enter
 4. **Focus diagnosis**: Delegate root instance deep diagnosis to `alicloud-ecs-ops` execution flows
 5. **Check escalation**: If ≥5 instances share the alarm pattern, check shared dependencies (SLB, VPC, shared storage)
 
+---
+
+## Intelligent Alert Convergence (智能告警收敛)
+
+Advanced alert correlation and deduplication powered by AI/ML patterns for reducing alert fatigue.
+
+### Convergence Patterns
+
+| Pattern ID | Pattern Name | Detection Logic |收敛效果 |
+|------------|--------------|------------------|---------|
+| 1 | **同实例多指标告警** | 同一实例的CPU/内存/磁盘同时告警 | 合并为1条，携带所有指标 |
+| 2 | **级联告警** | ECS告警→SLB告警→RDS告警（因果链） | 只保留根因告警 |
+| 3 | **重复告警** | 同一告警在5分钟内重复触发 | 抑制重复，仅通知首次 |
+| 4 | **依赖资源告警** | 多实例因同一SLB/VPC问题告警 | 按依赖树合并 |
+| 5 | **计划内告警** | 已知维护窗口内的告警 | 自动静默 |
+
+### CLI Implementation
+
+```bash
+# Step 1: Fetch recent alerts within time window
+aliyun cms DescribeAlertHistoryList \
+  --StartTime "$(date -u -v-10M +%Y-%m-%dT%H:%MZ)" \
+  --EndTime "$(date -u +%Y-%m-%dT%H:%MZ)" \
+  --Namespace acs_ecs_dashboard \
+  --Output cols=AlertName,InstanceId,AlertTime rows=AlertHistoryList[]
+
+# Step 2: Group by instanceId (同实例合并)
+aliyun cms DescribeAlertHistoryList ... | \
+  jq '.AlertHistoryList[] | {instanceId: .InstanceId, alertName: .AlertName}' | \
+  jq -s 'group_by(.instanceId) | map({instanceId: .[0].instanceId, alerts: map(.alertName) | unique})'
+
+# Step 3: Check for cascade patterns (依赖关系分析)
+# 需要结合VPC/SLB拓扑数据
+```
+
+### SDK Implementation (Intelligent Correlation)
+
+```go
+type AlertConverger struct {
+    cmsClient *cms.Client
+    vpcClient *vpc.Client
+    slbClient *slb.Client
+}
+
+type ConvergedAlert struct {
+    RootCause        string   // 根因实例/资源
+    AlertType        string   // 告警类型
+    AffectedCount    int      // 影响的实例数
+    AlertList        []string // 原始告警列表
+    Severity         string   // 最高告警级别
+    RecommendedAction string  // 建议操作
+}
+
+// detectCascadeAlerts analyzes cascade patterns across dependencies
+func (c *AlertConverger) detectCascadeAlerts(alerts []Alert) []ConvergedAlert {
+    var converged []ConvergedAlert
+
+    // Build dependency graph
+    dependencyGraph := c.buildDependencyGraph()
+
+    // Group alerts by root cause
+    alertGroups := c.groupByRootCause(alerts, dependencyGraph)
+
+    for _, group := range alertGroups {
+        converged = append(converged, ConvergedAlert{
+            RootCause:        group.rootResource,
+            AlertType:        group.alertType,
+            AffectedCount:    group.count,
+            AlertList:        group.alertNames,
+            Severity:         c.getHighestSeverity(group.alerts),
+            RecommendedAction: c.getRecommendedAction(group),
+        })
+    }
+
+    return converged
+}
+
+func (c *AlertConverger) buildDependencyGraph() map[string][]string {
+    // ECS → SLB → RDS 依赖关系
+    return map[string][]string{
+        "slb-xxx": {"ecs-1", "ecs-2", "ecs-3"},
+        "rds-xxx": {"ecs-1", "ecs-2"},
+    }
+}
+
+func (c *AlertConverger) groupByRootCause(alerts []Alert, depGraph map[string][]string) []AlertGroup {
+    // 1. 同实例多指标 → 合并
+    // 2. 级联告警 → 找根因
+    // 3. 重复告警 → 去重
+    // ...
+    return groups
+}
+```
+
+### Convergence Report Format
+
+```markdown
+## 智能告警收敛报告
+
+### 收敛统计
+
+| 指标 | 数值 |
+|------|------|
+| 原始告警数 | 156 |
+| 收敛后告警数 | 23 |
+| 收敛率 | 85% |
+| 级联告警识别 | 8组 |
+| 重复告警抑制 | 45条 |
+
+### 收敛后告警明细
+
+#### 🔴 根因告警 (需立即处理)
+
+| 告警ID | 资源 | 类型 | 影响范围 | 建议操作 |
+|--------|------|------|----------|----------|
+| ALERT-001 | slb-xxx | SLB后端全挂 | 12个ECS实例 | 检查ECS应用状态 |
+
+#### 🟡 依赖告警 (已收敛)
+
+| 原始告警 | 收敛说明 |
+|----------|----------|
+| ECS-1 CPU高 | 级联至SLB，已合并 |
+| ECS-2 CPU高 | 级联至SLB，已合并 |
+| ECS-3 CPU高 | 级联至SLB，已合并 |
+
+### 收敛前后对比
+
+```
+收敛前: [ECS-1告警][ECS-2告警][ECS-3告警][SLB告警][RDS告警] = 5条
+收敛后: [SLB根因告警] = 1条 ✅
+```
+
+### Integration
+
+- **EventBridge**: 将收敛后的告警发送到EventBridge触发自动化流程
+- **Notification**: 收敛告警通过钉钉/短信/邮件通知
+- **Incident**: 严重告警自动创建Jira/工单
+```
+
+### Auto-Action Mapping
+
+| Convergence Type | Auto-Action | Manual-Required |
+|------------------|-------------|-----------------|
+| 根因告警 | 自动创建工单 | 确认 |
+| 级联告警 | 抑制从属告警 | 否 |
+| 重复告警 | 静默重复 | 否 |
+| 计划内告警 | 自动静默 | 否 |
+
+### Configuration
+
+```bash
+# 启用智能收敛 (通过CMS告警规则配置)
+aliyun cms PutMetricRuleTargets \
+  --RuleId "ecs-cpu-high-rule" \
+  --TargetType "notification" \
+  --Payload "{\"alertConvergence\": true, \"cascadeAnalysis\": true}"
+```
+
+> **See also:** [Observability Integration](references/observability.md)
+
 ## Alert-Driven Diagnostic Decision Tree
 
 ```

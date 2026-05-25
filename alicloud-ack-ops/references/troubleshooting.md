@@ -217,6 +217,277 @@ aliyun ram GetRole --RoleName "AliyunCSDefaultRole"
 
 ---
 
+### Scenario 6: "API Server 响应延迟" (API Server Latency High)
+
+**Symptoms:** kubectl commands slow, API requests timeout.
+
+**Diagnostic Flow:**
+
+```bash
+# Step 1: Check API Server metrics via Prometheus
+# Query API Server latency P99
+kubectl get --raw /metrics | grep apiserver_request_duration_seconds
+
+# Step 2: Check control plane load
+kubectl get --raw /metrics | grep -E "apiserver_request_count|apiserver_watch_count"
+
+# Step 3: Check etcd health (managed cluster - via ACK API)
+aliyun cs GET /clusters/{{user.cluster_id}}/components | jq '.components[] | select(.name=="etcd")'
+
+# Step 4: Check kube-apiserver pod (managed cluster - via ACK logs)
+# For managed clusters, API Server is managed; check via ACK console logs
+
+# Step 5: Identify high-request clients
+kubectl get --raw /metrics | grep apiserver_request_count | sort -t= -k2 -nr | head -10
+```
+
+**Decision Tree:**
+- P99 latency >5s → Control plane overload; check client watch/request volume
+- High watch count (>10K) → Too many informers; reduce controller watch scope
+- High request rate (>1K/min) → Identify aggressive client; throttle or optimize
+- etcd latency high → Delegate to ACK support (managed etcd)
+- `kubectl` timeout → Check network connectivity to API endpoint
+
+---
+
+### Scenario 7: "控制面与数据面分离诊断" (Control Plane vs Data Plane Diagnosis)
+
+**Symptoms:** Need to isolate whether issue is in control plane (managed by ACK) or data plane (user nodes).
+
+**Diagnostic Flow:**
+
+```bash
+# Step 1: Identify issue scope
+kubectl get nodes -o wide  # Data plane check
+kubectl get cs  # Control plane component status (deprecated but useful)
+
+# Step 2: Control plane health (managed components)
+aliyun cs GET /clusters/{{user.cluster_id}} | jq '.state, .current_version'
+aliyun cs GET /clusters/{{user.cluster_id}}/components | jq '.components[] | {name, state, version}'
+
+# Step 3: Data plane health (user nodes and pods)
+kubectl get pods -A --field-selector=status.phase!=Running | wc -l  # Count abnormal pods
+kubectl get nodes | grep -v Ready | wc -l  # Count abnormal nodes
+
+# Step 4: Network connectivity between planes
+# Check if nodes can reach API Server
+kubectl get --raw '/api/v1/nodes/{{user.node_name}}/proxy/healthz'
+
+# Step 5: Certificate validation (control plane -> node)
+kubectl get nodes -o yaml | grep -A5 "client-certificate-data"
+```
+
+**Decision Tree:**
+- Control plane state != `running` → ACK-managed issue; contact support or wait
+- Data plane nodes/pods abnormal → User-managed issue; apply Scenario 1/2/3
+- Network connectivity failed → VPC/network issue; delegate to `alicloud-vpc-ops`
+- Certificate expired → Update cluster certificates
+
+---
+
+### Scenario 8: "跨可用区网络延迟" (Cross-AZ Network Latency)
+
+**Symptoms:** Pod-to-Pod communication slow across availability zones.
+
+**Diagnostic Flow:**
+
+```bash
+# Step 1: Identify node locations
+kubectl get nodes -o wide
+kubectl get nodes -o custom-columns='NAME:.metadata.name,ZONE:.metadata.labels.topology\.kubernetes\.io/zone'
+
+# Step 2: Check pod distribution across zones
+kubectl get pods -A -o wide | awk '{print $7}' | sort | uniq -c  # Count pods per node
+kubectl get pods -A -o custom-columns='POD:.metadata.name,NODE:.spec.nodeName,ZONE:.metadata.annotations'
+
+# Step 3: Test cross-AZ connectivity (pod-to-pod)
+kubectl exec -it {{user.source_pod}} -n {{user.namespace}} -- ping {{user.target_pod_ip}}
+kubectl exec -it {{user.source_pod}} -n {{user.namespace}} -- curl -w "%{time_total}" {{user.target_service}}
+
+# Step 4: Check VPC routing (delegate to alicloud-vpc-ops)
+aliyun vpc DescribeRouteTables --VpcId "{{user.vpc_id}}"
+
+# Step 5: Check CNI plugin (Terway/Flannel) configuration
+kubectl get pods -n kube-system -l app=terway  # For Terway
+kubectl get configmap -n kube-system terway-config -o yaml
+```
+
+**Decision Tree:**
+- Nodes in different zones → Cross-AZ traffic has latency; optimize pod placement
+- Ping latency >10ms → VPC routing issue; delegate to `alicloud-vpc-ops`
+- CNI misconfigured → Check Terway ENI allocation
+- Service latency high → Use topology-aware hints or node affinity
+
+---
+
+### Scenario 9: "大规模Pod调度失败" (Large-Scale Pod Scheduling Failure)
+
+**Symptoms:** Many pods (>50) simultaneously fail to schedule.
+
+**Diagnostic Flow:**
+
+```bash
+# Step 1: Count pending pods
+kubectl get pods -A --field-selector=status.phase=Pending | wc -l
+
+# Step 2: Analyze pending reasons
+kubectl get pods -A --field-selector=status.phase=Pending -o yaml | grep -A10 "message:" | sort | uniq -c
+
+# Step 3: Check cluster resource capacity
+kubectl top nodes
+kubectl describe nodes | grep -E "Allocated resources|Capacity"
+
+# Step 4: Check node pool capacity
+aliyun cs GET /clusters/{{user.cluster_id}}/nodepools | jq '.nodepools[] | {name, desired_size, current_size}'
+
+# Step 5: Check autoscaler status (if enabled)
+kubectl get configmap cluster-autoscaler-status -n kube-system -o yaml
+kubectl logs -n kube-system -l app=cluster-autoscaler --tail=100
+```
+
+**Decision Tree:**
+- Pending due to `Insufficient cpu/memory` → Node pool capacity insufficient; scale out
+- Autoscaler not triggering → Check autoscaler config and thresholds
+- Pending pods > node capacity → Resource requests too high; reduce or add nodes
+- Nodes available but pods pending → Check node selectors, taints, tolerations
+- Scale out failing → ECS quota exhausted; delegate to `alicloud-ecs-ops`
+
+---
+
+### Scenario 10: "存储性能瓶颈" (Storage Performance Bottleneck)
+
+**Symptoms:** Application slow, high disk I/O wait, PVC performance issues.
+
+**Diagnostic Flow:**
+
+```bash
+# Step 1: Identify PVC usage
+kubectl get pvc -A -o wide
+kubectl top pvc -A  # If metrics available
+
+# Step 2: Check pod disk I/O (via cgroups)
+kubectl exec -it {{user.pod_name}} -n {{user.namespace}} -- df -h
+kubectl exec -it {{user.pod_name}} -n {{user.namespace}} -- cat /sys/fs/cgroup/io.stat
+
+# Step 3: Check PV backend (cloud disk)
+aliyun ecs DescribeDisks \
+  --RegionId "{{user.region}}" \
+  --DiskIds '["{{user.disk_id}}"]'
+
+# Step 4: Check CSI driver status
+kubectl get pods -n kube-system -l app=csi-plugin
+kubectl logs -n kube-system -l app=csi-plugin --tail=100
+
+# Step 5: Test disk performance (inside pod)
+kubectl exec -it {{user.pod_name}} -n {{user.namespace}} -- \
+  dd if=/dev/zero of=/data/test bs=1M count=1024 conv=fdatasync
+```
+
+**Decision Tree:**
+- Disk type is `cloud_efficiency` or `cloud_ssd` → Upgrade to ESSD for better performance
+- Disk I/O utilization >80% → Disk bottleneck; expand disk or optimize I/O
+- CSI plugin errors → Check CSI driver logs; may need plugin restart
+- Pod disk wait time high → Application I/O pattern issue; optimize read/write
+- PVC size too small → Resize PVC (if StorageClass supports expansion)
+
+---
+
+## Fault Chain Tracing Methodology
+
+When diagnosing complex issues, trace the fault chain systematically:
+
+```yaml
+fault_chain_analysis:
+  step_1_identify_symptom:
+    - Collect user-reported symptom
+    - Identify affected components (Pod/Node/Service/Storage)
+    
+  step_2_trace_dependency_chain:
+    - Pod → Node → ECS → VPC → SLB
+    - Service → Endpoints → Pods
+    - PVC → PV → Disk → CSI
+    
+  step_3_correlate_metrics:
+    - Check metrics at each layer of dependency chain
+    - Identify metric spikes correlating with symptom time
+    
+  step_4_identify_root_layer:
+    - Determine which layer in chain has the anomaly
+    - Focus diagnosis on root layer
+    
+  step_5_cross_skill_delegation:
+    - ECS layer → alicloud-ecs-ops
+    - VPC layer → alicloud-vpc-ops  
+    - SLB layer → alicloud-slb-ops
+    - CMS layer → alicloud-cms-ops
+    - RAM layer → alicloud-ram-ops
+```
+
+### Example: Pod Crash Due to Storage Chain
+
+```
+Pod CrashLoopBackOff
+  ↓
+Events: FailedMount
+  ↓
+PVC status: Pending
+  ↓
+PV status: Failed provisioning
+  ↓
+CSI driver logs: Cloud disk creation failed
+  ↓
+ECS API error: QuotaExceeded
+  ↓
+Root cause: Disk quota exceeded
+  ↓
+Action: Raise disk quota via ECS quota management
+```
+
+---
+
+## Log Analysis Enhancement
+
+### Structured Log Collection
+
+```bash
+# Collect logs from multiple sources for comprehensive analysis
+kubectl logs {{user.pod_name}} -n {{user.namespace}} --since=1h > /tmp/pod.log
+kubectl describe pod {{user.pod_name}} -n {{user.namespace}} > /tmp/pod-desc.log
+kubectl get events -n {{user.namespace}} --since=1h > /tmp/events.log
+
+# System logs (if SSH access)
+ssh {{user.node_ip}} "journalctl -u kubelet --since='1 hour ago'" > /tmp/kubelet.log
+ssh {{user.node_ip}} "journalctl -u docker --since='1 hour ago'" > /tmp/docker.log
+```
+
+### Log Pattern Analysis
+
+```bash
+# Search for common error patterns
+grep -E "OOMKilled|Error|Failed|Timeout|Connection refused" /tmp/pod.log
+
+# Extract error frequency
+grep -oE "error_type=[a-zA-Z]+" /tmp/pod.log | sort | uniq -c | sort -nr
+
+# Timestamp correlation
+grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}" /tmp/pod.log | awk '{print $1, $2}' | sort | uniq -c
+```
+
+### Common Log Patterns Reference
+
+| Log Pattern | Root Cause | Action |
+|-------------|------------|--------|
+| `OOMKilled` | Memory limit exceeded | Increase memory limit |
+| `FailedMount` | Volume mount failure | Check PVC/PV and CSI |
+| `FailedAttachVolume` | Volume attachment failure | Check disk and CSI |
+| `ImagePullBackOff` | Image pull failed | Check image and registry |
+| `CrashLoopBackOff` | App crash loop | Check app logs and config |
+| `connection refused` | Service unreachable | Check service and network |
+| `TLS handshake error` | Certificate issue | Check certificates |
+| `permission denied` | RBAC or file permission | Check RBAC and security |
+
+---
+
 ## Cluster State Reference
 
 | State | Meaning | Actionable? |

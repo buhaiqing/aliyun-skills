@@ -1824,7 +1824,57 @@ Phase 2: Restore — Restore to NEW instance (never overwrite production)
 Phase 3: Validate — Data integrity, application smoke tests, traffic switch
 ```
 
-### 成本 (Cost)
+### 成本 (Cost) — 扩展版
+
+#### 成本可见性
+
+| 维度 | API/方法 | 输出 | 用途 |
+|------|----------|------|------|
+| 实例月成本 | Billing API | 规格 × 单价 × 天数 | 成本追踪 |
+| 存储成本 | DescribeResourceUsage | 存量 × 存储单价 | 存储优化 |
+| 备份成本 | DescribeBackups | 备份量 × 备份单价 | 备份策略优化 |
+| 跨地域成本 | DescribeCrossRegionBackup | 跨地域量 × 单价 | 跨地域评估 |
+
+#### FinOps 工作流
+
+| 工作流 | 触发频率 | 输出 | 参考 |
+|--------|----------|------|------|
+| 利用率审计 | 每周 | 低利用率实例列表 + 节省金额 | [FinOps §1](references/finops-analysis.md#1-实例利用率评估) |
+| 成本审计 | 每月 | 成本趋势 + 异常实例 | [FinOps §5](references/finops-analysis.md#5-成本预警规则) |
+| 预留审计 | 每季度 | 预留覆盖率 + 建议购买 | [FinOps §3](references/finops-analysis.md#3-预留实例优化) |
+
+#### Right-sizing 建议
+
+| Pattern | Condition | Recommendation | Savings |
+|---------|-----------|----------------|---------|
+| CPU浪费 | avg < 10% 7d | 降级 2档规格 | 60-80% |
+| CPU轻度浪费 | avg 10-30% 7d | 降级 1档规格 | 30-50% |
+| 内存浪费 | avg < 30% 7d | 降级规格 | 30-50% |
+| 存储浪费 | 使用率 < 30% | 缩容存储至 2倍实际 | 按实际节省 |
+| IOPS浪费 | avg < 20% 7d | 存储类型降级 | 20-30% |
+
+#### 预留实例优化
+
+| Running Duration | Recommendation | Savings |
+|------------------|----------------|---------|
+| 30-180 days | 包月 | 30-40% |
+| > 180 days | 包年 | 60-80% |
+| > 365 days | 包3年 | 70-85% |
+
+#### 节省计算
+
+```bash
+# 降级节省公式
+downgrade_savings = (current_rate - target_rate) × 24 × 30
+
+# 预留节省公式
+reserved_savings = (on_demand_annual - reserved_annual)
+
+# 合计节省潜力
+total_savings = Σ downgrade_savings + Σ reserved_savings + Σ storage_savings
+```
+
+> **详细 FinOps 分析**: 参考 [FinOps Cost Optimization](references/finops-analysis.md)
 
 | Billing | Best For | Savings |
 |---------|----------|---------|
@@ -1832,7 +1882,7 @@ Phase 3: Validate — Data integrity, application smoke tests, traffic switch
 | 包年包月 | Production | Up to 80% |
 | Serverless | Unpredictable workloads | Pay per request |
 
-**Waste:** CPU < 10% AND IOPS < 50 for 7d → downgrade. Unused databases → consolidate.
+**Waste Detection (FinOps §4):** CPU < 10% AND IOPS < 50 for 7d → downgrade. Unused databases → consolidate. Idle instances (Connections = 0) → archive or delete.
 
 ### 效率 (Efficiency)
 
@@ -1875,6 +1925,8 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md)
+- [AIOps Prediction & Anomaly Detection](references/aiops-prediction.md)
+- [FinOps Cost Optimization](references/finops-analysis.md)
 - [Integration](references/integration.md)
 
 ## See Also

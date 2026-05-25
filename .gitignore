@@ -27,7 +27,7 @@ go.sum
 
 # JD Cloud CLI config
 .jdc/
-.omc/
+
 
 # Environment files (NEVER commit secrets)
 .env
@@ -85,3 +85,5 @@ ehthumbs.db
 
 .trae/
 .agents/
+.omc/
+.omo/
