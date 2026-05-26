@@ -9,7 +9,7 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.2.0"
+  version: "1.3.0"
   last_updated: "2026-05-26"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
@@ -73,6 +73,10 @@ response validation, and failure recovery.
 - User asks to "巡检", "health check", or diagnose a PolarDB MySQL cluster
 - User asks to "执行 SQL", "跑 SQL 文件", "导入数据" on PolarDB cluster
 - User asks to "查询慢 SQL 统计" on PolarDB cluster (统计数据，不含诊断优化)
+- User asks to "预测存储", "容量预测", "存储趋势" on PolarDB cluster
+- User asks to "预测连接数", "连接趋势", "高峰预警" on PolarDB cluster
+- User asks to "异常检测", "根因分析", "CPU突增" on PolarDB cluster
+- User mentions "AIOps", "智能运维", "预测分析" with PolarDB context
 
 > **⚠️ 与 DAS skill 边界说明：**
 > - **本 Skill 负责**：SQL 执行（ExecuteSQL/ExecuteSQLFile）、慢日志统计查询（DescribeSlowLogRecords）
@@ -171,6 +175,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-05-26 | Add AIOps capabilities: Storage Prediction (30/60/90 days), Connection Prediction (cycle detection), Anomaly Detection (root cause correlation) (DOPS-85275) |
 | 1.2.0 | 2026-05-26 | Add SQL execution capability (ExecuteSQL, ExecuteSQLFile, DescribeSlowQueryLogs) with safety controls (DOPS-85273) |
 | 1.1.0 | 2026-05-26 | Add FinOps storage tier (PSLevel) cost optimization analysis (DOPS-85270) |
 | 1.0.0 | 2026-05-16 | Initial PolarDB MySQL skill with dual-path (CLI + SDK) support |
@@ -205,6 +210,9 @@ aliyun polardb DescribeDBClusters --DBType MySQL --RegionId "{{env.ALIBABA_CLOUD
 | ExecuteSQL | Execute single SQL statement | Medium |
 | ExecuteSQLFile | Execute .sql file with multiple statements | Medium |
 | DescribeSlowQueryLogs | Query slow SQL statistics | None |
+| PredictStorageTrend | Predict storage growth (30/60/90 days) | None |
+| PredictConnectionPeak | Predict connection peak based on cycle | None |
+| DetectAnomaly | CPU anomaly detection + root cause analysis | None |
 
 ## Execution Flows (Agent-Readable)
 
@@ -704,6 +712,140 @@ PolarDB 存储层级分析:
 
 ---
 
+## AIOps: PolarDB Storage Space Trend Prediction
+
+For predictive capacity planning through storage growth trend analysis.
+
+### Extended Cruise Workflow (Step 10)
+
+| Step | Operation | Purpose | Alert Threshold |
+|------|-----------|---------|-----------------|
+| **10** | **CMS GetMetricStatisticsData + Trend Analysis** | Storage growth prediction (30/60/90 days) | Alert if predicted to reach 85% within 30 days |
+
+### Analysis Scope
+
+- **存储增长预测**: 基于30天历史数据预测 30/60/90 天存储增长趋势
+- **阈值到达时间**: 预测达到 85%/95%/100% 阈值的具体日期
+- **扩容建议生成**: 根据预警级别自动触发扩容建议和存储包购买推荐
+
+### Prediction Accuracy
+
+| Algorithm | Accuracy Target | Use Case |
+|-----------|-----------------|----------|
+| Linear Regression | 85-95% | 稳定增长趋势 |
+| Weighted Moving Average | 82-92% | 波动型增长 |
+| Exponential Smoothing | 88-95% | 季节性波动 |
+
+### Output Example
+
+```
+PolarDB 存储空间趋势预测:
+├── 当前使用: 750.5 GB / 1000 GB (75.05%)
+├── 增长分析: 日增 0.25%, 月增 7.5%
+├── 未来预测:
+│   ├── 30天后: 825.5 GB (82.6%)
+│   ├── 60天后: 900.5 GB (90.1%) ⚠️
+│   └── 90天后: 975.5 GB (97.6%) 🚨
+├── 阈值预测:
+│   ├── 85%预警: 40天后 (2026-07-05)
+│   ├── 95%高危: 80天后 (2026-08-15)
+│   └── 100%满载: 100天后 (2026-09-04)
+└── 扩容建议: 增加 250GB + 购买 500GB 存储包
+```
+
+> **完整实现**请参阅: [references/aiops-storage-prediction.md](references/aiops-storage-prediction.md)
+
+---
+
+## AIOps: PolarDB Connection Trend Prediction
+
+For proactive connection bottleneck prevention through business cycle analysis.
+
+### Extended Cruise Workflow (Step 11)
+
+| Step | Operation | Purpose | Alert Threshold |
+|------|-----------|---------|-----------------|
+| **11** | **CMS GetMetricStatisticsData + Cycle Detection** | Connection peak prediction | Alert if predicted peak > 80% of max_connections |
+
+### Analysis Scope
+
+- **业务周期识别**: 检测日/周/月周期模式，识别高峰时段
+- **高峰连接预测**: 预测下一个高峰时段的连接数峰值
+- **瓶颈风险评估**: 评估 80%/90%/100% 阈值风险，提前预警
+
+### Cycle Detection Confidence
+
+| Cycle Type | Detection Method | Confidence Target |
+|------------|------------------|-------------------|
+| Daily Cycle | Hourly pattern analysis | > 80% |
+| Weekly Cycle | Workday vs weekend analysis | > 70% |
+| Monthly Cycle | STL decomposition | > 85% |
+
+### Output Example
+
+```
+PolarDB 连接数趋势预测:
+├── 当前连接: 2,850 / 5,000 (57.0%)
+├── 周期检测:
+│   ├── 日周期: 高峰 10:00-12:00 (置信度 88%)
+│   └── 周周期: 高峰 周一/周二 (置信度 72%)
+├── 高峰预测:
+│   ├── 下一个高峰: 3,800 (76.0%) @ 2026-05-27 10:00
+│   └── 本周高峰: 4,200 (84.0%) @ 2026-05-28 10:00
+├── 阈值风险:
+│   ├── 80%预警: ⚠️ 将达到 (medium)
+│   ├── 90%高危: ⚠️ 将达到 (high)
+│   └── 100%上限: ✅ 不会超过
+└── 优化建议: 调整 max_connections → 6000，预热连接池
+```
+
+> **完整实现**请参阅: [references/aiops-connection-prediction.md](references/aiops-connection-prediction.md)
+
+---
+
+## AIOps: PolarDB Anomaly Detection
+
+For automated performance anomaly detection with root cause correlation.
+
+### Extended Cruise Workflow (Step 12)
+
+| Step | Operation | Purpose | Alert Threshold |
+|------|-----------|---------|-----------------|
+| **12** | **Multi-Metric Analysis + Correlation** | Anomaly detection + root cause tracing | Alert on CPU spike > 50% sudden increase |
+
+### Detection Architecture
+
+| Layer | Algorithm | Detection Type |
+|-------|-----------|----------------|
+| Layer 1 | Threshold comparison | Static threshold (CPU > 85%, SlowQueries > 50/h) |
+| Layer 2 | Trend analysis | Moving average + slope (连续3周期上升 > 10%) |
+| Layer 3 | Sudden spike detection | Statistical deviation (突增 > 50%) |
+
+### Root Cause Chain Model
+
+```
+异常传播链路:
+CPU Spike (突增) → Slow Query Increase (慢查询增加) → Lock Wait (锁等待) → Connection Bottleneck (连接瓶颈)
+```
+
+### Output Example
+
+```
+PolarDB 异常检测报告:
+├── 主异常: CPU突增 85.2% (基线 33% → 当前 85.2%, 突增 52%)
+├── 关联异常: 慢查询增加 (120/h, 基线 20/h)
+├── 根因链路:
+│   CPU突增 → 慢查询 → 锁等待 45s → 连接瓶颈 92%
+├── Top慢SQL:
+│   ├── SELECT * FROM orders WHERE... (12.5s, 扫描850万行)
+│   └── UPDATE inventory SET... (8.3s, 锁等待12s)
+└── 优化建议: SQL限流 + 索引优化 + 调整连接池
+```
+
+> **完整实现**请参阅: [references/aiops-anomaly-detection.md](references/aiops-anomaly-detection.md)
+
+---
+
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):
@@ -726,14 +868,16 @@ PolarDB 存储层级分析:
 
 ## Intelligent Diagnosis Workflow
 
-| User Input Pattern | Diagnosis Type |
-|-------------------|----------------|
-| "CPU 告警" / "CPU 高" | CPU Performance |
-| "磁盘告警" / "空间不足" | Disk Capacity (storage) |
-| "连接数告警" | Connection Exhaustion |
-| "慢查询" / "SQL 慢" | Query Performance |
-| "集群宕机" / "连不上" | Availability |
-| "巡检异常" / "健康检查失败" | General Health |
+| User Input Pattern | Diagnosis Type | AIOps Enhancement |
+|-------------------|----------------|-------------------|
+| "CPU 告警" / "CPU 高" | CPU Performance | **AIOps Anomaly Detection** (根因链路追踪) |
+| "磁盘告警" / "空间不足" | Disk Capacity (storage) | **AIOps Storage Prediction** (30/60/90天趋势) |
+| "连接数告警" | Connection Exhaustion | **AIOps Connection Prediction** (周期高峰预测) |
+| "慢查询" / "SQL 慢" | Query Performance | Anomaly Detection (慢查询关联) |
+| "集群宕机" / "连不上" | Availability | Manual diagnosis |
+| "巡检异常" / "健康检查失败" | General Health | Extended Cruise Workflow (Step 8-12) |
+| "异常检测" / "根因分析" | Anomaly Detection | **AIOps Layer 1-3** (阈值/趋势/突增) |
+| "容量预测" / "趋势分析" | Capacity Planning | **AIOps Prediction** (存储/连接) |
 
 ### Supported Anomaly Patterns
 
@@ -805,6 +949,9 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [SQL Execution](references/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
 - [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
 - [FinOps: Storage Tier Analysis](references/finops-storage-tier-analysis.md) — 存储层级成本优化分析
+- [AIOps: Storage Prediction](references/aiops-storage-prediction.md) — 存储空间趋势预测（30/60/90天）
+- [AIOps: Connection Prediction](references/aiops-connection-prediction.md) — 连接数趋势预测（业务周期分析）
+- [AIOps: Anomaly Detection](references/aiops-anomaly-detection.md) — 异常检测与根因分析
 
 ## Related Skills & References
 
