@@ -595,6 +595,42 @@ For comprehensive cluster health assessment when user requests "巡检" or "heal
 | 6 | **DescribeAccounts** | Audit accounts | Warn if no accounts |
 | 7 | **DescribeDatabases** | Check database count | Log for awareness |
 
+---
+
+## FinOps: PolarDB Node-Level Resource Analysis
+
+For comprehensive cost optimization through node-level resource efficiency analysis.
+
+### Extended Cruise Workflow (Step 8)
+
+| Step | Operation | Purpose | Alert Threshold |
+|------|-----------|---------|-----------------|
+| **8** | **DescribeDBNodes + GetMetricStatisticsData** | Node-level CPU/Memory efficiency | Alert if reader node CPU < 30% |
+
+### Quick Analysis
+
+```bash
+# Get all nodes with roles (RegionId optional but recommended)
+aliyun polardb DescribeDBNodes \
+  --DBClusterId "{{user.db_cluster_id}}" \
+  --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --output cols=DBNodeId,Role,ZoneId,HealthStatus rows=Items.DBDetail[]
+```
+
+### Output Example
+
+```
+PolarDB 节点级分析:
+├── 主节点 (polar-xxx-writer) - CPU: avg 45%, peak 78%
+├── 只读节点1 (polar-xxx-reader-1) - CPU: avg 8% ⚠️ 利用率低
+├── 只读节点2 (polar-xxx-reader-2) - CPU: avg 35%
+└── 优化建议: 移除只读节点1 (节省 ￥800/月)
+```
+
+> **完整实现**请参阅: [references/finops-node-analysis.md](references/finops-node-analysis.md)
+
+---
+
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):
@@ -693,6 +729,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
+- [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
 
 ## Related Skills & References
 

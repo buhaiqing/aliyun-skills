@@ -1,20 +1,52 @@
 # Alibaba Cloud Skills Docker Sandbox
 # Provides isolated environment for running all aliyun-skills
 
-# Stage 1: Base runtime image with Go and common tools
+# Stage 1: Base runtime image with Go and Python 3.10
 FROM golang:1.24-bookworm AS base
 
-# Install system dependencies
+# Install Python 3.10 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     wget \
     git \
     jq \
     ca-certificates \
-    python3 \
-    python3-pip \
-    python3-venv \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Python 3.10 from source with all required modules
+ENV PYTHON_VERSION=3.10.14
+RUN cd /tmp && \
+    curl -fsSL "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" | tar -xz && \
+    cd Python-${PYTHON_VERSION} && \
+    ./configure \
+        --prefix=/usr/local \
+        --enable-optimizations \
+        --with-ensurepip=install \
+        --enable-shared \
+        LDFLAGS="-Wl,-rpath,/usr/local/lib" && \
+    make -j$(nproc) && \
+    make install && \
+    ldconfig && \
+    ln -sf /usr/local/bin/python3.10 /usr/local/bin/python3 && \
+    ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
+    rm -rf /tmp/Python-${PYTHON_VERSION}
+
+# Upgrade pip and install virtualenv
+RUN /usr/local/bin/python3.10 -m ensurepip --upgrade && \
+    /usr/local/bin/python3.10 -m pip install --upgrade pip virtualenv
 
 # Install aliyun CLI (official Go binary, no runtime dependencies)
 RUN OS=$(uname -s | tr '[:upper:]' '[:lower:]') && \
@@ -40,7 +72,7 @@ RUN mkdir -p /skills /tmp/aliyun-sdk-workspace /tmp/go-runtime
 # Stage 2: Development image with linting tools
 FROM base AS dev
 
-# Install Python-based development tools
+# Install Python-based development tools using Python 3.10
 RUN python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --upgrade pip && \
     /opt/venv/bin/pip install markdownlint-cli2>=0.17.0
