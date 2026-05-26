@@ -9,7 +9,7 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.1.0"
+  version: "1.2.0"
   last_updated: "2026-05-26"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
@@ -69,7 +69,15 @@ response validation, and failure recovery.
 - Task involves **performance monitoring** (CPU, memory, IOPS, connections, TPS/QPS)
 - Task involves **security** (whitelist, SSL, TDE, data masking)
 - Task involves **serverless** scaling (configure serverless, monitor RCUs)
+- Task involves **SQL execution** on PolarDB cluster (run SQL, execute .sql file, query slow logs)
 - User asks to "巡检", "health check", or diagnose a PolarDB MySQL cluster
+- User asks to "执行 SQL", "跑 SQL 文件", "导入数据" on PolarDB cluster
+- User asks to "查询慢 SQL 统计" on PolarDB cluster (统计数据，不含诊断优化)
+
+> **⚠️ 与 DAS skill 边界说明：**
+> - **本 Skill 负责**：SQL 执行（ExecuteSQL/ExecuteSQLFile）、慢日志统计查询（DescribeSlowLogRecords）
+> - **DAS Skill 负责**：慢 SQL **诊断优化**、SQL 性能分析、锁分析、自动 SQL 限流
+> - 边界关键词："执行 SQL" → PolarDB；"优化 SQL"、"诊断慢 SQL" → DAS
 
 ### SHOULD NOT Use This Skill When
 
@@ -163,6 +171,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | 2026-05-26 | Add SQL execution capability (ExecuteSQL, ExecuteSQLFile, DescribeSlowQueryLogs) with safety controls (DOPS-85273) |
 | 1.1.0 | 2026-05-26 | Add FinOps storage tier (PSLevel) cost optimization analysis (DOPS-85270) |
 | 1.0.0 | 2026-05-16 | Initial PolarDB MySQL skill with dual-path (CLI + SDK) support |
 
@@ -193,6 +202,9 @@ aliyun polardb DescribeDBClusters --DBType MySQL --RegionId "{{env.ALIBABA_CLOUD
 | UpgradeDBCluster | Upgrade cluster specification | Medium |
 | StartDBCluster / StopDBCluster | Start or stop cluster | Low |
 | PauseDBCluster / ResumeDBCluster | Serverless pause/resume | Low |
+| ExecuteSQL | Execute single SQL statement | Medium |
+| ExecuteSQLFile | Execute .sql file with multiple statements | Medium |
+| DescribeSlowQueryLogs | Query slow SQL statistics | None |
 
 ## Execution Flows (Agent-Readable)
 
@@ -582,6 +594,36 @@ aliyun polardb ModifyDBClusterEndpoint \
 
 ---
 
+### Operation: SQL Execution
+
+PolarDB MySQL 支持通过 mysql 客户端执行 SQL，提供多种 Endpoint 类型实现读写分离和查询优化。
+
+#### Endpoint Types for SQL Execution
+
+| Endpoint Type | Connection String Pattern | Use Case |
+|---------------|---------------------------|----------|
+| **Primary** | `pc-xxxx.mysql.polardb.rds.aliyuncs.com` | All write operations (INSERT, UPDATE, DELETE, DDL) |
+| **Cluster** | `pc-xxxx-cluster.mysql.polardb.rds.aliyuncs.com` | Read-write splitting, automatic query routing |
+| **Custom** | User-defined | Specific node group (e.g., read-only nodes for analytics) |
+
+#### Operations
+
+| Operation | Description | How to Execute |
+|-----------|-------------|----------------|
+| **ExecuteSQL** | Execute single SQL statement | mysql client with selected endpoint |
+| **ExecuteSQLFile** | Execute .sql file with multiple statements | mysql client with input redirect |
+| **DescribeSlowQueryLogs** | Query slow SQL statistics | `aliyun polardb DescribeSlowLogRecords` |
+
+#### Safety Controls
+
+- **Dangerous SQL Detection**: DROP, TRUNCATE, DELETE without WHERE → User confirmation required
+- **Endpoint Selection**: Write operations → Primary Endpoint; Read operations → Cluster/Custom Endpoint
+- **Result Masking**: Sensitive data (passwords, PII) not displayed in output
+
+> **完整实现**请参阅: [references/sql-execution.md](references/sql-execution.md)
+
+---
+
 ## PolarDB MySQL Cruise (Health Check Workflow)
 
 For comprehensive cluster health assessment when user requests "巡检" or "health check":
@@ -760,6 +802,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
+- [SQL Execution](references/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
 - [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
 - [FinOps: Storage Tier Analysis](references/finops-storage-tier-analysis.md) — 存储层级成本优化分析
 

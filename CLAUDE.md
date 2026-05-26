@@ -31,6 +31,19 @@ Each `alicloud-[product]-ops/` contains:
 - `references/` — CLI usage, API/SDK, core concepts, troubleshooting, monitoring
 - `assets/` — Example configs
 
+### Content Separation Rule (MANDATORY)
+**SKILL.md 只描述 What to do，How to do 放置在 references/ 目录下**
+
+| 文件 | 职责 | 内容 |
+|------|------|------|
+| `SKILL.md` | **What to do** | 触发条件、执行流程概览、输出示例、参考链接 |
+| `references/*.md` | **How to do** | 完整实现细节、CLI命令、SDK代码、参数说明、故障恢复 |
+
+**规则要求：**
+1. SKILL.md 中的每个功能必须在 references/ 中有对应的详细实现文档
+2. SKILL.md 使用链接引用 references/ 文档，而非内联详细代码
+3. references/ 文档必须独立完整，包含可直接执行的命令和代码
+
 ## Development Commands
 
 ### Validate Skills
