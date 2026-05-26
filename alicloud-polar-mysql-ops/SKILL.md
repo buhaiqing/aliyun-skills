@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-05-26"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -163,6 +163,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-05-26 | Add FinOps storage tier (PSLevel) cost optimization analysis (DOPS-85270) |
 | 1.0.0 | 2026-05-16 | Initial PolarDB MySQL skill with dual-path (CLI + SDK) support |
 
 ## Quick Start
@@ -631,6 +632,36 @@ PolarDB 节点级分析:
 
 ---
 
+## FinOps: PolarDB Storage Tier (PSLevel) Cost Optimization
+
+For comprehensive cost optimization through storage tier (PSLevel) efficiency analysis.
+
+### Extended Cruise Workflow (Step 9)
+
+| Step | Operation | Purpose | Alert Threshold |
+|------|-----------|---------|-----------------|
+| **9** | **DescribeDBClusterAttribute + CMS Metrics** | Storage tier suitability + pack optimization | Alert if IOPS < 30% tier capacity |
+
+### Analysis Scope
+
+- **存储层级适配度**: PSLevel1-5 性能与成本对比，识别过度/不足配置
+- **存储包购买建议**: 基于当前用量和增长趋势推荐最优规格
+- **数据分层策略**: 热/冷数据分布分析，归档路径建议
+
+### Output Example
+
+```
+PolarDB 存储层级分析:
+├── 当前配置: PSLevel2 - IOPS利用率24% ⚠️ 过度配置
+├── 建议降级: PSLevel3 - 预期节省23%
+├── 存储包建议: 1TB包 - 月度节省￥170
+└── 数据分层: 冷数据77% - 归档至PSLevel5节省65%
+```
+
+> **完整实现**请参阅: [references/finops-storage-tier-analysis.md](references/finops-storage-tier-analysis.md)
+
+---
+
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):
@@ -730,6 +761,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
 - [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
+- [FinOps: Storage Tier Analysis](references/finops-storage-tier-analysis.md) — 存储层级成本优化分析
 
 ## Related Skills & References
 
