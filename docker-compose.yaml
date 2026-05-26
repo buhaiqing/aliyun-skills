@@ -1,0 +1,240 @@
+# Alibaba Cloud Skills Docker Compose Configuration
+# Provides multiple service profiles for different use cases
+
+services:
+  # ===========================================
+  # Profile: runtime - Production runtime (minimal)
+  # ===========================================
+  runtime:
+    build:
+      context: .
+      target: runtime
+    image: aliyun-skills:runtime
+    container_name: aliyun-skills-runtime
+    profiles:
+      - runtime
+    environment:
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+      - ALIBABA_CLOUD_REGION_ID=${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}
+    volumes:
+      # Mount skills for live editing (optional)
+      - skills-data:/skills
+    networks:
+      - skills-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "aliyun", "version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ===========================================
+  # Profile: dev - Development with linting tools
+  # ===========================================
+  dev:
+    build:
+      context: .
+      target: dev
+    image: aliyun-skills:dev
+    container_name: aliyun-skills-dev
+    profiles:
+      - dev
+    environment:
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+      - ALIBABA_CLOUD_REGION_ID=${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}
+      - GOPATH=/go
+      - GOPROXY=https://goproxy.cn,direct
+    volumes:
+      # Mount entire project for development
+      - .:/skills:ro
+      # Persist Go cache for faster builds
+      - go-cache:/go/cache
+      - go-modcache:/go/modcache
+      # Share aliyun CLI config (optional, use env vars instead)
+      - aliyun-config:/home/skillsrunner/.aliyun:ro
+    networks:
+      - skills-network
+    working_dir: /skills
+    command: ["tail", "-f", "/dev/null"]  # Keep container running
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===========================================
+  # Profile: agent - AI Agent runtime environment
+  # ===========================================
+  agent:
+    build:
+      context: .
+      target: agent
+    image: aliyun-skills:agent
+    container_name: aliyun-skills-agent
+    profiles:
+      - agent
+    environment:
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+      - ALIBABA_CLOUD_REGION_ID=${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}
+      - SKILLS_HOME=/skills
+      - SKILLS_RUNTIME=docker
+      # Go runtime for JIT SDK
+      - GOPATH=/go
+      - GOCACHE=/go/cache
+      - GOMODCACHE=/go/modcache
+      - GOPROXY=https://goproxy.cn,direct
+    volumes:
+      # Read-only skills content
+      - .:/skills:ro
+      # Persist Go SDK artifacts
+      - go-cache:/go/cache
+      - go-modcache:/go/modcache
+      - sdk-workspace:/tmp/aliyun-sdk-workspace
+      # Output directory for generated reports
+      - output-data:/output
+    networks:
+      - skills-network
+    working_dir: /skills
+    # Agent-ready command
+    command: ["sh", "-c", "while true; do sleep 60; done"]
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /skills/README.md"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    security_opt:
+      - no-new-privileges:true
+    read_only: false  # Need write access for JIT SDK compilation
+
+  # ===========================================
+  # Profile: test - Testing and validation
+  # ===========================================
+  test:
+    build:
+      context: .
+      target: dev
+    image: aliyun-skills:test
+    container_name: aliyun-skills-test
+    profiles:
+      - test
+    environment:
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID:-test_key}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET:-test_secret}
+      - ALIBABA_CLOUD_REGION_ID=${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}
+    volumes:
+      - .:/skills:ro
+      - go-cache:/go/cache
+      - go-modcache:/go/modcache
+    networks:
+      - skills-network
+    working_dir: /skills
+    # Run markdown linting and other validations
+    command:
+      - sh
+      - -c
+      - |
+        echo "Running skills validation..."
+        markdownlint-cli2 "alicloud-*/SKILL.md" || true
+        echo "Validation complete"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ===========================================
+  # Profile: interactive - Interactive shell
+  # ===========================================
+  interactive:
+    build:
+      context: .
+      target: dev
+    image: aliyun-skills:interactive
+    container_name: aliyun-skills-interactive
+    profiles:
+      - interactive
+    environment:
+      - ALIBABA_CLOUD_ACCESS_KEY_ID=${ALIBABA_CLOUD_ACCESS_KEY_ID}
+      - ALIBABA_CLOUD_ACCESS_KEY_SECRET=${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+      - ALIBABA_CLOUD_REGION_ID=${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}
+      - GOPATH=/go
+      - GOPROXY=https://goproxy.cn,direct
+    volumes:
+      - .:/skills:ro
+      - go-cache:/go/cache
+      - go-modcache:/go/modcache
+      - sdk-workspace:/tmp/aliyun-sdk-workspace
+      - output-data:/output
+    networks:
+      - skills-network
+    working_dir: /skills
+    stdin_open: true
+    tty: true
+    command: ["/bin/bash"]
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  skills-network:
+    driver: bridge
+    name: aliyun-skills-network
+    labels:
+      description: "Network for Alibaba Cloud Skills containers"
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  skills-data:
+    name: aliyun-skills-data
+    labels:
+      description: "Skills content storage"
+  go-cache:
+    name: aliyun-skills-go-cache
+    labels:
+      description: "Go build cache for JIT SDK"
+  go-modcache:
+    name: aliyun-skills-go-modcache
+    labels:
+      description: "Go module cache for JIT SDK"
+  sdk-workspace:
+    name: aliyun-skills-sdk-workspace
+    labels:
+      description: "JIT Go SDK workspace"
+  output-data:
+    name: aliyun-skills-output
+    labels:
+      description: "Output directory for generated reports"
+  aliyun-config:
+    name: aliyun-skills-cli-config
+    labels:
+      description: "Aliyun CLI configuration (optional)"

@@ -1,0 +1,63 @@
+# Docker ignore file for aliyun-skills
+
+# Credentials (NEVER include in image)
+.env
+.env.*
+.aliyun/
+.jdc/
+
+# Git
+.git/
+.gitignore
+
+# Development files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+
+# Go build artifacts (JIT generated)
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Cache directories
+.cache/
+go-cache/
+go-modcache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sandbox analysis
+.sandbox-analysis/
+
+# Trae/OMC/OMO directories (development only)
+.trae/
+.omc/
+.omo/
+
+# Documentation that shouldn't be in image
+REQUIREMENTS.md
