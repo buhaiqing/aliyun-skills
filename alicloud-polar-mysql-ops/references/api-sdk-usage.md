@@ -1,6 +1,6 @@
 # API & SDK Usage — PolarDB MySQL
 
-> Version: 1.0.0 | Last Updated: 2026-05-16
+> Version: 1.1.0 | Last Updated: 2026-05-26
 
 ## OpenAPI
 
@@ -58,6 +58,9 @@ github.com/alibabacloud-go/polardb-20220530/v3/client
 | Create | `CreateDBEndpoint` | Create custom endpoint |
 | Modify | `ModifyDBClusterEndpoint` | Modify endpoint config |
 | Delete | `DeleteDBEndpoint` | Delete custom endpoint |
+| **Slow Query Analysis** |
+| Statistics | `DescribeSlowLogs` | Query slow SQL statistics overview |
+| Details | `DescribeSlowLogRecords` | Query detailed slow SQL records |
 | **Monitoring** |
 | Performance | `DescribeDBClusterPerformance` | Get performance metrics |
 | Metrics | `DescribeDBNodePerformance` | Get node-level metrics |
@@ -79,15 +82,103 @@ github.com/alibabacloud-go/polardb-20220530/v3/client
 | CreateDatabase | `DBClusterId`, `DBName` |
 | CreateBackup | `DBClusterId` |
 | DescribeBackups | `DBClusterId`, `StartTime`, `EndTime` |
+| **DescribeSlowLogs** | `DBClusterId`, `StartTime`, `EndTime` |
+| **DescribeSlowLogRecords** | `DBClusterId`, `StartTime`, `EndTime` |
+
+### Slow Query API Parameters
+
+**DescribeSlowLogs Request:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `DBClusterId` | string | Yes | PolarDB cluster ID |
+| `StartTime` | string | Yes | Start time in ISO 8601 format (UTC), e.g., `2024-11-22T02:22Z` |
+| `EndTime` | string | Yes | End time in ISO 8601 format (UTC), e.g., `2024-11-22T02:22Z` |
+| `DBName` | string | No | Filter by database name |
+| `PageSize` | int32 | No | Records per page (default: 30, max: 100) |
+| `PageNumber` | int32 | No | Page number (default: 1) |
+
+**DescribeSlowLogRecords Request:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `DBClusterId` | string | Yes | PolarDB cluster ID |
+| `StartTime` | string | Yes | Start time in ISO 8601 format (UTC) |
+| `EndTime` | string | Yes | End time in ISO 8601 format (UTC) |
+| `DBNodeId` | string | No | Filter by specific node ID |
+| `DBName` | string | No | Filter by database name |
+| `PageSize` | int32 | No | Records per page (default: 30, max: 100) |
+| `PageNumber` | int32 | No | Page number (default: 1) |
+| `SQLText` | string | No | Filter by SQL text pattern |
+
+### Slow Query Response Fields
+
+**DescribeSlowLogs Response:**
+
+| Field | Path | Type | Description |
+|-------|------|------|-------------|
+| SQL Text | `$.Items.SQLSlowLog[].SQLText` | string | SQL statement pattern |
+| DB Name | `$.Items.SQLSlowLog[].DBName` | string | Database name |
+| Slow Log Count | `$.Items.SQLSlowLog[].SlowLogCounts` | int64 | Number of occurrences |
+| Total Count | `$.Items.SQLSlowLog[].TotalCounts` | int64 | Total execution count |
+| Max Query Time | `$.Items.SQLSlowLog[].MaxQueryTime` | float64 | Maximum execution time (s) |
+| Avg Query Time | `$.Items.SQLSlowLog[].AvgQueryTime` | float64 | Average execution time (s) |
+| Min Query Time | `$.Items.SQLSlowLog[].MinQueryTime` | float64 | Minimum execution time (s) |
+
+**DescribeSlowLogRecords Response:**
+
+| Field | Path | Type | Description |
+|-------|------|------|-------------|
+| SQL Text | `$.Items.SQLSlowRecord[].SQLText` | string | Complete SQL statement |
+| Query Start Time | `$.Items.SQLSlowRecord[].QueryStartTime` | string | Execution start timestamp (ISO 8601) |
+| Query Time | `$.Items.SQLSlowRecord[].QueryTime` | float64 | Execution time in seconds |
+| Query Time (ms) | `$.Items.SQLSlowRecord[].QueryTimeMS` | float64 | Execution time in milliseconds |
+| Lock Time (ms) | `$.Items.SQLSlowRecord[].LockTimeMS` | int64 | Lock wait time in milliseconds |
+| Parse Row Counts | `$.Items.SQLSlowRecord[].ParseRowCounts` | int64 | Rows examined/scanned |
+| Return Row Counts | `$.Items.SQLSlowRecord[].ReturnRowCounts` | int64 | Rows returned |
+| DB Name | `$.Items.SQLSlowRecord[].DBName` | string | Database name |
+| Host Address | `$.Items.SQLSlowRecord[].HostAddress` | string | Client IP address |
+| Execution Plan | `$.Items.SQLSlowRecord[].ExecutionPlan` | string | Execution plan (if available) |
 
 ### Pagination
 
 - Use `PageNumber` (default 1) and `PageSize` (default 30, max 100).
 - Total count returned in `TotalRecordCount`.
+- For slow query analysis, fetch all pages to get complete dataset:
+
+```go
+// Paginated slow log retrieval
+pageNumber := int32(1)
+allRecords := []polardb.DescribeSlowLogRecordsResponseBodyItemsSQLSlowRecord{}
+
+for {
+    req := &polardb.DescribeSlowLogRecordsRequest{
+        DBClusterId: tea.String(clusterId),
+        StartTime:   tea.String(startTime),
+        EndTime:     tea.String(endTime),
+        PageSize:    tea.Int32(100),
+        PageNumber:  tea.Int32(pageNumber),
+    }
+    resp, _ := client.DescribeSlowLogRecords(req)
+    
+    items := resp.Body.Items.SQLSlowRecord
+    allRecords = append(allRecords, items...)
+    
+    // Check if we've fetched all records
+    if len(allRecords) >= int(tea.Int32Value(resp.Body.TotalRecordCount)) {
+        break
+    }
+    pageNumber++
+}
+```
 
 ### Timestamps
 
-All time parameters use `yyy-MM-ddTHH:mmZ` format (UTC).
+All time parameters use `yyyy-MM-ddTHH:mmZ` format (UTC). Time range constraints:
+
+- Maximum range: 7 days
+- Format: ISO 8601 with UTC timezone
+- Example: `2024-11-22T02:22Z`
 
 ## Error Code Reference
 
@@ -96,6 +187,9 @@ All time parameters use `yyy-MM-ddTHH:mmZ` format (UTC).
 | InvalidDBClusterId.NotFound | 404 | Cluster does not exist |
 | InvalidDBClusterId.Malform | 400 | Malformed cluster ID |
 | InvalidParameter | 400 | Parameter validation failed |
+| InvalidStartTime.Malformed | 400 | Invalid start time format |
+| InvalidEndTime.Malformed | 400 | Invalid end time format |
+| TimeRangeExceeded | 400 | Time range exceeds 7 days |
 | DBClusterQuotaExceeded | 403 | Cluster quota exceeded |
 | InsufficientBalance | 403 | Account balance insufficient |
 | ResourceAlreadyExists | 409 | Resource name already exists |

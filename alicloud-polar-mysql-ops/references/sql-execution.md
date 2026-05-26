@@ -634,12 +634,41 @@ SQL 类型：DROP TABLE
 
 **执行命令：**
 ```bash
+# 步骤1：获取慢查询统计概览
+aliyun polardb DescribeSlowLogs \
+  --DBClusterId pc-bp123456 \
+  --StartTime "2024-01-01T00:00Z" \
+  --EndTime "2024-01-07T23:59Z"
+
+# 步骤2：获取详细慢查询记录（用于 Top N 分析）
 aliyun polardb DescribeSlowLogRecords \
   --DBClusterId pc-bp123456 \
   --StartTime "2024-01-01T00:00Z" \
   --EndTime "2024-01-07T23:59Z" \
-  --SortBy "TotalQueryTimes"
+  --PageSize 100
 ```
+
+**深度分析流程：**
+
+对于需要深度慢查询诊断（执行计划分析、索引优化建议、SQL 改写建议），委托至：
+> **Delegate to:** `alicloud-das-ops` — 提供 SQL 自动优化、智能诊断能力
+
+本 Skill 提供的**轻量级分析能力**：
+1. **Top N 慢查询识别** — 基于 `DescribeSlowLogRecords` 数据统计
+2. **慢查询趋势分析** — 对比时间段内的慢查询数量变化
+3. **初步索引建议** — 基于 SQL 模式的简单规则建议
+
+**轻量级 vs 深度诊断边界：**
+
+| 能力 | 本 Skill (轻量级) | DAS Skill (深度) |
+|------|------------------|------------------|
+| 慢日志统计查询 | ✅ DescribeSlowLogs/Records | ✅ 更细粒度分析 |
+| Top N 识别 | ✅ 基于频次/时间排序 | ✅ 智能聚类 |
+| 趋势分析 | ✅ 时间窗口对比 | ✅ 预测性分析 |
+| 执行计划分析 | ❌ | ✅ EXPLAIN 分析 |
+| 索引优化建议 | ⚠️ 简单规则建议 | ✅ AI 优化建议 |
+| SQL 改写建议 | ❌ | ✅ 自动改写 |
+| 锁等待分析 | ❌ | ✅ 死锁诊断 |
 
 ---
 
@@ -736,3 +765,9 @@ aliyun polardb DescribeDBClusterEndpoints \
 | "慢查询"、"慢 SQL" | DescribeSlowQueryLogs | API 查询慢日志 |
 | "连接地址"、"endpoint" | DescribeDBClusterEndpoints | 返回连接信息 |
 | "DROP"、"TRUNCATE" | 危险 SQL 检测 | **必须用户确认** |
+
+---
+
+## Reference
+
+- [Slow Query Analysis Workflow](slow-query-analysis.md) — 详细的慢查询分析工作流文档，包含 Top N 识别、趋势分析、索引优化建议

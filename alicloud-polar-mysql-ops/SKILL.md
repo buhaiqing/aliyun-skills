@@ -9,7 +9,7 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.3.0"
+  version: "1.4.0"
   last_updated: "2026-05-26"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
@@ -175,6 +175,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.4.0 | 2026-05-26 | Add Slow Query Analysis workflow: DescribeSlowLogs/DescribeSlowLogRecords, Top N identification, index optimization recommendations, and diagnostic report template (DOPS-85274) |
 | 1.3.0 | 2026-05-26 | Add AIOps capabilities: Storage Prediction (30/60/90 days), Connection Prediction (cycle detection), Anomaly Detection (root cause correlation) (DOPS-85275) |
 | 1.2.0 | 2026-05-26 | Add SQL execution capability (ExecuteSQL, ExecuteSQLFile, DescribeSlowQueryLogs) with safety controls (DOPS-85273) |
 | 1.1.0 | 2026-05-26 | Add FinOps storage tier (PSLevel) cost optimization analysis (DOPS-85270) |
@@ -210,6 +211,7 @@ aliyun polardb DescribeDBClusters --DBType MySQL --RegionId "{{env.ALIBABA_CLOUD
 | ExecuteSQL | Execute single SQL statement | Medium |
 | ExecuteSQLFile | Execute .sql file with multiple statements | Medium |
 | DescribeSlowQueryLogs | Query slow SQL statistics | None |
+| SlowQueryAnalysis | Full slow query workflow: Top N, index recommendations, report | None |
 | PredictStorageTrend | Predict storage growth (30/60/90 days) | None |
 | PredictConnectionPeak | Predict connection peak based on cycle | None |
 | DetectAnomaly | CPU anomaly detection + root cause analysis | None |
@@ -632,6 +634,134 @@ PolarDB MySQL 支持通过 mysql 客户端执行 SQL，提供多种 Endpoint 类
 
 ---
 
+### Operation: Slow Query Analysis (慢查询分析)
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cluster Status | `DescribeDBClusterAttribute` | `Running` | HALT if not ready |
+| Time Range | Validate `{{user.start_time}}` to `{{user.end_time}}` | ≤ 7 days | Adjust range or split query |
+| Slow Log Enabled | Check audit log collector | Enabled | Warn if disabled |
+
+#### Execution — CLI: Slow Log Statistics (统计概览)
+
+```bash
+# Query slow SQL statistics (聚合统计)
+aliyun polardb DescribeSlowLogs \
+  --DBClusterId "{{user.db_cluster_id}}" \
+  --StartTime "{{user.start_time}}" \
+  --EndTime "{{user.end_time}}"
+```
+
+#### Execution — CLI: Slow Log Records (详细记录)
+
+```bash
+# Query detailed slow SQL records (支持分页)
+aliyun polardb DescribeSlowLogRecords \
+  --DBClusterId "{{user.db_cluster_id}}" \
+  --StartTime "{{user.start_time}}" \
+  --EndTime "{{user.end_time}}" \
+  --PageSize 100 \
+  --PageNumber 1
+```
+
+#### Execution — JIT Go SDK
+
+```go
+// DescribeSlowLogs - 统计概览
+req := &polardb.DescribeSlowLogsRequest{
+    DBClusterId: tea.String(os.Getenv("DB_CLUSTER_ID")),
+    StartTime:   tea.String(os.Getenv("START_TIME")),
+    EndTime:     tea.String(os.Getenv("END_TIME")),
+}
+resp, _ := client.DescribeSlowLogs(req)
+
+// DescribeSlowLogRecords - 详细记录
+reqDetail := &polardb.DescribeSlowLogRecordsRequest{
+    DBClusterId: tea.String(os.Getenv("DB_CLUSTER_ID")),
+    StartTime:   tea.String(os.Getenv("START_TIME")),
+    EndTime:     tea.String(os.Getenv("END_TIME")),
+    PageSize:    tea.Int32(100),
+    PageNumber:  tea.Int32(1),
+}
+respDetail, _ := client.DescribeSlowLogRecords(reqDetail)
+```
+
+#### Response Field Mapping
+
+**DescribeSlowLogs (统计概览):**
+
+| Field | JSON Path | Description |
+|-------|-----------|-------------|
+| SQL Text | `$.Items.SQLSlowLog[].SQLText` | SQL statement pattern |
+| DB Name | `$.Items.SQLSlowLog[].DBName` | Database name |
+| Slow Log Counts | `$.Items.SQLSlowLog[].SlowLogCounts` | Number of slow query occurrences |
+| Total Counts | `$.Items.SQLSlowLog[].TotalCounts` | Total query executions |
+| Max Query Time | `$.Items.SQLSlowLog[].MaxQueryTime` | Maximum execution time (seconds) |
+| Avg Query Time | `$.Items.SQLSlowLog[].AvgQueryTime` | Average execution time (seconds) |
+
+**DescribeSlowLogRecords (详细记录):**
+
+| Field | JSON Path | Description |
+|-------|-----------|-------------|
+| SQL Text | `$.Items.SQLSlowRecord[].SQLText` | Complete SQL statement |
+| Query Time | `$.Items.SQLSlowRecord[].QueryTime` | Duration in seconds |
+| Query Time (ms) | `$.Items.SQLSlowRecord[].QueryTimeMS` | Duration in milliseconds |
+| Lock Time (ms) | `$.Items.SQLSlowRecord[].LockTimeMS` | Lock wait time |
+| Rows Examined | `$.Items.SQLSlowRecord[].ParseRowCounts` | Rows scanned |
+| Rows Returned | `$.Items.SQLSlowRecord[].ReturnRowCounts` | Rows returned |
+| Client IP | `$.Items.SQLSlowRecord[].HostAddress` | Client IP address |
+| Start Time | `$.Items.SQLSlowRecord[].QueryStartTime` | Query execution start timestamp |
+
+#### Slow Query Analysis Workflow
+
+**Step 1: Top N 慢查询识别**
+
+```bash
+# 获取 Top N 慢查询（按总耗时排序）
+aliyun polardb DescribeSlowLogRecords \
+  --DBClusterId "{{user.db_cluster_id}}" \
+  --StartTime "{{user.start_time}}" \
+  --EndTime "{{user.end_time}}" \
+  --PageSize 100 | \
+  jq '.Items.SQLSlowRecord[] | {sql: .SQLText, time: .QueryTimeMS, rows_scanned: .ParseRowCounts, db: .DBName}' | \
+  sort -k2 -nr | head -{{user.top_n|10}}
+```
+
+**Step 2: 执行计划分析**
+
+Analyze execution patterns from slow log records:
+
+| Pattern | Detection Criteria | Action |
+|---------|-------------------|--------|
+| Full Table Scan | `ParseRowCounts` > 10,000 AND high scan ratio | Create composite index on filter columns |
+| High Lock Time | `LockTimeMS` > 1000 | Optimize transaction size |
+| Large Offset Pagination | SQL contains `LIMIT ... OFFSET` with large offset | Key-based pagination recommended |
+| Missing Index | `ParseRowCounts` / `ReturnRowCounts` > 100 | Add covering index |
+
+**Step 3: 诊断报告模板**
+
+```markdown
+PolarDB 慢查询分析报告:
+├── Top 10 慢查询
+│   ├── SQL: SELECT ... (执行时间: 12.5s, 次数: 245)
+│   ├── 表扫描: 全表扫描 (rows: 1,200,000)
+│   └── 建议: 添加索引 idx_xxx
+├── 慢查询趋势
+│   ├── 今日慢查询数: 45 (↑ 20%)
+│   └── 平均执行时间: 3.2s
+└── 根因分析
+    ├── 连接-慢查询关联: 存在 3 个热点查询
+    └── 索引缺失: 涉及 5 张表
+```
+
+> **深度诊断边界：** 如需深度 SQL 优化建议、执行计划 EXPLAIN、锁分析、SQL 限流，委托至 `alicloud-das-ops` Skill。
+
+> **详细工作流文档**请参阅: [references/slow-query-analysis.md](references/slow-query-analysis.md)
+
+---
+
 ## PolarDB MySQL Cruise (Health Check Workflow)
 
 For comprehensive cluster health assessment when user requests "巡检" or "health check":
@@ -947,6 +1077,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
 - [SQL Execution](references/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
+- [Slow Query Analysis Workflow](references/slow-query-analysis.md) — 慢查询分析工作流：Top N、趋势分析、索引优化建议
 - [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
 - [FinOps: Storage Tier Analysis](references/finops-storage-tier-analysis.md) — 存储层级成本优化分析
 - [AIOps: Storage Prediction](references/aiops-storage-prediction.md) — 存储空间趋势预测（30/60/90天）
