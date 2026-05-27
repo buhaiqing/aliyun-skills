@@ -175,6 +175,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.5.0 | 2026-05-27 | Extend AIOps anomaly detection: 12 patterns (P001-P012), 5 PolarDB-specific patterns (Replication Lag, Read Node Imbalance, Storage IO, GDN Sync, Serverless Elasticity), Pattern Correlation Engine (DOPS-85277) |
 | 1.4.0 | 2026-05-26 | Add Slow Query Analysis workflow: DescribeSlowLogs/DescribeSlowLogRecords, Top N identification, index optimization recommendations, and diagnostic report template (DOPS-85274) |
 | 1.3.0 | 2026-05-26 | Add AIOps capabilities: Storage Prediction (30/60/90 days), Connection Prediction (cycle detection), Anomaly Detection (root cause correlation) (DOPS-85275) |
 | 1.2.0 | 2026-05-26 | Add SQL execution capability (ExecuteSQL, ExecuteSQLFile, DescribeSlowQueryLogs) with safety controls (DOPS-85273) |

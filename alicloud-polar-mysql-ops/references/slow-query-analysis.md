@@ -393,7 +393,8 @@ slow_query_analysis:
     - name: analyze_top_n
       script: jq_aggregation
       inputs:
-        top_n: "{{user.top_n|10}}"
+        top_n: "{{user.top_n}}"
+        description: "Number of top slow queries to analyze (default: 10)"
         records: "{{output.collect_details}}"
         
     - name: generate_recommendations
