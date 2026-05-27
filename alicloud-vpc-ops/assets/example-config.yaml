@@ -1,0 +1,29 @@
+# VPC config (replace {{user.*}} and {{env.*}} at runtime)
+x-region: &region
+  RegionId: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+x-vpc: &vpc
+  <<: *region
+  CidrBlock: "{{user.vpc_cidr:10.0.0.0/16}}"
+  VpcName: "{{user.vpc_name}}"
+
+vpc_create:
+  <<: *vpc
+
+vswitch_create:
+  <<: *region
+  VpcId: "{{user.vpc_id}}"
+  ZoneId: "{{user.zone_id}}"
+  CidrBlock: "{{user.subnet_cidr:10.0.1.0/24}}"
+  VSwitchName: "{{user.vswitch_name}}"
+
+nat_create:
+  <<: *region
+  NatGatewayName: "{{user.nat_name}}"
+  VpcId: "{{user.vpc_id}}"
+  NatType: "Enhanced"
+
+eip_allocate:
+  <<: *region
+  Bandwidth: 100
+  InternetChargeType: "PayByTraffic"

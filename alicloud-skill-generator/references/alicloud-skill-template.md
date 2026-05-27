@@ -597,6 +597,33 @@ request := &[product].Restore[Resource]Request{
 - **Availability:** Multi-AZ or product-specific HA patterns per docs.
 - **Cost:** Right-size resources; use product cost controls where applicable.
 
+## Token Efficiency Guidelines (P0 — 强制)
+
+Generated skills MUST follow these 6 rules. See meta-skill SKILL.md for detailed examples.
+
+### TE-1: API Query > Static Tables
+Use API commands instead of hardcoding version/port/quota tables.
+```markdown
+aliyun [product] Describe[Versions]
+| Engine | Port |
+|--------|------|
+```
+### TE-2: No docstrings in code
+Inline comments only. No function-level docstring.
+```go
+// DO: inline comment only
+func createResource() { ... }
+```
+### TE-3: Compact error tables
+| Error Code | Agent Action |
+|------------|-------------|
+### TE-4: Centralized JSON paths
+File-top comment block; one per resource type.
+### TE-5: YAML anchors in example-config.yaml
+Use `&dev` / `&prod` to eliminate repeated fields.
+### TE-6: Eliminate cross-file duplicate flows
+SKILL.md already has full flow, no Complete Workflow in config or SDK files.
+
 ---
 
 # Appendix: Reference File Templates

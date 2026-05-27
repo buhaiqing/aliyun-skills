@@ -44,6 +44,21 @@ metadata:
 
 # Alibaba Cloud RAM Operations Skill
 
+## Common JSON Paths (Centralized)
+
+```
+# Create User:   $.User.{UserId,UserName,CreateDate}
+# Get User:      $.User.{UserId,LastLoginDate}
+# List Users:    $.Users.User[]
+# Create Role:   $.Role.{RoleId,RoleName,Arn}
+# List Roles:    $.Roles.Role[]
+# Create Policy: $.Policy.{PolicyName,PolicyType,DefaultVersion}
+# List Policies: $.Policies.Policy[]
+# Create AK:     $.AccessKey.{AccessKeyId,AccessKeySecret,Status}
+# AssumeRole:    $.Credentials.{AccessKeyId,AccessKeySecret,SecurityToken,Expiration}
+# Delete/etc:    $.RequestId
+```
+
 ## Overview
 
 Resource Access Management (RAM) is Alibaba Cloud's identity and access
@@ -139,19 +154,9 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `{{output.access_key_secret}}`, `AccessKeySecret`, or any credential/secret field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports. `{{output.access_key_secret}}` from CreateAccessKey MUST be shown to the user **ONCE** and NEVER logged or stored.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 >
-> **Masking rules across all execution paths:**
-> | Execution Path | Safe Pattern | Unsafe Pattern |
-> |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` | Raw credential value in output |
-> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
-> | Log files | `[INFO] Credentials: Secret=abcd****` | `[INFO] AK Secret: LTAI5t...` |
-> | Verification | `if os.Getenv("var") != ""` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
-> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
-> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
->
-> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
+> **RAM 特殊：** `{{output.access_key_secret}}` 从 CreateAccessKey 返回后必须仅展示**一次**，之后不可记录或存储。
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -197,12 +202,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 | AssumeRole | `$.Credentials.SecurityToken` | string | STS token |
 | AssumeRole | `$.Credentials.Expiration` | string | ISO 8601 expiration |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 2.1.0 | 2026-05-14 | UX optimization: added Quick Start, Common Scenarios, User Interaction Patterns, Diagnostic Quick Reference, and expanded Chinese trigger keywords |
-| 2.0.0 | 2026-05-14 | Initial RAM skill with dual-path execution, full identity lifecycle, policy management, STS, and security gates |
 
 ## Quick Start (Agent-Readable)
 
@@ -277,153 +277,23 @@ Step 1: CreatePolicy (with region-restricted policy document) → Done
 Real-world scenarios with step-by-step flows. Use these as templates when the
 user's request matches a common pattern.
 
-### Scenario 1: Onboard a New Developer
+### Common Scenario Quick Reference
 
-**Goal:** Create a RAM user with console access and ECS read-only permissions.
+| Scenario | Steps |
+|----------|-------|
+| **Onboard Developer** | `CreateUser` → `CreateLoginProfile` (password shown once) → `AttachPolicyToUser` (AliyunECSReadOnlyAccess) → Optional `CreateAccessKey` |
+| **Cross-Account Access** | `GetCallerIdentity` → `CreateRole` (trust policy scoping other account) → `CreatePolicy` → `AttachPolicyToRole` |
+| **Key Rotation** | `CreateAccessKey` (new key shown once) → user updates apps → `UpdateAccessKey` (old → Inactive) → wait → `DeleteAccessKey` |
+| **Permission Audit** | `ListUsers` → per user: `ListPoliciesForUser` + `ListAccessKeys` + `GetAccessKeyLastUsed` → report High/Medium/Low |
+| **Set Up MFA** | `SetPasswordPolicy` → per user: `CreateVirtualMFADevice` → user provides 2 TOTP codes → `BindMFADevice` |
 
-```
-1. CreateUser --UserName "dev-zhangsan" --DisplayName "张三"
-2. CreateLoginProfile --UserName "dev-zhangsan" --PasswordResetRequired true
-   → Display password to user ONCE
-3. AttachPolicyToUser --PolicyName "AliyunECSReadOnlyAccess" --PolicyType System
-4. (Optional) CreateAccessKey --UserName "dev-zhangsan"
-   → Display AccessKeyId and AccessKeySecret ONCE
-5. Report: "User dev-zhangsan created. Console login enabled. ECS read-only access granted."
-```
+### 用户交互规范
 
-### Scenario 2: Grant Cross-Account Access
-
-**Goal:** Allow another Alibaba Cloud account to assume a role in this account.
-
-```
-1. GetCallerIdentity → Get {{output.account_id}}
-2. CreateRole --RoleName "cross-account-admin" \
-     --AssumeRolePolicyDocument '{"Statement":[{"Action":"sts:AssumeRole","Effect":"Allow",\
-       "Principal":{"RAM":["acs:ram::{{other_account_id}}:root"]},"Version":"1"}]}'
-3. CreatePolicy --PolicyName "CrossAccountAdminPolicy" --PolicyDocument '...'
-4. AttachPolicyToRole --PolicyName "CrossAccountAdminPolicy" --PolicyType Custom
-5. Report: "Role cross-account-admin created. Other account can assume it via STS."
-```
-
-### Scenario 3: Emergency Access Key Rotation
-
-**Goal:** Rotate a compromised or expiring access key with minimal downtime.
-
-```
-1. ListAccessKeys --UserName "{{user.user_name}}" → Identify old key
-2. CreateAccessKey --UserName "{{user.user_name}}"
-   → Display new key pair ONCE
-3. Instruct user: "Update your applications with the new access key."
-4. Wait for user confirmation.
-5. UpdateAccessKey --UserName "{{user.user_name}}" --AccessKeyId "{{old_key}}" --Status Inactive
-6. Monitor for errors during grace period (default 24h).
-7. After user confirms: DeleteAccessKey --UserName "{{user.user_name}}" --AccessKeyId "{{old_key}}"
-```
-
-### Scenario 4: Full Permission Audit
-
-**Goal:** Identify over-permissioned users and unused access keys.
-
-```
-1. ListUsers → For each user:
-   a. ListPoliciesForUser → Check for wildcard actions
-   b. ListAccessKeys → For each key:
-      - GetAccessKeyLastUsed → Check if unused > 90 days
-   c. GetLoginProfile → Check if console login is enabled but unused
-2. ListRoles → For each role:
-   a. ListPoliciesForRole → Check for over-permission
-3. Report with risk levels:
-   - HIGH: Action "*" or Resource "*" without Condition
-   - MEDIUM: Key unused > 90 days
-   - LOW: Console login enabled but never used
-```
-
-### Scenario 5: Set Up MFA for All Users
-
-**Goal:** Enforce MFA for all RAM users with console access.
-
-```
-1. SetPasswordPolicy --RequireSymbols true --MinimumPasswordLength 12 --MaxPasswordAge 90
-2. ListUsers → For each user:
-   a. GetUserMFAInfo → If no MFA:
-      - CreateVirtualMFADevice → Present QR code
-      - Ask user for two consecutive TOTP codes
-      - BindMFADevice
-3. UpdateLoginProfile --MFABindRequired true (for each user with login profile)
-4. Report: "MFA enforced for all users with console access."
-```
-
-### User Interaction Patterns
-
-The agent SHOULD follow these interaction patterns to provide a consistent
-user experience:
-
-#### Pattern 1: Progressive Disclosure
-
-Do NOT dump all information at once. Instead, reveal information step by step:
-
-```
-User: "帮我创建一个子账号"
-Agent: "好的，请提供以下信息：
-  1. 用户名（必填，1-64个字符，支持字母、数字、.、@、-、_）
-  2. 显示名称（可选）
-  3. 手机号（可选）
-  4. 邮箱（可选）"
-User: "用户名 dev-zhangsan，显示名称 张三"
-Agent: "好的，正在创建用户 dev-zhangsan..."
-Agent: "✅ 用户创建成功！
-  - 用户名: dev-zhangsan
-  - 显示名称: 张三
-  - 用户ID: 123456789
-  是否需要为此用户开启控制台登录或生成AccessKey？"
-```
-
-#### Pattern 2: Confirmation Before Destruction
-
-For any destructive operation, ALWAYS:
-
-1. State exactly what will happen
-2. List the consequences
-3. Ask for explicit confirmation
-4. Wait for user's clear assent before proceeding
-
-```
-Agent: "⚠️ 即将执行删除操作：
-  - 删除RAM用户: dev-zhangsan
-  - 此操作不可逆
-  - 该用户的所有AccessKey、登录配置、MFA设备将被一并删除
-  - 该用户从所有用户组中移除
-  确认继续？(yes/no)"
-```
-
-#### Pattern 3: Suggest Next Steps
-
-After completing an operation, proactively suggest what the user might want
-to do next:
-
-```
-Agent: "✅ 用户 dev-zhangsan 已创建。
-  接下来您可以：
-  - 开启控制台登录（CreateLoginProfile）
-  - 生成AccessKey（CreateAccessKey）
-  - 授权（AttachPolicyToUser）
-  - 添加到用户组（AddUserToGroup）
-  请问需要继续哪一项？"
-```
-
-#### Pattern 4: Handle Multi-Step Requests
-
-When a user asks for a complex task, break it down and confirm each step:
-
-```
-User: "帮我创建一个有ECS管理权限的子账号"
-Agent: "好的，这个任务需要以下步骤：
-  1. 创建RAM用户
-  2. 授权ECS管理权限
-  3. （可选）开启控制台登录
-  4. （可选）生成AccessKey
-  请提供用户名，我先创建用户。"
-```
+- **渐进式披露:** 每次只询问最必要的信息，完成后再提示下一步
+- **销毁前确认:** 任何破坏性操作必须明确说明后果并获得用户明确同意
+- **建议下一步:** 操作完成后主动提示可选的后续步骤
+- **多步骤分解:** 复杂任务分步骤确认，每步聚焦一个子操作
+- **示例对话模板:** 参考 [Prompt Examples](references/prompt-examples.md) 获取常见场景的完整交互示例
 
 ## Execution Flows (Agent-Readable)
 
@@ -1747,38 +1617,9 @@ fi
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI** (primary execution path):
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
-   ```bash
-   # Download installer
-   curl -fsSL -o /tmp/aliyun-install.sh https://aliyuncli.alicdn.com/install.sh
-
-   # Optional: verify checksum if published by Alibaba Cloud
-   # sha256sum /tmp/aliyun-install.sh
-
-   # Execute installer
-   /bin/bash /tmp/aliyun-install.sh
-   aliyun version
-   ```
-
-   > **Security note:** `curl | bash` patterns bypass integrity verification.
-   > Prefer downloading first, inspecting the script, then executing.
-
-2. **Configure Credentials** (environment variables preferred):
-
-   ```bash
-   export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
-   export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
-   ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
-
-3. **Verify RAM access:**
-
-    ```bash
-    aliyun ram ListUsers --MaxItems 10
-    aliyun sts GetCallerIdentity
-    ```
+RAM 是全局服务，默认 Region `cn-hangzhou`。
 
 ---
 

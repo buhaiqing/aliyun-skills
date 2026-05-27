@@ -4,20 +4,20 @@
 
 ## Common API Error Codes
 
-| Error Code | HTTP | Meaning | Agent Action |
-|------------|------|---------|--------------|
-| `InvalidVpcId.NotFound` | 404 | VPC does not exist | Verify VpcId and region |
-| `InvalidVSwitchId.NotFound` | 404 | VSwitch does not exist | Verify VSwitchId and region |
-| `InvalidCidrBlock` | 400 | CIDR block is invalid | Use 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16 |
-| `InvalidNatGatewayId.NotFound` | 404 | NAT Gateway does not exist | Verify NatGatewayId |
-| `DependencyViolation` | 400 | Resource has dependencies | Delete associated resources first |
-| `QuotaExceeded` | 400 | Resource quota reached | Delete unused resources or request increase |
-| `Forbidden.RAM` | 403 | Insufficient RAM permissions | Add `AliyunVPCFullAccess` policy |
-| `InsufficientBalance` | 400 | Account balance insufficient | HALT; user recharges |
-| `Throttling.User` | 429 | Rate limit exceeded | Retry with exponential backoff |
-| `InternalError` | 500 | Server internal error | Retry 3x; escalate with RequestId |
-| `InvalidEipStatus` | 400 | EIP in wrong state | Check current EIP status |
-| `OperationDenied` | 400 | Operation denied | Check resource lock or deletion protection |
+| Error Code | Agent Action |
+|------------|-------------|
+| `InvalidVpcId.NotFound` (404) | Verify VpcId and region |
+| `InvalidVSwitchId.NotFound` (404) | Verify VSwitchId and region |
+| `InvalidCidrBlock` (400) | Use 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16 |
+| `InvalidNatGatewayId.NotFound` (404) | Verify NatGatewayId |
+| `DependencyViolation` (400) | Delete associated resources first |
+| `QuotaExceeded` (400) | Delete unused resources or request increase |
+| `Forbidden.RAM` (403) | Add `AliyunVPCFullAccess` policy |
+| `InsufficientBalance` (400) | HALT; user recharges |
+| `Throttling.User` (429) | Retry with exponential backoff |
+| `InternalError` (500) | Retry 3x; escalate with RequestId |
+| `InvalidEipStatus` (400) | Check current EIP status |
+| `OperationDenied` (400) | Check resource lock or deletion protection |
 | `VrouterEntryConflictError` | 400 | Route entry conflicts | Remove conflicting route before adding |
 | `RouteTableNotSupport` | 400 | Route table doesn't support operation | Check route table type and associations |
 

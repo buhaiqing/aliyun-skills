@@ -103,7 +103,7 @@ Alibaba Cloud NAT (Network Address Translation) Gateway enables private instance
 | `{{user.source_cidr}}` | SNAT source CIDR | Ask once; reuse |
 | `{{user.eip_id}}` | User-supplied EIP Allocation ID | Ask once; reuse |
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -176,11 +176,7 @@ aliyun vpc DescribeNatGateways --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
 | Create FULLNAT | Create FULLNAT entry for bidirectional NAT | Medium | Low |
 | List | View all SNAT/DNAT entries | Low | None |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-16 | Initial NAT skill generation — NAT Gateway, SNAT, DNAT, FULLNAT |
 
 ## Execution Flows (Agent-Readable)
 
@@ -379,29 +375,9 @@ aliyun vpc DescribeForwardTableEntries --RegionId "{{env.ALIBABA_CLOUD_REGION_ID
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI**:
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-   # Or: brew install aliyun-cli
-   ```
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
-2. **Configure Credentials**:
-   ```bash
-   export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
-   export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
-   ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
-
-3. **Verify**:
-   ```bash
-   aliyun vpc DescribeNatGateways --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" --PageSize 1
-   ```
-
-**Go SDK Package:**
-```
-github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+**Go SDK:** `github.com/alibabacloud-go/vpc-20160428/v3/client`
 
 ---
 

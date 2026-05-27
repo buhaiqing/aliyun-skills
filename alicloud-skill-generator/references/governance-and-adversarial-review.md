@@ -12,7 +12,7 @@
 > **地位：宪章条款 — 所有生成的 SKILL.md 必须遵守，否则视为无效技能。**
 > **自解机制：Agent 在生成完成后自动执行合规检查，不符合则自动触发修复。**
 
-以下 5 条为不可违背的基本原则（INVIOLABLE PRINCIPLES）：
+以下 6 条为不可违背的基本原则（INVIOLABLE PRINCIPLES）：
 
 | # | 原则 | 检查方法 | 违背后果 |
 |---|------|----------|----------|
@@ -21,8 +21,9 @@
 | **C3** | **Five Core Standards 表格存在** | 搜索 `## Five Core Standards` 表格 | **自动修复** — Agent 必须添加质量门表格 |
 | **C4** | **Well-Architected Framework 表格存在** | 搜索 `Well-Architected Framework Integration` | **自动修复** — Agent 必须添加五支柱表格 |
 | **C5** | **Variables 章节存在** | 搜索 `## Variables` 表格 | **自动修复** — Agent 必须添加占位符表格 |
+| **C6** | **Token Efficiency 6 条规则落实** | 检查 TE-1~TE-6 每条已应用 | **自动修复** — Agent 必须按 Token Efficiency Requirements 逐条修复 |
 
-> **自解规则**：如果任何 C1-C5 不满足，Agent 必须：
+> **自解规则**：如果任何 C1-C6 不满足，Agent 必须：
 > 1. 立即停止，报告违规项
 > 2. 自动修复缺失章节（使用模板内容填充）
 > 3. 重新执行合规检查
@@ -214,7 +215,19 @@ Review is REQUIRED when:
 **Pass Criteria:** Table with `{{env.*}}`, `{{user.*}}`, `{{output.*}}` placeholders.
 **Fail Action:** **自动修复** — Add Variables section with standard placeholders.
 
-> **自解流程**：检测到 Scenario 24-28 失败时，Agent 必须 HALT → REPORT → REMEDIATE → RE-CHECK → LOOP 直到通过。
+#### Scenario 29: Token Efficiency Violations (C6)
+**Test:** Check TE-1~TE-6 compliance in generated skill.
+| Sub-Scenario | Test | Pass Criteria | Auto-Fix |
+|--------------|------|--------------|----------|
+| TE-1 | Static data tables? | No static version/port/limit tables | Replace with API commands |
+| TE-2 | Docstrings in SDK? | Code uses inline comments only | Remove docstrings |
+| TE-3 | Verbose error descriptions? | Compact tables (≤3 cols) | Compress error tables |
+| TE-4 | JSON paths per-command? | File-top centralized block | Centralize JSON paths |
+| TE-5 | YAML anchors absent? | `&anchor` / `<<: *anchor` used | Add YAML anchors |
+| TE-6 | Duplicate flows across files? | No Complete Workflow in SDK/config | Remove duplicate flow |
+
+
+> **自解流程**：检测到 Scenario 24-29 失败时，Agent 必须 HALT → REPORT → REMEDIATE → RE-CHECK → LOOP 直到通过。
 
 ---
 
@@ -229,8 +242,21 @@ Review is REQUIRED when:
 - [ ] **C3:** Five Core Standards (Quality Gates) table present
 - [ ] **C4:** Well-Architected Framework Integration table present
 - [ ] **C5:** Variables table with `{{env.*}}`, `{{user.*}}`, `{{output.*}}` present
+- [ ] **C6:** Token Efficiency applied (TE-1~TE-6)
 
-> **自解触发**：如果任何 C1-C5 未通过，Agent 必须立即自动修复，不允许跳过。
+#### Scenario 29: Token Efficiency Violations (C6)
+**Test:** Check TE-1~TE-6 compliance in generated skill.
+| Sub-Scenario | Test | Pass Criteria | Auto-Fix |
+|--------------|------|--------------|----------|
+| TE-1 | Static data tables? | No static version/port/limit tables | Replace with API commands |
+| TE-2 | Docstrings in SDK? | Code uses inline comments only | Remove docstrings |
+| TE-3 | Verbose error descriptions? | Compact tables (≤3 cols) | Compress error tables |
+| TE-4 | JSON paths per-command? | File-top centralized block | Centralize JSON paths |
+| TE-5 | YAML anchors absent? | `&anchor` / `<<: *anchor` used | Add YAML anchors |
+| TE-6 | Duplicate flows across files? | No Complete Workflow in SDK/config | Remove duplicate flow |
+
+
+> **自解触发**：如果任何 C1-C6 未通过，Agent 必须立即自动修复，不允许跳过。
 
 ### 3.1 Pre-Merge Checklist
 
@@ -260,6 +286,12 @@ Review is REQUIRED when:
 - [ ] **Self-Healing Health Check:** Post-installation health verification with score ≥ 8/10
 - [ ] **Self-Healing Metrics:** Success criteria documented (duration < 30s, intervention < 20%)
 - [ ] **Self-Healing Degradation:** Graceful fallback path with user guidance template
+- [ ] **[TE] Static data → API query**: No hardcoded version/port/quota tables
+- [ ] **[TE] Compact SDK code**: Inline comments only, no docstrings
+- [ ] **[TE] Compact error format**: Error tables ≤3 columns
+- [ ] **[TE] JSON paths centralized**: File-top block, not per-command
+- [ ] **[TE] YAML anchors**: example-config.yaml uses anchors for shared fields
+- [ ] **[TE] No duplicate flows**: Complete Workflow only in SKILL.md
 
 ### 3.2 Post-Merge Monitoring
 

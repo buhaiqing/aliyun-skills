@@ -37,6 +37,20 @@ metadata:
 
 # Alibaba Cloud SLB Operations Skill
 
+## Common JSON Paths (Centralized)
+
+```
+# Create LB:           $.{LoadBalancerId,Address,VSwitchId,VpcId}
+# Describe LBs:        $.LoadBalancers.LoadBalancer[].{LoadBalancerId,LoadBalancerStatus,Address}
+# Describe LB Attr:    $.{LoadBalancerId,LoadBalancerStatus,Address,VpcId,CreateTime}
+# Create VServerGroup: $.VServerGroupId
+# Describe VSGs:       $.VServerGroups.VServerGroup[].VServerGroupId
+# Upload Cert:         $.ServerCertificateId
+# Create ACL:          $.AclId
+# Create Rules:        $.Rules.Rule[].RuleId
+# Delete/Set/Modify:   $.RequestId
+```
+
 ## Overview
 
 Alibaba Cloud SLB (Server Load Balancer, also known as CLB — Classic Load Balancer)
@@ -143,19 +157,7 @@ only when CLI lacks support for a specific edge-case operation.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
->
-> **Masking rules across all execution paths:**
-> | Execution Path | Safe Pattern | Unsafe Pattern |
-> |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` | Raw credential value in output |
-> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
-> | Log files | `[INFO] Credentials: Secret=abcd****` | `[INFO] AK Secret: LTAI5t...` |
-> | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
-> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
-> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
->
-> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -229,11 +231,7 @@ only when CLI lacks support for a specific edge-case operation.
 | CreateLoadBalancerHTTPListener | — | `running` | 5s | 60s |
 | CreateLoadBalancerHTTPSListener | — | `running` | 5s | 60s |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-14 | Initial SLB skill with cli-first (CLI + SDK fallback) support |
 
 ## Execution Flows (Agent-Readable)
 
@@ -1437,84 +1435,7 @@ fi
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI** (primary execution path — static Go binary, no runtime dependencies):
-
-   ```bash
-   # Official installer (auto-detects OS and architecture)
-   /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-
-   # Or Homebrew (macOS)
-   brew install aliyun-cli
-   ```
-
-2. **Bootstrap Go runtime** (for JIT SDK fallback — only needed if CLI does not support operation):
-
-   ```bash
-   # Check if Go exists
-   if ! command -v go &> /dev/null; then
-       # JIT download Go 1.24 (auto-detects OS and architecture)
-       OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-       ARCH=$(uname -m)
-       [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-       [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-
-       mkdir -p /tmp/go-runtime
-       curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-
-       # Set environment variables
-       export PATH="/tmp/go-runtime/go/bin:$PATH"
-       export GOPATH="/tmp/go-workspace"
-       export GOCACHE="/tmp/go-cache"
-       export GOMODCACHE="/tmp/go-modcache"
-       export GOPROXY="https://goproxy.cn,direct"  # China CDN mirror
-   fi
-
-   go version
-   ```
-
-   > Go version strategy: **JIT download Go 1.24+**, **Script compatibility Go 1.21+** (minimum).
-
-3. **Configure Credentials** — Environment variables (recommended for Agent execution):
-
-   ```bash
-   export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
-   export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
-   ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
-
-   **Alternative — Interactive CLI Configuration:**
-   ```bash
-   aliyun configure
-   ```
-
-   **Alternative — Config File (`~/.aliyun/config.json`):**
-   ```bash
-   mkdir -p ~/.aliyun
-   cat > ~/.aliyun/config.json << 'CONFIGEOF'
-   {
-     "current": "default",
-     "profiles": [
-       {
-         "name": "default",
-         "mode": "AK",
-         "access_key_id": "{{user.access_key_id}}",
-         "access_key_secret": "{{user.access_key_secret}}",
-         "region_id": "{{user.region}}"
-       }
-     ]
-   }
-   CONFIGEOF
-   ```
-
-4. **Verify Configuration**:
-   ```bash
-   # Quick validation (JSON output by default)
-   aliyun slb DescribeRegions
-   ```
-
-> **Security:** Never commit `.env` to version control (already in `.gitignore`).
-> All credentials use `{{env.*}}` placeholders in generated Skills — never real values.
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ---
 

@@ -40,6 +40,22 @@ metadata:
 
 # Alibaba Cloud VPC Operations Skill
 
+## Common JSON Paths (Centralized)
+
+```
+# Create VPC:           $.VpcId
+# Describe VPCs:        $.Vpcs.Vpc[].VpcId
+# Create VSwitch:       $.VSwitchId
+# Describe VSwitches:   $.VSwitches.VSwitch[].VSwitchId
+# Create NAT Gateway:   $.NatGatewayId
+# Describe NAT GWs:     $.NatGateways.NatGateway[].NatGatewayId
+# Allocate EIP:         $.AllocationId
+# Describe EIPs:        $.EipAddresses.EipAddress[].AllocationId
+# Create VPN GW:        $.VpnGatewayId
+# Create NetworkACL:    $.NetworkAclId
+# Create FlowLog:       $.FlowLogId
+```
+
 ## Overview
 
 Alibaba Cloud VPC (Virtual Private Cloud) provides isolated network environments for cloud resources. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **cli-first execution** (official **`aliyun` CLI** as primary path, **JIT Go SDK** as fallback), response validation, and failure recovery.
@@ -115,7 +131,7 @@ Alibaba Cloud VPC (Virtual Private Cloud) provides isolated network environments
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -203,21 +219,9 @@ aliyun vpc DescribeVpcs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 | Delete | Remove a resource | Low | **High** — irreversible |
 | List | View all resources | Low | None |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-16 | Initial VPC skill generation — VPC, vSwitch, NAT, EIP, RouteTable, VPN, NetworkACL, FlowLog, DHCP, HaVip, BGP |
 
-## Five Core Standards (Quality Gates)
 
-| # | Standard | How This Skill Fulfills It |
-|---|----------|---------------------------|
-| 1 | **Clear Boundaries** | SHOULD/SHOULD NOT Use conditions with precise triggers and delegation rules |
-| 2 | **Structured I/O** | Placeholder conventions (`{{env.*}}`, `{{user.*}}`, `{{output.*}}`) with type and source documented |
-| 3 | **Explicit Actionable Steps** | Every operation: Pre-flight → Execute → Validate → Recover, with numbered imperative steps |
-| 4 | **Complete Failure Strategies** | Error taxonomy table with ≥ 12 VPC-specific codes; HALT vs retry per error type |
-| 5 | **Absolute Single Responsibility** | One product (VPC), one primary resource model; cross-product delegation to other skills |
 
 ## Execution Flows (Agent-Readable)
 
@@ -599,50 +603,7 @@ aliyun vpc ReleaseEipAddress \
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI** (primary execution path):
-
-   ```bash
-   # Official installer (auto-detects OS and architecture)
-   /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-   
-   # Or Homebrew (macOS)
-   brew install aliyun-cli
-   ```
-
-2. **Bootstrap Go runtime** (for JIT SDK fallback):
-
-   ```bash
-   if ! command -v go &> /dev/null; then
-       OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-       ARCH=$(uname -m)
-       [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-       [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-       mkdir -p /tmp/go-runtime
-       curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-       export PATH="/tmp/go-runtime/go/bin:$PATH"
-       export GOPATH="/tmp/go-workspace"
-       export GOCACHE="/tmp/go-cache"
-       export GOPROXY="https://goproxy.cn,direct"
-   fi
-   go version
-   ```
-
-3. **Configure Credentials**:
-
-   ```bash
-   export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
-   export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
-   ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
-
-4. **Verify Configuration**:
-
-   ```bash
-   aliyun vpc DescribeRegions
-   ```
-
-> **Security:** Never commit `.env` to version control (already in `.gitignore`). All credentials use `{{env.*}}` placeholders — never real values.
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ---
 

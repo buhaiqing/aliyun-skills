@@ -1,59 +1,42 @@
 # Example configuration for alicloud-cms-ops
-# Copy and customize for your environment
-
-credentials:
+# YAML anchors eliminate repeated fields (TE-5)
+x-cred: &cred
   access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
   access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+
+x-alarm-base: &alarm
+  evaluation_count: 3
+  period: 300
+  statistics: "Average"
+  comparison_operator: ">="
+  effective_interval: "00:00-23:59"
+
+x-threshold-prod: &thresh
+  cpu_high: 80
+  cpu_critical: 95
+  memory_high: 80
+  disk_usage_high: 80
+
+credentials:
+  <<: *cred
   region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
 
 defaults:
   region: "cn-hangzhou"
   timeout_seconds: 30
-  retry_count: 3
 
-# Metric query defaults
 metrics:
   default_period: 60
-  max_time_range_hours: 24
-  
-  # Common namespaces for quick reference
   namespaces:
-    ecs: "acs_ecs_dashboard"
-    rds: "acs_rds_dashboard"
-    slb: "acs_slb_dashboard"
-    oss: "acs_oss_dashboard"
-    redis: "acs_kvstore_dashboard"
-    mongodb: "acs_mongodb_dashboard"
-    polardb: "acs_polardb_dashboard"
-    kubernetes: "acs_k8s_dashboard"
+    - acs_ecs_dashboard
+    - acs_rds_dashboard
+    - acs_slb_dashboard
+    - acs_kvstore_dashboard
+    - acs_k8s_dashboard
 
-# Alarm defaults
 alarms:
-  default_evaluation_count: 3
-  default_period: 300
-  default_statistics: "Average"
-  default_comparison_operator: ">="
-  default_effective_interval: "00:00-23:59"
-  
-  # Common thresholds
+  <<: *alarm
   thresholds:
-    cpu_high: 80
-    cpu_critical: 95
-    memory_high: 80
-    memory_critical: 95
-    disk_usage_high: 80
+    <<: *thresh
     disk_usage_critical: 90
-
-# Rate limiting
-rate_limits:
-  max_calls_per_second: 50
-  max_calls_per_month: 1000000
-  backoff_strategy: "exponential"
-  backoff_base_seconds: 1
-  backoff_max_retries: 3
-
-# Data retention (read-only reference)
-retention:
-  period_lt_60s_days: 7
-  period_60s_days: 31
-  period_gte_300s_days: 91
+    memory_critical: 95

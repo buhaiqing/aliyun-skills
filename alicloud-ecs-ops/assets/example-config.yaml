@@ -1,0 +1,36 @@
+# ECS Config (replace {{user.*}} and {{env.*}} at runtime)
+x-inst: &inst
+  RegionId: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+  InstanceChargeType: "PostPaid"
+  InternetChargeType: "PayByTraffic"
+  InternetMaxBandwidthOut: 1
+
+x-disk: &disk
+  Size: 40
+  Category: "cloud_essd"
+  DeleteWithInstance: true
+
+instance_create:
+  <<: *inst
+  ImageId: "{{user.image_id}}"
+  InstanceType: "{{user.instance_type:ecs.g6.large}}"
+  SecurityGroupId: "{{user.security_group_id}}"
+  VSwitchId: "{{user.vswitch_id}}"
+  SystemDisk:
+    <<: *disk
+
+disk_create:
+  ZoneId: "{{user.zone_id}}"
+  DiskName: "data-disk-{{user.instance_name}}"
+  Size: 500
+  Category: "cloud_essd"
+
+snapshot_create:
+  DiskId: "{{user.disk_id}}"
+  SnapshotName: "auto-snap-{{user.instance_name}}-$(date +%Y%m%d)"
+
+sg_rule_ssh:
+  IpProtocol: "tcp"
+  PortRange: "22/22"
+  SourceCidrIp: "0.0.0.0/0"
+  NicType: "intranet"

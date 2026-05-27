@@ -1,15 +1,7 @@
-# EIP Example Configuration
-
----
-# EIP Lifecycle Example
-# This YAML demonstrates a typical EIP workflow.
-
+# EIP Example: allocate → associate → verify → modify → unbind → release
 environment:
-  ALIBABA_CLOUD_ACCESS_KEY_ID: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-  ALIBABA_CLOUD_ACCESS_KEY_SECRET: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
   ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"
 
-# Step 1: Allocate EIP
 allocate_eip:
   RegionId: "cn-hangzhou"
   Bandwidth: 5
@@ -17,39 +9,33 @@ allocate_eip:
   ISP: "BGP"
   Name: "production-web-eip"
 
-# Step 2: Associate to ECS
 associate_eip:
   RegionId: "cn-hangzhou"
-  # AllocationId would come from allocate response
   AllocationId: "{{output.allocation_id}}"
   InstanceId: "i-bp1xxxxxxxxxx"
   InstanceType: "EcsInstance"
 
-# Step 3: Verify association
 verify_eip:
   RegionId: "cn-hangzhou"
   AllocationId: "{{output.allocation_id}}"
   ExpectedStatus: "InUse"
 
-# Step 4: Upgrade bandwidth (if needed)
 modify_bandwidth:
   RegionId: "cn-hangzhou"
   AllocationId: "{{output.allocation_id}}"
   NewBandwidth: 100
 
-# Step 5: Unbind (when no longer needed)
 unbind_eip:
   RegionId: "cn-hangzhou"
   AllocationId: "{{output.allocation_id}}"
   InstanceId: "i-bp1xxxxxxxxxx"
   InstanceType: "EcsInstance"
 
-# Step 6: Release
 release_eip:
   RegionId: "cn-hangzhou"
   AllocationId: "{{output.allocation_id}}"
 
-# Common Bandwidth Package Example
+# Common Bandwidth Package
 bandwidth_plan:
   Create:
     RegionId: "cn-hangzhou"
@@ -58,7 +44,4 @@ bandwidth_plan:
     ChargeType: "PayByBandwidth"
   AddEips:
     BandwidthPackageId: "cbwp-xxxxxxx"
-    EipAllocationIds:
-      - "eip-xxxxxxx1"
-      - "eip-xxxxxxx2"
-      - "eip-xxxxxxx3"
+    EipAllocationIds: ["eip-xxxxxxx1", "eip-xxxxxxx2", "eip-xxxxxxx3"]

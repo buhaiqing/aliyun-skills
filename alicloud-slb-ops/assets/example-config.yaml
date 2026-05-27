@@ -1,0 +1,41 @@
+# SLB config (replace {{user.*}} at runtime)
+x-region: &region
+  RegionId: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+x-lb: &lb
+  <<: *region
+  LoadBalancerName: "{{user.lb_name}}"
+  AddressType: "internet"
+  PayType: "PayOnDemand"
+
+slb_create:
+  <<: *lb
+  LoadBalancerSpec: "slb.s2.small"
+
+listener_http:
+  <<: *region
+  LoadBalancerId: "{{user.lb_id}}"
+  Protocol: "http"
+  ListenerPort: 80
+  BackendServerPort: 80
+  Bandwidth: -1
+  HealthCheck: {"HealthCheckType": "tcp", "HealthyThreshold": 4, "UnhealthyThreshold": 4}
+
+listener_https:
+  <<: *region
+  LoadBalancerId: "{{user.lb_id}}"
+  Protocol: "https"
+  ListenerPort: 443
+  BackendServerPort: 443
+  Bandwidth: -1
+  ServerCertificateId: "{{user.cert_id}}"
+
+vsg_create:
+  <<: *region
+  LoadBalancerId: "{{user.lb_id}}"
+  VServerGroupName: "{{user.vsg_name}}"
+
+backend_add:
+  ServerId: "{{user.instance_id}}"
+  Port: 80
+  Weight: 100

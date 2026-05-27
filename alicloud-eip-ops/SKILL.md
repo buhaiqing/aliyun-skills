@@ -102,7 +102,7 @@ Alibaba Cloud EIP (Elastic IP Address) provides independent public IP addresses 
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET` or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -179,21 +179,7 @@ aliyun vpc DescribeEipAddresses --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
 | List EIP Bandwidth Plans | View bandwidth plans and member EIPs | Low | None |
 | Create/Add to Plans | Add EIP to shared bandwidth | Medium | Low |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-16 | Initial EIP skill generation — allocate, associate, modify, release, bandwidth plans |
-
-## Five Core Standards (Quality Gates)
-
-| # | Standard | How This Skill Fulfills It |
-|---|----------|---------------------------|
-| 1 | **Clear Boundaries** | SHOULD/SHOULD NOT Use conditions with precise triggers; clear delegation to NAT/VPC/SLB skills |
-| 2 | **Structured I/O** | `{{env.*}}`, `{{user.*}}`, `{{output.*}}` documented with exact JSON paths |
-| 3 | **Explicit Actionable Steps** | Every operation: Pre-flight → Execute → Validate → Recover with numbered steps |
-| 4 | **Complete Failure Strategies** | 12+ EIP-specific error codes with retry/HALT logic |
-| 5 | **Absolute Single Responsibility** | One product (EIP), one resource model; cross-product delegation documented |
 
 ## Execution Flows (Agent-Readable)
 
@@ -443,29 +429,9 @@ aliyun vpc DescribeEipAddresses --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI**:
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-   # Or: brew install aliyun-cli
-   ```
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
-2. **Configure Credentials**:
-   ```bash
-   export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
-   export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
-   ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
-
-3. **Verify**:
-   ```bash
-   aliyun vpc DescribeEipAddresses --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" --PageSize 1
-   ```
-
-**Go SDK Package:**
-```
-github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+**Go SDK:** `github.com/alibabacloud-go/vpc-20160428/v3/client`
 
 ---
 

@@ -1,12 +1,7 @@
-# NAT Example Configuration
-
----
+# NAT config: gateway → EIP → SNAT → DNAT → cleanup
 environment:
-  ALIBABA_CLOUD_ACCESS_KEY_ID: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
-  ALIBABA_CLOUD_ACCESS_KEY_SECRET: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
   ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"
 
-# Create NAT Gateway
 create_nat_gateway:
   RegionId: "cn-hangzhou"
   VpcId: "vpc-bp1xxxxxxxxxx"
@@ -15,7 +10,6 @@ create_nat_gateway:
   Name: "production-nat"
   BillingMethod: "PayBySpec"
 
-# Allocate EIPs for SNAT
 allocate_eips:
   - RegionId: "cn-hangzhou"
     Bandwidth: 5
@@ -26,7 +20,6 @@ allocate_eips:
     InternetChargeType: "PayByTraffic"
     Name: "nat-snat-eip-2"
 
-# Create SNAT entries — vSwitch level
 create_snat_vswitch:
   - RegionId: "cn-hangzhou"
     NatGatewayId: "{{output.nat_gateway_id}}"
@@ -34,7 +27,6 @@ create_snat_vswitch:
     VSwitchId: "vsw-bp1xxxxxxxxxx"
     SnatEntryName: "snat-vswitch-1"
 
-# Create SNAT entries — CIDR level
 create_snat_cidr:
   - RegionId: "cn-hangzhou"
     NatGatewayId: "{{output.nat_gateway_id}}"
@@ -42,7 +34,6 @@ create_snat_cidr:
     SourceCIDR: "10.0.2.0/24"
     SnatEntryName: "snat-dev-cidr"
 
-# Create DNAT entries — port mapping
 create_dnat:
   - RegionId: "cn-hangzhou"
     NatGatewayId: "{{output.nat_gateway_id}}"
@@ -61,7 +52,6 @@ create_dnat:
     InternalPort: "443"
     ForwardEntryName: "dnat-https"
 
-# Cleanup sequence (order matters)
 cleanup:
   - DeleteSnatEntry
   - DeleteForwardEntry

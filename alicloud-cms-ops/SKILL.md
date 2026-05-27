@@ -167,17 +167,18 @@ complex request structures, JIT build a Go SDK script.
 - **Idempotency:** `PutMetricAlarm` is idempotent (same alarm name overwrites).
   `CreateMonitorGroup` may fail with `ResourceAlreadyExists`.
 
-### Common Namespaces (Verified)
+### Common Namespaces (Use `DescribeProjectMeta` for latest)
+
+```
+aliyun cms DescribeProjectMeta --RegionId {{user.region}}
+```
 
 | Product | Namespace |
 |---------|-----------|
 | ECS | acs_ecs_dashboard |
 | RDS | acs_rds_dashboard |
 | SLB | acs_slb_dashboard |
-| OSS | acs_oss_dashboard |
 | Redis | acs_kvstore_dashboard |
-| MongoDB | acs_mongodb_dashboard |
-| PolarDB | acs_polardb_dashboard |
 | Kubernetes | acs_k8s_dashboard |
 
 ### Response Field Table
@@ -191,13 +192,11 @@ complex request structures, JIT build a Go SDK script.
 | DescribeMetricAlarmList | `$.AlarmList` | array | List of alarm rules |
 | DeleteMetricAlarm | `$.Success` | boolean | Operation success |
 
-### Rate Limits (Verified)
+### Rate Limits
 
-- DescribeMetricLast, DescribeMetricList, DescribeMetricData, DescribeMetricTop:
-  **100万次/月免费额度** (shared across these APIs).
-- **50次/秒** per API per account (including RAM users).
-- Error code `Throttling.User` or `Request was denied due to user flow control`
-  indicates rate limiting.
+- **Free quota:** 1M calls/month for DescribeMetric APIs
+- **Throttle:** 50 calls/second per account
+- **Error:** `Throttling.User` / `Request was denied due to user flow control`
 
 ## Changelog
 
@@ -213,108 +212,39 @@ complex request structures, JIT build a Go SDK script.
 ### Anomaly Detection Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│               CLI 安装/调用异常检测引擎                          │
-├──────────────┬──────────────┬──────────────┬─────────────────┤
-│  Level 1     │  Level 2     │  Level 3     │  Level 4         │
-│  环境检测层   │  依赖检测层   │  网络检测层   │  权限检测层      │
-├──────────────┼──────────────┼──────────────┼─────────────────┤
-│ OS 兼容性    │ Go 运行时     │ DNS 解析     │ Credential 存在  │
-│ Shell 类型   │ SDK 包解析    │ CMS 端点     │ Credential 有效  │
-│ 包管理器     │ 版本冲突      │ CLI 下载源   │ RAM 策略         │
-│ 架构兼容     │ 构建工具      │ Go Proxy     │ CLI 二进制权限   │
-│ PATH 可写    │ GOPATH 配置   │ 下载速度     │ 磁盘写入权限     │
-│ 下载工具     │ Go Mod Cache │ 代理检测     │ sudo 权限        │
-└──────────────┴──────────────┴──────────────┴─────────────────┘
-       │              │              │              │
-       └──────────────┴──────────────┴──────────────┘
-                            │
-                    ┌───────▼───────────────────────────────────┐
-                    │  智能根因分析引擎                           │
-                    │  1. 异常关联 → 2. 模式匹配 → 3. 根因判定   │
-                    │  4. 可信度评分 → 5. 影响评估 → 6. 修复推荐  │
-                    └───────┬───────────────────────────────────┘
-                            │
-                    ┌───────▼───────────────────────────────────┐
-                    │  自动治愈引擎                               │
-                    │  heal_missing_cli  → 自动安装 CLI          │
-                    │  heal_missing_go   → 自动安装 Go           │
-                    │  heal_sdk_deps     → 自动修复 SDK 依赖      │
-                    │  heal_proxy_config → 配置 Go Proxy 加速    │
-                    │  heal_env_vars     → 检查/提示环境变量      │
-                    └───────┬───────────────────────────────────┘
-                            │
-                    ┌───────▼───────────────────────────────────┐
-                    │  降级策略矩阵                               │
-                    │  FULL    → CLI + SDK 均可用                 │
-                    │  NORMAL  → CLI-only 或 SDK-only            │
-                    │  DEGRADED→ 功能受限，人工提示               │
-                    │  BLOCKED → 上报错误，无法继续               │
-                    └──────────────────────────────────────────┘
+ Level 1 (Env) → Level 2 (Dep) → Level 3 (Net) → Level 4 (Perm)
+     │               │               │               │
+     └───────────────┴───────────────┴───────────────┘
+                         │
+                    ┌────▼────────────────────────────┐
+                    │  Root Cause Analysis Engine     │
+                    │  (correlation → pattern → RCA)  │
+                    └────┬────────────────────────────┘
+                         │
+                    ┌────▼────────────────────────────┐
+                    │  Auto-Heal Engine               │
+                    │  heal_cli / heal_go / heal_sdk  │
+                    └────┬────────────────────────────┘
+                         │
+                    ┌────▼────────────────────────────┐
+                    │  Degradation Matrix             │
+                    │  FULL → NORMAL → DEGRADED → HALT│
+                    └─────────────────────────────────┘
 ```
 
 ### Anomaly Detection Execution Protocol
 
-When any CLI command fails or the agent encounters an unexpected error, execute the following protocol in order:
+When any CLI command fails, execute in order:
 
 ```
-Step 1 — Quick Health Check (fast path):
-  Check if `aliyun` command exists and responds:
-  - PASS → Proceed to operation
-  - FAIL → Proceed to Step 2
-
-Step 2 — Level 1 Environment Check:
-  Execute environment diagnosis:
-  - OS compatibility, shell type, package manager
-  - Architecture support, PATH writability
-  - Download tool (curl/wget) availability
-  - Disk space, Xcode CLI tools (macOS)
-  If CRITICAL failure detected → Attempt auto-heal or report
-
-Step 3 — Level 2 Dependency Check:
-  Execute Go runtime and SDK dependency diagnosis:
-  - Go installed, version ≥ 1.21 (minimum), ≥ 1.24 (recommended for JIT)
-  - SDK package resolution (darabonba-openapi, cms-20190101, tea)
-  - GOPATH/bin in PATH, Go proxy configuration
-  - Build tools (gcc/clang) availability
-  If CRITICAL failure detected → Attempt auto-heal
-
-Step 4 — Level 3 Network Check:
-  Execute network connectivity diagnosis:
-  - DNS resolution for metrics.aliyuncs.com
-  - CMS API endpoint reachability
-  - CLI download server reachability
-  - GitHub/Go module proxy reachability
-  - Proxy detection, VPC internal endpoint availability
-  - Download speed test
-  If CRITICAL failure detected → Suggest proxy/mirror/heal
-
-Step 5 — Level 4 Permission Check:
-  Execute credential and permissions diagnosis:
-  - AK_ID, AK_SECRET, REGION environment variable existence
-  - Credential validity via DescribeProjectMeta dry-run
-  - RAM policy sufficiency (Forbidden → need AliyunCloudMonitorReadOnlyAccess)
-  - CLI binary executable permission
-  If CRITICAL failure detected → Prompt user for remediation
-
-Step 6 — Root Cause Analysis:
-  Execute anomaly correlation analysis:
-  - Cross-layer pattern matching (see anomaly patterns below)
-  - Confidence scoring for each matched pattern
-  - Impact assessment (FULL/NORMAL/DEGRADED/BLOCKED)
-  - Priority-ordered remediation recommendations
-
-Step 7 — Auto-Heal:
-  Execute automated healing based on root cause:
-  - heal_missing_cli: Auto-install aliyun CLI (brew/curl/wget)
-  - heal_missing_go: Auto-install Go runtime
-  - heal_sdk_deps: Auto-resolve SDK dependencies
-  - heal_proxy_config: Configure Go proxy for China region
-  - heal_env_vars: Guide user to set missing environment variables
-
-Step 8 — Degrade or Report:
-  If auto-heal succeeds → Retry the original operation
-  If auto-heal fails → Apply degradation strategy and report
+Step 1 — Quick Health Check: `command -v aliyun` → PASS proceed, FAIL → Step 2
+Step 2 — Level 1 (Env): OS/shell/PATH/package manager/disk space
+Step 3 — Level 2 (Dep): Go version ≥1.21, SDK resolution, proxy config
+Step 4 — Level 3 (Net): DNS (metrics.aliyuncs.com), CMS endpoint, Go proxy
+Step 5 — Level 4 (Perm): Env vars exist + dry-run DescribeProjectMeta
+Step 6 — RCA: Cross-layer pattern matching + confidence scoring
+Step 7 — Auto-Heal: heal_missing_cli|go|sdk_deps|proxy_config|env_vars
+Step 8 — Degrade/Report: Heal succeeded → retry. Fail → degrade strategy
 ```
 
 ### Root Cause Analysis — Pattern Matching Rules
@@ -864,83 +794,36 @@ func main() {
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI** (primary execution path — static Go binary, no runtime dependencies):
-
+1. **Install `aliyun` CLI** (primary):
    ```bash
-   # Official installer (auto-detects OS and architecture)
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-
-   # Or Homebrew (macOS)
-   brew install aliyun-cli
    ```
 
-2. **Bootstrap Go runtime** (for JIT SDK fallback — only needed if CLI does not support operation):
-
+2. **Bootstrap Go runtime** (JIT SDK fallback): See [integration.md](references/integration.md) for full self-healing install. Quick start:
    ```bash
-   # Check if Go exists
    if ! command -v go &> /dev/null; then
-       # JIT download Go 1.24 (auto-detects OS and architecture)
-       OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-       ARCH=$(uname -m)
-       [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-       [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-
-       mkdir -p /tmp/go-runtime
+       OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m)
+       [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
        curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-
-       # Set environment variables
-       export PATH="/tmp/go-runtime/go/bin:$PATH"
-       export GOPATH="/tmp/go-workspace"
-       export GOCACHE="/tmp/go-cache"
-       export GOMODCACHE="/tmp/go-modcache"
-       export GOPROXY="https://goproxy.cn,direct"  # China CDN mirror
+       export PATH="/tmp/go-runtime/go/bin:$PATH" GOMODCACHE="/tmp/go-modcache"
+       export GOPROXY="https://goproxy.cn,direct"
    fi
-
-   go version
    ```
-
-   > Go version strategy: **JIT download Go 1.24+**, **Script compatibility Go 1.21+** (minimum).
 
 3. **Configure Credentials** — Environment variables (recommended for Agent execution):
-
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
+   > **IMPORTANT:** When outputting to console, use masking: `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`.
 
-   **Alternative — Interactive CLI Configuration:**
+4. **Verify**:
    ```bash
-   aliyun configure
-   ```
-
-   **Alternative — Config File (`~/.aliyun/config.json`):**
-   ```bash
-   mkdir -p ~/.aliyun
-   cat > ~/.aliyun/config.json << 'CONFIGEOF'
-   {
-     "current": "default",
-     "profiles": [
-       {
-         "name": "default",
-         "mode": "AK",
-         "access_key_id": "{{user.access_key_id}}",
-         "access_key_secret": "{{user.access_key_secret}}",
-         "region_id": "{{user.region}}"
-       }
-     ]
-   }
-   CONFIGEOF
-   ```
-
-4. **Verify Configuration**:
-   ```bash
-   # Quick validation (JSON output by default)
    aliyun cms DescribeProjectMeta --RegionId {{user.region}}
    ```
 
-> **Security:** Never commit `.env` to version control (already in `.gitignore`). All credentials use `{{env.*}}` placeholders in generated Skills — never real values.
+> **Security:** Never commit `.env` to version control. All credentials use `{{env.*}}` placeholders — never real values.
 
 ---
 
@@ -1092,7 +975,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 	load := metrics["LoadAverage"]
 	conn := metrics["ConnectionUsage"]
 
-	// Pattern 1: CPU-Memory Pressure
+	// Pattern: CPU-Memory Pressure
 	if len(cpu) >= 2 && len(mem) >= 2 {
 		cpuHigh, memHigh := true, true
 		for i := len(cpu) - 2; i < len(cpu); i++ {
@@ -1108,7 +991,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 		}
 	}
 
-	// Pattern 2: Disk-IO Bottleneck
+	// Pattern: Disk-IO Bottleneck
 	if len(disk) > 0 && len(iops) > 0 {
 		latestDisk := disk[len(disk)-1].Average
 		latestIOPS := iops[len(iops)-1].Average
@@ -1117,7 +1000,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 		}
 	}
 
-	// Pattern 3: Load-CPU Mismatch (IO wait)
+	// Pattern: Load-CPU Mismatch (IO wait)
 	if len(load) > 0 && len(cpu) > 0 {
 		latestLoad := load[len(load)-1].Average
 		latestCPU := cpu[len(cpu)-1].Average
@@ -1126,7 +1009,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 		}
 	}
 
-	// Pattern 4: Connection Exhaustion
+	// Pattern: Connection Exhaustion
 	if len(conn) > 0 && len(cpu) > 0 {
 		latestConn := conn[len(conn)-1].Average
 		latestCPU := cpu[len(cpu)-1].Average
@@ -1135,7 +1018,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 		}
 	}
 
-	// Pattern 5: Memory Leak Trend
+	// Pattern: Memory Leak Trend
 	if len(mem) >= 6 {
 		slope := (mem[len(mem)-1].Average - mem[len(mem)-6].Average) / 5
 		if slope > 5 {
@@ -1143,7 +1026,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 		}
 	}
 
-	// Pattern 6: CPU Spike
+	// Pattern: CPU Spike
 	if len(cpu) >= 2 {
 		delta := cpu[len(cpu)-1].Average - cpu[len(cpu)-2].Average
 		if delta > 50 {
@@ -1232,62 +1115,32 @@ func main() {
 #### Diagnosis Decision Tree
 
 ```
-[CMS Alarm Fired]
-    │
-    ├── Step 1: Verify Alarm Validity
-    │   └─► DescribeMetricLast for the alarm metric
-    │       ├─ If metric normal → False positive; check alarm rule config
-    │       └─ If metric abnormal → Proceed to Step 2
-    │
-    ├── Step 2: Check Resource Status
-    │   └─► Delegate to product skill based on namespace
-    │       ├─ acs_ecs_dashboard → alicloud-ecs-ops (DescribeInstances)
-    │       ├─ acs_rds_dashboard → alicloud-rds-ops (DescribeDBInstances)
-    │       ├─ acs_slb_dashboard → alicloud-slb-ops (DescribeLoadBalancerAttribute)
-    │       ├─ acs_kvstore_dashboard → alicloud-redis-ops (DescribeInstances)
-    │       ├─ acs_polardb_dashboard → alicloud-polar-mysql-ops (DescribeDBClusters)
-    │       └─ acs_k8s_dashboard → alicloud-ack-ops (DescribeClusterDetail)
-    │
-    ├── Step 3: Multi-Metric Correlation
-    │   └─► Execute Multi-Metric Anomaly Inspection for the resource
-    │       ├─ Identify correlated anomalies
-    │       └─ Flag compound patterns
-    │
-    ├── Step 4: Deep AI Diagnosis (if available)
-    │   └─► Delegate to alicloud-das-ops
-    │       ├─ GetInstanceInspections (health score)
-    │       ├─ CreateDiagnosticReport (SQL/performance diagnosis)
-    │       ├─ CreateLatestDeadLockAnalysis (deadlock check)
-    │       └─ GetAutonomousNotifyEventsInRange (recent autonomous events)
-    │
-    └── Step 5: Compile Unified Diagnosis Report
-        └─► Aggregate findings from all skills
-            ├─ alarm_source: original alarm rule and metric
-            ├─ resource_status: current resource state
-            ├─ metric_analysis: trend and anomaly patterns
-            ├─ deep_diagnosis: DAS AI findings (if applicable)
-            ├─ correlated_events: other alarms in last 1h
-            └─ recommendation: synthesized action recommendation
+[CMS Alarm] → Step 1: Verify via DescribeMetricLast
+  ├─ Normal → False positive; check rule config
+  └─ Abnormal → Step 2: Check resource (delegate by namespace)
+       ├─ acs_ecs_dashboard → alicloud-ecs-ops
+       ├─ acs_rds_dashboard → alicloud-rds-ops
+       ├─ acs_slb_dashboard → alicloud-slb-ops
+       └─ acs_k8s_dashboard → alicloud-ack-ops
+
+       → Step 3: Multi-metric correlation → Step 4: DAS deep diagnosis
+       → Step 5: Unified report (findings + recommendations)
 ```
 
 #### Unified Diagnosis Report Schema
 
-| Field | Source | Description | Example |
-|-------|--------|-------------|---------|
-| `report_id` | Generated | UUID v4 for tracking | `rpt-550e8400-e29b-41d4-a716-446655440000` |
-| `timestamp` | CMS | Alarm trigger time | `2026-05-14T10:30:00Z` |
-| `alarm_source` | CMS | Original alarm rule | `ECS-CPU-Critical` |
-| `resource_id` | CMS | Instance ID from dimensions | `i-abcdefgh1234567890` |
-| `resource_status` | Product Skill | Current resource state | `Running` |
-| `metric_value` | CMS | Metric value at alarm time | `CPUUtilization: 96.5%` |
-| `metric_trend` | CMS | 1h trend analysis | `Increasing, +40% in 15min` |
-| `anomaly_patterns` | Multi-Metric Inspection | Detected patterns | `["CPU-Memory Pressure", "CPU Spike"]` |
-| `deep_diagnosis` | DAS | AI diagnosis score/findings | `Score: 45/100, High CPU due to ...` |
-| `correlated_alarms` | CMS | Other alarms same resource | `["ECS-Memory-Warning"]` |
-| `correlated_events` | DAS | Autonomous events | `["AutoSQLThrottle triggered"]` |
-| `root_cause` | Synthesized | Primary root cause | `CPU saturation due to runaway process` |
-| `recommendation` | Synthesized | Recommended action | `Scale up instance or optimize query` |
-| `delegated_skills` | Agent | Skills invoked | `["alicloud-ecs-ops", "alicloud-das-ops"]` |
+| Field | Source | Example |
+|-------|--------|---------|
+| `report_id` | Generated | `rpt-uuid` |
+| `timestamp` | CMS | `2026-05-14T10:30:00Z` |
+| `alarm_source` | CMS | `ECS-CPU-Critical` |
+| `resource_id` | CMS | `i-abcdefgh1234567890` |
+| `resource_status` | Product Skill | `Running` |
+| `metric_value` | CMS | `CPUUtilization: 96.5%` |
+| `anomaly_patterns` | Inspection | `["CPU-Memory Pressure"]` |
+| `root_cause` | Synthesized | `CPU saturation due to runaway process` |
+| `delegated_skills` | Agent | `["alicloud-ecs-ops", "alicloud-das-ops"]` |
+| `recommendation` | Synthesized | `Scale up instance or optimize query` |
 
 #### Execution — CLI (Diagnosis Orchestration Script)
 

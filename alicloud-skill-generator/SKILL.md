@@ -184,7 +184,7 @@ Every generated skill MUST satisfy these five standards. Reference them througho
 ```
 生成完成 → 执行宪章检查 (C1-C5)
   ↓
-C1-C5 全通过？
+C1-C6 全通过？
   ↓ YES          ↓ NO
 报告成功    → HALT + 报告违规项
   ↓              ↓
@@ -204,6 +204,7 @@ C1-C5 全通过？
 | C3 | Five Core Standards | `grep -c "Five Core Standards" SKILL.md` | ≥ 1 match | Add Five Core Standards table from template |
 | C4 | Well-Architected | `grep -c "Well-Architected Framework" SKILL.md` | ≥ 1 match | Add Well-Architected Framework table |
 | C5 | Variables | `grep -c "^## Variables" SKILL.md` | ≥ 1 match | Add Variables section with `{{env.*}}`/`{{user.*}}`/`{{output.*}}` |
+| **C6** | **Token Efficiency** | See §Token Efficiency Requirements in meta-skill | All 6 TE rules applied | Fix per TE guidelines below |
 
 ### Self-Remediation Template (自动修复模板)
 
@@ -278,6 +279,104 @@ Before and during generation, check against these common anti-patterns:
 | 8 | **Missing Failure Path** | Only documenting the success path; no error handling | Add failure recovery table with error codes, retry logic, HALT conditions |
 | 9 | **Over-Engineering** | Adding advanced features before core flow works | Follow evaluation-driven approach: start minimal, expand step by step |
 | 10 | **Redundant Redundancy** | Repeating the same info across SKILL.md and references | SKILL.md is entry point; references provide depth — no duplication |
+
+---
+
+## Token Efficiency Requirements (P0 — 强制)
+
+> 目标：在保持 Agent 可执行性的前提下，最小化每个生成技能的 Token 消耗。
+
+### TE-1: 用 API 查询替代硬编码静态数据
+```markdown
+# ❌ BAD: 硬编码引擎版本/配额表（50+ 行）
+| Engine | Port |
+|--------|------|
+| MySQL | 3306 |
+| PostgreSQL | 5432 |
+
+# ✅ GOOD: 用 API 可查 + 精简表
+## Supported Engines (Use API for latest)
+aliyun [product] Describe[EngineVersions]
+| Engine | Port |
+|--------|------|
+| MySQL | 3306 |
+| PostgreSQL | 5432 |
+```
+**预计算约**: ~200-500 Token
+
+### TE-2: 省略不必要的文档说明
+Alibaba Cloud 使用 Go SDK，用 `#` 注释代替函数级 docstring：
+```go
+// ❌ BAD
+func createResource(client *ecs.Client) (*ecs.CreateInstanceResponse, error) {
+    /* Create a new ECS instance with specified parameters.
+     * Args: client - ECS client
+     * Returns: response - instance details
+     */
+}
+
+// ✅ GOOD: inline comment only
+func createResource(client *ecs.Client) (*ecs.CreateInstanceResponse, error) {
+    // Create instance with required params from OpenAPI
+}
+```
+**预计算约**: ~100-200 Token/函数
+
+### TE-3: 错误表 → 紧凑格式
+```markdown
+# ❌ BAD: 每个错误 8-15 行描述
+#### InvalidParameter
+Cause: ...
+Resolution: ...
+
+# ✅ GOOD: 紧凑表格，每行 1 个错误
+| Error Code | Agent Action |
+|------------|-------------|
+| InvalidParameter | FIX — align with OpenAPI |
+| QuotaExceeded | HALT — request increase |
+```
+**预计算约**: ~300-500 Token/文件
+
+### TE-4: JSON paths 集中声明（不重复）
+```markdown
+# ❌ BAD: 每个操作后单独列 JSON paths
+## Create
+JSON path: $.ResourceId
+## Describe
+JSON path: $.Status
+
+# ✅ GOOD: 文件顶部集中声明
+# Common JSON Paths:
+# Create: $.ResourceId
+# Describe: $.{Status,ResourceId,RegionId}
+```
+**预计算约**: ~50-100 Token/文件
+
+### TE-5: YAML anchors 消除重复字段
+```yaml
+# ❌ BAD: Dev/Prod 各写 15 行重复字段
+# ✅ GOOD: 共享 anchors
+x-prod: &prod
+  region: "cn-hangzhou"
+  zone_id: "cn-hangzhou-f"
+  internet_charge_type: "PayByTraffic"
+
+instance:
+  <<: *prod
+  instance_name: "prod-web-01"
+```
+**预计算约**: ~200-400 Token/文件
+
+### TE-6: 消除跨文件重复流程
+- SKILL.md 已有完整 Pre-flight → Execute → Validate → Recover
+- `assets/example-config.yaml` 中的完整流程示例和 SDK 文件中的 Complete Setup 函数是重复内容 → 删除
+
+### TE 边界 — 不可压缩的内容
+| 可压缩 | 不可压缩 |
+|--------|---------|
+| DocStrings、静态表格、重复流程 | Agent 可执行命令本身（参数、JSON paths） |
+| 长篇架构描述 | 错误恢复逻辑、安全门、Credential 规则 |
+| 多个示例变体（保留 1-2 个核心） | 跨技能编排链、AIOps/Well-Architected 场景定义 |
 
 ---
 
@@ -534,6 +633,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **CLI fidelity:** Default output is JSON (NO `--output json` needed); `--output` used for JMESPath columns only; commands match official CLI docs; JSON paths verified with a real CLI run or official docs
 - [ ] **Safety gates** for destructive operations (before **each** documented path: `aliyun` **and** SDK fallback)
 - [ ] **Timeouts** for polling and long-running operations (default: 5s interval, 300s max wait)
+- [ ] **[TE] Token Efficiency applied** — see §Token Efficiency Requirements below
 - [ ] **Self-Healing Framework:** All installation flows follow [enhanced-self-healing-framework.md](references/enhanced-self-healing-framework.md) with pre-flight checks, error classification, multi-path recovery, health verification, and graceful degradation
 - [ ] **Self-Healing Coverage:** CLI install, Go runtime JIT, dependency download all have ≥ 3 self-healing paths per error type (network, permission, resource, configuration)
 - [ ] **Self-Healing Metrics:** Health score ≥ 8/10, self-healing duration < 30s, user intervention rate < 20% documented as success criteria

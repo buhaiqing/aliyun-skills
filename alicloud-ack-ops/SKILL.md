@@ -617,23 +617,21 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 ```bash
 #!/bin/bash
 # pod-diagnosis.sh
-# Pod 异常诊断脚本
-
 NAMESPACE="${1:-default}"
 echo "=== Pod Diagnosis in namespace: $NAMESPACE ==="
 echo ""
 
-# 1. 统计 Pod 状态
+# Pod status summary
 echo "[1] Pod Status Summary:"
 kubectl get pods -n $NAMESPACE -o json | jq -r '.items[] | .status.phase' | sort | uniq -c
 echo ""
 
-# 2. 异常 Pod 列表
+# Abnormal pods
 echo "[2] Abnormal Pods:"
 kubectl get pods -n $NAMESPACE --field-selector=status.phase!=Running -o wide
 echo ""
 
-# 3. CrashLoopBackOff Pods
+# CrashLoopBackOff
 echo "[3] CrashLoopBackOff Pods:"
 CRASH_PODS=$(kubectl get pods -n $NAMESPACE | grep CrashLoopBackOff | awk '{print $1}')
 if [ -n "$CRASH_PODS" ]; then
@@ -647,7 +645,7 @@ else
 fi
 echo ""
 
-# 4. Pending Pods
+# Pending pods
 echo "[4] Pending Pods:"
 PENDING_PODS=$(kubectl get pods -n $NAMESPACE | grep Pending | awk '{print $1}')
 if [ -n "$PENDING_PODS" ]; then
@@ -660,7 +658,7 @@ else
 fi
 echo ""
 
-# 5. Evicted Pods
+# Evicted pods
 echo "[5] Evicted Pods:"
 EVICTED_PODS=$(kubectl get pods -n $NAMESPACE | grep Evicted | awk '{print $1}')
 if [ -n "$EVICTED_PODS" ]; then
@@ -673,14 +671,14 @@ fi
 
 #### 常见 Pod 异常诊断表
 
-| 状态 | 常见原因 | 诊断命令 | 修复方案 |
-|------|---------|---------|---------|
-| **Pending** | 资源不足、节点选择器限制、污点/容忍 | `kubectl describe pod` | 扩容节点池、调整 Request、修改选择器 |
-| **CrashLoopBackOff** | 应用异常、启动命令错误、配置错误 | `kubectl logs --previous` | 修复代码、修正启动命令、检查配置 |
-| **Evicted** | 节点磁盘/内存/PID 压力 | `kubectl describe node` | 清理节点资源、扩容节点 |
-| **OOMKilled** | 内存超限、内存泄漏 | `kubectl describe pod` | 增加内存 Limit、修复内存泄漏 |
-| **ImagePullBackOff** | 镜像不存在、认证失败、网络不通 | `kubectl describe pod` | 修正镜像标签、配置 imagePullSecret |
-| **CreateContainerConfigError** | ConfigMap/Secret 不存在 | `kubectl describe pod` | 创建缺失的配置资源 |
+| 状态 | 常见原因 | 修复方案 |
+|------|---------|---------|
+| **Pending** | 资源不足/节点选择器限制/污点 | 扩容节点池/调整 Request |
+| **CrashLoopBackOff** | 应用异常/启动命令错误/配置错误 | 修复代码/修正启动命令/检查配置 |
+| **Evicted** | 节点磁盘/内存/PID 压力 | 清理节点资源/扩容节点 |
+| **OOMKilled** | 内存超限/内存泄漏 | 增加内存 Limit/修复内存泄漏 |
+| **ImagePullBackOff** | 镜像不存在/认证失败/网络不通 | 修正镜像标签/配置 imagePullSecret |
+| **CreateContainerConfigError** | ConfigMap/Secret 不存在 | 创建缺失的配置资源 |
 
 ---
 
@@ -721,43 +719,38 @@ fi
 ```bash
 #!/bin/bash
 # service-diagnosis.sh
-# Service 异常诊断脚本
-
 NAMESPACE="${1:-default}"
 SERVICE="${2:-}"
 echo "=== Service Diagnosis in namespace: $NAMESPACE ==="
 echo ""
 
-# 1. Service 列表
+# Service list
 echo "[1] Services in namespace:"
 kubectl get svc -n $NAMESPACE
 echo ""
 
-# 2. Endpoints 检查
+# Endpoints check
 echo "[2] Endpoints status:"
 kubectl get endpoints -n $NAMESPACE
 echo ""
 
-# 3. 如果指定了 Service，详细诊断
+# Detailed diagnosis for specific service
 if [ -n "$SERVICE" ]; then
   echo "[3] Detailed diagnosis for service: $SERVICE"
-  
-  # Service 详情
   kubectl describe svc $SERVICE -n $NAMESPACE
   
-  # Endpoints 详情
+  # Endpoints details
   echo ""
   echo "--- Endpoints Details ---"
   kubectl describe endpoints $SERVICE -n $NAMESPACE
   
-  # 检查后端 Pod
+  # Backend pod check
   SELECTOR=$(kubectl get svc $SERVICE -n $NAMESPACE -o json | jq -r '.spec.selector')
   if [ -n "$SELECTOR" ] && [ "$SELECTOR" != "null" ]; then
     echo ""
     echo "--- Backend Pods (Selector: $SELECTOR) ---"
     kubectl get pods -n $NAMESPACE -l $(echo $SELECTOR | jq -r 'to_entries | map("\(.key)=\(.value)") | join(",")')
     
-    # 检查 Pod Ready 状态
     NOT_READY=$(kubectl get pods -n $NAMESPACE -l $(echo $SELECTOR | jq -r 'to_entries | map("\(.key)=\(.value)") | join(",")') | grep -v Running | grep -v "1/1" || true)
     if [ -n "$NOT_READY" ]; then
       echo ""
@@ -770,7 +763,7 @@ if [ -n "$SERVICE" ]; then
   fi
 fi
 
-# 4. CoreDNS 检查
+# CoreDNS check
 echo ""
 echo "[4] CoreDNS status:"
 kubectl get pods -n kube-system -l k8s-app=coredns
@@ -778,13 +771,13 @@ kubectl get pods -n kube-system -l k8s-app=coredns
 
 #### 常见 Service 异常诊断表
 
-| 问题 | 常见原因 | 诊断命令 | 修复方案 |
-|------|---------|---------|---------|
-| **Endpoints 空** | Selector 与 Pod Label 不匹配、Pod 未 Ready | `kubectl describe svc` | 修正 Selector、等待 Pod Ready |
-| **ClusterIP 无法访问** | Pod 网络不通、iptables 异常 | `kubectl exec` 测试 | 检查 CNI、重启 Pod |
-| **NodePort 无法访问** | 节点防火墙、安全组限制 | 节点端口测试 | 配置安全组规则 |
-| **LoadBalancer 无法访问** | SLB 异常、后端健康检查失败 | 检查 SLB 状态 | 委托 `alicloud-slb-ops` |
-| **DNS 解析失败** | CoreDNS 异常、Pod DNS 配置错误 | `kubectl get pods -n kube-system \| grep coredns` | 重启 CoreDNS、修正 Pod DNS 配置 |
+| 问题 | 常见原因 | 修复方案 |
+|------|---------|---------|
+| **Endpoints 空** | Selector 与 Pod Label 不匹配/Pod 未 Ready | 修正 Selector/等待 Pod Ready |
+| **ClusterIP 无法访问** | Pod 网络不通/iptables 异常 | 检查 CNI/重启 Pod |
+| **NodePort 无法访问** | 节点防火墙/安全组限制 | 配置安全组规则 |
+| **LoadBalancer 无法访问** | SLB 异常/后端健康检查失败 | 委托 `alicloud-slb-ops` |
+| **DNS 解析失败** | CoreDNS 异常/Pod DNS 配置错误 | 重启 CoreDNS/修正 Pod DNS 配置 |
 
 ---
 
@@ -825,23 +818,21 @@ kubectl get pods -n kube-system -l k8s-app=coredns
 ```bash
 #!/bin/bash
 # ingress-diagnosis.sh
-# Ingress 异常诊断脚本
-
 NAMESPACE="${1:-default}"
 echo "=== Ingress Diagnosis ==="
 echo ""
 
-# 1. Ingress 列表
+# Ingress list
 echo "[1] Ingress resources:"
 kubectl get ingress -A
 echo ""
 
-# 2. Ingress Controller Pod 状态
+# Ingress controller pods
 echo "[2] Ingress Controller Pods:"
 kubectl get pods -n kube-system | grep -E "nginx-ingress|ingress-controller"
 echo ""
 
-# 3. Ingress Controller 日志（最近错误）
+# Ingress controller logs (recent errors)
 echo "[3] Ingress Controller recent errors:"
 INGRESS_POD=$(kubectl get pods -n kube-system | grep nginx-ingress-controller | head -1 | awk '{print $1}')
 if [ -n "$INGRESS_POD" ]; then
@@ -849,7 +840,7 @@ if [ -n "$INGRESS_POD" ]; then
 fi
 echo ""
 
-# 4. 检查指定 namespace 的 Ingress
+# Ingress details in namespace
 if [ "$NAMESPACE" != "all" ]; then
   echo "[4] Ingress details in namespace $NAMESPACE:"
   kubectl get ingress -n $NAMESPACE -o wide
@@ -859,7 +850,6 @@ if [ "$NAMESPACE" != "all" ]; then
     echo "--- Ingress: $ING ---"
     kubectl describe ingress $ING -n $NAMESPACE
     
-    # 检查关联 Service
     SERVICE=$(kubectl get ingress $ING -n $NAMESPACE -o json | jq -r '.spec.rules[].http.paths[].backend.service.name' | head -1)
     if [ -n "$SERVICE" ]; then
       echo ""
@@ -869,7 +859,7 @@ if [ "$NAMESPACE" != "all" ]; then
   done
 fi
 
-# 5. 检查 SLB（如果使用 LoadBalancer）
+# LoadBalancer services
 echo ""
 echo "[5] LoadBalancer Services:"
 kubectl get svc -A -o json | jq -r '.items[] | select(.spec.type=="LoadBalancer") | "\(.metadata.namespace)/\(.metadata.name): \(.status.loadBalancer.ingress[0].ip // "pending")"'
@@ -877,13 +867,13 @@ kubectl get svc -A -o json | jq -r '.items[] | select(.spec.type=="LoadBalancer"
 
 #### 常见 Ingress 异常诊断表
 
-| 问题 | 常见原因 | 诊断命令 | 修复方案 |
-|------|---------|---------|---------|
-| **502 Bad Gateway** | 后端 Pod 不健康、Service 无 Endpoints | 检查 Service/Pod | 修复后端应用、确保 Pod Ready |
-| **503 Service Unavailable** | Ingress Controller 过载、后端全部不可用 | 检查 Ingress Controller 资源 | 扩容 Ingress Controller、修复后端 |
-| **路由不匹配** | Ingress 路径/域名配置错误 | `kubectl describe ingress` | 修正 Ingress 配置 |
-| **证书问题** | TLS Secret 不存在或过期 | `kubectl get secret` | 创建/更新 TLS Secret |
-| **SLB 不可达** | SLB 后端健康检查失败 | 检查 SLB 状态 | 委托 `alicloud-slb-ops` |
+| 问题 | 常见原因 | 修复方案 |
+|------|---------|---------|
+| **502 Bad Gateway** | 后端 Pod 不健康/Service 无 Endpoints | 修复后端应用/确保 Pod Ready |
+| **503 Service Unavailable** | Ingress Controller 过载/后端不可用 | 扩容 Ingress Controller/修复后端 |
+| **路由不匹配** | Ingress 路径/域名配置错误 | 修正 Ingress 配置 |
+| **证书问题** | TLS Secret 不存在或过期 | 创建/更新 TLS Secret |
+| **SLB 不可达** | SLB 后端健康检查失败 | 委托 `alicloud-slb-ops` |
 
 ---
 
@@ -924,24 +914,20 @@ kubectl get svc -A -o json | jq -r '.items[] | select(.spec.type=="LoadBalancer"
 ```bash
 #!/bin/bash
 # storage-diagnosis.sh
-# PVC/PV 异常诊断脚本
-
 echo "=== Storage Diagnosis ==="
 echo ""
 
-# 1. PVC 状态统计
+# PVC status summary
 echo "[1] PVC Status Summary:"
 kubectl get pvc -A -o json | jq -r '.items[] | .status.phase' | sort | uniq -c
 echo ""
 
-# 2. Pending PVC 详情
+# Pending PVCs
 echo "[2] Pending PVCs:"
 PENDING_PVC=$(kubectl get pvc -A | grep Pending)
 if [ -n "$PENDING_PVC" ]; then
   echo "$PENDING_PVC"
   echo ""
-  
-  # 详细诊断
   for LINE in "$PENDING_PVC"; do
     NS=$(echo $LINE | awk '{print $1}')
     PVC_NAME=$(echo $LINE | awk '{print $2}')
@@ -953,22 +939,22 @@ else
 fi
 echo ""
 
-# 3. PV 状态
+# PV status
 echo "[3] PV Status:"
 kubectl get pv | grep -v Bound || echo "All PVs are Bound."
 echo ""
 
-# 4. StorageClass 检查
+# StorageClass check
 echo "[4] Available StorageClasses:"
 kubectl get storageclass
 echo ""
 
-# 5. CSI Driver 状态
+# CSI driver status
 echo "[5] CSI Driver Pods:"
 kubectl get pods -n kube-system | grep csi
 echo ""
 
-# 6. CSI Controller 日志（错误）
+# CSI controller logs (errors)
 CSI_POD=$(kubectl get pods -n kube-system | grep csi-controller | head -1 | awk '{print $1}')
 if [ -n "$CSI_POD" ]; then
   echo "[6] CSI Controller recent errors:"
@@ -978,12 +964,12 @@ fi
 
 #### 常见 PVC/PV 异常诊断表
 
-| 问题 | 常见原因 | 诊断命令 | 修复方案 |
-|------|---------|---------|---------|
-| **PVC Pending** | StorageClass 不存在、PV 不足、可用区不匹配 | `kubectl describe pvc` | 创建 StorageClass、扩容 PV 配额 |
-| **MountVolume 失败** | 云盘不存在、CSI 异常、挂载点冲突 | 检查 CSI Pod 日志 | 恢复云盘、重启 CSI Pod |
-| **Volume 扩容失败** | 云盘类型不支持在线扩容 | `kubectl describe pvc` | 使用 ESSD 云盘、手动扩容 |
-| **云盘释放后 PVC 异常** | PV reclaimPolicy 为 Delete | `kubectl get pv -o yaml` | 修改 reclaimPolicy 为 Retain |
+| 问题 | 常见原因 | 修复方案 |
+|------|---------|---------|
+| **PVC Pending** | StorageClass 不存在/PV 不足/可用区不匹配 | 创建 StorageClass/扩容 PV 配额 |
+| **MountVolume 失败** | 云盘不存在/CSI 异常/挂载点冲突 | 恢复云盘/重启 CSI Pod |
+| **Volume 扩容失败** | 云盘类型不支持在线扩容 | 使用 ESSD 云盘/手动扩容 |
+| **云盘释放后 PVC 异常** | PV reclaimPolicy 为 Delete | 修改 reclaimPolicy 为 Retain |
 
 ---
 
@@ -1138,46 +1124,31 @@ fi
 
 ## Prerequisites
 
-1. **Install `aliyun` CLI** (primary execution path):
-
+1. **Install `aliyun` CLI** (primary):
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-   # Or: brew install aliyun-cli
    ```
 
-2. **Bootstrap Go runtime** (for JIT SDK fallback):
-
+2. **Bootstrap Go runtime** (JIT SDK fallback): See [integration.md](references/integration.md) for full self-healing install. Quick start:
    ```bash
    if ! command -v go &> /dev/null; then
-       OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-       ARCH=$(uname -m)
-       [ "$ARCH" = "x86_64" ] && ARCH="amd64"
-       [ "$ARCH" = "aarch64" ] && ARCH="arm64"
-
-       mkdir -p /tmp/go-runtime
+       OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m)
+       [ "$ARCH" = "x86_64" ] && ARCH="amd64"; [ "$ARCH" = "aarch64" ] && ARCH="arm64"
        curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
-
-       export PATH="/tmp/go-runtime/go/bin:$PATH"
-       export GOPATH="/tmp/go-workspace"
-       export GOCACHE="/tmp/go-cache"
-       export GOMODCACHE="/tmp/go-modcache"
+       export PATH="/tmp/go-runtime/go/bin:$PATH" GOMODCACHE="/tmp/go-modcache"
        export GOPROXY="https://goproxy.cn,direct"
    fi
-
-   go version
    ```
 
 3. **Configure Credentials**:
-
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
-   > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
+   > **IMPORTANT:** When outputting to console, use masking: `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`.
 
-4. **Verify Configuration**:
-
+4. **Verify**:
    ```bash
    aliyun cs GET /clusters
    ```
