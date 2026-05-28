@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD003 MD013 MD022 MD024 MD034 MD041 MD060 -->
+
 # Well-Architected Assessment — Security Center (SAS)
 
 ## §2.1 安全 (Security)

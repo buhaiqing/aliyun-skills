@@ -124,7 +124,7 @@ response validation, and failure recovery.
 | `{{output.db_cluster_id}}` | From API/CLI response | Parse per OpenAPI |
 | `{{output.request_id}}` | From API response | For correlation |
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports. Verify existence only via `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"`.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 

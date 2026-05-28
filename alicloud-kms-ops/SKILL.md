@@ -127,23 +127,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
->
-> **Masking rules across all execution paths:**
-> | Execution Path | Safe Pattern | Unsafe Pattern |
-> |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=LTAI5t...` |
-> | Error messages | `Error: API call failed (credential omitted)` | `Error: InvalidAccessKeySecret.XXX ... actual secret...` |
-> | Log files | `[INFO] Credentials configured: Secret=***` | `[INFO] AK Secret: LTAI5t...` |
-> | Verification | `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" && echo "✅ Secret is set"` | `echo "Secret=$ALIBABA_CLOUD_ACCESS_KEY_SECRET"` |
-> | JIT Go SDK | `AccessKeySecret: tea.String(os.Getenv("..."))` (env read is safe) | `fmt.Printf("Config: %+v", config)` or `log.Printf("%+v", ...)` |
-> | Debug/verbose | `⚠️ Debug mode may expose credential values` (warning only) | `--debug` with un-masked credential output |
->
-> **Credential verification MUST check existence only**, never echo the value:
-> - Bash: `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"` ✅ | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` ❌
-> - Go: `if os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET") == ""` ✅ | `fmt.Println(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET"))` ❌
->
-> **If any execution flow violates this rule, the skill SHALL be blocked from merge as a security incident.**
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 

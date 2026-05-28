@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD003 MD013 MD022 MD024 MD034 MD041 MD060 -->
+
 # Integration — Alibaba Cloud Security Center (SAS)
 
 ## Environment Setup
@@ -87,7 +89,7 @@ func main() {
 | VPC | `tds.vpc-proxy.aliyuncs.com` (region-specific) |
 | Intl VPC | `tds-intl.vpc-proxy.aliyuncs.com` |
 
-Reference: https://www.alibabacloud.com/help/en/security-center/developer-reference/api-sas-2018-12-03-endpoint
+Reference: <https://www.alibabacloud.com/help/en/security-center/developer-reference/api-sas-2018-12-03-endpoint>
 
 ## Cross-Skill Delegation Matrix
 

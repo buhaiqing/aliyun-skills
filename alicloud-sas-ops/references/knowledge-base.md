@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD003 MD013 MD022 MD024 MD034 MD041 MD060 -->
+
 # Knowledge Base — Security Center Fault Patterns
 
 ## Pattern: Mass Agent Offline After Network Change
