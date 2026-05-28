@@ -112,19 +112,7 @@ fallback), response validation, and failure recovery.
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be
 > collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
->
-> **Masking rules across all execution paths:**
-> | Execution Path | Safe Pattern | Unsafe Pattern |
-> |----------------|-------------|----------------|
-> | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=abcd****` | Raw credential value in output |
-> | Error messages | `Error: API call failed (credential omitted)` | Error containing raw credential value |
-> | Log files | `[INFO] Credentials: Secret=abcd****` | `[INFO] AK Secret: LTAI5t...` |
-> | Verification | `test -n "$var" && echo "Secret is set"` (existence check only) | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` |
-> | JIT Go SDK | env read via `os.Getenv(...)` is safe; never print `Config` struct | `fmt.Printf("Config: %+v", config)` |
-> | Debug/verbose | `Debug mode may expose credentials (use with caution)` | Un-masked credential in debug output |
->
-> **Credential verification MUST check existence only**, never echo the value. This applies to ALL execution flows (SDK, CLI, and debugging scripts).
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -223,50 +211,7 @@ aliyun cs POST /clusters \
 
 When CLI does not support a specific cluster parameter or new API version:
 
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-
-    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    "github.com/alibabacloud-go/tea/tea"
-    cs "github.com/alibabacloud-go/cs-20151215/v4/client"
-)
-
-func main() {
-    config := &openapi.Config{
-        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-        Endpoint:        tea.String(fmt.Sprintf("cs.%s.aliyuncs.com", os.Getenv("ALIBABA_CLOUD_REGION_ID"))),
-    }
-
-    client, err := cs.NewClient(config)
-    if err != nil {
-        panic(err)
-    }
-
-    request := &cs.CreateClusterRequest{
-        ClusterType:         tea.String("ManagedKubernetes"),
-        Name:                tea.String(os.Getenv("CLUSTER_NAME")),
-        RegionId:            tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-        VpcId:               tea.String(os.Getenv("VPC_ID")),
-        VswitchIds:          tea.StringSlice([]string{"vsw-xxx"}),
-        WorkerInstanceTypes: tea.StringSlice([]string{"ecs.g7.xlarge"}),
-        NumOfNodes:          tea.Int64(2),
-        ServiceCidr:         tea.String("172.16.0.0/16"),
-        PodCidr:             tea.String("10.0.0.0/8"),
-    }
-
-    response, err := client.CreateCluster(request)
-    if err != nil {
-        panic(err)
-    }
-
-    fmt.Println(tea.ToString(response.Body))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -519,15 +464,7 @@ aliyun cs GET /clusters/{{user.cluster_id}}/addons
 #   }"
 ```
 
-#### JIT Go SDK Fallback
-
-If CLI does not support addon operations:
-
-```go
-// Use cs-20151215/v4/client
-// request := &cs.InstallAddonRequest{...}
-// response, err := client.InstallAddon(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 

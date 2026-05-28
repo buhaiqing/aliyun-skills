@@ -262,73 +262,7 @@ aliyun r-kvstore create-instance \
 
 #### Execution — JIT Go SDK (Fallback Path)
 
-```go
-package main
-
-import (
-	"fmt"
-	"os"
-	"time"
-
-	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	"github.com/alibabacloud-go/tea/tea"
-	rkvstore "github.com/alibabacloud-go/r-kvstore-20150101/v2/client"
-)
-
-func main() {
-	config := &openapi.Config{
-		AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-		AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-		RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-		Endpoint:        tea.String("r-kvstore.aliyuncs.com"),
-	}
-
-	c, err := rkvstore.NewClient(config)
-	if err != nil {
-		panic(err)
-	}
-
-	req := &rkvstore.CreateInstanceRequest{
-		RegionId:      tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-		InstanceName:  tea.String(os.Getenv("INSTANCE_NAME")),
-		InstanceClass: tea.String(os.Getenv("INSTANCE_CLASS")),
-		EngineVersion: tea.String(os.Getenv("ENGINE_VERSION")),
-		ZoneId:        tea.String(os.Getenv("ZONE_ID")),
-		NetworkType:   tea.String(os.Getenv("NETWORK_TYPE")),
-		VPCId:         tea.String(os.Getenv("VPC_ID")),
-		VSwitchId:     tea.String(os.Getenv("VSWITCH_ID")),
-		ChargeType:    tea.String(os.Getenv("CHARGE_TYPE")),
-		Password:      tea.String(os.Getenv("PASSWORD")),
-		Token:         tea.String(os.Getenv("TOKEN")),
-	}
-
-	resp, err := c.CreateInstance(req)
-	if err != nil {
-		panic(err)
-	}
-
-	instanceId := tea.ToString(resp.Body.InstanceId)
-	fmt.Printf("Created Redis/Tair instance: %s\n", instanceId)
-
-	// Poll until Normal
-	for i := 0; i < 60; i++ {
-		descReq := &rkvstore.DescribeInstancesRequest{
-			RegionId:   tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-			InstanceId: tea.String(instanceId),
-		}
-		descResp, err := c.DescribeInstances(descReq)
-		if err != nil {
-			panic(err)
-		}
-		items := descResp.Body.Instances.KVStoreInstance
-		if len(items) > 0 && tea.ToString(items[0].InstanceStatus) == "Normal" {
-			fmt.Println("Instance is Normal")
-			break
-		}
-		time.Sleep(10 * time.Second)
-	}
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -382,13 +316,7 @@ aliyun r-kvstore describe-instances --RegionId "{{user.region}}" \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.DescribeInstancesRequest{
-	RegionId:   tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeInstances(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -427,12 +355,7 @@ aliyun r-kvstore describe-instance-attribute \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.DescribeInstanceAttributeRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeInstanceAttribute(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -466,12 +389,7 @@ aliyun r-kvstore restart-instance --InstanceId "{{user.instance_id}}"
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.RestartInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.RestartInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -508,12 +426,7 @@ aliyun r-kvstore delete-instance --InstanceId "{{user.instance_id}}"
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.DeleteInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DeleteInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -552,14 +465,7 @@ aliyun r-kvstore modify-instance-spec \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.ModifyInstanceSpecRequest{
-	InstanceId:  tea.String(os.Getenv("INSTANCE_ID")),
-	InstanceClass: tea.String(os.Getenv("INSTANCE_CLASS")),
-	OrderType:   tea.String("UPGRADE"),
-}
-resp, err := c.ModifyInstanceSpec(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -589,12 +495,7 @@ aliyun r-kvstore describe-accounts \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.DescribeAccountsRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeAccounts(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -626,15 +527,7 @@ aliyun r-kvstore create-account \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rkvstore.CreateAccountRequest{
-	InstanceId:      tea.String(os.Getenv("INSTANCE_ID")),
-	AccountName:     tea.String(os.Getenv("ACCOUNT_NAME")),
-	AccountPassword: tea.String(os.Getenv("ACCOUNT_PASSWORD")),
-	AccountType:     tea.String(os.Getenv("ACCOUNT_TYPE")),
-}
-resp, err := c.CreateAccount(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 

@@ -133,7 +133,7 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected
 > interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports. Credential verification MUST check existence only, never echo the value.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -168,10 +168,9 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 This skill enables you to configure, query, and manage ActionTrail audit logging on
 Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
-### Prerequisites
-- [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
-- [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-- [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
+## Prerequisites
+
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ### Verify Setup
 ```bash
@@ -208,13 +207,6 @@ aliyun actiontrail DescribeTrails
 | LookupInsightEvents | Query insight events | Medium | None |
 | CreateDeliveryHistoryJob | Backfill historical events | Medium | Low |
 | CreateComplianceTrail | Create a compliance-grade trail (all regions, all events) | Medium | Low |
-
-## Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.1.0 | 2026-05-15 | Added 5 new InsightTypes (IpInsight, AkInsight, PolicyChangeInsight, PasswordChangeInsight, TrailConcealmentInsight), LookupInsightEvents flow, CreateComplianceTrail flow with compliance checklist, InsightTypeNotAvailable error code |
-| 1.0.0 | 2026-05-15 | Initial ActionTrail skill with CLI and SDK support |
 
 ## Execution Flows (Agent-Readable)
 
@@ -253,46 +245,7 @@ aliyun actiontrail CreateTrail \
 
 #### SDK Execution (JIT Go Fallback)
 
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "encoding/json"
-
-    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    "github.com/alibabacloud-go/tea/tea"
-    actiontrail "github.com/alibabacloud-go/actiontrail-20200706/v4/client"
-)
-
-func main() {
-    config := &openapi.Config{
-        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-        Endpoint:        tea.String("actiontrail.aliyuncs.com"),
-    }
-
-    client, err := actiontrail.NewClient(config)
-    if err != nil {
-        panic(err)
-    }
-
-    request := &actiontrail.CreateTrailRequest{
-        Name:          tea.String(os.Args[1]),
-        OssBucketName: tea.String(os.Args[2]),
-        EventRW:       tea.String("All"),
-    }
-
-    response, err := client.CreateTrail(request)
-    if err != nil {
-        panic(err)
-    }
-
-    body, _ := json.Marshal(response.Body)
-    fmt.Println(string(body))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ```bash
 go run main.go {{user.trail_name}} {{user.oss_bucket_name}}
@@ -335,12 +288,7 @@ aliyun actiontrail DescribeTrails --NameList '["{{user.trail_name}}"]'
 aliyun actiontrail DescribeTrails --IncludeOrganizationTrail true
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.DescribeTrailsRequest{}
-response, err := client.DescribeTrails(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -369,14 +317,7 @@ response, err := client.DescribeTrails(request)
 aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.GetTrailStatusRequest{
-    Name: tea.String("{{user.trail_name}}"),
-}
-response, err := client.GetTrailStatus(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -406,14 +347,7 @@ response, err := client.GetTrailStatus(request)
 aliyun actiontrail StartLogging --Name {{user.trail_name}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.StartLoggingRequest{
-    Name: tea.String("{{user.trail_name}}"),
-}
-response, err := client.StartLogging(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -443,14 +377,7 @@ response, err := client.StartLogging(request)
 aliyun actiontrail StopLogging --Name {{user.trail_name}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.StopLoggingRequest{
-    Name: tea.String("{{user.trail_name}}"),
-}
-response, err := client.StopLogging(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -481,15 +408,7 @@ aliyun actiontrail UpdateTrail \
   --EventRW All
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.UpdateTrailRequest{
-    Name:          tea.String("{{user.trail_name}}"),
-    OssBucketName: tea.String("{{user.oss_bucket_name}}"),
-}
-response, err := client.UpdateTrail(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -521,14 +440,7 @@ response, err := client.UpdateTrail(request)
 aliyun actiontrail DeleteTrail --Name {{user.trail_name}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.DeleteTrailRequest{
-    Name: tea.String("{{user.trail_name}}"),
-}
-response, err := client.DeleteTrail(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -580,16 +492,7 @@ aliyun actiontrail LookupEvents \
   --NextToken {{output.next_token}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.LookupEventsRequest{
-    StartTime: tea.String("{{user.start_time}}"),
-    EndTime:   tea.String("{{user.end_time}}"),
-    MaxResults: tea.Int32(50),
-}
-response, err := client.LookupEvents(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -620,14 +523,7 @@ response, err := client.LookupEvents(request)
 aliyun actiontrail GetAccessKeyLastUsedInfo --AccessKeyId {{user.access_key_id}}
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.GetAccessKeyLastUsedInfoRequest{
-    AccessKeyId: tea.String("{{user.access_key_id}}"),
-}
-response, err := client.GetAccessKeyLastUsedInfo(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -687,14 +583,7 @@ aliyun actiontrail EnableInsight --InsightType TrailConcealmentInsight
 | `PasswordChangeInsight` | Password change events | Detect account compromise — unexpected password reset |
 | `TrailConcealmentInsight` | Trail disable/deletion attempts | Detect audit evasion — attacker tries to cover tracks by disabling trails |
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.EnableInsightRequest{
-    InsightType: tea.String("IpInsight"),
-}
-response, err := client.EnableInsight(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -731,15 +620,7 @@ aliyun actiontrail LookupInsightEvents \
   --MaxResults 50
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.LookupInsightEventsRequest{
-    InsightType: tea.String("IpInsight"),
-    MaxResults:  tea.Int32(50),
-}
-response, err := client.LookupInsightEvents(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 
@@ -769,14 +650,7 @@ response, err := client.LookupInsightEvents(request)
 aliyun actiontrail DisableInsight --InsightType IpInsight
 ```
 
-#### SDK Execution (JIT Go Fallback)
-
-```go
-request := &actiontrail.DisableInsightRequest{
-    InsightType: tea.String("IpInsight"),
-}
-response, err := client.DisableInsight(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 

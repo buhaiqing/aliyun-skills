@@ -121,7 +121,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 | `{{output.request_id}}` | RequestId | Parse `$.RequestId` |
 | `{{output.install_code}}` | Agent install verification code | Parse from AddInstallCode / DescribeInstallCode |
 
-> **Credential masking (MANDATORY):** Never log or print `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, secret values from `GetSecretValue`-like APIs, or full AccessKey IDs in output. Verify credentials with existence checks only.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -147,11 +147,9 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 ## Quick Start
 
-### Prerequisites
+## Prerequisites
 
-- [ ] `aliyun` CLI installed
-- [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-- [ ] Region: `ALIBABA_CLOUD_REGION_ID` (commonly `cn-shanghai` for Security Center)
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ### Verify Setup
 
@@ -183,12 +181,6 @@ aliyun sas DescribeCloudCenterInstances \
 | DescribeAccesskeyLeakList | AK leak list | Low | None |
 | CreateVirusScanOnceTask | One-time virus scan | Medium | Low |
 | AddUninstallClientsByUuids | Uninstall agent | Low | **High** |
-
-## Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-20 | Initial Security Center (SAS) ops skill |
 
 ## Execution Flows (Agent-Readable)
 
@@ -227,13 +219,7 @@ aliyun sas DescribeCloudCenterInstances \
 
 #### SDK Execution (JIT Fallback)
 
-```go
-request := &sas.DescribeCloudCenterInstancesRequest{
-    Criteria: tea.String(os.Getenv("CRITERIA_JSON")),
-    PageSize: tea.Int32(50),
-}
-response, err := client.DescribeCloudCenterInstances(request)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Validation
 

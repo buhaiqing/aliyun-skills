@@ -243,79 +243,7 @@ aliyun ecs CreateInstance \
 
 > **Note:** Output is JSON by default. Parse `InstanceId` from response.
 
-#### Execution — JIT Go SDK (Fallback Path)
-
-```go
-package main
-
-import (
-	"fmt"
-	"os"
-	"time"
-
-	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	"github.com/alibabacloud-go/tea/tea"
-	ecs "github.com/alibabacloud-go/ecs-20140526/v4/client"
-)
-
-func main() {
-	config := &openapi.Config{
-		AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-		AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-		RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	}
-
-	c, err := ecs.NewClient(config)
-	if err != nil {
-		panic(err)
-	}
-
-	req := &ecs.CreateInstanceRequest{
-		RegionId:              tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-		ZoneId:                tea.String(os.Getenv("ZONE_ID")),
-		ImageId:               tea.String(os.Getenv("IMAGE_ID")),
-		InstanceType:          tea.String(os.Getenv("INSTANCE_TYPE")),
-		SecurityGroupId:       tea.String(os.Getenv("SECURITY_GROUP_ID")),
-		VSwitchId:             tea.String(os.Getenv("VSWITCH_ID")),
-		InstanceName:          tea.String(os.Getenv("INSTANCE_NAME")),
-		InternetMaxBandwidthOut: tea.Int(1),
-		KeyPairName:           tea.String(os.Getenv("KEY_PAIR_NAME")),
-	}
-
-	resp, err := c.CreateInstance(req)
-	if err != nil {
-		panic(err)
-	}
-
-	instanceId := tea.ToString(resp.Body.InstanceId)
-	fmt.Printf("Created instance: %s\n", instanceId)
-
-	// Poll until Running
-	for i := 0; i < 60; i++ {
-		descReq := &ecs.DescribeInstancesRequest{
-			RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-			InstanceIds: tea.String(`["` + instanceId + `"]`),
-		}
-		descResp, err := c.DescribeInstances(descReq)
-		if err != nil {
-			panic(err)
-		}
-		instances := descResp.Body.Instances.Instance
-		if len(instances) > 0 && tea.ToString(instances[0].Status) == "Running" {
-			fmt.Println("Instance is Running")
-			break
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-```
-
-> **UserData Note:** To pass initialization scripts, add `UserData` field with base64-encoded content:
-> ```go
-> import "encoding/base64"
-> userData := base64.StdEncoding.EncodeToString([]byte("#!/bin/bash\necho 'hello' > /tmp/setup.log"))
-> req.UserData = tea.String(userData)
-> ```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -389,15 +317,7 @@ aliyun ecs DescribeInstances --RegionId "{{user.region}}" \
   --output cols=InstanceId,Status,InstanceName rows=Instances.Instance[].{InstanceId,Status,InstanceName}
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeInstancesRequest{
-	RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InstanceIds: tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-}
-resp, err := c.DescribeInstances(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -444,24 +364,7 @@ aliyun ecs RunInstances \
 
 > **Note:** `Amount` supports 1-100. Returns `InstanceIdSets` array.
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.RunInstancesRequest{
-	RegionId:              tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	ZoneId:                tea.String(os.Getenv("ZONE_ID")),
-	ImageId:               tea.String(os.Getenv("IMAGE_ID")),
-	InstanceType:          tea.String(os.Getenv("INSTANCE_TYPE")),
-	SecurityGroupId:       tea.String(os.Getenv("SECURITY_GROUP_ID")),
-	VSwitchId:             tea.String(os.Getenv("VSWITCH_ID")),
-	InstanceName:          tea.String(os.Getenv("INSTANCE_NAME")),
-	Amount:                tea.Int32(2),
-	InternetMaxBandwidthOut: tea.Int(1),
-	KeyPairName:           tea.String(os.Getenv("KEY_PAIR_NAME")),
-}
-resp, err := c.RunInstances(req)
-// Parse InstanceIdSets.InstanceIdSet[] from response
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -489,15 +392,7 @@ aliyun ecs ModifyInstanceAttribute \
   --Password "{{user.new_password}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.ModifyInstanceAttributeRequest{
-	InstanceId:   tea.String(os.Getenv("INSTANCE_ID")),
-	InstanceName: tea.String(os.Getenv("NEW_INSTANCE_NAME")),
-}
-resp, err := c.ModifyInstanceAttribute(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -521,16 +416,7 @@ aliyun ecs DescribeImages \
   --ImageName "CentOS*"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeImagesRequest{
-	RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	ImageOwnerAlias: tea.String("system"),
-	OSType:          tea.String("Linux"),
-}
-resp, err := c.DescribeImages(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -556,14 +442,7 @@ resp, err := c.DescribeImages(req)
 aliyun ecs StartInstance --InstanceId "{{user.instance_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.StartInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.StartInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -590,15 +469,7 @@ aliyun ecs DescribeInstances \
 aliyun ecs StopInstance --InstanceId "{{user.instance_id}}" --ForceStop false
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.StopInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	ForceStop:  tea.Bool(false),
-}
-resp, err := c.StopInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -625,15 +496,7 @@ aliyun ecs DescribeInstances \
 aliyun ecs RebootInstance --InstanceId "{{user.instance_id}}" --ForceStop false
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.RebootInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	ForceStop:  tea.Bool(false),
-}
-resp, err := c.RebootInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -666,15 +529,7 @@ aliyun ecs DeleteInstance --InstanceId "{{user.instance_id}}" --Force false
 aliyun ecs DeleteInstance --InstanceId "{{user.instance_id}}" --Force true
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DeleteInstanceRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	Force:      tea.Bool(false),
-}
-resp, err := c.DeleteInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -716,28 +571,7 @@ aliyun ecs CreateDisk \
 
 > **Note:** `ZoneId` is optional if `InstanceId` is specified (creates and attaches in one step).
 
-#### Execution — JIT Go SDK
-
-```go
-size, _ := strconv.Atoi(os.Getenv("DISK_SIZE"))
-req := &ecs.CreateDiskRequest{
-	RegionId:     tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	ZoneId:       tea.String(os.Getenv("ZONE_ID")),
-	DiskName:     tea.String(os.Getenv("DISK_NAME")),
-	Size:         tea.Int32(int32(size)),
-	DiskCategory: tea.String(os.Getenv("DISK_CATEGORY")),
-}
-resp, err := c.CreateDisk(req)
-```
-
-> **Disk Encryption:** For compliance, enable encryption with:
-> ```bash
-> aliyun ecs CreateDisk ... --Encrypted true --KMSKeyId "alias/acs/ecs"
-> ```
-> ```go
-> req.Encrypted = tea.Bool(true)
-> req.KMSKeyId = tea.String("alias/acs/ecs")
-> ```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -767,15 +601,7 @@ aliyun ecs AttachDisk \
   --DiskId "{{user.disk_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.AttachDiskRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	DiskId:     tea.String(os.Getenv("DISK_ID")),
-}
-resp, err := c.AttachDisk(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -804,15 +630,7 @@ aliyun ecs DetachDisk \
   --DiskId "{{user.disk_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DetachDiskRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	DiskId:     tea.String(os.Getenv("DISK_ID")),
-}
-resp, err := c.DetachDisk(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -840,14 +658,7 @@ aliyun ecs DescribeDisks \
 aliyun ecs DeleteDisk --DiskId "{{user.disk_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DeleteDiskRequest{
-	DiskId: tea.String(os.Getenv("DISK_ID")),
-}
-resp, err := c.DeleteDisk(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -865,15 +676,7 @@ aliyun ecs CreateSnapshot \
   --SnapshotName "{{user.snapshot_name}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.CreateSnapshotRequest{
-	DiskId:       tea.String(os.Getenv("DISK_ID")),
-	SnapshotName: tea.String(os.Getenv("SNAPSHOT_NAME")),
-}
-resp, err := c.CreateSnapshot(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -900,14 +703,7 @@ aliyun ecs DescribeSnapshots \
 aliyun ecs DeleteSnapshot --SnapshotId "{{user.snapshot_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DeleteSnapshotRequest{
-	SnapshotId: tea.String(os.Getenv("SNAPSHOT_ID")),
-}
-resp, err := c.DeleteSnapshot(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -922,16 +718,7 @@ aliyun ecs CreateSecurityGroup \
   --VpcId "{{user.vpc_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.CreateSecurityGroupRequest{
-	RegionId:          tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	SecurityGroupName: tea.String(os.Getenv("SECURITY_GROUP_NAME")),
-	VpcId:             tea.String(os.Getenv("VPC_ID")),
-}
-resp, err := c.CreateSecurityGroup(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -971,25 +758,7 @@ aliyun ecs AuthorizeSecurityGroup \
   --Permissions '[{"IpProtocol":"tcp","PortRange":"80/80","SourceCidrIp":"0.0.0.0/0","Policy":"accept","Priority":"2"}]'
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.AuthorizeSecurityGroupRequest{
-	SecurityGroupId: tea.String(os.Getenv("SECURITY_GROUP_ID")),
-	RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	Permissions: []*ecs.AuthorizeSecurityGroupRequestPermissions{
-		{
-			IpProtocol:   tea.String("tcp"),
-			PortRange:    tea.String("22/22"),
-			SourceCidrIp: tea.String(os.Getenv("SOURCE_CIDR_IP")), // e.g., 203.0.113.10/32
-			Policy:       tea.String("accept"),
-			Priority:     tea.String("1"),
-			Description:  tea.String("SSH access from admin IP"),
-		},
-	},
-}
-resp, err := c.AuthorizeSecurityGroup(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -1016,18 +785,7 @@ aliyun ecs RevokeSecurityGroup \
   --Permissions '[{"IpProtocol":"tcp","PortRange":"22/22","SourceCidrIp":"0.0.0.0/0","Policy":"accept"}]'
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.RevokeSecurityGroupRequest{
-	SecurityGroupId:       tea.String(os.Getenv("SECURITY_GROUP_ID")),
-	RegionId:              tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	SecurityGroupRuleId: []*string{
-		tea.String(os.Getenv("RULE_ID")),
-	},
-}
-resp, err := c.RevokeSecurityGroup(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -1041,41 +799,73 @@ aliyun ecs DescribeSecurityGroupAttribute \
   --RegionId "{{user.region}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeSecurityGroupAttributeRequest{
-	SecurityGroupId: tea.String(os.Getenv("SECURITY_GROUP_ID")),
-	RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-}
-resp, err := c.DescribeSecurityGroupAttribute(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
 ### Operation: Security Group Compliance Check (安全组合规检查)
 
-详见 [安全组合规检查](references/sg-compliance-check.md)
+| Trigger | Purpose | CLI | Key Check |
+|---------|---------|-----|-----------|
+| "安全组检查", "合规审计" | 检测 `0.0.0.0/0` 开放的高危端口 | `aliyun ecs DescribeSecurityGroupAttribute` | `SourceCidrIp` + `PortRange` ∈ {22,3389,3306,1433,6379,27017} |
+
+**Severity:** Critical rules → `SourceCidrIp="0.0.0.0/0"` + high-risk port; Immediate remediation.  
+**Full runbook:** [安全组合规检查](references/sg-compliance-check.md)
+
+---
 
 ### Operation: Multi-Metric Anomaly Inspection
 
-详见 [多指标异常巡检](references/multi-metric-anomaly.md)
+| Trigger | Purpose | CLI | Key Thresholds |
+|---------|---------|-----|----------------|
+| "异常检测", "告警分析" | 跨指标复合异常（CPU+Memory, Disk+IOPS） | `aliyun cms DescribeMetricList` — `CPUUtilization`, `MemoryUsage`, `DiskUsage` | CPU>90% AND Mem>85% 5min → Critical |
+
+**Auto-Actions:** CPU-Memory 双高 → Auto-scale; 磁盘-IO 瓶颈 → 扩容 SSD.  
+**Full runbook:** [多指标异常巡检](references/multi-metric-anomaly.md)
+
+---
 
 ### Operation: Idle Resource Detection (闲置资源智能识别)
 
-详见 [闲置资源检测](references/idle-resource-detection.md)
+| Trigger | Purpose | CLI | Key Dimensions |
+|---------|---------|-----|----------------|
+| "闲置实例", "成本优化" | 识别 30天无活动实例 | `aliyun cms DescribeMetricList` — `InternetOutRate`, `CPUUtilization` + ActionTrail | 30d 无流量 + 无CPU + 无API → 疑似闲置 |
+
+**Classification:** 活跃 / 低频 / 疑似闲置 / 确定闲置 → 保留 / 降配 / 回收.  
+**Full runbook:** [闲置资源检测](references/idle-resource-detection.md)
+
+---
 
 ### Operation: Cost Visualization Report (成本可视化报告)
 
-详见 [成本可视化报告](references/cost-visualization.md)
+| Trigger | Purpose | CLI | Key Metrics |
+|---------|---------|-----|-------------|
+| "成本分析", "费用报告" | ECS 实例+磁盘+快照月度费用 | `aliyun ecs DescribeInstances` + `DescribeDisks` + `bssapi QueryBill` | 实例费 / 磁盘费 / 流量费 / 快照费 |
+
+**Optimization:** Right-size 低利用率实例 → 节省 60-80%; RI 长期实例 → 节省 30-85%.  
+**Full runbook:** [成本可视化报告](references/cost-visualization.md)
+
+---
 
 ### Operation: Predictive Capacity Analysis (预测性容量分析)
 
-详见 [预测性容量分析](references/predictive-capacity.md)
+| Trigger | Purpose | CLI | Prediction |
+|---------|---------|-----|------------|
+| "容量预警", "趋势分析" | 基于30天历史预测未来7天容量 | `aliyun cms DescribeMetricList` — `CPUUtilization` (30d, Period=3600) | 线性回归: `current + daily_growth × days` |
+
+**Risk Levels:** ≤7d to threshold → Critical; ≤14d → Warning.  
+**Full runbook:** [预测性容量分析](references/predictive-capacity.md)
+
+---
 
 ### Operation: LLM-Assisted Diagnosis (LLM辅助诊断)
 
-详见 [LLM辅助诊断](references/llm-diagnosis.md)
+| Trigger | Purpose | Workflow | Data Inputs |
+|---------|---------|----------|-------------|
+| "诊断", "故障排查" | LLM 分析 ECS 状态+监控+日志生成修复建议 | 收集数据 → 构建 Prompt → LLM 分析 → 输出报告 | `DescribeInstances` (Status), `cms` (CPU/Mem), 用户描述 |
+
+**Problem Types:** 无法连接 / 性能问题 / 磁盘满 / 登录失败 / 应用崩溃.  
+**Full runbook:** [LLM辅助诊断](references/llm-diagnosis.md)
 
 ---
 
@@ -1090,19 +880,7 @@ aliyun ecs AddTags \
   --Tags '[{"Key":"Environment","Value":"Production"},{"Key":"Owner","Value":"DevOps"}]'
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.AddTagsRequest{
-	ResourceType: tea.String("instance"),
-	ResourceId:   tea.String(os.Getenv("INSTANCE_ID")),
-	Tags: []*ecs.AddTagsRequestTags{
-		{Key: tea.String("Environment"), Value: tea.String("Production")},
-		{Key: tea.String("Owner"), Value: tea.String("DevOps")},
-	},
-}
-resp, err := c.AddTags(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -1117,16 +895,7 @@ aliyun ecs DescribeTags \
   --ResourceId "{{user.instance_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeTagsRequest{
-	RegionId:     tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	ResourceType: tea.String("instance"),
-	ResourceId:   tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeTags(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -1142,16 +911,7 @@ aliyun ecs RemoveTags \
   --TagKey.2 "Owner"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.RemoveTagsRequest{
-	ResourceType: tea.String("instance"),
-	ResourceId:   tea.String(os.Getenv("INSTANCE_ID")),
-	TagKey:       []*string{tea.String("Environment"), tea.String("Owner")},
-}
-resp, err := c.RemoveTags(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ---
 
@@ -1172,16 +932,7 @@ aliyun ecs ResizeDisk \
   --NewSize "{{user.new_size}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-newSize, _ := strconv.Atoi(os.Getenv("NEW_SIZE"))
-req := &ecs.ResizeDiskRequest{
-	DiskId:  tea.String(os.Getenv("DISK_ID")),
-	NewSize: tea.Int32(int32(newSize)),
-}
-resp, err := c.ResizeDisk(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 > **Post-resize:** After resizing the cloud disk, you must extend the file system inside the OS. This is an OS-level operation, not an ECS API operation.
 
@@ -1203,15 +954,7 @@ aliyun ecs ReplaceSystemDisk \
   --ImageId "{{user.image_id}}"
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.ReplaceSystemDiskRequest{
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-	ImageId:    tea.String(os.Getenv("IMAGE_ID")),
-}
-resp, err := c.ReplaceSystemDisk(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1352,19 +1095,7 @@ aliyun ecs RunCommand \
 
 > **Security Note:** Commands run with root/Administrator privileges. Validate command content to prevent accidental damage. Avoid commands that expose secrets in output.
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.RunCommandRequest{
-	RegionId:      tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InstanceIds:   tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-	CommandContent: tea.String(os.Getenv("COMMAND_CONTENT")),
-	Type:          tea.String(os.Getenv("COMMAND_TYPE")), // RunShellScript, RunBatScript, RunPowerShellScript
-	Name:          tea.String(os.Getenv("COMMAND_NAME")),
-	Timeout:       tea.Int64(60),
-}
-resp, err := c.RunCommand(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1432,17 +1163,7 @@ aliyun ecs InvokeCommand \
   --Parameters '{"var1":"value1","var2":"value2"}'
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.InvokeCommandRequest{
-	RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	CommandId:   tea.String(os.Getenv("COMMAND_ID")),
-	InstanceIds: tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-	Parameters:  tea.String(`{"var1":"value1"}`),
-}
-resp, err := c.InvokeCommand(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1475,16 +1196,7 @@ aliyun ecs DescribeInvocationResults \
   rows=Invocation.InvocationResults.InvocationResult[0].{InvokeId,InvocationStatus,ExitCode,StartTime,EndTime}
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeInvocationResultsRequest{
-	RegionId:   tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InvokeId:   tea.String(os.Getenv("INVOKE_ID")),
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeInvocationResults(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1517,16 +1229,7 @@ aliyun ecs StopInvocation \
   --InstanceIds '["{{user.instance_id}}"]'
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.StopInvocationRequest{
-	RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InvokeId:    tea.String(os.Getenv("INVOKE_ID")),
-	InstanceIds: tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-}
-resp, err := c.StopInvocation(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 > **Note:** Only invocations in `Pending` or `Running` status can be stopped.
 
@@ -1576,32 +1279,7 @@ aliyun ecs SendFile \
 
 > **Note:** The `Content` field must be base64-encoded file content.
 
-#### Execution — JIT Go SDK
-
-```go
-import "encoding/base64"
-import "os"
-
-fileContent, err := os.ReadFile(os.Getenv("LOCAL_FILE"))
-if err != nil {
-	panic(err)
-}
-encodedContent := base64.StdEncoding.EncodeToString(fileContent)
-
-req := &ecs.SendFileRequest{
-	RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InstanceIds: tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-	Name:        tea.String(os.Getenv("FILE_NAME")),
-	Description: tea.String(os.Getenv("FILE_DESCRIPTION")),
-	TargetDir:   tea.String(os.Getenv("TARGET_DIR")),
-	FileOwner:   tea.String(os.Getenv("FILE_OWNER")),
-	FileGroup:   tea.String(os.Getenv("FILE_GROUP")),
-	FileMode:    tea.String(os.Getenv("FILE_MODE")),
-	Content:     tea.String(encodedContent),
-	Overwrite:   tea.Bool(true),
-}
-resp, err := c.SendFile(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1655,16 +1333,7 @@ aliyun ecs DescribeSendFileResults \
   rows=SendFileResults.SendFileResult[0].{FileStatus,TargetDir,FileOwner,FileMode}
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeSendFileResultsRequest{
-	RegionId:   tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InvokeId:   tea.String(os.Getenv("INVOKE_ID")),
-	InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-resp, err := c.DescribeSendFileResults(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1701,15 +1370,7 @@ aliyun ecs DescribeCloudAssistantStatus \
   rows=InstanceCloudAssistantStatusSet.InstanceCloudAssistantStatus[].{InstanceId,CloudAssistantStatus}
 ```
 
-#### Execution — JIT Go SDK
-
-```go
-req := &ecs.DescribeCloudAssistantStatusRequest{
-	RegionId:    tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	InstanceIds: tea.String(`["` + os.Getenv("INSTANCE_ID") + `"]`),
-}
-resp, err := c.DescribeCloudAssistantStatus(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 

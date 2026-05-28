@@ -1,5 +1,3 @@
-# Security Center (SAS) — Example operational configuration
-
 security_center:
   api:
     product: sas
@@ -8,7 +6,6 @@ security_center:
     region_id: cn-shanghai
 
   credentials:
-    # Use environment variables only — never commit real keys
     access_key_id: "${ALIBABA_CLOUD_ACCESS_KEY_ID}"
     access_key_secret: "${ALIBABA_CLOUD_ACCESS_KEY_SECRET}"
 
@@ -45,7 +42,7 @@ security_center:
   monitoring:
     offline_agent_warning_percent: 5
     offline_agent_critical_percent: 15
-    export_alerts_to_sls: false  # enable when sls-ops skill configured
+    export_alerts_to_sls: false
 
   delegation:
     actiontrail_skill: alicloud-actiontrail-ops

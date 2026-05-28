@@ -466,14 +466,7 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 | **L2** | 预发 | Notify team | Best effort | [Sensitivity-Aware §2](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
 | **L3** | 开发/测试 | Auto | N/A | [Sensitivity-Aware §2](references/sensitivity-aware-operations.md#2-change-control-by-sensitivity-level) |
 
-**Key Rules for L0/L1 NAT Gateways:**
-- [ ] Tag NAT Gateway with `SensitivityLevel` tag (L0/L1/L2/L3)
-- [ ] Changes only during approved change window (L0: Tue-Thu 02:00-05:00)
-- [ ] Configuration snapshot before any modifying operation
-- [ ] Rollback plan documented before change
-- [ ] Post-change monitoring for 15-60 min
-- [ ] DeleteNatGateway requires CAB approval + dual confirmation (L0)
-- [ ] Emergency override requires verbal approval from CTO/Team lead
+**L0/L1 关键规则:** 详见 [Sensitivity-Aware Operations](references/sensitivity-aware-operations.md) — 含变更窗口、配置快照、回滚计划、删除审批等要求
 
 ## Reference Directory
 

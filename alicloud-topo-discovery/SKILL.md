@@ -298,8 +298,4 @@ This skill uses read-only Describe APIs which are free. Minimal API call volume:
 | Full scan (all VPCs) | ~10-20 Describe calls | < 30s |
 | Brief mode | ~5 Describe calls | < 10s |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-16 | Initial release. VPC/ECS/RDS/SLB/NAT/EIP/ACK scan. ASCII + Mermaid output. Brief/Detailed modes. |

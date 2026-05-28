@@ -1052,14 +1052,7 @@ All operations MUST validate inputs before API calls. See [security-enhancement.
 | `path` | No `..` traversal, no `.` prefix | HALT; unsafe path |
 | `command` | Dangerous pattern check | HALT or warn per severity |
 
-### Credential Security
-
-- **NEVER** log AK/SK or Signature values
-- **DO** use environment variables for credential injection
-- **DO** mask credentials in error messages with masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`)
-- **PREFER** STS temporary credentials when possible (see [security-enhancement.md](references/security-enhancement.md) §6)
-- **DO** validate credential format before signing (see [security-enhancement.md](references/security-enhancement.md) §2.1)
-- This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## Prerequisites
 

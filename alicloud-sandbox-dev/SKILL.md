@@ -231,12 +231,7 @@ The following operations require explicit confirmation before execution:
 | `DeleteTemplate` | **Cannot create** new sandboxes from this template | Yes — confirm templateId and check for dependents |
 | `filesystem/remove` | **Deletes** files/directories in sandbox | Verify path is not `/` or critical system path |
 
-### Credential Security
-
-- **NEVER** log AK/SK values, even in development
-- **NEVER** pass AK/SK to business application containers
-- **DO** use environment variables or K8s Secrets for credential injection
-- **DO** implement credential rotation with STS temporary credentials when possible
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## Response Fields
 
@@ -263,8 +258,4 @@ The following operations require explicit confirmation before execution:
 | `results[].status` | string | API | `ok`, `error`, `timeout` |
 | `contextId` | string | API | Associated context ID |
 
-## Changelog
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-18 | Initial release — FC Sandbox Sidecar development skill |

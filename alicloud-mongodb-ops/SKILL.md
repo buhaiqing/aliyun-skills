@@ -378,27 +378,11 @@ aliyun dds CreateDBInstance \
 
 Use when CLI lacks operation or complex programmatic control needed. See `references/api-sdk-usage.md` for complete SDK patterns.
 
-```go
-config := &openapi.Config{
-    AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-    AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-    RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-}
-c, err := dds.NewClient(config)
-// See api-sdk-usage.md for full request/response handling
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## Critical Rules
-
-### Credential Security (MANDATORY)
-
-**NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`). If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
-
-| Execution Path | Safe Pattern | Unsafe Pattern |
-|----------------|-------------|----------------|
-| Console output | `Secret=abcd****` | Raw credential value |
-| Error messages | `credential omitted` | Error containing credential |
-| Verification | `test -n "$var"` (existence check) | `echo $SECRET` |
 
 ### Pre-flight Checks
 
@@ -516,9 +500,3 @@ Detailed documentation for specialized operations:
 | Backup | Create snapshot | Low |
 | Restore | Restore from backup | **High** — data overwrite |
 
-## Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.1.0 | 2026-05-19 | Security & FinOps enhancements: credential safety (chmod 600), network security checklist, cost awareness (billing models, backup costs), password policy & least privilege, audit log guidance, cross-skill delegation examples |
-| 1.0.0 | 2026-05-18 | Initial MongoDB/ApsaraDB skill with dual-path (CLI + SDK) support |

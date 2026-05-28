@@ -86,7 +86,7 @@ response validation, and failure recovery.
 | `{{user.db_name}}` | Database name | Ask once |
 | `{{output.db_cluster_id}}` | From API response | Parse per OpenAPI |
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions
 
@@ -116,12 +116,6 @@ response validation, and failure recovery.
 | DeleteDBCluster | any stable | absent | 10s | 300s |
 | StartDBCluster | `Stopped` | `Running` | 10s | 300s |
 | StopDBCluster | `Running` | `Stopped` | 10s | 300s |
-
-## Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-05-16 | Initial PolarDB PG skill with dual-path support |
 
 ## Quick Start
 
@@ -167,40 +161,7 @@ aliyun polardb-pg CreateDBCluster \
 
 #### Execution — JIT Go SDK (Fallback Path)
 
-```go
-package main
-
-import (
-	"fmt"
-	"os"
-
-	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-	"github.com/alibabacloud-go/tea/tea"
-	polardbpg "github.com/alibabacloud-go/polardb-pg-20211126/v2/client"
-)
-
-func main() {
-	config := &openapi.Config{
-		AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-		AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-	}
-	client, _ := polardbpg.NewClient(config)
-
-	req := &polardbpg.CreateDBClusterRequest{
-		DBVersion:            tea.String(os.Getenv("ENGINE_VERSION")),
-		DBNodeClass:          tea.String(os.Getenv("DB_NODE_CLASS")),
-		PayType:              tea.String("Postpaid"),
-		RegionId:             tea.String(os.Getenv("REGION")),
-		VPCId:                tea.String(os.Getenv("VPC_ID")),
-		VSwitchId:            tea.String(os.Getenv("VSWITCH_ID")),
-		DBClusterDescription: tea.String(os.Getenv("CLUSTER_NAME")),
-		SecurityIPList:       tea.String(os.Getenv("SECURITY_IP_LIST")),
-		ClientToken:          tea.String(os.Getenv("CLIENT_TOKEN")),
-	}
-	resp, _ := client.CreateDBCluster(req)
-	fmt.Printf("Created PolarDB PG cluster: %s\n", tea.ToString(resp.Body.DBClusterId))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -544,9 +505,7 @@ The following multi-metric anomaly patterns are used for intelligent detection d
 
 ## Prerequisites
 
-1. **Install CLI**: `/bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"`
-2. **Configure Credentials**: export `ALIBABA_CLOUD_ACCESS_KEY_*` env vars
-3. **Verify**: `aliyun polardb-pg DescribeDBClusters --DBVersion PostgreSQL`
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ---
 

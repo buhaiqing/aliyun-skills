@@ -124,7 +124,7 @@ response validation, and failure recovery.
 | `{{output.db_cluster_id}}` | From API/CLI response | Parse per OpenAPI |
 | `{{output.request_id}}` | From API response | For correlation |
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`) in console output, debug messages, error messages, or logs. If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports. Verify existence only via `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"`.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -171,18 +171,11 @@ response validation, and failure recovery.
 | AddDBNodes | `Running` | `Running` (with new nodes) | 10s | 600s |
 | UpgradeDBCluster | `Running` | `Running` | 10s | 600s |
 
-## Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.5.0 | 2026-05-27 | Initial release with AIOps capabilities: Storage Prediction (30/60/90 days), Connection Prediction (cycle detection), Anomaly Detection (12 patterns P001-P012), Auto-remediation with safety controls (DOPS-85278, DOPS-85279) |
-
 ## Quick Start
 
-### Prerequisites
-- [ ] `aliyun` CLI installed
-- [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-- [ ] Region: `ALIBABA_CLOUD_REGION_ID`
+## Prerequisites
+
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ### First Command
 ```bash
@@ -235,51 +228,7 @@ aliyun polardb CreateDBCluster \
 
 **Execute (SDK Fallback)**
 
-```go
-package main
-
-import (
-    "fmt"
-    "os"
-    "github.com/google/uuid"
-    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    polardb "github.com/alibabacloud-go/polardb-20220530/v3/client"
-    "github.com/alibabacloud-go/tea/tea"
-)
-
-func main() {
-    config := &openapi.Config{
-        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-        RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-    }
-    
-    client, err := polardb.NewClient(config)
-    if err != nil {
-        panic(err)
-    }
-    
-    req := &polardb.CreateDBClusterRequest{
-        RegionId:      tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-        DBType:        tea.String("PostgreSQL"),
-        DBVersion:     tea.String(os.Getenv("DB_VERSION")),
-        DBClusterClass: tea.String(os.Getenv("DB_NODE_CLASS")),
-        DBNodeClass:   tea.String(os.Getenv("DB_NODE_CLASS")),
-        ZoneId:        tea.String(os.Getenv("ZONE_ID")),
-        VPCId:         tea.String(os.Getenv("VPC_ID")),
-        VSwitchId:     tea.String(os.Getenv("VSWITCH_ID")),
-        PayType:       tea.String("Postpaid"),
-        ClientToken:   tea.String(uuid.New().String()),
-    }
-    
-    resp, err := client.CreateDBCluster(req)
-    if err != nil {
-        panic(err)
-    }
-    
-    fmt.Printf("Created cluster: %s\n", tea.StringValue(resp.Body.DBClusterId))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 **Validate**
 

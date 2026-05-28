@@ -117,7 +117,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 
 > **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
 
-> **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET` or any credential field value (including `ALIBABA_CLOUD_ACCESS_KEY_ID`). If credential information must be displayed for debugging or troubleshooting purposes, use the masking format: show only the first 4 characters followed by `****` (e.g., `abcd****`). This masking rule applies to ALL output channels: stdout, stderr, log files, debug traces, error messages, and diagnostic reports.
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
 
 ## API and Response Conventions (Agent-Readable)
 
@@ -242,53 +242,7 @@ Every operation: **Pre-flight → Execute (SDK) → Validate → Recover**. Do n
 
 #### Execution — JIT Go SDK
 
-```go
-// main.go (generated dynamically in /tmp/aliyun-sdk-workspace)
-package main
-
-import (
-    "fmt"
-    "os"
-    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    "github.com/alibabacloud-go/tea/tea"
-    elasticsearch "github.com/alibabacloud-go/elasticsearch-20170613/v6/client"
-)
-
-func main() {
-    config := &openapi.Config{
-        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-        Endpoint:        tea.String("elasticsearch.aliyuncs.com"),
-    }
-    
-    client, err := elasticsearch.NewClient(config)
-    if err != nil {
-        panic(err)
-    }
-    
-    // CreateInstance request (fields from OpenAPI)
-    request := &elasticsearch.CreateInstanceRequest{
-        RegionId:          tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-        InstanceName:      tea.String("{{user.instance_name}}"),
-        EsVersion:         tea.String("{{user.version}}"),          // e.g., "7.10_aliyun", "8.9_aliyun"
-        NodeSpec:          tea.String("{{user.node_spec}}"),        // e.g., "elasticsearch.sn2ne.large"
-        NodeAmount:        tea.Int32(3),                            // minimum 3 for HA
-        DataNodeAmount:    tea.Int32(3),
-        VpcId:             tea.String("{{user.vpc_id}}"),
-        VswitchId:         tea.String("{{user.vswitch_id}}"),
-        Password:          tea.String("{{user.es_password}}"),      // admin password
-        // Optional fields:
-        // DiskSize, DiskType, ChargeType, Period, etc.
-    }
-    
-    response, err := client.CreateInstance(request)
-    if err != nil {
-        panic(err)
-    }
-    
-    fmt.Println(tea.ToString(response.Body.Result.InstanceId))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 Execute:
 ```bash
@@ -348,29 +302,7 @@ for i := 0; i < 60; i++ {
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.DescribeInstanceRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-}
-
-response, err := client.DescribeInstance(request)
-if err != nil {
-    // Handle NotFound error
-    if strings.Contains(err.Error(), "NotFound") {
-        fmt.Println("❌ Instance not found")
-        return
-    }
-    panic(err)
-}
-
-// Extract key fields
-fmt.Printf("Instance ID: %s\n", tea.ToString(response.Body.Result.InstanceId))
-fmt.Printf("Instance Name: %s\n", tea.ToString(response.Body.Result.InstanceName))
-fmt.Printf("Status: %s\n", tea.ToString(response.Body.Result.Status))
-fmt.Printf("ES Version: %s\n", tea.ToString(response.Body.Result.EsVersion))
-fmt.Printf("Node Amount: %d\n", tea.ToInt32(response.Body.Result.NodeAmount))
-fmt.Printf("Region: %s\n", tea.ToString(response.Body.Result.RegionId))
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -387,28 +319,7 @@ fmt.Printf("Region: %s\n", tea.ToString(response.Body.Result.RegionId))
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.ListInstanceRequest{
-    RegionId: tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-    // Optional filters:
-    // Status: tea.String("Normal"),
-    // InstanceName: tea.String("name-filter"),
-}
-
-response, err := client.ListInstance(request)
-if err != nil {
-    panic(err)
-}
-
-// Iterate through instances
-for _, inst := range response.Body.Result.Instance {
-    fmt.Printf("ID: %s, Name: %s, Status: %s, Version: %s\n",
-        tea.ToString(inst.InstanceId),
-        tea.ToString(inst.InstanceName),
-        tea.ToString(inst.Status),
-        tea.ToString(inst.EsVersion))
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 ### Operation: Update Elasticsearch Instance
 
@@ -422,24 +333,7 @@ for _, inst := range response.Body.Result.Instance {
 
 #### Execution — JIT Go SDK
 
-```go
-// Common update operations
-request := &elasticsearch.UpdateInstanceRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-    // Modify specific fields:
-    // NodeAmount: tea.Int32(5),           // Scale nodes
-    // NodeSpec: tea.String("elasticsearch.sn2ne.xlarge"), // Upgrade spec
-    // DiskSize: tea.Int32(100),           // Increase disk
-}
-
-response, err := client.UpdateInstance(request)
-if err != nil {
-    panic(err)
-}
-
-// Poll until update completes
-// (Update may trigger restart; poll status until Normal)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -456,16 +350,7 @@ if err != nil {
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.RestartInstanceRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-}
-
-response, err := client.RestartInstance(request)
-if err != nil {
-    panic(err)
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -481,17 +366,7 @@ Poll status: `Activating` → `Normal` (restart in progress) → `Normal` (compl
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.DeleteInstanceRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-    // Optional: ignoreNotFound, releaseInstance, etc.
-}
-
-response, err := client.DeleteInstance(request)
-if err != nil {
-    panic(err)
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -510,19 +385,7 @@ Poll DescribeInstance until **NotFound** error (instance deleted)
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.CreateSnapshotRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-    SnapshotName: tea.String("auto-backup-" + time.Now().Format("20060102-150405")),
-    // Description: tea.String("Pre-change backup"),
-}
-
-response, err := client.CreateSnapshot(request)
-if err != nil {
-    panic(err)
-}
-fmt.Printf("Snapshot ID: %s\n", tea.ToString(response.Body.Result.SnapshotId))
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -540,17 +403,7 @@ Poll snapshot status until `Success` (check via DescribeSnapshot or ListSnapshot
 
 #### Execution — JIT Go SDK
 
-```go
-request := &elasticsearch.UpgradeEngineVersionRequest{
-    InstanceId: tea.String("{{user.instance_id}}"),
-    EsVersion: tea.String("{{user.target_version}}"),  // e.g., "8.9_aliyun"
-}
-
-response, err := client.UpgradeEngineVersion(request)
-if err != nil {
-    panic(err)
-}
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
