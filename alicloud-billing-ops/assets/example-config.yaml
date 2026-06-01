@@ -1,0 +1,125 @@
+# Billing configuration: balance → bills → orders → FinOps alerts
+# Shared anchors
+x-env: &env
+  ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"  # billing is region-independent
+  BUDGET_LIMIT: 10000                       # monthly budget in CNY
+  ANOMALY_THRESHOLD: 30                     # MoM increase alert threshold (%)
+  RESOURCE_EXPIRY_DAYS: 30                  # alert when resource expires within N days
+  RI_COVERAGE_MIN: 70                       # minimum RI coverage percentage
+  SP_POOL_MIN: 100                          # minimum SP pool value in CNY
+
+queries:
+  account_balance:
+    - operation: QueryAccountBalance
+      output_fields: [AvailableAmount, CreditAmount, Currency]
+
+  bill_overview:
+    - operation: QueryBillOverview
+      billing_cycle: "2026-05"
+      output_fields: [ProductCode, ProductName, PretaxAmount, BillingCycle]
+
+  bill_details:
+    - operation: QueryBill
+      billing_cycle: "2026-05"
+      page_size: 100
+      filters:
+        - product_code: "ecs"
+        - subscription_type: "PayAsYouGo"
+
+  instance_bill:
+    - operation: QueryInstanceBill
+      billing_cycle: "2026-05"
+      page_size: 100
+      is_billing_item: false
+
+  settle_bill:
+    - operation: QuerySettleBill
+      billing_cycle: "2026-05"
+      page_size: 100
+
+  split_bill:
+    - operation: QuerySplitItemBill
+      billing_cycle: "2026-05"
+      tag_filters:
+        - key: "CostCenter"
+          value: "Engineering"
+
+  orders:
+    - operation: QueryOrders
+      create_time_start: "2026-05-01T00:00:00Z"
+      create_time_end: "2026-05-31T23:59:59Z"
+      page_size: 20
+
+  order_detail:
+    - operation: GetOrderDetail
+      order_id: "1234567890"
+
+  ri_utilization:
+    - operation: QueryRIUtilizationDetail
+      deducted_commodity_code: "ecs"
+      page_size: 20
+
+  savings_plans:
+    - operation: QuerySavingsPlansInstance
+      page_size: 100
+
+  sp_deduction:
+    - operation: QuerySavingsPlansDeductLog
+      instance_id: "sp-xxxxxxxx"
+      start_time: "2026-05-01T00:00:00Z"
+      end_time: "2026-05-31T23:59:59Z"
+
+  resource_packages:
+    - operation: QueryResourcePackageInstances
+      page_size: 100
+
+  transactions:
+    - operation: QueryAccountTransactions
+      page_size: 20
+
+  prepaid_cards:
+    - operation: QueryPrepaidCards
+
+  cash_coupons:
+    - operation: QueryCashCoupons
+
+finops_alerts:
+  cost_anomaly:
+    <<: *env
+    schedule: "daily"
+    check: "month_over_month_increase"
+    threshold: "{{anomaly_threshold}}"
+    action: "review_product_breakdown"
+
+  resource_expiry:
+    <<: *env
+    schedule: "daily"
+    check: "days_to_expiry"
+    threshold_days: "{{resource_expiry_days}}"
+    action: "renew_or_replace"
+
+  ri_coverage:
+    <<: *env
+    schedule: "weekly"
+    check: "coverage_percentage"
+    threshold: "{{ri_coverage_min}}"
+    action: "purchase_additional_ri"
+
+  sp_pool:
+    <<: *env
+    schedule: "daily"
+    check: "pool_value"
+    threshold: "{{sp_pool_min}}"
+    action: "top_up_savings_plan"
+
+  budget:
+    <<: *env
+    schedule: "daily"
+    check: "budget_consumed"
+    thresholds:
+      - pct: 80
+        severity: "P2"
+      - pct: 90
+        severity: "P1"
+      - pct: 100
+        severity: "P0"
