@@ -170,8 +170,9 @@ fault_patterns:
     category: performance_degradation
     severity: critical
     symptoms:
-      - "CreateSqlLimitTask 后热点 SQL 仍无限制"
+      - "CreateSqlLimitTask 或 EnableSqlConcurrencyControl 后热点 SQL 仍无限制"
       - "DescribeSqlLimitTasks 中规则状态为 EXPIRED"
+      - "GetRunningSqlConcurrencyControlRules 中规则状态异常"
       - "限流规则未匹配目标 SQL"
     root_causes:
       - "SQL 关键词匹配模式不准确"
@@ -180,12 +181,18 @@ fault_patterns:
       - "DAS Agent 未正常运行"
     diagnostic_apis:
       - DescribeSqlLimitTasks
+      - GetRunningSqlConcurrencyControlRules
+      - GetSqlConcurrencyControlRulesHistory
       - GetQueryOptimizeData
       - GetInstanceInspections
     resolution_apis:
       - CreateSqlLimitTask
+      - EnableSqlConcurrencyControl
+      - DisableSqlConcurrencyControl
+      - DisableAllSqlConcurrencyControlRules
+      - GetSqlConcurrencyControlKeywordsFromSqlText
     prevention:
-      - "使用精确的 SQL 模板匹配"
+      - "使用 GetSqlConcurrencyControlKeywordsFromSqlText 生成精确的 SQL 模板匹配"
       - "定期检查限流规则有效期"
       - "实例变更后重新评估限流策略"
 

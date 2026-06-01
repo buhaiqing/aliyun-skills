@@ -115,7 +115,7 @@
      a. 若存在大量 Sleep 连接 → 连接池配置不当
      b. 若存在大量活跃慢查询 → 慢查询阻塞连接释放
      c. 若来自单一 IP 的连接过多 → 应用连接池溢出
-   - 修复：CreateKillInstanceSessionTask（需用户确认）+ CreateSqlLimitTask
+   - 修复：CreateKillInstanceSessionTask（需用户确认）+ EnableSqlConcurrencyControl / CreateSqlLimitTask
 
 4. **检查网络层**：
    - 若连通性诊断失败 → 根因：网络/安全策略问题
@@ -148,7 +148,7 @@
 请按以下流程执行：
 1. **安全门控检查**：
    - 若修复策略包含 CreateKillInstanceSessionTask → 必须获取用户显式确认
-   - 若修复策略包含 CreateSqlLimitTask → 必须确认 SQL 模式和限流参数
+   - 若修复策略包含 EnableSqlConcurrencyControl / CreateSqlLimitTask → 必须确认 SQL 模式和限流参数
 
 2. **执行修复**：
    - 按 fix_strategy 调用相应 API
@@ -324,7 +324,7 @@
    - 输出索引建议、SQL 改写建议
 
 2. **中风险优化（需告知用户）**：
-   - 若需要 CreateSqlLimitTask 限流热点 SQL → 说明影响范围和持续时间
+   - 若需要 EnableSqlConcurrencyControl / CreateSqlLimitTask 限流热点 SQL → 说明影响范围和持续时间
    - 若需要调整自动扩容配置 → 说明扩容触发条件和成本影响
 
 3. **高风险优化（需用户确认）**：
@@ -482,7 +482,7 @@
 请按以下流程执行：
 1. **死锁修复**：
    - 输出事务优化建议（访问顺序统一、缩短事务）
-   - 如需临时缓解，可创建 SQL 限流（CreateSqlLimitTask）降低并发
+   - 如需临时缓解，可创建 SQL 限流（EnableSqlConcurrencyControl / CreateSqlLimitTask）降低并发
    - 持续监控死锁频率
 
 2. **空间修复**：
@@ -747,7 +747,7 @@
 | 巡检 | GetInstanceInspections | 全阶段 |
 | 诊断报告 | CreateDiagnosticReport | 1.2.2, 1.3.1 |
 | 会话管理 | GetSessionList, CreateKillInstanceSessionTask | 1.1.1, 1.1.3, 1.1.4 |
-| SQL 限流 | CreateSqlLimitTask, DescribeSqlLimitTasks | 1.1.4, 1.2.4 |
+| SQL 限流 | CreateSqlLimitTask, DescribeSqlLimitTasks, EnableSqlConcurrencyControl, DisableSqlConcurrencyControl, DisableAllSqlConcurrencyControlRules, GetRunningSqlConcurrencyControlRules, GetSqlConcurrencyControlRulesHistory, GetSqlConcurrencyControlKeywordsFromSqlText | 1.1.4, 1.2.4 |
 | 空间分析 | GetSpaceSummary | 1.3.1, 1.3.2 |
 | 死锁分析 | CreateLatestDeadLockAnalysis, GetDeadLockHistory | 1.3.1, 1.3.2 |
 | 性能洞察 | GetPfsSqlSamples, GetQueryOptimizeData | 1.2.1, 1.2.2 |

@@ -19,8 +19,8 @@ compatibility: >-
   access to das.cn-shanghai.aliyuncs.com (DAS is single-region service).
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-14"
+  version: "1.1.0"
+  last_updated: "2026-06-01"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -83,6 +83,9 @@ as the primary agent execution path** in `SKILL.md`.
   - session management / 实例会话 / CreateKillInstanceSessionTask
   - space analysis / 空间分析 / GetSpaceSummary
   - SQL throttling / SQL限流 / CreateSqlLimitTask
+  - SQL concurrency control / SQL并发控制 / EnableSqlConcurrencyControl, DisableSqlConcurrencyControl, DisableAllSqlConcurrencyControlRules
+  - SQL concurrency control rules query / SQL限流规则查询 / GetRunningSqlConcurrencyControlRules, GetSqlConcurrencyControlRulesHistory
+  - SQL concurrency control keywords / SQL限流关键词生成 / GetSqlConcurrencyControlKeywordsFromSqlText
   - auto-scaling / 自动弹性伸缩 / SetAutoScalingConfig
   - event subscription / 事件通知 / SetEventSubscription
   - autonomous event / 自治事件 / GetAutonomousNotifyEventsInRange
@@ -208,6 +211,14 @@ Nearly all DAS API responses follow this five-element envelope:
 | GetSessionList | `$.Data.sessionList[].sessionId` | array | Active sessions |
 | GetSpaceSummary | `$.Data.totalSize` | integer | Total space in bytes |
 | CreateSqlLimitTask | `$.Data` | boolean | true if limit task created |
+| EnableSqlConcurrencyControl | `$.Data` | string | `"Null"` on success |
+| DisableSqlConcurrencyControl | `$.Data` | string | `"Null"` on success |
+| DisableAllSqlConcurrencyControlRules | `$.Data` | string | `"None"` on success |
+| GetRunningSqlConcurrencyControlRules | `$.Data.Total` | integer | Total running rules count |
+| GetRunningSqlConcurrencyControlRules | `$.Data.List.runningRules[]` | array | Running rules list with ItemId, SqlType, SqlKeywords, MaxConcurrency, Status |
+| GetSqlConcurrencyControlRulesHistory | `$.Data.Total` | integer | Total rules history count |
+| GetSqlConcurrencyControlRulesHistory | `$.Data.List.rules[]` | array | Rules history list with ItemId, SqlType, SqlKeywords, MaxConcurrency, Status (Open/Closed) |
+| GetSqlConcurrencyControlKeywordsFromSqlText | `$.Data` | string | Generated SQL throttling keywords (e.g. `SELECT~FROM~test~where~name`) |
 | SetEventSubscription | `$.Data` | boolean | true if settings saved |
 | GetEventSubscription | `$.Data` | object | Subscription configuration |
 | GetAutonomousNotifyEventsInRange | `$.Data[].eventId` | array | Autonomous events list |
@@ -228,11 +239,15 @@ Nearly all DAS API responses follow this five-element envelope:
 | CreateLatestDeadLockAnalysis | — | `SUCCESS` or `FAILED` | 5s | 120s |
 | CreateKillInstanceSessionTask | — | `completed` (implied) | N/A (async fire-and-forget) | 30s |
 | CreateSqlLimitTask | — | `ACTIVE` or `EXPIRED` | 5s | 60s |
+| EnableSqlConcurrencyControl | — | `Open` (implied) | N/A (sync) | 30s |
+| DisableSqlConcurrencyControl | `Open` | `Closed` | N/A (sync) | 30s |
+| DisableAllSqlConcurrencyControlRules | `Open` | `Closed` | N/A (sync) | 30s |
 
 ## Changelog
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.0 | 2026-06-01 | Added SQL concurrency control operations: EnableSqlConcurrencyControl, DisableSqlConcurrencyControl, DisableAllSqlConcurrencyControlRules, GetRunningSqlConcurrencyControlRules, GetSqlConcurrencyControlRulesHistory, GetSqlConcurrencyControlKeywordsFromSqlText |
 | 1.0.0 | 2026-05-14 | Initial DAS ops skill with SDK-only execution, covering instance registration, inspection, diagnosis, cache analysis, deadlock analysis, session management, space analysis, SQL throttling, event subscription, autonomous events, SQL insight, and query governance |
 
 ## Execution Flows (Agent-Readable)
@@ -633,6 +648,341 @@ printResponse(response.Body)
 | Error | Recovery |
 |-------|----------|
 | `InvalidParameter` | Verify SQL pattern and limit parameters against OpenAPI constraints |
+
+---
+
+### Operation: Enable SQL Concurrency Control (EnableSqlConcurrencyControl)
+
+Enable SQL concurrency control (throttling) rules for RDS MySQL or PolarDB MySQL
+instances. This is the primary API for SQL throttling.
+
+> **Engine Support:** Only `MySQL` (RDS MySQL) and `PolarDB` (PolarDB MySQL) are
+> supported. Do not use for other engines.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
+| Engine support | `{{user.engine}}` | `MySQL`, `PolarDB` | HALT; concurrency control limited to MySQL family |
+| SQL keywords | User provides SQL keywords or calls `GetSqlConcurrencyControlKeywordsFromSqlText` | Non-empty | Ask user for SQL text or keywords |
+| Safety gate | Confirm `MaxConcurrency` and `ConcurrencyControlTime` | User confirms | HALT if user declines |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.EnableSqlConcurrencyControlRequest{
+    RegionId:                 tea.String("cn-shanghai"),
+    InstanceId:               tea.String(os.Getenv("INSTANCE_ID")),
+    SqlType:                  tea.String(os.Getenv("SQL_TYPE")),           // SELECT, UPDATE, DELETE
+    MaxConcurrency:           tea.Int64(maxConcurrency),                   // >= 1
+    SqlKeywords:              tea.String(os.Getenv("SQL_KEYWORDS")),       // keywords separated by ~
+    ConcurrencyControlTime:   tea.Int64(controlTimeSeconds),               // duration in seconds
+}
+response, err := client.EnableSqlConcurrencyControl(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export SQL_TYPE="SELECT"
+export SQL_KEYWORDS="call~open~api~test"
+export MAX_CONCURRENCY=3
+export CONTROL_TIME=300
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Code`: expect `"200"`
+- Parse `$.Success`: expect `"true"`
+- Call `GetRunningSqlConcurrencyControlRules` to confirm the new rule appears with `Status == "Open"`
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `SqlKeywords` format (use `~` separator), `MaxConcurrency` >= 1, `SqlType` is valid enum |
+| `NoPermission` | Verify RAM policy includes `hdm:EnableSqlConcurrencyControl` |
+
+---
+
+### Operation: Disable SQL Concurrency Control (DisableSqlConcurrencyControl)
+
+Disable (close) a specific SQL concurrency control rule by its `ItemId`.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Rule exists | `GetRunningSqlConcurrencyControlRules` | Rule with target `ItemId` found | Inform user; no action needed |
+| Safety gate | Confirm rule `ItemId` with user | User confirms | HALT if user declines |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.DisableSqlConcurrencyControlRequest{
+    RegionId:   tea.String("cn-shanghai"),
+    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
+    ItemId:     tea.Int64(itemId),
+}
+response, err := client.DisableSqlConcurrencyControl(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export ITEM_ID="{{output.item_id}}"
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Code`: expect `"200"`
+- Parse `$.Success`: expect `"true"`
+- Call `GetRunningSqlConcurrencyControlRules` to confirm the rule no longer appears
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `ItemId` is correct and the rule is still running |
+| `NoPermission` | Verify RAM policy includes `hdm:DisableSqlConcurrencyControl` |
+
+---
+
+### Operation: Disable All SQL Concurrency Control Rules (DisableAllSqlConcurrencyControlRules)
+
+Disable all currently running SQL concurrency control rules for an instance.
+
+> **Safety Gate:** This is a batch destructive action. Present a summary of all
+> running rules (from `GetRunningSqlConcurrencyControlRules`) and require user
+> confirmation before executing.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Running rules exist | `GetRunningSqlConcurrencyControlRules` | `Total > 0` | Inform user; no rules to disable |
+| Safety gate | Present rule summary and confirm with user | User confirms | HALT if user declines |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.DisableAllSqlConcurrencyControlRulesRequest{
+    RegionId:   tea.String("cn-shanghai"),
+    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
+}
+response, err := client.DisableAllSqlConcurrencyControlRules(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Code`: expect `"200"`
+- Parse `$.Success`: expect `"true"`
+- Call `GetRunningSqlConcurrencyControlRules` to confirm `Total == 0`
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `InstanceId` is correct |
+| `NoPermission` | Verify RAM policy includes `hdm:DisableAllSqlConcurrencyControlRules` |
+
+---
+
+### Operation: Get Running SQL Concurrency Control Rules (GetRunningSqlConcurrencyControlRules)
+
+Retrieve all currently active (running) SQL concurrency control rules for an
+instance.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.GetRunningSqlConcurrencyControlRulesRequest{
+    RegionId:   tea.String("cn-shanghai"),
+    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
+    PageNo:     tea.Int32(1),
+    PageSize:   tea.Int32(10),
+}
+response, err := client.GetRunningSqlConcurrencyControlRules(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Data.Total`: integer, total running rules count
+- Parse `$.Data.List.runningRules[]` array; for each rule extract:
+  - `ItemId` — rule ID (used for `DisableSqlConcurrencyControl`)
+  - `SqlType` — `SELECT`, `UPDATE`, or `DELETE`
+  - `SqlKeywords` — throttling keywords
+  - `MaxConcurrency` — max allowed concurrency
+  - `ConcurrencyControlTime` — rule duration in seconds
+  - `StartTime` — Unix timestamp in milliseconds
+  - `Status` — always `"Open"` for running rules
+  - `KeywordsHash` — hash of the keywords
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `InstanceId` and pagination parameters |
+| `NoPermission` | Verify RAM policy includes `hdm:GetRunningSqlConcurrencyControlRules` |
+
+---
+
+### Operation: Get SQL Concurrency Control Rules History (GetSqlConcurrencyControlRulesHistory)
+
+Retrieve the history of SQL concurrency control rules, including both currently
+running rules and previously triggered (closed) rules.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.GetSqlConcurrencyControlRulesHistoryRequest{
+    RegionId:   tea.String("cn-shanghai"),
+    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
+    PageNo:     tea.Int32(1),
+    PageSize:   tea.Int32(10),
+}
+response, err := client.GetSqlConcurrencyControlRulesHistory(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Data.Total`: integer, total history records count
+- Parse `$.Data.List.rules[]` array; for each rule extract:
+  - `ItemId`, `SqlType`, `SqlKeywords`, `MaxConcurrency`, `ConcurrencyControlTime`
+  - `StartTime` — Unix timestamp in milliseconds
+  - `Status` — `"Open"` (running) or `"Closed"` (finished)
+  - `KeywordsHash`, `UserId`
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `InstanceId` and pagination parameters |
+| `NoPermission` | Verify RAM policy includes `hdm:GetSqlConcurrencyControlRulesHistory` |
+
+---
+
+### Operation: Get SQL Concurrency Control Keywords From SQL Text (GetSqlConcurrencyControlKeywordsFromSqlText)
+
+Generate SQL throttling keywords from a raw SQL statement. This is a helper API
+used before calling `EnableSqlConcurrencyControl` to produce the correct
+`SqlKeywords` format.
+
+> **Important:** The returned keywords are based on a templated (normalized)
+> version of the SQL. If you need to throttle a specific parameter value, append
+> it manually to the returned keyword string with `~` as separator.
+>
+> Example:
+> - Raw SQL: `SELECT * FROM test WHERE name = 'das'`
+> - API returns: `SELECT~FROM~test~WHERE~name`
+> - To throttle `name = 'das'`, append `das`: `SELECT~FROM~test~WHERE~name~das`
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| SQL text | User provides raw SQL statement | Non-empty | Ask user for SQL text |
+| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
+
+#### Execution — JIT Go SDK
+
+```go
+request := &das.GetSqlConcurrencyControlKeywordsFromSqlTextRequest{
+    RegionId:   tea.String("cn-shanghai"),
+    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
+    SqlText:    tea.String(os.Getenv("SQL_TEXT")),
+}
+response, err := client.GetSqlConcurrencyControlKeywordsFromSqlText(request)
+if err != nil {
+    panic(err)
+}
+printResponse(response.Body)
+```
+
+Execute:
+```bash
+export INSTANCE_ID="{{user.instance_id}}"
+export SQL_TEXT="SELECT * FROM orders WHERE status = 'pending'"
+export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace
+go run ./main.go
+```
+
+#### Validate
+
+- Parse `$.Data`: string containing the generated keywords separated by `~`
+- Present the generated keywords to the user and ask for confirmation or manual
+  adjustment before using in `EnableSqlConcurrencyControl`
+
+#### Recover
+
+| Error | Recovery |
+|-------|----------|
+| `InvalidParams` | Verify `SqlText` is a valid SQL statement; check `InstanceId` |
+| `NoPermission` | Verify RAM policy includes `hdm:GetSqlConcurrencyControlKeywordsFromSqlText` |
 
 ---
 
@@ -1257,7 +1607,7 @@ Phase 3: Resolve — Auto-scaling, SQL throttling, session kill, or escalate wit
 ### 效率 (Efficiency)
 
 - **Auto-Scaling Config:** `SetAutoScalingConfig` for automatic storage/spec scaling based on usage
-- **SQL Throttling:** `CreateSqlLimitTask` to automatically throttle runaway SQL patterns
+- **SQL Throttling:** `CreateSqlLimitTask` and `EnableSqlConcurrencyControl` to automatically throttle runaway SQL patterns; `GetSqlConcurrencyControlKeywordsFromSqlText` to generate accurate keywords
 - **Cross-Skill Delegation:** DAS can trigger ECS/VPC/SLB skills for network-related database issues
 
 ### 性能 (Performance)
