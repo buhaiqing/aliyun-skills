@@ -1323,6 +1323,69 @@ See: [Batch Operations](../alicloud-skill-generator/templates/batch-operations.m
 
 See: [API Usage Metrics](../alicloud-skill-generator/templates/api-usage-metrics.md)
 
+---
+
+### Operation: Execute Redis Command via Cloud Assistant
+
+通过阿里云 ECS 云助手（Cloud Assistant）在指定 ECS 实例上执行任意 Redis CLI 命令。
+适用于需要直接操作 Redis 数据面（如 `DEL`、`GET`、`SET`、`TTL`、`EXISTS`、`KEYS` 等）而管控面 API 无法覆盖的场景。
+
+> **适用场景：** 删除特定缓存 Key、查询 Key 是否存在、修改 Key 的 TTL、批量操作数据等。
+> ⚠️ **注意：** 此操作要求目标 ECS 实例与 Redis 实例在同一 VPC 内，或网络可达。
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| ECS 实例存在 | `aliyun ecs DescribeInstances --InstanceIds '["{{user.ecs_instance_id}}"]'` | 实例已找到 | HALT — 确认 ECS InstanceId |
+| ECS 状态 | `InstanceStatus` | `Running` | HALT — 先启动实例 |
+| Cloud Assistant 已安装 | `aliyun ecs DescribeCloudAssistantStatus --RegionId {{user.region}} --InstanceIds '["{{user.ecs_instance_id}}"]'` | `CloudAssistantStatus` == `true` | HALT — 引导安装云助手 Agent |
+| Redis 实例存在 | `aliyun r-kvstore describe-instances --InstanceId "{{user.redis_instance_id}}"` | 实例已找到 | HALT — 确认 Redis InstanceId |
+| Redis 状态 | `InstanceStatus` | `Normal` | HALT — 实例不可用 |
+| Redis 命令确认 | 用户确认 | 明确同意执行 `{{user.redis_command}}` | HALT — 必须获得确认 |
+
+#### 变量约定
+
+| 变量 | 含义 | 来源 |
+|------|------|------|
+| `{{user.region}}` | 地域 | 用户提供或从环境推断 |
+| `{{user.ecs_instance_id}}` | 目标 ECS 实例 ID | 用户提供或通过 `DescribeInstances` 查询 |
+| `{{user.redis_instance_id}}` | Redis 实例 ID | 用户提供或通过 `DescribeInstances` 确定 |
+| `{{user.redis_host}}` | Redis 连接地址 | 从 `DescribeInstanceAttribute` 的 `ConnectionDomain` 自动获取 |
+| `{{user.redis_port}}` | Redis 端口 | 默认 `6379` |
+| `{{user.redis_password}}` | Redis 密码（可选） | 用户提供；无密码时留空 |
+| `{{user.redis_command}}` | 待执行的 Redis 命令 | 用户提供，如 `DEL 8560pfuat:gpas_lsym_funding_token` |
+| `{{user.redis_cli_version}}` | 期望的 redis-cli 最低版本（可选） | 用户提供；不指定则仅检查存在性 |
+
+#### Execution
+
+完整执行流程（5 个 Step + 合并执行 + Post-execution Validation + 退出码全表 + 日志解读 + Failure Recovery）参见：
+
+> **[references/redis-cli-execution.md](references/redis-cli-execution.md)**
+
+执行概览：
+
+| Step | 操作 | 说明 |
+|------|------|------|
+| 1 | `aliyun r-kvstore describe-instance-attribute` | 获取 Redis 连接地址 |
+| 2 | `aliyun ecs RunCommand — which redis-cli` | 幂等检查 redis-cli 环境（exit 10=未安装, 11=损坏） |
+| 3 | `aliyun ecs RunCommand — apt/yum/apk install` | 安装/升级 redis-cli（按 OS 自适应，支持 7 种发行版 + 源码兜底） |
+| 4 | `aliyun ecs RunCommand — REDISCLI_AUTH` | 密码配置检查（可选） |
+| 5 | `aliyun ecs RunCommand — redis-cli DEL/GET/SET` | 执行 Redis 命令（含网络可达性检测 + 错误分类诊断） |
+
+退出码快速参考：
+
+| ExitCode | 阶段 | 含义 | 人工动作 |
+|:--------:|------|------|---------|
+| 0 | 整体 | ✅ 成功 | 检查 `[SUMMARY] Result:` |
+| 10 | env-check | redis-cli 未安装 | 自动触发安装 |
+| 11 | env-check | redis-cli 损坏 | 手动检查 ECS |
+| 20 | install | 安装失败 | 查看 `[DIAG] disk/mem/network` |
+| 30 | network | ECS → Redis 不可达 | 检查 VPC/安全组/白名单 |
+| 40 | exec | Redis 命令失败 | 查看 `[ERROR] TYPE=... FIX=...` |
+
+所有诊断日志使用结构化前缀 `[HH:MM:SS] [PHASE] key=value`，支持 Agent 自动解析和人工快速定位。
+
 ## Enhanced Pre-flight Check (MANDATORY)
 
 > **CRITICAL:** Before executing ANY Redis/Tair operation, MUST run the enhanced pre-flight check script to validate environment and detect potential issues early.
