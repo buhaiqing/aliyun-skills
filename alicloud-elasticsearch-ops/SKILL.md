@@ -504,3 +504,13 @@ This skill's operations are evaluated against Alibaba Cloud's Well-Architected F
 - [Cost Assessment](references/well-architected-assessment.md#23-成本支柱-cost)
 - [Efficiency Assessment](references/well-architected-assessment.md#24-效率支柱-efficiency)
 - [Performance Assessment](references/well-architected-assessment.md#25-性能支柱-performance)
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **APPLIES** — 本 skill 必须有 `assets/code-snippets/` 目录.

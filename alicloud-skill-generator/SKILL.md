@@ -140,6 +140,7 @@ If the user wants **operational execution** (e.g. "create a resource"), load the
 | `references/idempotency-checklist.md` | Idempotent behavior for retries/automation | Automation-heavy products |
 | `assets/example-config.yaml` | Example configuration with UX and optimization settings | Always |
 | `assets/eval_queries.json` | Trigger accuracy evaluation queries for the generated skill | Always |
+| `assets/code-snippets/<verb>_<resource>.go` + `go.mod` + `README.md` | 可直接 `go run` 的 Go SDK 代码片段（每 operation 一文件 + 独立 module） | `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式) |
 
 ---
 
@@ -463,7 +464,12 @@ alicloud-[product]-ops/
 │   └── idempotency-checklist.md  # When retries/automation required
 ├── assets/
 │   ├── example-config.yaml
-│   └── eval_queries.json         # MANDATORY: trigger accuracy eval queries
+│   ├── eval_queries.json         # MANDATORY: trigger accuracy eval queries
+│   └── code-snippets/            # MANDATORY when cli_applicability: sdk-only
+│       ├── go.mod                # 独立 module，便于单独编译运行
+│       ├── main.go               # 公共 Client 工厂
+│       ├── <verb>_<resource>.go  # 每个 operation 一个独立 .go 文件
+│       └── README.md             # 使用说明
 ```
 
 Add `references/idempotency-checklist.md` when retries or automation require idempotent behavior.
@@ -507,6 +513,49 @@ Replace all `[Placeholder]` with product-specific content derived from Step 2. E
 | `integration.md` | Go bootstrap, JIT SDK setup, dependency config | Execution environment |
 
 **Validation checkpoint:** All reference files populated with real content (not template placeholders)?
+
+---
+
+### Step 5.5: Generate Code Snippets (when `sdk-only`)
+
+> **触发条件：** `cli_applicability: sdk-only`（CLI 不暴露该 product，或暴露但不足以覆盖完整功能）
+> **模板：** [templates/code-snippets.md](templates/code-snippets.md)
+> **输出位置：** `assets/code-snippets/`
+
+**为什么需要这一步：**
+当 CLI 不能完整覆盖 product 操作时，Agent 在沙箱里需要 **直接可执行** 的 Go SDK 脚本。
+把代码片段沉淀到 `assets/code-snippets/`，而不是让 Agent 每次现编，可以：
+
+1. **稳定性** — 同一份代码反复使用，结构一致、参数正确
+2. **可审计** — 评审 PR 时可以 review 这批 snippet 而非散落在对话中的一次性脚本
+3. **可复用** — 用户可独立 `go run` 触发，无需走完整 SKILL.md 流程
+
+**生成步骤：**
+
+1. **解析 OpenAPI** 提取 `operations[]`，对每个 Operation 确定：
+   `OperationId` / SDK `<RequestType>` / `<MethodName>` / 必填参数 / Response 关键 JSON path
+2. **创建 `assets/code-snippets/`**：
+   - `go.mod` — 独立 module，依赖 `darabonba-openapi` / `tea` / `<product-package>/<version>`（版本必须与 `references/integration.md` 一致）
+   - `main.go` — 公共 `NewClient(endpoint) (*client.Client, error)` 工厂，从 `os.Getenv` 读 AK/SK，**禁止任何 SK 回显**
+3. **遍历 `operations[]` 生成 `<verb>_<resource>.go`**：
+   - 命名：小写 + 下划线，动词对齐 OpenAPI（Create/Describe/Modify/Delete/List/Get/Start/Stop/Restart/Upgrade）
+   - 头部注释：`<OperationId>` / SDK Method / `CLI Support: sdk-only` / OpenAPI doc URL
+   - Request 构造：必填参数 + 1-2 个常用可选参数
+   - 末尾注释：列出关键输出 JSON path（如 `// $.DBInstanceId -> 新建实例 ID`）
+4. **生成 `README.md`**：前置条件（Go 版本 + 3 个环境变量）+ Snippet 列表 + 运行示例 + 安全约束
+5. **验证（沙箱可用时强制）**：
+   ```bash
+   cd assets/code-snippets
+   go mod tidy && go vet ./...
+   ```
+   - 失败 → 修复 `go.mod` 版本号或 import 路径，重试
+   - 成功 → 在 `SKILL.md` Reference Directory 添加 `assets/code-snippets/README.md` 链接
+
+**关键约束（违反即 P0 失败）：**
+- ❌ `cli-first` / `dual-path` skill 也生成 snippets → ✅ 仅 `sdk-only` 触发
+- ❌ 多 operation 挤在一个 `main.go` → ✅ 每 operation 一独立 `.go`
+- ❌ snippet 硬编码 AK/SK 或在日志打印 SK → ✅ 始终 `os.Getenv` + 禁止 SK 回显
+- ❌ snippet 缺少 `go.mod` → ✅ 必须有独立 module 便于 `go run`
 
 ---
 
@@ -644,6 +693,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Prompt Library Alignment:** Generation process uses structured prompts from [prompt-library.md](references/prompt-library.md) with effectiveness tracking where applicable
 - [ ] **Description Optimization:** Generated skill's `description` field follows agentskills.io optimization principles — imperative phrasing, user-intent focused, implicit trigger scenarios, negative boundaries, under 1024 chars
 - [ ] **Eval Queries:** `assets/eval_queries.json` created or updated with should-trigger/should-not-trigger queries for the generated skill
+- [ ] **Code Snippets (when `sdk-only`):** `assets/code-snippets/` contains `go.mod` + `main.go` (Client factory) + one `<verb>_<resource>.go` per operation + `README.md`; no hardcoded credentials; no SK echo; snippets pass `go vet ./...` per [templates/code-snippets.md](templates/code-snippets.md)
 - [ ] **Optimization Awareness:** Skill design considers Fault Diagnosis, Root Cause Localization, and Rapid Resolution dimensions per [optimization-analysis.md](references/optimization-analysis.md)
 - [ ] **AIOps Compliance (when skill involves monitoring/alarm/diagnosis):** Skill implements multi-metric correlation, cross-skill diagnosis decision tree, delegation matrix, proactive inspection, and alarm storm handling per [aiops-best-practices.md](references/aiops-best-practices.md)
 - [ ] **Well-Architected — Security Pillar:** Minimum RAM permissions documented; credential masking enforced; VPC endpoint recommendation present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.1
@@ -690,6 +740,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 | [aiops-best-practices.md](references/aiops-best-practices.md) | Mandatory AIOps patterns for monitoring/diagnosis skills |
 | [well-architected-assessment.md](references/well-architected-assessment.md) | **NEW** Alibaba Cloud Well-Architected Framework five-pillar assessment integration |
 | [assets/eval_queries.json](assets/eval_queries.json) | Eval queries for testing the meta-skill's description trigger accuracy |
+| [templates/code-snippets.md](templates/code-snippets.md) | **sdk-only skill 专用** — `assets/code-snippets/` 目录结构、Client 工厂、operation 模板、go.mod/README 模板、生成流程与反模式 |
 
 ### External References
 

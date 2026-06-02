@@ -6,7 +6,7 @@
 |------|-------------|----------|
 | `ManagedKubernetes` | Managed control plane, user manages worker nodes | Production workloads requiring node-level control |
 | `Kubernetes` | Dedicated control plane on user-managed ECS | Compliance / regulatory requirements |
-| `Ask` (Serverless Kubernetes) | No node management, pay per pod | Variable workloads, batch jobs |
+| ~~`Ask` (Serverless Kubernetes)~~ | **Out of scope for this skill** — see [`alicloud-ack-serverless-ops`](../../alicloud-ack-serverless-ops/SKILL.md) | Variable workloads, batch jobs |
 
 ## Key Resources
 

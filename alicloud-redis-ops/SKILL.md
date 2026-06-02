@@ -1611,3 +1611,14 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Cost:** Right-size instances; use auto-renewal for PrePaid instances.
 - **Security:** Regularly rotate passwords; restrict whitelist to minimum required IPs.
 - **Backup:** Enable automated backups; test restore procedures periodically.
+
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `dual-path`，CLI/SDK 已覆盖，无需 code snippets.

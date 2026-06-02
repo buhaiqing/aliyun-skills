@@ -1,0 +1,81 @@
+# Example configuration for alicloud-eci-ops
+# YAML anchors eliminate repeated fields (TE-5)
+# This example is for direct ECI ContainerGroup management (standalone, not via ASK)
+# Inspired by alicloud-ack-serverless-ops example-config.yaml — kept independent (not shared).
+
+x-cred: &cred
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+
+x-network-base: &netbase
+  vswitch_id: "vsw-xxxxxxxxxxxxxxxx"
+  security_group_id: "sg-xxxxxxxxxxxxxxxx"
+  # vpc_id is inferred from vswitch
+
+x-batch-job: &batchjob
+  restart_policy: "Never"          # <-- critical for batch to avoid infinite billing
+  client_token_prefix: "job"      # <-- helps with idempotent retry
+
+x-long-running: &longrun
+  restart_policy: "Always"         # <-- only for long-running services; consider ASK instead
+
+credentials:
+  <<: *cred
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+# --- Batch job ECI example (one-off, single container) ---
+batch_job:
+  container_group_name: "nightly-report-{{user.run_id}}"
+  region: "cn-hangzhou"
+  image: "registry.cn-hangzhou.aliyuncs.com/myteam/reporter:v1.2"
+  cpu: 2.0
+  memory: 4.0
+  <<: *netbase
+  <<: *batchjob
+  env:
+    - { key: "DB_URL",     value: "mysql://..." }
+    - { key: "OUTPUT_BUCKET", value: "oss://my-bucket/reports/" }
+  image_registry_credential:        # <-- only needed for private registry
+    server: "registry.cn-hangzhou.aliyuncs.com"
+    user: "{{user.acr_user}}"
+    password: "{{user.acr_password}}"
+
+# --- Multi-container ECI example (app + sidecar) ---
+multi_container:
+  container_group_name: "web-with-log-shipper"
+  region: "cn-hangzhou"
+  <<: *netbase
+  containers:
+    - name: "nginx"
+      image: "nginx:1.25"
+      cpu: 1.0
+      memory: 2.0
+    - name: "log-shipper"
+      image: "logshipper:v1"
+      cpu: 0.5
+      memory: 1.0
+  cpu: 1.5
+  memory: 3.0
+  <<: *longrun
+  tags:
+    - { key: "app",        value: "web" }
+    - { key: "env",        value: "prod" }
+    - { key: "cost-center", value: "engineering" }
+
+# --- GPU inference ECI example ---
+gpu_inference:
+  container_group_name: "llm-inference"
+  region: "cn-hangzhou"
+  image: "registry.cn-hangzhou.aliyuncs.com/myteam/llm-infer:v3"
+  cpu: 8.0
+  memory: 32.0
+  gpu: 1                              # <-- verify exact field
+  <<: *netbase
+  <<: *longrun
+
+# --- Cost guardrails (for Agent pre-flight) ---
+cost_guardrails:
+  max_cpu_per_eci: 16                 # refuse Cpu > this without confirmation
+  max_memory_per_eci_gb: 64
+  refuse_restart_policy_always_for_short_jobs: true   # RestartPolicy=Always with restart loop = infinite cost
+  require_client_token_for_create: true

@@ -489,3 +489,14 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 - **EIP management:** Allocate EIPs via `alicloud-eip-ops` before configuring SNAT/DNAT. Add EIPs to Common Bandwidth Plans for cost savings.
 - **Monitoring:** Track NAT Gateway CU utilization and bandwidth. Upgrade spec if CU exceeds 80%.
 - **Multi-AZ HA:** Enhanced NAT Gateway is AZ-scoped. For HA, deploy in multiple vSwitches across AZs.
+
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `cli-first`，CLI/SDK 已覆盖，无需 code snippets.

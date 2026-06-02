@@ -37,5 +37,6 @@ github.com/alibabacloud-go/cs-20151215/v4/client
 - **Pagination:** List APIs use `page_size` and `page_number` query parameters
 - **Long-running operations:** CreateCluster, UpgradeCluster, ScaleOutCluster
   return async task IDs; poll `DescribeClusterDetail` for state transitions
-- **Cluster types:** `ManagedKubernetes` (managed), `Kubernetes` (dedicated),
-  `Ask` (Serverless)
+- **Cluster types covered by this skill:** `ManagedKubernetes` (managed),
+  `Kubernetes` (dedicated). `Ask` (Serverless) is **NOT** in scope — see
+  [`alicloud-ack-serverless-ops`](../../alicloud-ack-serverless-ops/SKILL.md).

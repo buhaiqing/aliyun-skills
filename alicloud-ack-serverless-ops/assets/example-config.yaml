@@ -1,0 +1,52 @@
+# Example configuration for alicloud-ack-serverless-ops
+# YAML anchors eliminate repeated fields (TE-5)
+# This example is for Serverless Kubernetes (ASK, cluster_type=ManagedKubernetes + profile=Serverless)
+# Inspired by alicloud-ack-ops example-config.yaml — kept independent (not shared).
+
+x-cred: &cred
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+
+x-ask-base: &askbase
+  cluster_type: "ManagedKubernetes"   # <-- for ASK: cluster_type=ManagedKubernetes + profile=Serverless
+  profile: "Serverless"               # <-- KEY field distinguishing ASK from ManagedKubernetes
+  region: "cn-hangzhou"
+
+x-network-base: &netbase
+  vpc_id: "vpc-xxxxxxxxxxxxxxxx"
+  vswitch_ids:
+    - "vsw-xxxxxxxxxxxxxxxxa"   # AZ A
+    - "vsw-xxxxxxxxxxxxxxxxb"   # AZ B (multi-AZ recommended)
+  # pod_vswitch_ids:             # <-- verify with OpenAPI checklist
+  #   - "vsw-xxxxxxxxxxxxxxxxa"
+  # nat_gateway_id: "ngw-xxx"   # <-- only if Pods need internet
+
+credentials:
+  <<: *cred
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+ask_cluster_defaults:
+  <<: *askbase
+  <<: *netbase
+  kubernetes_version_target: "managed-by-ack"   # <-- read-only; do NOT try to set
+  service_cidr: "172.16.0.0/16"
+  deletion_protection: true                     # <-- production default: ON
+  endpoint_public_access_enabled: false         # <-- production default: VPC-only
+  private_zone_enabled: false                   # <-- enable if cross-VPC service discovery needed
+  tags:
+    - { key: "env",        value: "prod" }
+    - { key: "owner",      value: "platform" }
+    - { key: "cost-center", value: "engineering" }
+
+# NOTE: HPA / CronHPA configs are applied via `kubectl apply`, not via
+# the alicloud CLI at cluster creation time. This is a TODO for the
+# user post-create.
+scaling_defaults:
+  hpa:
+    min_replicas: 2          # <-- production floor; cold-start aware
+    max_replicas: 50
+    target_cpu_utilization_percentage: 70
+  cron_hpa:
+    # Example: scale up business hours
+    schedule_up: "0 8 * * 1-5"
+    schedule_down: "0 22 * * 1-5"

@@ -1089,3 +1089,13 @@ All operations MUST validate inputs before API calls. See [security-enhancement.
 - [Monitoring Guide](references/monitoring.md) — Observability, metrics, and alerting
 - [Well-Architected Assessment](references/well-architected-assessment.md) — Five-pillar integration
 - [Integration](references/integration.md) — Credential setup and signing workflow
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **APPLIES** — 本 skill 必须有 `assets/code-snippets/` 目录.

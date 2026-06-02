@@ -1,6 +1,6 @@
 # RDS Operations — Prompts Handbook
 
-> **Purpose:** 25+ categorized prompt examples for RDS operations.
+> **Purpose:** 34 categorized prompt examples for RDS operations.
 
 ## RDS 实例管理
 
@@ -17,48 +17,48 @@
 
 ## SQL 执行（见 references/sql-execution.md）
 
-30. "用阿里云 CLI 在 RDS MySQL 里执行 schema.sql（多条 SQL）"
-31. "帮我把初始化 SQL 文件导入到 RDS 实例"
-32. "没有 mysql 客户端，能用 OpenAPI 执行单条 SQL 吗？"
-33. "配置 RDS Data API 并执行 SELECT 1"
-34. "aliyun rds 能直接跑 sql 文件吗？"
+8. "用阿里云 CLI 在 RDS MySQL 里执行 schema.sql（多条 SQL）"
+9. "帮我把初始化 SQL 文件导入到 RDS 实例"
+10. "没有 mysql 客户端，能用 OpenAPI 执行单条 SQL 吗？"
+11. "配置 RDS Data API 并执行 SELECT 1"
+12. "aliyun rds 能直接跑 sql 文件吗？"
 
 ## 备份恢复
 
-8. "创建手动备份"
-9. "根据备份恢复数据库到指定时间点"
-10. "查看备份列表"
-11. "验证备份完整性"
+13. "创建手动备份"
+14. "根据备份恢复数据库到指定时间点"
+15. "查看备份列表"
+16. "验证备份完整性"
 
 ## 监控类
 
-12. "查看 RDS CPU 使用率"
-13. "查看慢 SQL"
-14. "检查 RDS 磁盘使用率"
-15. "查看连接数"
+17. "查看 RDS CPU 使用率"
+18. "查看慢 SQL"
+19. "检查 RDS 磁盘使用率"
+20. "查看连接数"
 
 ## 诊断类
 
-16. "RDS CPU 突然 100%，帮我排查"
-17. "连接数满了，帮我诊断原因"
-18. "慢查询太多，帮我分析"
-19. "RDS 磁盘满了，帮我处理"
-20. "主从延迟高了，帮我排查"
+21. "RDS CPU 突然 100%，帮我排查"
+22. "连接数满了，帮我诊断原因"
+23. "慢查询太多，帮我分析"
+24. "RDS 磁盘满了，帮我处理"
+25. "主从延迟高了，帮我排查"
 
 ## 多指标关联巡检
 
-21. "执行 RDS 多指标巡检"
-22. "检查 RDS 是否有 CPU-连接双高压"
-23. "查看所有 RDS 的异常模式"
+26. "执行 RDS 多指标巡检"
+27. "检查 RDS 是否有 CPU-连接双高压"
+28. "查看所有 RDS 的异常模式"
 
 ## 告警驱动诊断
 
-24. "收到 RDS CPU 告警，帮我诊断根因"
-25. "RDS 连接数告警，帮我分析"
-26. "SLB 5xx 和 RDS 有关联吗？"
+29. "收到 RDS CPU 告警，帮我诊断根因"
+30. "RDS 连接数告警，帮我分析"
+31. "SLB 5xx 和 RDS 有关联吗？"
 
 ## 主动巡检
 
-27. "对所有 RDS 实例执行主动巡检"
-28. "生成 RDS 巡检报告"
-29. "巡检 RDS 的慢 SQL"
+32. "对所有 RDS 实例执行主动巡检"
+33. "生成 RDS 巡检报告"
+34. "巡检 RDS 的慢 SQL"

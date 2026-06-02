@@ -1,0 +1,83 @@
+[
+  {
+    "query": "Create an ECI to run my batch job",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to run a one-off container on Alibaba Cloud",
+    "should_trigger": true
+  },
+  {
+    "query": "Run a Spark job on ECI",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a ContainerGroup with 2 vCPU and 4GB memory",
+    "should_trigger": true
+  },
+  {
+    "query": "How much ECI quota do I have in cn-hangzhou?",
+    "should_trigger": true
+  },
+  {
+    "query": "Exec a command into my ECI container",
+    "should_trigger": true
+  },
+  {
+    "query": "Run a CI/CD runner on ECI on demand",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete my ECI ContainerGroup",
+    "should_trigger": true
+  },
+  {
+    "query": "我需要创建一个弹性容器实例来跑个一次性任务",
+    "should_trigger": true
+  },
+  {
+    "query": "Run a GPU inference workload on ECI",
+    "should_trigger": true
+  },
+
+  {
+    "query": "Create a Kubernetes cluster on Alibaba Cloud",
+    "should_trigger": false
+  },
+  {
+    "query": "Add a worker node to my ACK cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Manage my ASK cluster's Pods and Services",
+    "should_trigger": false
+  },
+  {
+    "query": "Scale my ECI via HPA",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a managed Kubernetes cluster with 3 worker nodes",
+    "should_trigger": false
+  },
+  {
+    "query": "Create an ECS instance for my web server",
+    "should_trigger": false
+  },
+  {
+    "query": "Build a Docker image and push to ACR",
+    "should_trigger": false
+  },
+  {
+    "query": "Show me my Alibaba Cloud bill for last month",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a new VPC for my project",
+    "should_trigger": false
+  },
+  {
+    "query": "How do I configure a load balancer for my ECS instances?",
+    "should_trigger": false
+  }
+]

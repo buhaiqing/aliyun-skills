@@ -71,6 +71,17 @@ and failure recovery.
   execution flow documents **both** the SDK step and the `aliyun` step for every
   operation.
 
+### Quick Start
+
+不知道从哪里开始？按需选一个：
+
+- **"怎么把 SQL 文件跑进 RDS"** → [SQL Execution Runbook](references/sql-execution.md)（含 `mysql` 客户端和 RDS Data API 两种路径）
+- **"我需要 1 条自然语言提示词"** → [Prompts Handbook](references/prompts.md)（34 条分类示例）
+- **"实例有异常，帮我巡检一下"** → [RDS Cruise 巡检工作流](references/cruise.md) + [Alert Diagnosis](references/alert-diagnosis.md)
+- **"我想看核心概念/术语"** → [Core Concepts](references/core-concepts.md)
+- **"出错码对应什么"** → [Troubleshooting Guide](references/troubleshooting.md)
+- **"我要写自定义 Go SDK 脚本"** → [API & SDK Usage](references/api-sdk-usage.md)
+
 ## Trigger & Scope (Agent-Readable)
 
 ### SHOULD Use This Skill When
@@ -202,7 +213,34 @@ and failure recovery.
 | RestoreDBInstance | — | `Running` | 10s | 600s |
 | CreateBackup | — | `Success` | 10s | 600s |
 
+### Polling Strategy
 
+RDS 大多数写入操作（创建实例/账号/库、备份、恢复、规格变更等）是 **异步** 的：API
+立即返回 `RequestId` 或资源 ID，但资源状态需要时间才能达到终态。所有 Operation 统一遵循
+以下轮询模式（CLI 原生 waiter 尚未覆盖 RDS 全部场景，故采用通用 shell 轮询）：
+
+```bash
+# 通用轮询模板 — 适用于任意 Operation
+for i in $(seq 1 60); do            # 60 次 × 10s = 600s（按 Operation 调整次数/间隔）
+  STATUS=$(aliyun rds <DescribeXxx> \
+    --DBInstanceId "{{user.db_instance_id}}" \
+    --output cols=<StatusField> rows=<JsonPath>)
+  [ "$STATUS" = "<TargetState>" ] && break
+  sleep <PollInterval>
+done
+[ "$STATUS" = "<TargetState>" ] || { echo "TIMEOUT"; exit 1; }
+```
+
+| 轮询参数 | 含义 | 适用场景 |
+|---------|------|---------|
+| **Poll Interval** | 两次查询间隔 | 重操作 10s（实例/恢复），轻操作 5s（账号/库） |
+| **Max Wait** | 最长等待时间 | 写入完成 = 600s，恢复 = 600s，删 = 300s，账号/库 = 120s |
+| **Target State** | 终态判定值 | `Running` / `Available` / `Success` / absent（`TotalRecordCount=0`） |
+
+> **未达到 Target State 但接近 Max Wait** → 进入 [Failure Recovery](#failure-recovery)
+> 流程，记录 `RequestId` 提交工单。
+>
+> **JIT Go SDK 端**用 `DescribeXxx` 同步轮询即可，模式相同。
 
 ## Execution Flows (Agent-Readable)
 
@@ -513,14 +551,7 @@ aliyun rds CreateDatabase \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.CreateDatabaseRequest{
-	DBInstanceId:     tea.String(os.Getenv("DB_INSTANCE_ID")),
-	DBName:           tea.String(os.Getenv("DB_NAME")),
-	CharacterSetName: tea.String(os.Getenv("CHARACTER_SET_NAME")),
-}
-resp, err := c.CreateDatabase(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -557,13 +588,7 @@ aliyun rds DeleteDatabase \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DeleteDatabaseRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	DBName:       tea.String(os.Getenv("DB_NAME")),
-}
-resp, err := c.DeleteDatabase(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -595,12 +620,7 @@ aliyun rds DescribeDatabases \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDatabasesRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeDatabases(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -631,14 +651,7 @@ aliyun rds CreateBackup \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.CreateBackupRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	BackupMethod: tea.String(os.Getenv("BACKUP_METHOD")),
-	BackupType:   tea.String(os.Getenv("BACKUP_TYPE")),
-}
-resp, err := c.CreateBackup(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -677,13 +690,7 @@ aliyun rds RestoreDBInstance \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.RestoreDBInstanceRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	BackupId:     tea.String(os.Getenv("BACKUP_ID")),
-}
-resp, err := c.RestoreDBInstance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -723,14 +730,7 @@ aliyun rds DescribeBackups \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeBackupsRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-}
-resp, err := c.DescribeBackups(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -767,15 +767,7 @@ aliyun rds DescribeSlowLogs \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeSlowLogsRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-	DBName:       tea.String(os.Getenv("DB_NAME")),
-}
-resp, err := c.DescribeSlowLogs(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -802,12 +794,7 @@ aliyun rds DescribeResourceUsage \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeResourceUsageRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeResourceUsage(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -837,15 +824,7 @@ aliyun rds DescribeDBInstancePerformance \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDBInstancePerformanceRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	Key:          tea.String(os.Getenv("METRIC_KEY")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-}
-resp, err := c.DescribeDBInstancePerformance(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -868,12 +847,7 @@ aliyun rds DescribeDBInstanceHAConfig \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDBInstanceHAConfigRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeDBInstanceHAConfig(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -903,13 +877,7 @@ aliyun rds ModifySecurityIps \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.ModifySecurityIpsRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	SecurityIps:  tea.String(os.Getenv("SECURITY_IPS")),
-}
-resp, err := c.ModifySecurityIps(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -938,12 +906,7 @@ aliyun rds DescribeParameters \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeParametersRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeParameters(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -976,13 +939,7 @@ aliyun rds ModifyParameter \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.ModifyParameterRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	Parameters:   tea.String(os.Getenv("PARAMETERS")),
-}
-resp, err := c.ModifyParameter(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1002,12 +959,7 @@ aliyun rds DescribeDBInstanceAttribute \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDBInstanceAttributeRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeDBInstanceAttribute(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1045,12 +997,7 @@ aliyun rds DescribeDBInstanceNetInfo \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDBInstanceNetInfoRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeDBInstanceNetInfo(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1076,12 +1023,7 @@ aliyun rds DescribeDBInstanceIPArrayList \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeDBInstanceIPArrayListRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeDBInstanceIPArrayList(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1106,14 +1048,7 @@ aliyun rds DescribeBinlogFiles \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeBinlogFilesRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-}
-resp, err := c.DescribeBinlogFiles(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1140,14 +1075,7 @@ aliyun rds DescribeErrorLogs \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeErrorLogsRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-}
-resp, err := c.DescribeErrorLogs(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1171,14 +1099,7 @@ aliyun rds DescribeSQLLogRecords \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeSQLLogRecordsRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-	StartTime:    tea.String(os.Getenv("START_TIME")),
-	EndTime:      tea.String(os.Getenv("END_TIME")),
-}
-resp, err := c.DescribeSQLLogRecords(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1215,17 +1136,7 @@ aliyun rds ModifyDBInstanceSpec \
 
 #### Execution — JIT Go SDK
 
-```go
-storageInt, _ := strconv.Atoi(os.Getenv("DB_INSTANCE_STORAGE"))
-
-req := &rds.ModifyDBInstanceSpecRequest{
-	DBInstanceId:      tea.String(os.Getenv("DB_INSTANCE_ID")),
-	DBInstanceClass:   tea.String(os.Getenv("DB_INSTANCE_CLASS")),
-	DBInstanceStorage: tea.Int32(int32(storageInt)),
-	PayType:           tea.String(os.Getenv("PAY_TYPE")),
-}
-resp, err := c.ModifyDBInstanceSpec(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1264,13 +1175,7 @@ aliyun rds UpgradeDBInstanceEngineVersion \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.UpgradeDBInstanceEngineVersionRequest{
-	DBInstanceId:  tea.String(os.Getenv("DB_INSTANCE_ID")),
-	EngineVersion: tea.String(os.Getenv("ENGINE_VERSION")),
-}
-resp, err := c.UpgradeDBInstanceEngineVersion(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Post-execution Validation
 
@@ -1302,14 +1207,7 @@ aliyun rds DescribeAvailableZones \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeAvailableZonesRequest{
-	RegionId:      tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
-	Engine:        tea.String(os.Getenv("ENGINE")),
-	EngineVersion: tea.String(os.Getenv("ENGINE_VERSION")),
-}
-resp, err := c.DescribeAvailableZones(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1330,12 +1228,7 @@ aliyun rds DescribeReadDBInstances \
 
 #### Execution — JIT Go SDK
 
-```go
-req := &rds.DescribeReadDBInstancesRequest{
-	DBInstanceId: tea.String(os.Getenv("DB_INSTANCE_ID")),
-}
-resp, err := c.DescribeReadDBInstances(req)
-```
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 #### Present to User
 
@@ -1532,6 +1425,10 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md)
 - [AIOps Prediction & Anomaly Detection](references/aiops-prediction.md)
 - [FinOps Cost Optimization](references/finops-analysis.md)
+- [Observability (Metrics/Logs/Traces 联动)](references/observability.md)
+- [RDS Cruise (巡检工作流)](references/cruise.md)
+- [Fault Pattern Knowledge Base](references/knowledge-base.md)
+- [Prompts Handbook (提示词示例)](references/prompts.md)
 - [Integration](references/integration.md)
 
 ## See Also
@@ -1547,3 +1444,14 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - **Security:** Restrict SecurityIPList to minimum required CIDRs; rotate account passwords regularly.
 - **Backup:** Enable automated backups and test restore procedures periodically.
 - **Monitoring:** Set up CloudMonitor alerts for CPU, memory, connections, and disk usage.
+
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `dual-path`，CLI/SDK 已覆盖，无需 code snippets.

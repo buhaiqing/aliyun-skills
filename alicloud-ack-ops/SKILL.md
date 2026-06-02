@@ -2,11 +2,14 @@
 name: alicloud-ack-ops
 description: >-
   Use this skill when the user needs to set up, manage, or troubleshoot a
-  Kubernetes cluster on Alibaba Cloud (ACK). Catches tasks like "create a
-  cluster", "add nodes", "upgrade K8s version", "集群健康检查", "节点 NotReady",
+  Kubernetes cluster on Alibaba Cloud (ACK) of type `ManagedKubernetes` or
+  `Kubernetes` (i.e. worker-node based). Catches tasks like "create a cluster",
+  "add nodes", "upgrade K8s version", "集群健康检查", "节点 NotReady",
   "获取 kubeconfig" — even when the user just says "帮我弄个 K8s 集群" or "my
-  Alibaba cluster is broken" without naming ACK. Does NOT handle VPC, SLB, ECS,
-  RAM, or billing — those belong to their own skills.
+  Alibaba cluster is broken" without naming ACK. Does NOT handle Serverless
+  Kubernetes (ASK, `cluster_type=Ask`) — that is in `alicloud-ack-serverless-ops`.
+  Also does NOT handle VPC, SLB, ECS, RAM, or billing — those belong to their
+  own skills.
 license: MIT
 compatibility: >-
   Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+
@@ -51,10 +54,14 @@ fallback), response validation, and failure recovery.
   policies, or new API versions).
 - **Console click-paths** are not an agent execution surface in `SKILL.md`.
 
-**Core resources managed by this skill:**
+**Core resources managed by this skill (ManagedKubernetes / Kubernetes only):**
 - **Cluster** — the Kubernetes control plane and managed infrastructure.
 - **Node Pool** — homogeneous groups of worker nodes with shared configuration.
 - **Addon** — cluster components (e.g., ingress, metrics-server, logtail).
+
+> **Out of scope:** ASK (Serverless Kubernetes, `cluster_type=Ask`) has **no
+> nodes, no node pools, no node-level scaling** — see
+> [`alicloud-ack-serverless-ops`](../alicloud-ack-serverless-ops/SKILL.md).
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -65,8 +72,9 @@ fallback), response validation, and failure recovery.
 - Task involves CRUD or lifecycle operations on **Cluster** or **Node Pool**
   (create, describe, modify, delete, list, scale, upgrade)
 - Task keywords: `cluster`, `node pool`, `worker node`, `managed kubernetes`,
-  `pro kubernetes`, `ask` (Serverless Kubernetes), `addon`, `ingress`, `scaling`,
-  `upgrade`, `kubeconfig`
+  `pro kubernetes`, `addon`, `ingress`, `scaling`, `upgrade`, `kubeconfig`
+  — **NOT** triggered by Serverless / ASK / `cluster_type=Ask` / 按 Pod 弹性 /
+  无服务器 K8s / ECI Pod; those belong to `alicloud-ack-serverless-ops`
 - User asks to deploy, configure, troubleshoot, or monitor ACK **via API, SDK,
   CLI, or automation**
 
@@ -79,7 +87,9 @@ fallback), response validation, and failure recovery.
 - Task is about **VPC / SLB / NAS / OSS** underlying resources but not ACK
   cluster lifecycle → delegate to: `alicloud-vpc-ops`, `alicloud-slb-ops`, etc.
 - Task is about **ECI / Serverless** outside ACK context → delegate to:
-  `alicloud-eci-ops` (when present)
+  [`alicloud-eci-ops`](../alicloud-eci-ops/SKILL.md)
+- Cluster is **Serverless Kubernetes (ASK, `cluster_type=Ask`)** → delegate to:
+  [`alicloud-ack-serverless-ops`](../alicloud-ack-serverless-ops/SKILL.md)
 - User insists on **console-only** flows with no API → state limitation; do not
   invent undocumented HTTP steps
 
@@ -1476,3 +1486,14 @@ aliyun cms PutMetricRuleTargets \
   workload isolation; restrict privileged containers.
 - **Network Policy:** Use Calico or Terway network policies to segment traffic
   between namespaces.
+
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `dual-path`，CLI/SDK 已覆盖，无需 code snippets.

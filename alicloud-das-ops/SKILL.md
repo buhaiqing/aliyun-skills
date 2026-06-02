@@ -278,6 +278,7 @@ import (
     "encoding/json"
     "fmt"
     "os"
+    "strconv"
 
     openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
     das "github.com/alibabacloud-go/das-20200116/v5/client"
@@ -656,6 +657,8 @@ printResponse(response.Body)
 Enable SQL concurrency control (throttling) rules for RDS MySQL or PolarDB MySQL
 instances. This is the primary API for SQL throttling.
 
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-enablesqlconcurrencycontrol
+
 > **Engine Support:** Only `MySQL` (RDS MySQL) and `PolarDB` (PolarDB MySQL) are
 > supported. Do not use for other engines.
 
@@ -671,13 +674,15 @@ instances. This is the primary API for SQL throttling.
 #### Execution — JIT Go SDK
 
 ```go
+maxConcurrency, _ := strconv.ParseInt(os.Getenv("MAX_CONCURRENCY"), 10, 64)
+controlTime, _ := strconv.ParseInt(os.Getenv("CONTROL_TIME"), 10, 64)
 request := &das.EnableSqlConcurrencyControlRequest{
     RegionId:                 tea.String("cn-shanghai"),
     InstanceId:               tea.String(os.Getenv("INSTANCE_ID")),
     SqlType:                  tea.String(os.Getenv("SQL_TYPE")),           // SELECT, UPDATE, DELETE
     MaxConcurrency:           tea.Int64(maxConcurrency),                   // >= 1
     SqlKeywords:              tea.String(os.Getenv("SQL_KEYWORDS")),       // keywords separated by ~
-    ConcurrencyControlTime:   tea.Int64(controlTimeSeconds),               // duration in seconds
+    ConcurrencyControlTime:   tea.Int64(controlTime),                      // duration in seconds
 }
 response, err := client.EnableSqlConcurrencyControl(request)
 if err != nil {
@@ -717,6 +722,8 @@ go run ./main.go
 
 Disable (close) a specific SQL concurrency control rule by its `ItemId`.
 
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-disablesqlconcurrencycontrol
+
 #### Pre-flight Checks
 
 | Check | Method | Expected | On Failure |
@@ -727,6 +734,7 @@ Disable (close) a specific SQL concurrency control rule by its `ItemId`.
 #### Execution — JIT Go SDK
 
 ```go
+itemId, _ := strconv.ParseInt(os.Getenv("ITEM_ID"), 10, 64)
 request := &das.DisableSqlConcurrencyControlRequest{
     RegionId:   tea.String("cn-shanghai"),
     InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
@@ -766,6 +774,8 @@ go run ./main.go
 ### Operation: Disable All SQL Concurrency Control Rules (DisableAllSqlConcurrencyControlRules)
 
 Disable all currently running SQL concurrency control rules for an instance.
+
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-disableallsqlconcurrencycontrolrules
 
 > **Safety Gate:** This is a batch destructive action. Present a summary of all
 > running rules (from `GetRunningSqlConcurrencyControlRules`) and require user
@@ -819,6 +829,8 @@ go run ./main.go
 
 Retrieve all currently active (running) SQL concurrency control rules for an
 instance.
+
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getrunningsqlconcurrencycontrolrules
 
 #### Pre-flight Checks
 
@@ -877,6 +889,8 @@ go run ./main.go
 Retrieve the history of SQL concurrency control rules, including both currently
 running rules and previously triggered (closed) rules.
 
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getsqlconcurrencycontrolruleshistory
+
 #### Pre-flight Checks
 
 | Check | Method | Expected | On Failure |
@@ -930,6 +944,8 @@ go run ./main.go
 Generate SQL throttling keywords from a raw SQL statement. This is a helper API
 used before calling `EnableSqlConcurrencyControl` to produce the correct
 `SqlKeywords` format.
+
+> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getsqlconcurrencycontrolkeywordsfromsqltext
 
 > **Important:** The returned keywords are based on a templated (normalized)
 > version of the SQL. If you need to throttle a specific parameter value, append
@@ -1645,3 +1661,15 @@ This skill includes a comprehensive troubleshooting enhancement framework:
 - [DAS Go SDK](https://github.com/alibabacloud-go/das-20200116)
 - [Alibaba Cloud CLI (not applicable for DAS)](https://github.com/aliyun/aliyun-cli)
 - [Agent Skill OpenSpec](https://agentskills.io/specification)
+- [API Documentation Mapping](references/api-doc-mapping.md) — Canonical mapping of all skill operations to official API doc URLs and SDK types
+
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **APPLIES** — 本 skill 必须有 `assets/code-snippets/` 目录.
