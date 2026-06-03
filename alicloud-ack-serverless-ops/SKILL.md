@@ -19,8 +19,8 @@ compatibility: >-
   Alibaba Cloud CS endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-06-02"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -781,6 +781,22 @@ ASK 没有"空闲节点"，但有"空闲 Pod"：
   containers (ECI does not support hostNetwork/hostPID).
 - **Network Policy:** Use Calico / Terway network policies. ECI ENIs
   respect security group rules.
+
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| Most-scrutinized | `DeleteCluster` (check + disable DeletionProtection first; backup kubeconfig) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for ack-serverless-ops.
+
+---
 
 ## See Also — Meta-Skill Rules
 

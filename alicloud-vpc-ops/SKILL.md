@@ -22,8 +22,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -689,6 +689,40 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **CIDR planning:** Plan CIDR blocks early to avoid overlap with on-premise or partner networks.
 - **FlowLog:** Enable FlowLog on critical VPC/vSwitch for traffic auditing and troubleshooting.
 
+---
+
+## Quality Gate (GCL)
+
+This skill is the **seventh rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-vpc-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Two references in this directory carry the GCL contract:**
+> [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+### GCL Scope for VPC
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, seventh skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Most-scrutinized ops | `DeleteVpc` (network foundation), `DeleteNatGateway` (egress), `DeleteVSwitch` (subnet), EIP ops (delegate to `alicloud-eip-ops`) |
+
+### Per-Op Safety Highlights
+
+| Operation | Hard condition |
+|---|---|
+| `DeleteVpc` | **4-step dependency cascade**: `DescribeVSwitches` / `DescribeNatGateways` / `DescribeHaVips` / `DescribeRouteTables` all empty; cross-skill ECS/RDS/SLB ENI check |
+| `DeleteNatGateway` | **3-step cascade**: SNAT empty + DNAT empty + EIPs unbound |
+| `Create SNAT Entry` | No `SourceCIDR` overlap with existing SNAT |
+| `Create DNAT Entry` | No `(ExternalIp, ExternalPort, Protocol, InternalIp, InternalPort)` 5-tuple conflict |
+| EIP ops | **Delegate to `alicloud-eip-ops` GCL** (production marker, 2-step unbind, DNS audit, traffic pre-check) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Seventh rollout: `## Quality Gate (GCL)` + `references/rubric.md` + `references/prompt-templates.md`. Dependency-cascade pattern; EIP cross-skill delegation.
+
+---
 
 ## See Also — Meta-Skill Rules
 

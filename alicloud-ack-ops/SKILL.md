@@ -17,8 +17,8 @@ compatibility: >-
   Alibaba Cloud CS endpoints.
 metadata:
   author: alicloud
-  version: "2.0.0"
-  last_updated: "2026-05-14"
+  version: "2.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -1487,6 +1487,21 @@ aliyun cms PutMetricRuleTargets \
 - **Network Policy:** Use Calico or Terway network policies to segment traffic
   between namespaces.
 
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| Most-scrutinized | `DeleteCluster` (irreversible; backup kubeconfig + check DeletionProtection), `DeleteNodePool` (last pool with critical workloads) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for ack-ops.
+
+---
 
 ## See Also — Meta-Skill Rules
 

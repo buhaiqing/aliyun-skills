@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.5.0"
-  last_updated: "2026-05-27"
+  version: "1.6.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -408,6 +408,24 @@ When implementing this skill:
 - [ ] Safety controls for auto-remediation
 - [ ] Error taxonomy covers ≥10 codes
 
+---
+
+## Quality Gate (GCL)
+
+Twelfth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + PG-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, twelfth skill) |
+| `max_iter` | 2 |
+| Engine | PostgreSQL 11/12/13/14/15 |
+| PG-specific hot-spots | `VACUUM FULL` (table lock), `ALTER SYSTEM SET` (durable cluster-wide), `REINDEX` / `CLUSTER` (table lock), `DROP SCHEMA` |
+| Credential surface | `PGPASSWORD` / `POLARDB_PG_NEW_PASSWORD` env vars (NOT `--password` or inline `postgresql://user:pass@host`) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Twelfth rollout; inherits canonical + PG-specific.
+
+---
 
 ## See Also — Meta-Skill Rules
 

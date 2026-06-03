@@ -18,8 +18,8 @@ compatibility: >-
   Alibaba Cloud ECI endpoints.
 metadata:
   author: alicloud
-  version: "1.1.0"
-  last_updated: "2026-06-02"
+  version: "1.2.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -775,6 +775,22 @@ ECIs are short-lived by design, so "idle" is unusual. Patterns:
   survive — handle separately.
 - **ImageCache / DataCache:** Pre-create for latency-sensitive or
   model-loading workloads to cut cold start by 60-90%.
+
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| Most-scrutinized | `DeleteContainerGroup` (ephemeral data loss; waiver/backup required), `ExecContainerCommand` with destructive patterns (`rm -rf`, `dd`, `mkfs`) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for eci-ops.
+
+---
 
 ## See Also — Meta-Skill Rules
 

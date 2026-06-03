@@ -19,8 +19,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "2.0.0"
-  last_updated: "2026-05-14"
+  version: "2.2.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -1418,6 +1418,22 @@ Phase 3: Resolve — Auto-remediation or escalate to human with full diagnostic 
 - **Cost awareness:** Metric query APIs share a 1,000,000 calls/month free quota. Monitor usage to avoid unexpected charges.
 - **Alarm tuning:** Set appropriate EvaluationCount (3+ for production) to avoid false positives. Use EffectiveInterval to suppress alarms during maintenance windows.
 - **Data retention:** Choose Period based on retention needs — <60s (7 days), 60s (31 days), ≥300s (91 days).
+
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| Most-scrutinized | `DeleteMetricAlarm` (backup alarm rule JSON; monitoring coverage lost), `DeleteMonitorGroup` (group alarms + contacts detached) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for cms-ops.
+
+---
 
 ## References
 

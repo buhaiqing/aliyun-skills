@@ -18,8 +18,8 @@ compatibility: >-
   endpoints. FC 3.0 uses ROA-style API (`aliyun fc-open <METHOD> /2023-03-30/path`).
 metadata:
   author: alicloud
-  version: "3.1.0"
-  last_updated: "2026-05-19"
+  version: "3.2.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -990,6 +990,21 @@ See [references/execution-environment.md](references/execution-environment.md) f
 - **VPC for data access**: Use VPC binding for RDS/Redis, but note cold start penalty (~200ms)
 - **Tag everything**: `env`, `team`, `costCenter` for cost attribution
 
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| Most-scrutinized | `DeleteFunction` (no active triggers; backup function config), `DeleteService` (no functions inside; cascade warning) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for fc-ops.
+
+---
 
 ## See Also — Meta-Skill Rules
 

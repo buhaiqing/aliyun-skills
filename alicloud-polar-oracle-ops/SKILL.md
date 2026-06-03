@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -589,6 +589,25 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Backup:** Daily automated backups with 30+ day retention.
 - **Monitoring:** CMS alarms for CPU > 85%, Connections > 80%.
 
+---
+
+## Quality Gate (GCL)
+
+Thirteenth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + Oracle-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, thirteenth skill) |
+| `max_iter` | 2 |
+| Engine | Oracle 11g/12c/19c |
+| Oracle hot-spots | `DROP USER ... CASCADE` (require `expdp`), `ALTER SYSTEM SET ... SCOPE=SPFILE` (require `original_value_backup`), `GRANT DBA` (privilege escalation, require justification), `DROP TABLESPACE ... INCLUDING CONTENTS` (require RMAN) |
+| PL/SQL risk | DDL inside `BEGIN ... END;` blocks — Critic must parse inner SQL |
+| Credential surface | `ORACLE_PASSWORD` / `POLARDB_ORACLE_NEW_PASSWORD` env vars (NOT `sqlplus user/pass@host`) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Thirteenth rollout; inherits canonical + Oracle-specific.
+
+---
 
 ## See Also — Meta-Skill Rules
 

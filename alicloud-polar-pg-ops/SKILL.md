@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -569,6 +569,27 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Backup:** Daily automated backups with 30+ day retention.
 - **Monitoring:** CMS alarms for CPU > 85%, Connections > 80%.
 
+---
+
+## Quality Gate (GCL)
+
+Fourteenth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + PG-specific deviations from `alicloud-polar-postgresql-ops` + the polar-pg 2021-11-26 API version deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, fourteenth skill) |
+| `max_iter` | 2 |
+| API | `polardb-pg 2021-11-26` (legacy/v1) — **NOT** the 2022-05-30 family |
+| CLI | `aliyun polardb-pg` (separate product, NOT `aliyun polardb`) |
+| Engine | PostgreSQL 11/12/13/14 (PG 15 NOT supported) |
+| Operation names | `CreateDBInstance` / `DeleteDBInstance` / `DescribeDBInstanceAttribute` (NOT `*DBCluster*`) |
+| PG-specific hot-spots | Same as polar-postgresql-ops: `VACUUM FULL` / `ALTER SYSTEM SET` / `REINDEX` / `CLUSTER` / `DROP SCHEMA` |
+| Spec Compliance check | Wrong API version / wrong op name / PG 15 requested → Spec Compliance = 0 |
+
+### Changelog
+1.0.0 | 2026-06-04 | Fourteenth rollout; inherits canonical + PG-specific + polar-pg 2021 deviations.
+
+---
 
 ## See Also — Meta-Skill Rules
 

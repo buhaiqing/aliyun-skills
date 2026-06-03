@@ -17,8 +17,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-15"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -845,6 +845,53 @@ Event storage: free for 90 days. OSS delivery for long-term (use lifecycle rules
 ### 性能 (Performance)
 
 `LookupEvents`: ≤ 30 days per query, within 90 days. 50 results per page. `LookupInsightEvents`: 24h delay after enabling.
+
+---
+
+## Quality Gate (GCL)
+
+This skill participates in the Generator-Critic-Loop (GCL) defined in
+[`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+in a **non-destructive cross-checker role**. Per `AGENTS.md` §12.8, this
+skill is classified as `optional` (read-only audit) and is therefore **not
+required to host its own `references/rubric.md` + `references/prompt-templates.md`**.
+
+| Aspect | Setting |
+|---|---|
+| Required? | **No** (Phase 3-C, read-only audit) |
+| GCL role | **Cross-checker** — verifies GCL traces against cloud-side ActionTrail events |
+| Companion script | [`scripts/gcl_actiontrail_crosscheck.py`](../../scripts/gcl_actiontrail_crosscheck.py) |
+| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
+
+### What the Cross-Check Catches
+
+| Finding | Severity | Meaning |
+|---|---|---|
+| `PHANTOM_PASS` | high | Local GCL said PASS but no ActionTrail event exists (op never ran) |
+| `PHANTOM_FAIL` | high | Local GCL said FAIL but ActionTrail has events (safety gate bypassed) |
+| `RESOURCE_MISMATCH` | medium | Event exists but `ResourceName` differs from local trace's args |
+| `TIMING_ANOMALY` | low | Event time > 1 hour from trace mtime (replay / clock drift / ingestion lag) |
+| `API_ERROR` | high | LookupEvents failed; cross-check infrastructure issue (NOT a phantom) |
+| `UNPARSEABLE_TRACE` | low | Trace command is not `aliyun ...` (dry-run, data-plane op) |
+
+### Usage (companion script)
+
+```bash
+# Cross-check a single trace
+python3 scripts/gcl_actiontrail_crosscheck.py \
+  --trace audit-results/gcl-trace-20260604-103015-abc123.json
+
+# Cross-check ALL traces (CI mode)
+python3 scripts/gcl_actiontrail_crosscheck.py \
+  --trace-dir audit-results/ \
+  --report audit-results/crosscheck-$(date +%Y%m%d).json \
+  --strict
+```
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 3-C: `## Quality Gate (GCL)` cross-checker role added. Companion script `scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests). ActionTrail remains `optional` per §12.8.
+
+---
 
 ## See Also — Meta-Skill Rules
 

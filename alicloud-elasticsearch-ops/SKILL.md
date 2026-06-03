@@ -17,8 +17,8 @@ compatibility: >-
   JIT Go SDK is the primary execution path.
 metadata:
   author: alicloud
-  version: "2.0.0"
-  last_updated: "2026-05-17"
+  version: "2.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -493,6 +493,23 @@ Poll until upgrade completes (status transitions through upgrade phases)
 - **Multi-zone:** Recommend distributing nodes across multiple zones for HA.
 - **Backup:** Create snapshots before major changes (restart, upgrade, spec change).
 - **Cost:** Select appropriate node spec based on workload; use reserved instances for stable workloads.
+
+---
+
+## Quality Gate (GCL)
+
+Tenth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, tenth skill) |
+| `max_iter` | 2 |
+| `cli_applicability` | **sdk-only** (REST + Go SDK; CLI is not the primary path) |
+| Most-scrutinized | Wildcard `DELETE /*` / `DELETE /<prefix>*` (Safety = 0), `_delete_by_query` with `match_all`, `_forcemerge max_num_segments=1` (irreversible) |
+| Hard rule | All `Delete*` ops (instance, index, by-query) require `snapshot_trace` — no waiver |
+
+### Changelog
+1.0.0 | 2026-06-04 | Tenth rollout.
 
 ---
 

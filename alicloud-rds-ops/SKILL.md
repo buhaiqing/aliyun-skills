@@ -25,8 +25,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "2.0.0"
-  last_updated: "2026-05-19"
+  version: "2.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -1430,6 +1430,8 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Fault Pattern Knowledge Base](references/knowledge-base.md)
 - [Prompts Handbook (提示词示例)](references/prompts.md)
 - [Integration](references/integration.md)
+- [GCL Rubric](references/rubric.md) — **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, per-op Safety sub-rules, 6-class / 12-regex SQL classification, 4 worked examples)
+- [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 rollout** Generator & Critic prompt templates (3-path: control-plane CLI / SDK / data-plane SQL aware)
 
 ## See Also
 
@@ -1445,6 +1447,118 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - **Backup:** Enable automated backups and test restore procedures periodically.
 - **Monitoring:** Set up CloudMonitor alerts for CPU, memory, connections, and disk usage.
 
+---
+
+## Quality Gate (GCL)
+
+This skill is the **third rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-rds-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Two references in this directory carry the GCL contract:**
+>
+> | File | Purpose |
+> |---|---|
+> | [`references/rubric.md`](references/rubric.md) | The 5 core + 3 Aliyun-specific rubric dimensions, per-op Safety sub-rules, the 6-class / 12-regex SQL classification, and 4 worked examples |
+> | [`references/prompt-templates.md`](references/prompt-templates.md) | The Generator and Critic prompt templates (with `{{env.*}}` / `{{user.*}}` / `{{output.*}}` placeholders) |
+> | [`references/sql-execution.md`](references/sql-execution.md) | Path A (`mysql`) / Path B (`rds-data`) / Path C (DMS) decision tree — referenced by both rubric and prompt templates for SQL Execution ops |
+>
+> The full rationale, termination rules, anti-patterns, and rollout roadmap
+> live in `AGENTS.md` §12. This section is only a pointer + per-skill override.
+
+### GCL Scope for RDS
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, third skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Operations covered | ALL operations in this SKILL.md (CRUD + accounts + databases + backups + whitelists + parameters + SQL Execution) |
+| Operations most scrutinized | `DeleteDBInstance`, `DeleteAccount`, `DeleteDatabase`, `RestoreDBInstance`, `ResetAccountPassword`, `CreateAccount` (password hygiene), `ModifySecurityIps` (especially `0.0.0.0/0`), `ModifyParameter` (high-risk params), `UpgradeDBInstanceEngineVersion`, **all SQL Execution ops** (data-plane) |
+
+### Per-Op Safety Sub-Rules (Quick Reference)
+
+For the **full** sub-rule table, see [`references/rubric.md` §1.2](../alicloud-rds-ops/references/rubric.md).
+Highlights:
+
+| Operation | Hard Safety condition (Score 1 requires) |
+|---|---|
+| `DeleteDBInstance` | Explicit user confirmation of `{{user.db_instance_id}}` AND `{{user.db_instance_name}}`; `DBInstanceStatus == Running`; final backup created OR user explicitly waived |
+| `DeleteDatabase` | Explicit user confirmation of `{{user.db_name}}`; **final DB-level backup created (no waiver — databases cannot be snapshot-restored)** |
+| `RestoreDBInstance` | Explicit user confirmation; `BackupId` verified via `DescribeBackups` with `BackupStatus == Success`; target instance is the original owner |
+| `ResetAccountPassword` | Explicit user confirmation; `AccountPassword` NOT in any trace field; password complexity 8-32 chars |
+| `CreateAccount` | `AccountName` is not `root` / `admin` / `mysql` / `postgres`; password delivered via env var, not CLI flag |
+| `ModifySecurityIps` | **No `0.0.0.0/0` entry** in `{{user.security_ips}}` unless user explicitly justified |
+| `ModifyParameter` | Parameter is not in the high-risk list (`innodb_flush_log_at_trx_commit`, `sync_binlog`, `max_connections`, `lower_case_table_names`, `default_storage_engine`, `log_bin`) unless user explicitly justified |
+| `UpgradeDBInstanceEngineVersion` | Explicit user confirmation; **final backup created (no waiver)**; maintenance window confirmed |
+| **SQL Execution (data-plane)** | See `rubric.md` §1.2.1 — 6 risk classes (READ-ONLY / WRITE-LIMITED / DESTRUCTIVE-LIMITED / DESTRUCTIVE-MASS / SCHEMA-MUTATION / FATAL); 12 regex hot-spots incl. `DELETE` / `UPDATE` without `WHERE`, `DROP DATABASE`, `SHUTDOWN` |
+
+### The WHERE-Clause Rule (data-plane, hard gate)
+
+For multi-statement SQL files (`mysql < file.sql`) or single SQL statements
+(`aliyun rds-data execute-statement`):
+
+- **`DELETE` / `UPDATE` without `WHERE`** → Safety = 0 (full-table mutation)
+- **`DELETE FROM x WHERE 1=1`** → Safety = 0 (treated as full-table)
+- **Multi-statement files** must be scanned in their entirety; the
+  worst-case classification across all statements is the file's Safety
+  score. Sampling is allowed for very large files (> 1000 statements) but
+  must be recorded in `statement_count` / `statements_scanned` /
+  `sampling_strategy`.
+
+### RDS-Specific Additions (beyond the 5 core dimensions)
+
+| Dimension | Threshold | Why it matters for RDS |
+|---|---|---|
+| **Region Compliance** | ≥ 0.5 | `--RegionId` must match `{{user.region}}` to avoid cross-region cost leakage |
+| **Credential Hygiene** | = 1 (**absolute**) | RDS has the **richest password surface in the skill farm** — `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `MYSQL_PWD`, `RDS_NEW_PASSWORD`, `AccountPassword`, RDS Data API `ResourceArn`, `SecretStore` credentials. Any one in a trace → ABORT. |
+| **Well-Architected** | ≥ 0.5 | The 5 WA pillars from `references/well-architected-assessment.md`. Security is the **primary pillar** for DDL/DML/data-plane ops. |
+
+### Three-Path Trace Convention (control-plane vs. data-plane)
+
+Unlike ECS (cli-first), RDS supports THREE execution paths:
+
+```json
+{
+  "generator": {
+    "path": "control-plane-cli",  // or "control-plane-sdk" | "data-plane-mysql" | "data-plane-rds-data"
+    "command": "aliyun rds ...",  // or "mysql -h ... -e ..." for data-plane
+    "affected_rows": null,  // int for DML only
+    "command_classification": "DESTRUCTIVE-MASS",  // for SQL Execution only
+    ...
+  }
+}
+```
+
+Path selection rules (inherited from `prompt-templates.md` §1):
+
+1. **Default to control-plane CLI** — `aliyun rds <action> --DBInstanceId ...`.
+2. **Use data-plane SQL** only when: (a) user explicitly asks to run SQL, (b) user provided a `.sql` file, (c) requested op is `SELECT` / `SHOW` / `DESCRIBE` requiring live data read.
+3. **NEVER route** `DROP DATABASE` / full-table `TRUNCATE` to data plane when a control-plane alternative exists (e.g. `DeleteDatabase` is softer than `DROP DATABASE`; consider proposing it first).
+
+### Termination (inherited from `AGENTS.md` §12.5)
+
+| Condition | Behavior |
+|---|---|
+| All dimensions ≥ threshold | **PASS** — return Generator's result |
+| Safety = 0 **or** Credential Hygiene = 0 | **ABORT** — never return partial output |
+| Other dimension < threshold AND iter < 2 | **RETRY** — inject Critic suggestions into next Generator prompt |
+| Other dimension < threshold AND iter = 2 | **MAX_ITER** — return best-so-far + unresolved rubric items |
+
+### Trace Persistence (mandatory)
+
+Every GCL run MUST write `./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json`
+with the schema defined in `AGENTS.md` §12.6. Apply the RDS-specific
+sanitization regex helpers in `rubric.md` §2.2 to scrub all 8 RDS-specific
+secret patterns before persisting.
+
+### Changelog (this section only)
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-06-04 | Third rollout: added `## Quality Gate (GCL)` section + `references/rubric.md` + `references/prompt-templates.md`. Default `max_iter=2`. Aligned with `AGENTS.md` §12 and the ECS / Redis pilots. RDS-specific additions: three-path (control-plane CLI / control-plane SDK / data-plane SQL) trace convention; SQL statement classification (6 risk classes, 12 regex hot-spots); hard WHERE-clause rule (no `WHERE` on `DELETE` / `UPDATE` → Safety = 0); 8 RDS-specific secret patterns with sanitization helper. |
+
+---
 
 ## See Also — Meta-Skill Rules
 

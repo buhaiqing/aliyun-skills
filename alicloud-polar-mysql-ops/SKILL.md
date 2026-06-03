@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.4.0"
-  last_updated: "2026-05-26"
+  version: "1.5.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -1100,6 +1100,24 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Monitoring:** Set CMS alarms for CPU > 85%, Connections > 80%, Storage > 85%.
 - **Serverless:** Consider Serverless mode for variable workload clusters.
 
+---
+
+## Quality Gate (GCL)
+
+Eleventh rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **This skill is the canonical PolarDB rubric** for all 4 PolarDB variants. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, eleventh skill, **canonical for all 4 PolarDB variants**) |
+| `max_iter` | 2 |
+| Inherits | RDS WHERE-clause + 6-class SQL classification |
+| Most-scrutinized | `DeleteDBCluster` (mandatory final backup, **no waiver**), `Manage Endpoints` (RW/RO mismatch), SQL Execution WHERE-clause rule |
+| Endpoint selection | Primary (writes) / Cluster (RW-split) / Custom (node group) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Eleventh rollout; canonical for polar-postgresql, polar-oracle, polar-pg.
+
+---
 
 ## See Also — Meta-Skill Rules
 

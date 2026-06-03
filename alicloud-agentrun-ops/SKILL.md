@@ -18,8 +18,8 @@ compatibility: >-
   endpoints. No official CLI or SDK — direct HTTP API calls required.
 metadata:
   author: alicloud
-  version: "1.3.0"
-  last_updated: "2026-05-19"
+  version: "1.4.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   api_profile: "AgentRun 2025-09-10 / https://help.aliyun.com/zh/functioncompute/fc/sandbox-function"
   cli_applicability: "sdk-only"
@@ -1089,6 +1089,23 @@ All operations MUST validate inputs before API calls. See [security-enhancement.
 - [Monitoring Guide](references/monitoring.md) — Observability, metrics, and alerting
 - [Well-Architected Assessment](references/well-architected-assessment.md) — Five-pillar integration
 - [Integration](references/integration.md) — Credential setup and signing workflow
+
+---
+
+## Quality Gate (GCL)
+
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Recommended** (Phase 5, `max_iter=3`) |
+| `cli_applicability` | `sdk-only` (REST API; no `aliyun` CLI) |
+| Most-scrutinized | `DeleteSandbox` (sandbox state + files permanently lost; warn if `Status=Running`), `DeleteTemplate` (dependent sandboxes lose recreate ability), `ExecCommand` with destructive patterns (`rm -rf /`, `dd`, `mkfs`, `fdisk`, `shutdown`) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for agentrun-ops.
+
+---
 
 ## See Also — Meta-Skill Rules
 

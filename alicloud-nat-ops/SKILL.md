@@ -23,8 +23,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -490,6 +490,24 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 - **Monitoring:** Track NAT Gateway CU utilization and bandwidth. Upgrade spec if CU exceeds 80%.
 - **Multi-AZ HA:** Enhanced NAT Gateway is AZ-scoped. For HA, deploy in multiple vSwitches across AZs.
 
+---
+
+## Quality Gate (GCL)
+
+Eighth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, eighth skill) |
+| `max_iter` | 2 |
+| Most-scrutinized | `DeleteNatGateway` (3-step cascade: SNAT + DNAT + EIP) |
+| CIDR / port conflict | `Create SNAT` (no SourceCIDR overlap); `Create DNAT` (no 5-tuple conflict) |
+| Production NAT | Deletion requires `maintenance_window_confirmed` |
+
+### Changelog
+1.0.0 | 2026-06-04 | Eighth rollout.
+
+---
 
 ## See Also — Meta-Skill Rules
 

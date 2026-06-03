@@ -18,8 +18,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.1.0"
-  last_updated: "2026-05-19"
+  version: "1.2.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -501,6 +501,24 @@ Detailed documentation for specialized operations:
 | Restore | Restore from backup | **High** — data overwrite |
 
 
+
+---
+
+## Quality Gate (GCL)
+
+Ninth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, ninth skill) |
+| `max_iter` | 2 |
+| Most-scrutinized | `dropDatabase` (no recycle bin, **mandatory `mongodump`**), `deleteMany({})` / `updateMany({})` (empty filter), `$out` / `$merge` aggregation |
+| Hard-coded data-plane regex | 6 hot-spots incl. `db\.\w+\.dropDatabase\s*\(\s*\)`, `db\.\w+\.(deleteMany\|updateMany)\s*\(\s*\{\s*\}\s*\)` |
+
+### Changelog
+1.0.0 | 2026-06-04 | Ninth rollout.
+
+---
 
 ## See Also — Meta-Skill Rules
 

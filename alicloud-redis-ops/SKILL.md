@@ -19,8 +19,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-14"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -1666,6 +1666,8 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Monitoring & Alerts](references/monitoring.md) — Key metrics, KPI thresholds, automated monitoring flows, and CloudMonitor integration
 - [Prompts Guide](references/prompts.md) — Ready-to-use prompt templates for 40+ operational scenarios (lifecycle, security, diagnostics, batch ops, advanced analytics)
 - [Integration](references/integration.md) — VPC, RAM, CI/CD, Terraform/Pulumi/Ansible integration patterns
+- [GCL Rubric](references/rubric.md) — **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, per-op Safety sub-rules, 5-class data-plane command classification, 4 worked examples)
+- [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 rollout** Generator & Critic prompt templates (dual-path CLI/SDK aware)
 
 ## Operational Best Practices
 
@@ -1675,6 +1677,108 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Security:** Regularly rotate passwords; restrict whitelist to minimum required IPs.
 - **Backup:** Enable automated backups; test restore procedures periodically.
 
+---
+
+## Quality Gate (GCL)
+
+This skill is the **second rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-redis-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Two references in this directory carry the GCL contract:**
+>
+> | File | Purpose |
+> |---|---|
+> | [`references/rubric.md`](references/rubric.md) | The 5 core + 3 Aliyun-specific rubric dimensions, per-op Safety sub-rules, the 5-class / 8-regex data-plane command classification, and 4 worked examples |
+> | [`references/prompt-templates.md`](references/prompt-templates.md) | The Generator and Critic prompt templates (with `{{env.*}}` / `{{user.*}}` / `{{output.*}}` placeholders) |
+>
+> The full rationale, termination rules, anti-patterns, and rollout roadmap
+> live in `AGENTS.md` §12. This section is only a pointer + per-skill override.
+
+### GCL Scope for Redis / Tair
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, second skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Operations covered | ALL operations in this SKILL.md (CRUD + lifecycle + accounts + backups + whitelists + parameters + Cloud Assistant data-plane) |
+| Operations most scrutinized | `DeleteInstance`, `FlushInstance`, `RestoreInstance`, `DeleteAccount`, `ResetAccountPassword`, `ModifySecurityIps` (especially `0.0.0.0/0`), `ModifyParameter` (high-risk params), `Execute Redis Command via Cloud Assistant` (data-plane classification) |
+
+### Per-Op Safety Sub-Rules (Quick Reference)
+
+For the **full** sub-rule table (with the exact `Score 1` conditions), see
+[`references/rubric.md` §1.2](../alicloud-redis-ops/references/rubric.md).
+Highlights:
+
+| Operation | Hard Safety condition (Score 1 requires) |
+|---|---|
+| `DeleteInstance` | Explicit user confirmation of `{{user.instance_id}}` AND `{{user.instance_name}}`; `InstanceStatus == Normal`; backup created in the same flow OR user explicitly waived |
+| `FlushInstance` | Explicit user confirmation that **ALL data** will be wiped; backup created OR user explicitly waived; `InstanceStatus == Normal` |
+| `RestoreInstance` | Explicit user confirmation that current data will be overwritten; `BackupId` verified via `DescribeBackups` with `BackupStatus == Success`; target instance is the original owner (cross-instance restore needs an extra confirmation entry) |
+| `ResetAccountPassword` | Explicit user confirmation that all current connections will be invalidated; **`AccountPassword` NOT present in any trace field**; password complexity 8-30 chars, mixed case + digits |
+| `CreateAccount` | `AccountName` is not `root` / `admin` / `redis`; password delivered via env var, not as a CLI flag |
+| `ModifySecurityIps` | **No `0.0.0.0/0` entry** in `{{user.security_ips}}` unless user explicitly justified (Redis whitelists are network-level ACLs — more dangerous than SG rules) |
+| `ModifyParameter` | Parameter is not in the high-risk list (`maxmemory-policy`, `appendonly`, `save`, `protected-mode`, `bind`, `requirepass`) unless user explicitly justified |
+| `Execute Redis Command via Cloud Assistant` | See `rubric.md` §1.2.1 — 5 risk classes (READ-ONLY / WRITE-KEY / DESTRUCTIVE-MASS / CONFIG-MUTATION / FATAL); 8 regex hot-spots (FLUSHALL, FLUSHDB, SHUTDOWN, DEBUG, CONFIG SET, `DEL cache:*`, `KEYS *`, `EVAL ... DEL ... KEYS ...`) |
+
+### Redis-Specific Additions (beyond the 5 core dimensions)
+
+| Dimension | Threshold | Why it matters for Redis |
+|---|---|---|
+| **Region Compliance** | ≥ 0.5 | `--RegionId` must match `{{user.region}}` to avoid cross-region cost leakage and accidental cross-region side-effects |
+| **Credential Hygiene** | = 1 (**absolute**) | `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `REDISCLI_AUTH`, **and any `AccountPassword` value** must never appear in any trace field — promoted to absolute gate due to the high density of password-bearing operations in this skill |
+| **Well-Architected** | ≥ 0.5 | The 5 WA pillars from `references/well-architected-assessment.md` are scored when the op is WA-sensitive (cost / security / stability) |
+| **Data-plane classification** (cross-validation only, no separate score) | n/a | For the "Execute Redis Command via Cloud Assistant" operation, the Generator MUST populate `command_classification` and the Critic MUST independently re-classify — disagreement is a finding (Traceability 0) |
+
+### Dual-Path Trace Convention (CLI vs. SDK)
+
+Unlike `alicloud-ecs-ops` (cli-first), this skill is `dual-path` (CLI
+primary, Go SDK fallback). The trace MUST record which path was used:
+
+```json
+{
+  "generator": {
+    "path": "cli",  // or "sdk"
+    "command": "aliyun r-kvstore flush-instance --InstanceId r-bp1...",  // null if path=sdk
+    "sdk_request": null,  // or Go struct literal if path=sdk
+    ...
+  }
+}
+```
+
+Path selection rules (inherited from `prompt-templates.md` §1):
+
+1. Default to `cli` — `aliyun r-kvstore <action> --InstanceId ...`.
+2. Use `sdk` only when: (a) CLI lacks the operation, (b) user explicitly requested SDK, or (c) CLI returned 5xx after 2 retries.
+
+### Termination (inherited from `AGENTS.md` §12.5)
+
+| Condition | Behavior |
+|---|---|
+| All dimensions ≥ threshold | **PASS** — return Generator's result |
+| Safety = 0 **or** Credential Hygiene = 0 | **ABORT** — never return partial output |
+| Other dimension < threshold AND iter < 2 | **RETRY** — inject Critic suggestions into next Generator prompt |
+| Other dimension < threshold AND iter = 2 | **MAX_ITER** — return best-so-far + unresolved rubric items |
+
+### Trace Persistence (mandatory)
+
+Every GCL run MUST write `./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json`
+with the schema defined in `AGENTS.md` §12.6. Apply the Redis-specific
+sanitization regex helpers in `rubric.md` §2.2 to scrub
+`ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `REDISCLI_AUTH`, and `AccountPassword`
+before persisting.
+
+> `./audit-results/` is already in the repository `.gitignore` (added in the
+> ECS pilot rollout, `AGENTS.md` §12.11 Phase 1).
+
+### Changelog (this section only)
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-06-04 | Second rollout: added `## Quality Gate (GCL)` section + `references/rubric.md` + `references/prompt-templates.md`. Default `max_iter=2`. Aligned with `AGENTS.md` §12 and the ECS pilot (`alicloud-ecs-ops/SKILL.md` `## Quality Gate (GCL)` v1.0.0). Redis-specific additions: dual-path (CLI / SDK) trace convention; data-plane command classification (5 risk classes, 8 regex hot-spots); Credential Hygiene promoted to absolute gate. |
+
+---
 
 ## See Also — Meta-Skill Rules
 

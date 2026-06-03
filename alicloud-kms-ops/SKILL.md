@@ -18,8 +18,8 @@ compatibility: >-
   KMS endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-20"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -818,6 +818,8 @@ aliyun kms AsymmetricVerify \
 - [Integration](references/integration.md)
 - [Well-Architected Assessment](references/well-architected-assessment.md)
 - [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md)
+- [GCL Rubric](references/rubric.md) — **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, 17 per-op Safety sub-rules, 10 key-material regex hot-spots, 4 worked examples)
+- [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 rollout** Generator & Critic prompt templates (one-shot delivery + PendingWindowInDays validation)
 
 ## Operational Best Practices
 
@@ -827,6 +829,151 @@ aliyun kms AsymmetricVerify \
 - **Cost:** Prefer software-protected keys unless HSM is required for compliance.
 - **Key lifecycle:** Always test with small-scale keys; document all key purposes and owners.
 
+---
+
+## Quality Gate (GCL)
+
+This skill is the **fifth rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-kms-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Why KMS warrants the strictest GCL rules in the farm:**
+>
+> KMS is the **cryptographic root of trust** for the entire Alibaba Cloud
+> account. Three consequences are reflected in the rubric and prompt templates:
+>
+> 1. **`ScheduleKeyDeletion` is the most irreversible op in the farm.**
+>    After the 7-30 day `PendingWindowInDays` elapses, key material is
+>    destroyed. Per `SKILL.md` "ScheduleKeyDeletion" Pre-flight:
+>    "irreversible scheduled deletion of key".
+> 2. **`GetSecretValue` / `Decrypt` / `GenerateDataKey` / `Encrypt` return
+>    plaintext** that is **irrecoverable** after the response is discarded.
+>    These are **double-strict** one-shot delivery contracts.
+> 3. **Key material in a trace is a hard double-absolute** (Safety = 0
+>    AND Credential Hygiene = 0) — stricter than any other skill because
+>    plaintext key material can decrypt arbitrary ciphertext.
+
+> **Two references in this directory carry the GCL contract:**
+>
+> | File | Purpose |
+> |---|---|
+> | [`references/rubric.md`](references/rubric.md) | The 5 core + 3 Aliyun-specific rubric dimensions, 17 per-op Safety sub-rules, §1.2.1 key-material detection (10 regex hot-spots), 4 worked examples |
+> | [`references/prompt-templates.md`](references/prompt-templates.md) | The Generator and Critic prompt templates (with `{{env.*}}` / `{{user.*}}` / `{{output.*}}` placeholders) — includes one-shot delivery contract and PendingWindowInDays validation |
+
+### GCL Scope for KMS
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, fifth skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Operations covered | ALL operations in this SKILL.md (CreateKey, ScheduleKeyDeletion, CancelKeyDeletion, EnableKey/DisableKey, CreateAlias, DeleteAlias, CreateSecret, GetSecretValue, PutSecretValue, RotateSecret, DeleteSecret, RestoreSecret, Encrypt, Decrypt, GenerateDataKey, AsymmetricSign/Verify, OpenKmsService) |
+| Operations most scrutinized | `ScheduleKeyDeletion` (irreversible), `DeleteSecret` (recovery-window), `DisableKey` (breaks dependents), `GetSecretValue` / `Decrypt` / `GenerateDataKey` / `Encrypt` (plaintext return), `CreateKey` with `EnableAutomaticRotation=true` (rotation policy) |
+
+### Per-Op Safety Sub-Rules (Quick Reference)
+
+For the **full** sub-rule table (17 operations), see
+[`references/rubric.md` §1.2](../alicloud-kms-ops/references/rubric.md).
+Highlights:
+
+| Operation | Hard Safety condition (Score 1 requires) |
+|---|---|
+| `CreateKey` | Explicit user confirmation of `KeyUsage` / `KeySpec`; `ProtectionLevel` ∈ {`SOFTWARE`, `HSM`}; if `EnableAutomaticRotation=true`, `RotationInterval ∈ [7, 365]` days; returned `KeyId` is one-shot delivered |
+| `ScheduleKeyDeletion` | Explicit user confirmation; **explicit warning that key material is DESTROYED after the pending window**; **`PendingWindowInDays ∈ [7, 30]`**; `DescribeKey` confirms `Enabled`/`Disabled`; aliases enumerated via `ListAliases`; **deletion date informed to user**; **`CancelKeyDeletion` mentioned as rescue op** |
+| `CancelKeyDeletion` | `DescribeKey` confirms `PendingDeletion`; explicit user confirmation |
+| `DisableKey` | Explicit user confirmation; `DescribeKey` confirms `Enabled`; explicit warning that dependents will fail |
+| `CreateSecret` / `PutSecretValue` | `DescribeSecret` confirms name uniqueness; `SecretData` delivered via **env var or file reference, NOT inline CLI flag** |
+| `RotateSecret` | Explicit user confirmation; secret is `Available`; rotation is automatic OR user provides new value via env var; applications warned to update retrieval |
+| `DeleteSecret` | Explicit user confirmation; **`RecoveryWindowInDays ∈ [7, 30]`**; no active dependencies; **final `GetSecretValue` retrieved and saved by user in the same flow** |
+| `RestoreSecret` | `DescribeSecret` confirms `ScheduledDeletion`; explicit user confirmation |
+| `GetSecretValue` | Explicit user confirmation; secret is `Available`; **`SecretData` plaintext is one-shot delivered and redacted everywhere else** |
+| `Decrypt` | Explicit user confirmation; `CiphertextBlob` is from this session; `Plaintext` is one-shot delivered |
+| `GenerateDataKey` | Explicit user confirmation; BOTH `Plaintext` AND `CiphertextBlob` are one-shot delivered; agent recommends storing `CiphertextBlob` long-term and discarding `Plaintext` after envelope encryption |
+
+### The PendingWindowInDays Rule (ScheduleKeyDeletion, hard gate)
+
+Per `SKILL.md` "ScheduleKeyDeletion" Pre-flight: `PendingWindowInDays` must
+be **in [7, 30]**. The Critic regex `pending_window_in_days["': =]+[1-6]\b`
+or `=0\b` will catch violations. Values outside this range → **Safety = 0**.
+
+Additionally, the user MUST be informed of:
+- The **deletion date** (computed from `PendingWindowInDays`)
+- `CancelKeyDeletion` as the **rescue op** within the window
+
+### The One-Shot Delivery Contract (for plaintext-returning ops)
+
+`GetSecretValue` / `Decrypt` / `GenerateDataKey` / `Encrypt` return
+plaintext that is **irrecoverable** after the response is discarded. The
+trace MUST encode:
+
+```json
+{
+  "generator": {
+    "command": "aliyun kms GetSecretValue --SecretName \"...\"",
+    "output_mode": "json",  // MUST be "json"
+    "one_shot_delivery": {
+      "delivered": true,
+      "delivered_to": "user",
+      "delivered_at": "2026-06-04T10:00:00Z",
+      "trace_value_after_delivery": "<redacted>",
+      "ciphertext_blob_persisted": true,  // for Decrypt / GenerateDataKey
+      "ciphertext_blob_value": "<available in trace for re-decrypt if needed>"
+    }
+  }
+}
+```
+
+> `--output cols=` / `--output table` is **forbidden** for plaintext-returning
+> ops for the same reason as RAM's `CreateAccessKey` (per
+> `AGENTS.md` §12 cross-skill convention).
+
+### The Key-Material Hard-Block (cross-cutting)
+
+The Critic MUST scan the trace for the 10 key-material regex hot-spots in
+`rubric.md` §1.2.1. A match is **both Safety = 0 AND Credential Hygiene = 0**:
+
+| Pattern | Risk |
+|---|---|
+| `"Plaintext":"..."` (outside one-shot) | DESTRUCTIVE-MASS (key material leak) |
+| `"SecretData":"..."` (outside one-shot) | DESTRUCTIVE-MASS (secret leak) |
+| `"KeyMaterial":"..."` | DESTRUCTIVE-MASS (raw key material) |
+| `BEGIN PRIVATE KEY` / `BEGIN RSA PRIVATE KEY` / `BEGIN EC PRIVATE KEY` | DESTRUCTIVE-MASS (private key in trace) |
+| `--SecretData "rawvalue"` | Credential Hygiene = 0 (CLI flag leak) |
+| `--Plaintext "rawvalue"` | Credential Hygiene = 0 (CLI flag leak) |
+| `PendingWindowInDays` ∈ [1, 6] | Safety = 0 (too-short window) |
+| `PendingWindowInDays = 0` | Safety = 0 (immediate delete) |
+
+### KMS-Specific Additions (beyond the 5 core dimensions)
+
+| Dimension | Threshold | Why it matters for KMS |
+|---|---|---|
+| **Region Compliance** | ≥ 0.5 | `--RegionId` must match `{{user.region}}`; **cross-region key access is impossible** without `ReplicateKey` — mixing `--RegionId` and `KeyId` from different regions is a Safety = 0 finding |
+| **Credential Hygiene** | = 1 (**absolute, triple-strict**) | KMS issues AND consumes cryptographic material. The trace must contain no `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, no leaked `Plaintext` / `SecretData` / `KeyMaterial` / private keys. 12 KMS-specific patterns in `rubric.md` §2.2. |
+| **Well-Architected** | ≥ 0.5 | The 5 WA pillars; **Security is the primary pillar** for KMS (cryptographic root). Security sub-score **must** be ≥ 0.5 or the overall WA score is 0. |
+
+### Termination (inherited from `AGENTS.md` §12.5)
+
+| Condition | Behavior |
+|---|---|
+| All dimensions ≥ threshold | **PASS** — return Generator's result |
+| Safety = 0 **or** Credential Hygiene = 0 | **ABORT** — never return partial output |
+| Other dimension < threshold AND iter < 2 | **RETRY** — inject Critic suggestions into next Generator prompt |
+| Other dimension < threshold AND iter = 2 | **MAX_ITER** — return best-so-far + unresolved rubric items |
+
+### Trace Persistence (mandatory)
+
+Every GCL run MUST write `./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json`
+with the schema defined in `AGENTS.md` §12.6. Apply the KMS-specific
+sanitization regex helpers in `rubric.md` §2.2 to scrub all 12
+KMS-specific secret / key material patterns before persisting.
+
+### Changelog (this section only)
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0.0 | 2026-06-04 | Fifth rollout: added `## Quality Gate (GCL)` section + `references/rubric.md` + `references/prompt-templates.md`. Default `max_iter=2`. Aligned with `AGENTS.md` §12 and the ECS / Redis / RDS / RAM pilots. KMS-specific additions: 17 per-op Safety sub-rules; `PendingWindowInDays ∈ [7, 30]` hard rule; one-shot delivery contract for plaintext-returning ops; mandatory `--output json` for plaintext-returning ops; 10 key-material regex hot-spots (leak = Safety = 0 + Credential Hygiene = 0); 12 KMS-specific secret / key material patterns with sanitization helper; cross-region key access is a Safety = 0 finding. |
+
+---
 
 ## See Also — Meta-Skill Rules
 

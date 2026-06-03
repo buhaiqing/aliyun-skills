@@ -22,8 +22,8 @@ compatibility: >-
   and agentskills.io frontmatter conventions.
 metadata:
   author: alicloud
-  version: "3.0.0"
-  last_updated: "2026-05-14"
+  version: "3.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   type: meta-skill
   guidance_freedom_level: medium
@@ -702,6 +702,11 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Well-Architected — Performance Pillar:** Key performance metrics with thresholds documented; auto-scaling trigger table present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.5
 - [ ] **Well-Architected Reference:** SKILL.md links to `well-architected-assessment.md` for pillar-specific assessment patterns
 
+- [ ] **[GCL] Rubric present (when `required` or `recommended` per `AGENTS.md` §12.8):** `references/rubric.md` exists with 5 core dimensions + 3 Aliyun-specific extensions, per-op Safety sub-rules table (≥ 3 sub-rules per destructive op), detection regex list (≥ 5 patterns for data-plane skills), ≥ 2 worked examples (one PASS, one SAFETY_FAIL), and changelog with 1.0.0 entry per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §4
+- [ ] **[GCL] Prompt templates present (when `required` or `recommended`):** `references/prompt-templates.md` exists with Generator template (hard rules list referencing rubric's per-op sub-rules) AND Critic template (independent re-query pattern, regex application, **Critic MUST NOT see `{{user.request}}`** for rubber-stamping prevention per `AGENTS.md` §12.2) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §5
+- [ ] **[GCL] Quality Gate section in SKILL.md (when `required` or `recommended`):** `## Quality Gate (GCL)` section inserted between `## Operational Best Practices` and `## See Also — Meta-Skill Rules`, with classification table (Required? / `max_iter` / Most-scrutinized ops), `Changelog` line at 1.0.0, and links to both `references/rubric.md` AND `references/prompt-templates.md` per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §6
+- [ ] **[GCL] Cross-skill delegation documented (when skill touches other products):** Generator template hard rules list explicit delegation to other skills' GCL rules (e.g. VPC → `alicloud-eip-ops` for EIP ops; NAT → `alicloud-eip-ops`; PolarDB → `alicloud-rds-ops` for shared SQL WHERE-clause) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §7
+
 ### P1 — SHOULD PASS
 
 - [ ] **Chaining:** Stable output fields for downstream skills (via `{{output.*}}` placeholders)
@@ -714,6 +719,9 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **Well-Architected — Multi-AZ:** Cross-AZ/region deployment recommendation present per [well-architected-assessment.md](references/well-architected-assessment.md) §2.2.1
 - [ ] **Well-Architected — Right-Sizing:** Resource utilization → recommendation mapping documented per [well-architected-assessment.md](references/well-architected-assessment.md) §2.3.2
 - [ ] **Well-Architected — Batch:** Batch operation pattern documented for ≥ 3 resources per [well-architected-assessment.md](references/well-architected-assessment.md) §2.4.1
+
+- [ ] **[GCL] Frontmatter coherence on GCL rollout:** When GCL files are added/modified, `version` (minor or patch bump) AND `last_updated` are updated in the SAME commit; `rubric_version` in `references/rubric.md` frontmatter matches `1.0.0` for the first rollout per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §6.2
+- [ ] **[GCL] Classification matches destructive surface:** Skill's GCL classification (`required` / `recommended` / `optional`) matches `AGENTS.md` §12.8 defaults OR provides explicit justification for any deviation; if the new skill has a `Delete*` / `Drop*` / `FLUSHALL*` / `ScheduleKeyDeletion*` op, it MUST be classified as `required` per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §2
 
 ---
 
@@ -738,6 +746,9 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 | [optimization-analysis.md](references/optimization-analysis.md) | Three-dimensional optimization framework |
 | [user-experience-spec.md](references/user-experience-spec.md) | Mandatory UX requirements for all generated skills |
 | [aiops-best-practices.md](references/aiops-best-practices.md) | Mandatory AIOps patterns for monitoring/diagnosis skills |
+| [gcl-rollout-spec.md](references/gcl-rollout-spec.md) | **NEW** Generator-Critic-Loop (GCL) rollout playbook — how to generate `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section in SKILL.md for a new `alicloud-*-ops` skill; covers `required` / `recommended` / `optional` classification, per-op Safety sub-rule format, regex hot-spot detection, cross-skill delegation, and SLB worked example. Mandatory reference for any new or updated `required` / `recommended` skill per `AGENTS.md` §12. |
+| [gcl-orchestrator-agent.md](references/gcl-orchestrator-agent.md) | **NEW** `pi-subagents` custom agent definition (`gcl-orchestrator`) that wraps `scripts/gcl_runner.py` for the parent pi session. Install by copying the spec to `.pi/agents/gcl-orchestrator.md` (project scope) or `~/.pi/agent/agents/gcl-orchestrator.md` (user scope). `context: fork` future-proofs for Phase 3 LLM-based Critic. |
+| [gcl-actiontrail-crosscheck-spec.md](references/gcl-actiontrail-crosscheck-spec.md) | **NEW** GCL ↔ ActionTrail cross-check spec (Phase 3-C). For each `gcl-trace-*.json`, an independent `LookupEvents` call verifies the op actually happened in the cloud; catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY` findings. Companion to `scripts/gcl_actiontrail_crosscheck.py`. |
 | [well-architected-assessment.md](references/well-architected-assessment.md) | **NEW** Alibaba Cloud Well-Architected Framework five-pillar assessment integration |
 | [assets/eval_queries.json](assets/eval_queries.json) | Eval queries for testing the meta-skill's description trigger accuracy |
 | [templates/code-snippets.md](templates/code-snippets.md) | **sdk-only skill 专用** — `assets/code-snippets/` 目录结构、Client 工厂、operation 模板、go.mod/README 模板、生成流程与反模式 |
