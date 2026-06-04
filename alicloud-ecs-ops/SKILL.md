@@ -810,7 +810,24 @@ aliyun ecs DescribeSecurityGroupAttribute \
 | "安全组检查", "合规审计" | 检测 `0.0.0.0/0` 开放的高危端口 | `aliyun ecs DescribeSecurityGroupAttribute` | `SourceCidrIp` + `PortRange` ∈ {22,3389,3306,1433,6379,27017} |
 
 **Severity:** Critical rules → `SourceCidrIp="0.0.0.0/0"` + high-risk port; Immediate remediation.  
-**Full runbook:** [安全组合规检查](references/sg-compliance-check.md)
+**Full runbook:** [安全组合规检查（基础版）](references/sg-compliance-check.md)
+
+### Operation: Security Group SecOps Inspection (SecOps安全组巡检)
+
+| Trigger | Purpose | Key Capabilities |
+|---------|---------|------------------|
+| "安全组巡检", "SecOps", "暴露面分析", "安全组审计" | 从安全运营视角全面巡检安全组 | 资产盘点、暴露面检测、变更追踪、关联分析、规则统计、冲突检测、基线合规评估 |
+
+**Capabilities:**  
+- 资产盘点：安全组数量、规则数量、所属VPC  
+- 暴露面分析：0.0.0.0/0 高危端口检测（Critical/High/Medium/Low分级）  
+- 变更追踪：集成ActionTrail审计谁在何时改了什么  
+- 关联分析：安全组与ECS实例的关联关系  
+- 规则统计：出入站规则分布、0.0.0.0/0占比  
+- 冲突检测：重复规则、包含冲突、矛盾规则  
+- 合规评估：SOC/等保合规检查，生成0-100分评分报告  
+
+**Full runbook:** [SecOps安全组巡检与分析](references/sg-secops巡检.md)
 
 ---
 
