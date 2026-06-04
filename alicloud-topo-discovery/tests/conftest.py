@@ -5,6 +5,10 @@ import pytest
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
+# Self-bootstrap: ensure fixtures directory exists so smoke tests pass in
+# fresh clones. Real fixtures are added in Task 2+.
+FIXTURES_DIR.mkdir(exist_ok=True)
+
 
 @pytest.fixture
 def fixtures_dir():
