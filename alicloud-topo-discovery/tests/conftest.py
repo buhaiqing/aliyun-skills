@@ -21,7 +21,7 @@ def load_fixture():
     """Returns a function that loads a JSON fixture by name (without .json extension)."""
     def _load(name: str) -> dict:
         path = FIXTURES_DIR / f"{name}.json"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     return _load
 
