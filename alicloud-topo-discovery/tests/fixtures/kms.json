@@ -1,0 +1,10 @@
+{
+  "KeyId": "key-bp1aevb8sfi8mh1qj5tj",
+  "KeySpec": "Aliyun_AES_256",
+  "KeyUsage": "ENCRYPT/DECRYPT",
+  "Description": "Production encryption key",
+  "CreationTime": "2026-03-01T12:00:00Z",
+  "KeyState": "Enabled",
+  "Origin": "Aliyun_KMS",
+  "ProtectionLevel": "SOFTWARE"
+}

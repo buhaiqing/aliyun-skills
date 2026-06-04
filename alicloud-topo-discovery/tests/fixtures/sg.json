@@ -1,0 +1,24 @@
+{
+  "SecurityGroupId": "sg-bp1aevb8sfi8mh1qj5tg",
+  "SecurityGroupName": "prod-web-sg",
+  "Description": "Web security group",
+  "SecurityGroupType": "normal",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "CreationTime": "2026-01-16T09:00:00Z",
+  "Tags": {
+    "Tag": [
+      {"TagKey": "env", "TagValue": "prod"}
+    ]
+  },
+  "SecurityGroupRules": {
+    "SecurityGroupRule": [
+      {
+        "IpProtocol": "tcp",
+        "PortRange": "80/80",
+        "SourceCidrIp": "0.0.0.0/0",
+        "Direction": "ingress",
+        "Policy": "Accept"
+      }
+    ]
+  }
+}

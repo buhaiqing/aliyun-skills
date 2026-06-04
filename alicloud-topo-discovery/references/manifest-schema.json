@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "alicloud-topo-discovery manifest",
+  "description": "Schema for manifest.json output by alicloud-topo-discovery export-hcl. Locked to v1.0; future versions will use new schema_version values.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generator",
+    "generator_version",
+    "generated_at",
+    "account_id",
+    "region",
+    "scope",
+    "provider_version",
+    "resource_count",
+    "by_type",
+    "sensitive_masked",
+    "unsupported_types",
+    "import_ids_stable",
+    "execution_time_ms"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "generator": {
+      "type": "string",
+      "const": "alicloud-topo-discovery"
+    },
+    "generator_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "account_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "account_alias": {
+      "type": "string"
+    },
+    "role_arn": {
+      "type": "string",
+      "pattern": "^arn:acs:ram::[0-9]+:role/.+$"
+    },
+    "region": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "resource_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "by_type": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "sensitive_masked": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "unsupported_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "import_ids_stable": {
+      "type": "boolean"
+    },
+    "execution_time_ms": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

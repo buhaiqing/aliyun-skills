@@ -1,0 +1,35 @@
+# Topology Baseline - GitHub Actions
+# Schedule: daily 2 AM UTC + manual trigger
+name: Topology Baseline
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install deps
+        run: |
+          pip install alicloud-topo-discovery
+      - name: Run baseline
+        run: python alicloud-topo-discovery/scripts/baseline-manager.py --output-dir ./infra-baseline
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
+          ALIBABA_CLOUD_REGION_ID: ${{ secrets.ALIBABA_CLOUD_REGION_ID }}
+      - name: Commit and push baseline
+        run: |
+          git config user.name "topo-discovery"
+          git config user.email "topo@alicloud.com"
+          git add infra-baseline/
+          git diff --staged --quiet || git commit -m "baseline: $(date +%Y-%m-%d)"
+          git push

@@ -1,0 +1,9 @@
+{
+  "VpnConnectionId": "vco-bp1aevb8sfi8mh1qj5tn",
+  "Name": "prod-vpn-tokyo",
+  "LocalSubnet": "10.0.0.0/8",
+  "RemoteSubnet": "172.16.0.0/12",
+  "Status": "connected",
+  "CreateTime": "2026-04-15T10:00:00Z",
+  "VpnGatewayId": "vpn-bp1aevb8sfi8mh1qj5to"
+}

@@ -1,0 +1,35 @@
+{
+  "InstanceId": "i-bp1aevb8sfi8mh1qj5ta",
+  "InstanceName": "web-01",
+  "InstanceType": "ecs.g7.large",
+  "ImageId": "aliyun_3_x64_20G_alibase_20240819.vhd",
+  "HostName": "web-01",
+  "Status": "Running",
+  "VpcAttributes": {
+    "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+    "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+    "PrivateIpAddress": {
+      "IpAddress": [
+        "10.0.1.5"
+      ]
+    }
+  },
+  "SecurityGroupIds": {
+    "SecurityGroupId": [
+      "sg-bp1aevb8sfi8mh1qj5tb"
+    ]
+  },
+  "Tags": {
+    "Tag": [
+      {
+        "TagKey": "env",
+        "TagValue": "prod"
+      },
+      {
+        "TagKey": "tier",
+        "TagValue": "web"
+      }
+    ]
+  },
+  "CreationTime": "2026-02-01T10:00:00Z"
+}

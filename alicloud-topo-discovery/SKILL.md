@@ -1,11 +1,14 @@
 ---
 name: alicloud-topo-discovery
 description: >-
-  Use this skill to automatically discover and generate Alibaba Cloud network topology and resource inventory reports.
+  Use this skill to automatically discover and generate Alibaba Cloud network topology and resource inventory reports,
+  and export cloud resources as Terraform HCL for declarative infrastructure archives.
   Triggers when the user asks to "scan network resources", "generate topology map", "inventory VPC resources",
-  "check cloud resources", or "audit network structure" for a specific Alibaba Cloud account.
-  Supports both summary (brief) and detailed inventory modes. Keywords: 网络拓扑, 资源清单, VPC 探测, 
-  云资源扫描, 网络审计, network topology, resource inventory, VPC scan.
+  "check cloud resources", or "audit network structure", as well as "export as terraform", "create baseline snapshots",
+  "generate HCL", or "audit infrastructure drift" for a specific Alibaba Cloud account.
+  Supports both summary (brief) and detailed inventory modes, plus on-demand HCL export and periodic baseline management.
+  Keywords: 网络拓扑, 资源清单, VPC 探测, 云资源扫描, 网络审计, Terraform HCL 导出, 基础设施基线,
+  配置漂移检测, network topology, resource inventory, VPC scan, terraform export, infra baseline, drift detection.
   Do NOT use for resource creation, modification, deletion, or troubleshooting. Read-only discovery only.
 license: MIT
 compatibility: >-
@@ -72,8 +75,12 @@ metadata:
 - User 需要获取 VPC 下的资源清单/资产列表
 - User 需要了解账号下有哪些 VPC/EIP/SLB/ECS
 - User 需要生成网络架构图/资源报告
-- Keywords: 网络拓扑, VPC 结构, 资源清单, 云资源扫描, network topology, resource inventory
-- User 说"扫描一下网络", "看看有哪些资源", "生成拓扑图"
+- User 需要将云资源导出为 Terraform HCL (`export-hcl`)
+- User 需要创建基础设施基线快照 (`baseline`)
+- User 需要比较两次基线间的配置变更 (`baseline-diff`)
+- User 需要跨账号扫描资源 (使用 `--assume-role`)
+- Keywords: 网络拓扑, VPC 结构, 资源清单, 云资源扫描, Terraform HCL 导出, 基础设施基线
+- User 说"扫描一下网络", "看看有哪些资源", "生成拓扑图", "导出 HCL", "创建 baseline"
 
 ### SHOULD NOT Use This Skill When
 
@@ -81,6 +88,7 @@ metadata:
 - User 需要排查资源故障/性能问题 → 引导至监控/诊断 Skill
 - User 需要查询账单/费用 → 引导至计费 Skill
 - User 需要配置安全策略 → 引导至安全相关 Skill
+- User 需要通过 `terraform apply` 创建云资源 → 引导至 `alicloud-terraform-ops` (待实现)
 
 ## Pre-flight Interaction (用户决策)
 

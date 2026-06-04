@@ -1,0 +1,13 @@
+{
+  "InstanceId": "r-bp1aevb8sfi8mh1qj5ti",
+  "InstanceName": "prod-redis-cache",
+  "InstanceClass": "redis.master.large.default",
+  "EngineVersion": "6.0",
+  "ConnectionDomain": "r-bp1aevb8sfi8mh1qj5ti.redis.rds.aliyuncs.com",
+  "Port": 6379,
+  "NetworkType": "VPC",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+  "InstanceStatus": "Normal",
+  "CreateTime": "2026-02-25T10:00:00Z"
+}

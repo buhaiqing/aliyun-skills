@@ -1,0 +1,16 @@
+{
+  "ClusterId": "c-bp1aevb8sfi8mh1qj5tp",
+  "Name": "prod-k8s-cluster",
+  "ClusterType": "ManagedKubernetes",
+  "Version": "1.28",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VSwitchIds": {
+    "VSwitchId": [
+      "vsw-bp1aevb8sfi8mh1qj5t9"
+    ]
+  },
+  "WorkerNumber": 3,
+  "MasterNumber": 0,
+  "State": "running",
+  "Created": "2026-02-01T08:00:00Z"
+}

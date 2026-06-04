@@ -1,0 +1,11 @@
+{
+  "AllocationId": "eip-bp1aevb8sfi8mh1qj5tf",
+  "Name": "prod-eip-01",
+  "Bandwidth": 100,
+  "InternetChargeType": "PayByTraffic",
+  "InstanceChargeType": "PostPaid",
+  "IpAddress": "42.120.75.100",
+  "Status": "InUse",
+  "RegionId": "cn-hangzhou",
+  "CreationTime": "2026-01-18T10:00:00Z"
+}

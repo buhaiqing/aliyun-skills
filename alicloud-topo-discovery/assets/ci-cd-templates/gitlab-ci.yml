@@ -1,0 +1,23 @@
+# Topology Baseline - GitLab CI
+stages:
+  - baseline
+
+topology-baseline:
+  stage: baseline
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+  script:
+    - pip install alicloud-topo-discovery
+    - python alicloud-topo-discovery/scripts/baseline-manager.py --backend git --output-dir ./infra-baseline
+  variables:
+    ALIBABA_CLOUD_ACCESS_KEY_ID: $ALIBABA_CLOUD_ACCESS_KEY_ID
+    ALIBABA_CLOUD_ACCESS_KEY_SECRET: $ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    ALIBABA_CLOUD_REGION_ID: $ALIBABA_CLOUD_REGION_ID
+  cache:
+    paths:
+      - infra-baseline/
+  artifacts:
+    paths:
+      - infra-baseline/**/manifest.json

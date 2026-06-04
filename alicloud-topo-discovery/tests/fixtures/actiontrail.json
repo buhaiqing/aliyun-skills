@@ -1,0 +1,10 @@
+{
+  "Name": "prod-audit-trail",
+  "OssBucketName": "prod-audit-logs",
+  "OssKeyPrefix": "actiontrail/",
+  "Status": "Enabled",
+  "Region": "cn-hangzhou",
+  "TrailRegion": "All",
+  "IsOrganizationTrail": false,
+  "CreateTime": "2026-01-01T00:00:00Z"
+}

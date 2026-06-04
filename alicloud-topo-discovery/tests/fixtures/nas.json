@@ -1,0 +1,10 @@
+{
+  "FileSystemId": "fs-bp1aevb8sfi8mh1qj5tk",
+  "Description": "prod-nfs-storage",
+  "StorageType": "Capacity",
+  "ProtocolType": "NFS",
+  "MeteredSize": 10737418240,
+  "RegionId": "cn-hangzhou",
+  "CreateTime": "2026-03-10T08:00:00Z",
+  "Status": "Running"
+}

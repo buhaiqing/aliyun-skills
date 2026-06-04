@@ -1,0 +1,23 @@
+{
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VpcName": "prod-vpc-beijing",
+  "CidrBlock": "10.0.0.0/8",
+  "Description": "Production VPC in Beijing",
+  "RegionId": "cn-beijing",
+  "Status": "Available",
+  "IsDefault": false,
+  "CreationTime": "2026-01-15T08:00:00Z",
+  "VSwitchIds": {
+    "VSwitchId": [
+      "vsw-bp1aevb8sfi8mh1qj5t9"
+    ]
+  },
+  "Tags": {
+    "Tag": [
+      {
+        "TagKey": "env",
+        "TagValue": "prod"
+      }
+    ]
+  }
+}

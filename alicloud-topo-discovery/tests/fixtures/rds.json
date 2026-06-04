@@ -1,0 +1,24 @@
+{
+  "DBInstanceId": "rm-bp1aevb8sfi8mh1qj5tc",
+  "DBInstanceDescription": "prod-mysql",
+  "Engine": "MySQL",
+  "EngineVersion": "8.0",
+  "DBInstanceClass": "rds.mysql.s3.large",
+  "DBInstanceStorage": 100,
+  "DBInstanceNetType": "Intranet",
+  "ConnectionString": "rm-bp1aevb8sfi8mh1qj5tc.mysql.rds.aliyuncs.com",
+  "Port": 3306,
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+  "AccountPassword": "MySecretP@ss123",
+  "DBInstanceStatus": "Running",
+  "CreationTime": "2026-02-10T06:00:00Z",
+  "Tags": {
+    "Tag": [
+      {
+        "TagKey": "env",
+        "TagValue": "prod"
+      }
+    ]
+  }
+}
