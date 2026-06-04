@@ -1,0 +1,107 @@
+# alicloud-nas-ops example configuration
+# Use this file as a template for NAS automation scenarios.
+# Credentials MUST come from env vars (ALIBABA_CLOUD_ACCESS_KEY_ID / SECRET),
+# NEVER hardcode them in this file.
+#
+# Reference: https://help.aliyun.com/zh/nas/developer-reference/api-nas-2017-06-26-overview
+
+# Common anchors (YAML anchors — TE-5)
+x-defaults: &defaults
+  region: cn-hangzhou
+  protocol_type: NFS
+  access_group: web-app-shared
+  backup_retention_days: 30
+  recycle_bin_retention_days: 14
+
+# Standard (General-purpose) NAS — typical web application
+web_app_standard:
+  <<: *defaults
+  file_system_type: standard
+  storage_type: Performance
+  description: "Web app shared static assets"
+  vpc_id: vpc-bp1xxxxxxxxxx
+  vswitches:
+    - zone: cn-hangzhou-h
+      vsw_id: vsw-bp1xxxxxxxxxx001
+    - zone: cn-hangzhou-i
+      vsw_id: vsw-bp1xxxxxxxxxx002
+  access_rules:
+    - source_cidr: 10.0.0.0/8
+      rw_access: RDWR
+      user_access: root_squash
+      priority: 1
+  auto_snapshot_policy:
+    name: web-daily-0300
+    repeat_weekdays: "1,2,3,4,5,6,7"
+    time_points: "3"
+    retention_days: 7
+  lifecycle_policies:
+    - name: log-tierdown
+      path: /var/log
+      ia_days: 30
+      archive_days: 180
+
+# Extreme NAS — high-IOPS OLTP / EDA
+oltp_extreme:
+  <<: *defaults
+  file_system_type: extreme
+  storage_type: advance
+  capacity_gib: 4096
+  description: "OLTP database shared storage"
+  access_rules:
+    - source_cidr: 10.0.0.0/8
+      rw_access: RDWR
+      user_access: no_squash
+      priority: 1
+
+# CPFS — HPC / AI training
+ai_training_cpfs:
+  <<: *defaults
+  protocol_type: cpfs
+  file_system_type: cpfs
+  storage_type: advance_200
+  capacity_gib: 16384
+  bandwidth_mbps: 4096
+  description: "AI training dataset shared FS"
+  filesets:
+    - name: imagenet
+      path: /datasets/imagenet
+    - name: checkpoints
+      path: /checkpoints
+
+# SMB for Windows workloads
+windows_smb:
+  <<: *defaults
+  protocol_type: SMB
+  file_system_type: standard
+  storage_type: Capacity
+  description: "Windows file shares"
+  smb_acl_enabled: true
+  ad_integration:
+    enabled: true
+    ldap_config: ldap-config-prod
+  access_rules:
+    - source_cidr: 10.0.0.0/8
+      rw_access: RDWR
+      user_access: root_squash
+      priority: 1
+
+# Backup target — for cross-region DR via HBR
+backup_target:
+  <<: *defaults
+  file_system_type: standard
+  storage_type: Capacity
+  description: "Cross-region backup target"
+  auto_snapshot_policy:
+    name: hourly-backup
+    repeat_weekdays: "1,2,3,4,5,6,7"
+    time_points: "0,4,8,12,16,20"
+    retention_days: 30
+  # Replication: configure HBR vault pair separately via alicloud-hbr-ops
+
+# Tagging convention (cost allocation)
+tags:
+  env: production
+  team: platform
+  cost_center: "1234"
+  managed_by: alicloud-nas-ops
