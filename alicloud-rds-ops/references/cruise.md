@@ -130,7 +130,7 @@ The following compound anomaly patterns are supported for advanced巡检 detecti
 | 3 | 内存-缓冲池瓶颈 | Memory > 85% + BufferPoolHitRate < 95% | Section 1.2 | 内存异常持续5分钟→DAS SQL诊断 |
 | 4 | 磁盘-写入延迟 | DiskUsage > 85% + WriteLatency突增 | Section 1.4 + 1.5 | 磁盘写入延迟→DAS分析 |
 
-> **Note:** Multi-indicator patterns require correlation analysis. See [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md) Section 2.1 for the Multi-Dimensional Correlation Matrix.
+> **Note:** Multi-indicator patterns require correlation analysis. See [Alert Diagnosis & Root Cause Analysis](alert-diagnosis.md) Section 2.1 for the Multi-Dimensional Correlation Matrix.
 
 ### DAS Diagnostic Delegation Triggers
 

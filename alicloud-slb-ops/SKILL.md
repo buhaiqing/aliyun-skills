@@ -1249,11 +1249,11 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md) — Common errors, diagnostic order, RAM policies
 - [Monitoring & Alerts](references/monitoring.md) — CloudMonitor metrics, health checks, alert recommendations
 - [Integration](references/integration.md) — Environment setup, JIT Go SDK bootstrap, cross-product integration
-- [Batch Operations](batch-operations.md) — 批量并行操作模板 (See: ../alicloud-skill-generator/templates/batch-operations.md)
+- [Batch Operations](../alicloud-ecs-ops/references/idle-resource-detection.md) — 批量并行操作模板 (See: ../alicloud-skill-generator/templates/batch-operations.md)
 
 ### API 调用计数
 
-See: [../alicloud-skill-generator/templates/api-counting.md](../alicloud-skill-generator/templates/api-counting.md)
+See: [../alicloud-skill-generator/references/api-call-counter.md](../alicloud-skill-generator/references/api-call-counter.md)
 
 ### Assets
 
@@ -1278,7 +1278,7 @@ The `assets/` directory contains reusable configuration templates and examples:
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

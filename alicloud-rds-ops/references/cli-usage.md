@@ -23,7 +23,7 @@ with connection info from `DescribeDBInstanceNetInfo`. For OpenAPI-only access w
 use the **`aliyun-cli-rds-data` plugin** (`aliyun rds-data execute-statement` — one `--sql` string
 per call; `batch-execute-statement` is for parameterized bulk INSERT/UPDATE, not arbitrary scripts).
 
-**Full agent runbook:** [sql-execution.md](sql-execution.md)
+**Full agent runbook:** [sql-execution.md](../references/advanced/sql-execution.md)
 
 | Goal | Command family | Example |
 |------|----------------|---------|
@@ -41,7 +41,7 @@ aliyun plugin install --names aliyun-cli-rds-data
 
 | Operation (API / SDK) | Available via `aliyun`? | Notes |
 |------------------------|---------------------|-------|
-| Execute SQL / run `.sql` file | **no** (`rds`) / partial (`rds-data`) | Use `mysql` client for files; see [sql-execution.md](sql-execution.md) |
+| Execute SQL / run `.sql` file | **no** (`rds`) / partial (`rds-data`) | Use `mysql` client for files; see [sql-execution.md](../references/advanced/sql-execution.md) |
 | CreateSecret / DescribeSecrets (Data API) | yes (`aliyun rds`) | MySQL only; pairs with `rds-data` plugin |
 | CreateDBInstance | yes | Full support |
 | DescribeDBInstances | yes | Full support |
@@ -72,7 +72,7 @@ aliyun plugin install --names aliyun-cli-rds-data
 | DescribeAvailableZones | yes | Full support |
 
 > RDS **control-plane** APIs are fully supported by `aliyun rds`. **Data-plane SQL**
-> (running `.sql` files) is **not** part of `aliyun rds` — see [sql-execution.md](sql-execution.md).
+> (running `.sql` files) is **not** part of `aliyun rds` — see [sql-execution.md](../references/advanced/sql-execution.md).
 
 ## Command Map
 

@@ -12,7 +12,7 @@ in the same CS product.
 
 All installation flows MUST follow the **Enhanced Self-Healing Framework**
 defined in
-[`alicloud-skill-generator/references/enhanced-self-healing-framework.md`](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+[`alicloud-skill-generator/references/enhanced-self-healing-framework.md`](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
 - **Pre-flight Checks:** Network, disk, permissions, system compatibility

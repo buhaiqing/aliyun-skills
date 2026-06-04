@@ -1484,7 +1484,7 @@ Phase 3: Validate — Confirm connectivity, application health, data integrity
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
 - [Prompt Examples](references/prompt-examples.md) — 自然语言提示词示例，开箱即用
-- [Batch Operations](references/batch-operations.md) — 批量并行操作模板
+- [Batch Operations](references/idle-resource-detection.md) — 批量并行操作模板
 - [Observability](references/observability.md) — 可观测性联动规则
 - [GCL Rubric](references/rubric.md) — **Phase 1 pilot** GCL rubric (5 core + 3 Aliyun dimensions, per-op Safety sub-rules)
 - [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 pilot** Generator & Critic prompt templates
@@ -1512,7 +1512,7 @@ Phase 3: Validate — Confirm connectivity, application health, data integrity
 ## Quality Gate (GCL)
 
 This skill is the **Phase 1 pilot** for the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
 Every runtime execution of an `alicloud-ecs-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

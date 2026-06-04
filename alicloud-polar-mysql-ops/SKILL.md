@@ -631,7 +631,7 @@ PolarDB MySQL 支持通过 mysql 客户端执行 SQL，提供多种 Endpoint 类
 - **Endpoint Selection**: Write operations → Primary Endpoint; Read operations → Cluster/Custom Endpoint
 - **Result Masking**: Sensitive data (passwords, PII) not displayed in output
 
-> **完整实现**请参阅: [references/sql-execution.md](references/sql-execution.md)
+> **完整实现**请参阅: [references/advanced/sql-execution.md](references/advanced/sql-execution.md)
 
 ---
 
@@ -759,7 +759,7 @@ PolarDB 慢查询分析报告:
 
 > **深度诊断边界：** 如需深度 SQL 优化建议、执行计划 EXPLAIN、锁分析、SQL 限流，委托至 `alicloud-das-ops` Skill。
 
-> **详细工作流文档**请参阅: [references/slow-query-analysis.md](references/slow-query-analysis.md)
+> **详细工作流文档**请参阅: [references/advanced/slow-query-analysis.md](references/advanced/slow-query-analysis.md)
 
 ---
 
@@ -809,7 +809,7 @@ PolarDB 节点级分析:
 └── 优化建议: 移除只读节点1 (节省 ￥800/月)
 ```
 
-> **完整实现**请参阅: [references/finops-node-analysis.md](references/finops-node-analysis.md)
+> **完整实现**请参阅: [references/advanced/finops-node-analysis.md](references/advanced/finops-node-analysis.md)
 
 ---
 
@@ -839,7 +839,7 @@ PolarDB 存储层级分析:
 └── 数据分层: 冷数据77% - 归档至PSLevel5节省65%
 ```
 
-> **完整实现**请参阅: [references/finops-storage-tier-analysis.md](references/finops-storage-tier-analysis.md)
+> **完整实现**请参阅: [references/advanced/finops-storage-tier-analysis.md](references/advanced/finops-storage-tier-analysis.md)
 
 ---
 
@@ -884,7 +884,7 @@ PolarDB 存储空间趋势预测:
 └── 扩容建议: 增加 250GB + 购买 500GB 存储包
 ```
 
-> **完整实现**请参阅: [references/aiops-storage-prediction.md](references/aiops-storage-prediction.md)
+> **完整实现**请参阅: [references/advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md)
 
 ---
 
@@ -930,7 +930,7 @@ PolarDB 连接数趋势预测:
 └── 优化建议: 调整 max_connections → 6000，预热连接池
 ```
 
-> **完整实现**请参阅: [references/aiops-connection-prediction.md](references/aiops-connection-prediction.md)
+> **完整实现**请参阅: [references/advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md)
 
 ---
 
@@ -973,7 +973,7 @@ PolarDB 异常检测报告:
 └── 优化建议: SQL限流 + 索引优化 + 调整连接池
 ```
 
-> **完整实现**请参阅: [references/aiops-anomaly-detection.md](references/aiops-anomaly-detection.md)
+> **完整实现**请参阅: [references/advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md)
 
 ---
 
@@ -1020,6 +1020,31 @@ PolarDB 异常检测报告:
 | 4 | **存储-延迟模式** | StorageUsage > 85% + Latency 突增 | 存储空间不足、写入阻塞 | 扩容存储、清理历史数据、归档冷数据 |
 
 > **Note:** For complex anomaly diagnosis (SQL throttling, deadlock analysis, auto-scaling), delegate to `alicloud-das-ops`.
+
+---
+
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 异常检测、根因分析 | [advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md) |
+| 异常模式识别 | [advanced/aiops-anomaly-patterns.md](references/advanced/aiops-anomaly-patterns.md) |
+| 连接数预测、容量规划 | [advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md) |
+| 存储预测 | [advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md) |
+| 自动修复方案 | [advanced/aiops-auto-remediation.md](references/advanced/aiops-auto-remediation.md) |
+| 存储分层优化 | [advanced/finops-storage-tier-analysis.md](references/advanced/finops-storage-tier-analysis.md) |
+| 节点成本分析 | [advanced/finops-node-analysis.md](references/advanced/finops-node-analysis.md) |
+| 慢查询深度分析 | [advanced/slow-query-analysis.md](references/advanced/slow-query-analysis.md) |
+
+### ⚠️ Security-Sensitive Operations
+
+以下操作涉及数据变更，**执行前必须获得用户显式确认**：
+
+| 场景 | 文档 | 风险等级 |
+|------|------|---------|
+| SQL 文件执行 | [advanced/sql-execution.md](references/advanced/sql-execution.md) | 🔴 高（可执行 DROP/TRUNCATE） |
 
 ---
 
@@ -1077,13 +1102,13 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
-- [SQL Execution](references/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
-- [Slow Query Analysis Workflow](references/slow-query-analysis.md) — 慢查询分析工作流：Top N、趋势分析、索引优化建议
-- [FinOps: Node Analysis](references/finops-node-analysis.md) — 节点级成本优化分析
-- [FinOps: Storage Tier Analysis](references/finops-storage-tier-analysis.md) — 存储层级成本优化分析
-- [AIOps: Storage Prediction](references/aiops-storage-prediction.md) — 存储空间趋势预测（30/60/90天）
-- [AIOps: Connection Prediction](references/aiops-connection-prediction.md) — 连接数趋势预测（业务周期分析）
-- [AIOps: Anomaly Detection](references/aiops-anomaly-detection.md) — 异常检测与根因分析
+- [SQL Execution](references/advanced/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
+- [Slow Query Analysis Workflow](references/advanced/slow-query-analysis.md) — 慢查询分析工作流：Top N、趋势分析、索引优化建议
+- [FinOps: Node Analysis](references/advanced/finops-node-analysis.md) — 节点级成本优化分析
+- [FinOps: Storage Tier Analysis](references/advanced/finops-storage-tier-analysis.md) — 存储层级成本优化分析
+- [AIOps: Storage Prediction](references/advanced/aiops-storage-prediction.md) — 存储空间趋势预测（30/60/90天）
+- [AIOps: Connection Prediction](references/advanced/aiops-connection-prediction.md) — 连接数趋势预测（业务周期分析）
+- [AIOps: Anomaly Detection](references/advanced/aiops-anomaly-detection.md) — 异常检测与根因分析
 
 ## Related Skills & References
 
@@ -1104,7 +1129,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 ## Quality Gate (GCL)
 
-Eleventh rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **This skill is the canonical PolarDB rubric** for all 4 PolarDB variants. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Eleventh rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **This skill is the canonical PolarDB rubric** for all 4 PolarDB variants. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

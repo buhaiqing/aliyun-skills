@@ -851,7 +851,7 @@ Event storage: free for 90 days. OSS delivery for long-term (use lifecycle rules
 ## Quality Gate (GCL)
 
 This skill participates in the Generator-Critic-Loop (GCL) defined in
-[`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
 in a **non-destructive cross-checker role**. Per `AGENTS.md` §12.8, this
 skill is classified as `optional` (read-only audit) and is therefore **not
 required to host its own `references/rubric.md` + `references/prompt-templates.md`**.
@@ -861,7 +861,7 @@ required to host its own `references/rubric.md` + `references/prompt-templates.m
 | Required? | **No** (Phase 3-C, read-only audit) |
 | GCL role | **Cross-checker** — verifies GCL traces against cloud-side ActionTrail events |
 | Companion script | [`scripts/gcl_actiontrail_crosscheck.py`](../../scripts/gcl_actiontrail_crosscheck.py) |
-| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
+| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
 
 ### What the Cross-Check Catches
 

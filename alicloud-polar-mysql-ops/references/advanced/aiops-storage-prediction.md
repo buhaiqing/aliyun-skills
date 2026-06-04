@@ -758,7 +758,7 @@ func validatePredictionAccuracy(clusterId string) float64 {
 
 ## Related References
 
-- [CLI Usage](cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
-- [API/SDK Usage](api-sdk-usage.md) - CMS SDK 完整接口文档
-- [Monitoring](monitoring.md) - PolarDB 存储指标监控配置
+- [CLI Usage](../cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
+- [API/SDK Usage](../api-sdk-usage.md) - CMS SDK 完整接口文档
+- [Monitoring](../monitoring.md) - PolarDB 存储指标监控配置
 - [FinOps Storage Tier Analysis](finops-storage-tier-analysis.md) - 存储层级成本优化

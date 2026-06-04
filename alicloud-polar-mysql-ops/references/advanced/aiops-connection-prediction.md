@@ -1138,8 +1138,8 @@ SHOW PROCESSLIST;
 
 ## Related References
 
-- [CLI Usage](cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
-- [API/SDK Usage](api-sdk-usage.md) - CMS SDK 完整接口文档
-- [Monitoring](monitoring.md) - PolarDB 连接指标监控配置
+- [CLI Usage](../cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
+- [API/SDK Usage](../api-sdk-usage.md) - CMS SDK 完整接口文档
+- [Monitoring](../monitoring.md) - PolarDB 连接指标监控配置
 - [AIOps Anomaly Detection](aiops-anomaly-detection.md) - 连接异常检测联动
 - [AIOps Storage Prediction](aiops-storage-prediction.md) - 存储趋势预测模式参考

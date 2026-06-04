@@ -11,7 +11,7 @@
 
 All installation flows MUST follow the **Enhanced Self-Healing Framework**
 defined in
-[`alicloud-skill-generator/references/enhanced-self-healing-framework.md`](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+[`alicloud-skill-generator/references/enhanced-self-healing-framework.md`](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
 - **Pre-flight Checks:** Network, disk, permissions, system compatibility
@@ -88,7 +88,7 @@ For detailed implementation, see the meta-skill framework doc Section 3.2.
 | Private image pull | ACR (or other registry) | `alicloud-acr-ops` (when present) |
 | Container logs | SLS | `alicloud-sls-ops` (when present) |
 | Monitoring / Alerts | CloudMonitor (CMS) | `alicloud-cms-ops` |
-| ECI in ASK context (K8s) | ASK kubeconfig | [`alicloud-ack-serverless-ops`](../alicloud-ack-serverless-ops/SKILL.md) |
+| ECI in ASK context (K8s) | ASK kubeconfig | [`alicloud-ack-serverless-ops`](../../alicloud-ack-serverless-ops/SKILL.md) |
 | Cluster authentication | RAM | `alicloud-ram-ops` |
 | Cost reporting | Billing | `alicloud-billing-ops` |
 | VirtualNode to K8s | self-managed K8s cluster | `alicloud-cs-ops` (when present) |

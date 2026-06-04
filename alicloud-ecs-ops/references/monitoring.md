@@ -272,7 +272,7 @@ aliyun cms PutMetricRuleTargets \
   --Payload "{\"alertConvergence\": true, \"cascadeAnalysis\": true}"
 ```
 
-> **See also:** [Observability Integration](references/observability.md)
+> **See also:** [Observability Integration](observability.md)
 
 ## Alert-Driven Diagnostic Decision Tree
 

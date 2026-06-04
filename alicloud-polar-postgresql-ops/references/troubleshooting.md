@@ -165,7 +165,7 @@ aliyun polardb DescribeSlowLogs \
 
 **解决方案：**
 
-参见 [Slow Query Analysis](slow-query-analysis.md)
+参见 [Slow Query Analysis](../references/advanced/slow-query-analysis.md)
 
 ### High Replication Lag
 

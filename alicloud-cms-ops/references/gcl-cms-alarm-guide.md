@@ -22,7 +22,7 @@ metadata:
 
 > **Prerequisite:** Phase 3-C must be running (cron / CI) to produce
 > `crosscheck-report-*.json` files. See
-> [`gcl-actiontrail-crosscheck-spec.md`](../gcl-actiontrail-crosscheck-spec.md).
+> [`gcl-actiontrail-crosscheck-spec.md`](../../alicloud-skill-generator/referenc../../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md).
 
 ---
 

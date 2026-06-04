@@ -4,7 +4,7 @@
 
 **DAS is CLI-unsupported — JIT Go SDK is the ONLY execution path.**
 
-All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Critical for DAS:**
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, Go runtime compatibility
@@ -21,7 +21,7 @@ Since DAS has NO CLI fallback, Go runtime JIT download MUST succeed. The Agent M
 4. Verify Go runtime health before proceeding
 5. Provide clear user guidance if all attempts fail
 
-For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
 
 ## API Profile
 

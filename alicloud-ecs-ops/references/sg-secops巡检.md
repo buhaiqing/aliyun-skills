@@ -629,4 +629,4 @@ echo "[$(date)] 巡检完成，报告位于: $REPORT_DIR"
 
 - [安全组合规检查（基础版）](sg-compliance-check.md)
 - [ECS故障诊断](troubleshooting.md)
-- [云助手执行](references/cloud-assistant.md)
+- [云助手执行](integration.md)

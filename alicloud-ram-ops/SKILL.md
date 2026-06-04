@@ -1567,7 +1567,7 @@ RAM API calls are instant (sub-second). Monitor:
 ## Quality Gate (GCL)
 
 This skill is the **fourth rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
 Every runtime execution of an `alicloud-ram-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

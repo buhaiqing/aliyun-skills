@@ -1642,7 +1642,7 @@ Phase 3: Resolve — Auto-scaling, SQL throttling, session kill, or escalate wit
 This skill includes a comprehensive troubleshooting enhancement framework:
 
 ### Assessment & Optimization
-- [Troubleshooting Capability Assessment](references/troubleshooting-assessment.md) — Root cause identification efficiency analysis, optimization proposals, and standardized evaluation metrics
+- [Troubleshooting Capability Assessment](references/troubleshooting.md) — Root cause identification efficiency analysis, optimization proposals, and standardized evaluation metrics
 - [Cross-Skill Collaboration Protocol](references/cross-skill-collaboration.md) — Trigger conditions, context passing format, and best practices for multi-skill diagnosis
 
 ### Prompt Templates

@@ -381,6 +381,16 @@ aliyun vpc DescribeForwardTableEntries --RegionId "{{env.ALIBABA_CLOUD_REGION_ID
 
 ---
 
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 成本优化、资源分析 | [advanced/finops-optimization.md](references/advanced/finops-optimization.md) |
+
+---
+
 ## Well-Architected Assessment (卓越架构)
 
 This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to NAT Gateway.
@@ -416,11 +426,11 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 | Area | Guidance | Detail Reference |
 |------|----------|-----------------|
-| **Billing Mode Decision** | PayBySpec for steady traffic (> 60% CU); PayByActualUsage for bursty/low traffic | [FinOps Optimization §2](references/finops-optimization.md#2-billing-mode-decision-tree) |
-| **Idle Resource Detection** | NAT with 0 SNAT + 0 DNAT for 7d = idle → delete. Orphaned EIPs → release | [FinOps Optimization §3](references/finops-optimization.md#3-idle-resource-detection) |
-| **Right-Sizing** | Match spec to workload: Small (< 1K CU) → Medium (5K CU) → Large (10K CU) → XLarge (50K CU) | [FinOps Optimization §4](references/finops-optimization.md#4-right-sizing-guide) |
-| **EIP Cost Optimization** | Common Bandwidth Package for 3+ EIPs saves 20-42%. Match billing mode to traffic pattern | [FinOps Optimization §5](references/finops-optimization.md#5-eip-cost-optimization) |
-| **Cost Anomaly Detection** | NAT cost spike > 30% MoM, EIP count growing, bandwidth over-provisioned | [FinOps Optimization §6](references/finops-optimization.md#6-finops-inspection-workflow) |
+| **Billing Mode Decision** | PayBySpec for steady traffic (> 60% CU); PayByActualUsage for bursty/low traffic | [FinOps Optimization §2](references/advanced/finops-optimization.md#2-billing-mode-decision-tree) |
+| **Idle Resource Detection** | NAT with 0 SNAT + 0 DNAT for 7d = idle → delete. Orphaned EIPs → release | [FinOps Optimization §3](references/advanced/finops-optimization.md#3-idle-resource-detection) |
+| **Right-Sizing** | Match spec to workload: Small (< 1K CU) → Medium (5K CU) → Large (10K CU) → XLarge (50K CU) | [FinOps Optimization §4](references/advanced/finops-optimization.md#4-right-sizing-guide) |
+| **EIP Cost Optimization** | Common Bandwidth Package for 3+ EIPs saves 20-42%. Match billing mode to traffic pattern | [FinOps Optimization §5](references/advanced/finops-optimization.md#5-eip-cost-optimization) |
+| **Cost Anomaly Detection** | NAT cost spike > 30% MoM, EIP count growing, bandwidth over-provisioned | [FinOps Optimization §6](references/advanced/finops-optimization.md#6-finops-inspection-workflow) |
 
 **Cost P0 Checklist:**
 - [ ] No idle NAT Gateways (0 SNAT + 0 DNAT for 7d)
@@ -475,7 +485,7 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 - [CLI Usage](references/cli-usage.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Prompt Examples](references/prompt-examples.md)
-- [FinOps Optimization](references/finops-optimization.md)
+- [FinOps Optimization](references/advanced/finops-optimization.md)
 - [Security Enhancement](references/security-enhancement.md)
 - [Sensitivity-Aware Operations](references/sensitivity-aware-operations.md)
 - [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
@@ -494,7 +504,7 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 
 ## Quality Gate (GCL)
 
-Eighth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Eighth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

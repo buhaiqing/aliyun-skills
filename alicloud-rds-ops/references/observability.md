@@ -145,4 +145,4 @@ aliyun das CreateDiagnosticReport \
    └─ 建议: 连接泄漏排查 + 紧急扩容
 ```
 
-> **详细预测分析**: 参考 [AIOps Prediction & Anomaly Detection](references/aiops-prediction.md)
+> **详细预测分析**: 参考 [AIOps Prediction & Anomaly Detection](../references/advanced/aiops-prediction.md)

@@ -1097,5 +1097,5 @@ db.coll.aggregate([{ $indexStats: {} }])
 
 - [Alibaba Cloud MongoDB Documentation](https://help.aliyun.com/product/26556.html)
 - [MongoDB Index Strategies Official Guide](https://docs.mongodb.com/manual/indexes/)
-- [DAS Integration Guide](../references/integration.md) - Call `alicloud-das-ops` for intelligent analysis
+- [DAS Integration Guide](integration.md) - Call `alicloud-das-ops` for intelligent analysis
 - [Monitoring Reference](../references/monitoring.md) - Performance metrics and alerts

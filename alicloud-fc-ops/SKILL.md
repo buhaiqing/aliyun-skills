@@ -44,7 +44,7 @@ Alibaba Cloud Function Compute (FC) is a fully managed, event-driven serverless 
 
 **Execution paths:** Dual-path — ROA-style CLI (`aliyun fc-open`) as primary, JIT Go SDK (`github.com/alibabacloud-go/fc-20230330/v4`) as fallback for operations CLI doesn't cover.
 
-> **UX Compliance:** This skill follows the [User Experience Specification](../references/user-experience-spec.md). All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
+> **UX Compliance:** This skill follows the [User Experience Specification](../alicloud-skill-generator/../alicloud-skill-generator/references/user-experience-spec.md). All operations include onboarding guidance, minimal prompts, smart defaults, clear feedback, and user-friendly error handling.
 
 ### CLI applicability (repository policy)
 
@@ -961,7 +961,7 @@ aliyun cms DescribeMetricList --Namespace acs_fc \
 3. **Configure credentials** (`{{env.*}}`)
 4. **Verify**: `aliyun fc-open GET /2023-03-30/functions`
 
-See [references/execution-environment.md](references/execution-environment.md) for detailed setup with self-healing framework.
+See [../alicloud-skill-generator/references/execution-environment.md](../alicloud-skill-generator/references/execution-environment.md) for detailed setup with self-healing framework.
 
 ## Reference Directory
 
@@ -977,8 +977,8 @@ See [references/execution-environment.md](references/execution-environment.md) f
 - [Observability](references/observability.md)
 - [Self-Healing Framework](references/enhanced-self-healing-framework.md)
 - [Enhanced Self-Healing](references/enhanced-self-healing-framework.md)
-- [User Experience Specification](references/user-experience-spec.md)
-- [Optimization Analysis](references/optimization-analysis.md)
+- [User Experience Specification](../alicloud-skill-generator/references/user-experience-spec.md)
+- [Optimization Analysis](../alicloud-rds-ops/references/advanced/finops-analysis.md)
 
 ## Operational Best Practices
 
@@ -994,7 +994,7 @@ See [references/execution-environment.md](references/execution-environment.md) f
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

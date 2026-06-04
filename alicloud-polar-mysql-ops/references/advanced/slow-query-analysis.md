@@ -418,7 +418,7 @@ slow_query_analysis:
 
 ## References
 
-- [CLI Usage](cli-usage.md) — Slow query CLI commands
-- [API & SDK Usage](api-sdk-usage.md) — API parameters and response fields
-- [Troubleshooting Guide](troubleshooting.md) — Error handling
+- [CLI Usage](../cli-usage.md) — Slow query CLI commands
+- [API & SDK Usage](../api-sdk-usage.md) — API parameters and response fields
+- [Troubleshooting Guide](../troubleshooting.md) — Error handling
 - SKILL.md — Complete execution flow with Pre-flight checks

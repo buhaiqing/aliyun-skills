@@ -606,7 +606,7 @@ compatible_with: ["AIOps Platform", "Incident Management", "Audit Trail"]
   "links": {
     "instance_console_url": "https://elasticsearch.console.aliyun.com/instance/es-cn-abc123",
     "monitoring_dashboard": "https://grafana.internal/d/es-health",
-    "troubleshooting_guide": "operations/alarm-storm-handling.md",
+    "troubleshooting_guide": "../operations/alarm-storm-handling.md",
     "support_channel": "https://workorder.console.aliyun.com/"
   }
 }
@@ -689,9 +689,9 @@ Resolution:
 
 ## Related Operations
 
-- [Alarm Storm Handling Guide](operations/alarm-storm-handling.md)
-- [Proactive Inspection](operations/proactive-inspection.md)
-- [Monitoring Configuration](references/monitoring.md)
+- [Alarm Storm Handling Guide](../operations/alarm-storm-handling.md)
+- [Proactive Inspection](../operations/proactive-inspection.md)
+- [Monitoring Configuration](../references/monitoring.md)
 
 ---
 

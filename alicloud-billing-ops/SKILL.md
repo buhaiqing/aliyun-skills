@@ -52,6 +52,18 @@ Every generated skill MUST satisfy these five standards. Use them as a design ch
 
 Refer to the [meta-skill](../alicloud-skill-generator/SKILL.md#five-core-standards-quality-gates) for detailed descriptions of each standard.
 
+---
+
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 成本最佳实践、FinOps 策略 | [advanced/finops-best-practices.md](references/advanced/finops-best-practices.md) |
+
+---
+
 ### Well-Architected Framework Integration (卓越架构)
 
 In addition to the Five Core Standards, every generated skill MUST map its operations to Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html) five pillars:
@@ -186,7 +198,7 @@ aliyun bssopenapi QueryBillOverview --BillingCycle "2026-05"
 - [Common Operations](#execution-flows-agent-readable) — Query bills, orders, savings
 - [CLI Usage](references/cli-usage.md) — Complete CLI command map with JSON paths
 - [Troubleshooting](references/troubleshooting.md) — Fix common errors
-- [FinOps Best Practices](references/finops-best-practices.md) — Cost optimization runbooks
+- [FinOps Best Practices](references/advanced/finops-best-practices.md) — Cost optimization runbooks
 
 ## Capabilities at a Glance
 
@@ -708,7 +720,7 @@ fi
 - [Monitoring & Alerts](references/monitoring.md) — Cost anomaly detection, expiry monitoring, RI/SP alerts
 - [Integration](references/integration.md) — Cross-skill delegation matrix, RAM policy templates, environment setup
 - [Well-Architected Assessment](references/well-architected-assessment.md) — Five-pillar assessment: Security, Stability, Cost, Efficiency, Performance
-- [FinOps Best Practices](references/finops-best-practices.md) — Executable FinOps patterns: anomaly detection, expiry warning, RI/SP optimization, budget alerts, account health checks
+- [FinOps Best Practices](references/advanced/finops-best-practices.md) — Executable FinOps patterns: anomaly detection, expiry warning, RI/SP optimization, budget alerts, account health checks
 
 ## Operational Best Practices
 

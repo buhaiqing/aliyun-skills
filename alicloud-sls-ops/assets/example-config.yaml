@@ -1,0 +1,262 @@
+# Example Configuration — Alibaba Cloud Simple Log Service (SLS)
+
+## Overview
+
+This file provides example configurations for **Simple Log Service (SLS)** operations.
+Use these as templates for your own configurations.
+
+## Example 1: Basic SLS Project
+
+### Configuration
+
+```yaml
+project:
+  name: "my-project"
+  description: "Log Service project for application logs"
+  region: "cn-hangzhou"
+
+logstore:
+  name: "app-logs"
+  ttl: 30
+  shardCount: 2
+  enableTracking: false
+  appendMeta: true
+  autoSplit: true
+  maxSplitShard: 64
+
+index:
+  fullTextIndex:
+    caseSensitive: false
+    includeChinese: true
+    token: ["@", " ", ","]
+  keys:
+    level:
+      type: "text"
+      token: ["@"]
+      caseSensitive: false
+      includeChinese: true
+    message:
+      type: "text"
+      token: ["@", " "]
+      caseSensitive: false
+      includeChinese: true
+```
+
+### CLI Commands
+
+```bash
+# Create project
+aliyun sls POST / \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"project":"my-project","description":"Log Service project","region":"cn-hangzhou"}'
+
+# Create logstore
+aliyun sls POST /logstores \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"logstore":"app-logs","ttl":30,"shardCount":2}' \
+  --project "my-project"
+
+# Create index
+aliyun sls POST /logstores/app-logs/index \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"fullTextIndex":{"caseSensitive":false,"includeChinese":true,"token":["@"," ", ","]}}' \
+  --project "my-project"
+```
+
+## Example 2: Alert Configuration
+
+### Configuration
+
+```yaml
+alert:
+  name: "error-alert"
+  displayName: "Error Alert"
+  description: "Alert on error logs"
+  type: "alert"
+  schedule:
+    type: "FixedRate"
+    interval: "1m"
+  configuration:
+    query: "level:ERROR"
+    chartQuery: "level:ERROR | select count(*) as cnt"
+    condition:
+      condition: ">"
+      threshold: 10
+  notification:
+    notificationList:
+      - type: "IM"
+        id: "my-im-group"
+```
+
+### CLI Commands
+
+```bash
+# Create alert
+aliyun sls POST /alerts \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"alertName":"error-alert","displayName":"Error Alert","description":"Alert on error logs","type":"alert","schedule":{"type":"FixedRate","interval":"1m"},"configuration":{"query":"level:ERROR","chartQuery":"level:ERROR | select count(*) as cnt","condition":{"condition":">","threshold":10}}}' \
+  --project "my-project"
+```
+
+## Example 3: Dashboard Configuration
+
+### Configuration
+
+```yaml
+dashboard:
+  name: "ops-dashboard"
+  displayName: "Operations Dashboard"
+  description: "Operational monitoring dashboard"
+  charts:
+    - title: "Log Volume"
+      type: "line"
+      logstore: "app-logs"
+      query: "from * | select count(*) as cnt"
+      xAxis:
+        type: "time"
+      yAxis:
+        type: "value"
+    - title: "Error Count"
+      type: "bar"
+      logstore: "app-logs"
+      query: "level:ERROR | select source, count(*) as cnt group by source order by cnt desc"
+      xAxis:
+        type: "category"
+      yAxis:
+        type: "value"
+    - title: "Recent Errors"
+      type: "table"
+      logstore: "app-logs"
+      query: "level:ERROR | select __time__, source, message order by __time__ desc limit 10"
+```
+
+### CLI Commands
+
+```bash
+# Create dashboard
+aliyun sls POST /dashboards \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"dashboardName":"ops-dashboard","displayName":"Operations Dashboard","description":"Operational monitoring dashboard","charts":[{"title":"Log Volume","type":"line","logstore":"app-logs","query":"from * | select count(*) as cnt","xAxis":{"type":"time"},"yAxis":{"type":"value"}},{"title":"Error Count","type":"bar","logstore":"app-logs","query":"level:ERROR | select source, count(*) as cnt group by source order by cnt desc","xAxis":{"type":"category"},"yAxis":{"type":"value"}},{"title":"Recent Errors","type":"table","logstore":"app-logs","query":"level:ERROR | select __time__, source, message order by __time__ desc limit 10"}]}' \
+  --project "my-project"
+```
+
+## Example 4: Consumer Group Configuration
+
+### Configuration
+
+```yaml
+consumerGroup:
+  name: "my-consumer-group"
+  order: true
+  timeout: 300
+
+consumer:
+  name: "consumer-1"
+  checkpoint: "1625140800"
+```
+
+### CLI Commands
+
+```bash
+# Create consumer group
+aliyun sls POST /logstores/app-logs/consumergroups \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"consumerGroup":"my-consumer-group","order":true,"timeout":300}' \
+  --project "my-project"
+
+# Consumer heartbeat
+aliyun sls POST /logstores/app-logs/consumergroups/my-consumer-group?type=heartbeat \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"consumerName":"consumer-1"}' \
+  --project "my-project"
+
+# Update checkpoint
+aliyun sls POST /logstores/app-logs/consumergroups/my-consumer-group?type=checkpoint \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"consumerName":"consumer-1","checkpoint":"1625140800"}' \
+  --project "my-project"
+```
+
+## Example 5: Log Query Patterns
+
+### Basic Query
+
+```bash
+# Query all logs
+aliyun sls GET /logstores/app-logs/logs \
+  --header "x-log-apiversion=0.9.0" \
+  --query "from * | select __time__, __topic__, content limit 100" \
+  --project "my-project"
+```
+
+### Error Query
+
+```bash
+# Query error logs
+aliyun sls GET /logstores/app-logs/logs \
+  --header "x-log-apiversion=0.9.0" \
+  --query "level:ERROR | select __time__, source, message order by __time__ desc limit 100" \
+  --project "my-project"
+```
+
+### Time Range Query
+
+```bash
+# Query logs in time range
+aliyun sls GET /logstores/app-logs/logs \
+  --header "x-log-apiversion=0.9.0" \
+  --query "level:ERROR" \
+  --from 1625140800 \
+  --to 1625227200 \
+  --line 100 \
+  --project "my-project"
+```
+
+### Aggregation Query
+
+```bash
+# Query log count by source
+aliyun sls GET /logstores/app-logs/logs \
+  --header "x-log-apiversion=0.9.0" \
+  --query "from * | select source, count(*) as cnt group by source order by cnt desc" \
+  --project "my-project"
+```
+
+## Example 6: Logtail Configuration
+
+### Configuration
+
+```yaml
+# Logtail configuration for ECS log collection
+logtail:
+  config:
+    name: "app-logtail-config"
+    logstore: "app-logs"
+    logPath: "/var/log/app/"
+    filePattern: "*.log"
+    logBeginRegex: ".*"
+    regex: "(?<level>\\w+) (?<message>.*)"
+    keys: ["level", "message"]
+```
+
+### CLI Commands
+
+```bash
+# Create logtail configuration
+aliyun sls POST /logtailconfigs \
+  --header "x-log-apiversion=0.9.0" \
+  --body '{"logtailConfig":{"name":"app-logtail-config","logstore":"app-logs","logPath":"/var/log/app/","filePattern":"*.log","logBeginRegex":".*","regex":"(?<level>\\w+) (?<message>.*)","keys":["level","message"]}}' \
+  --project "my-project"
+
+# Apply logtail configuration to machine group
+aliyun sls PUT /machinegroups/my-machinegroup/logtailconfigs/app-logtail-config \
+  --header "x-log-apiversion=0.9.0" \
+  --project "my-project"
+```
+
+## Notes
+
+- Replace placeholder values with your actual configuration
+- Ensure credentials are properly configured via environment variables
+- Test configurations in non-production environment first
+- Monitor logs after configuration changes

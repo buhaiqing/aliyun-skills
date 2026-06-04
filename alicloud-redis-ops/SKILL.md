@@ -1313,7 +1313,7 @@ Supported Anomaly Patterns:
 
 ### DAS 联动引用
 
-See: [DAS Cache Analysis Integration](../alicloud-skill-generator/templates/das-cache-analysis.md)
+See: [DAS Cache Analysis Integration](../alicloud-das-ops/references/integration.md)
 
 ### 批量操作引用
 
@@ -1321,7 +1321,7 @@ See: [Batch Operations](../alicloud-skill-generator/templates/batch-operations.m
 
 ### API计数引用
 
-See: [API Usage Metrics](../alicloud-skill-generator/templates/api-usage-metrics.md)
+See: [API Usage Metrics](../alicloud-skill-generator/references/api-call-counter.md)
 
 ---
 
@@ -1682,7 +1682,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 ## Quality Gate (GCL)
 
 This skill is the **second rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
 Every runtime execution of an `alicloud-redis-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

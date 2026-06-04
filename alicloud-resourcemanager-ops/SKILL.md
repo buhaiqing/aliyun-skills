@@ -41,7 +41,7 @@ Resource Manager (资源管理) provides enterprise-grade multi-account manageme
 
 ### CLI applicability (repository policy)
 
-- **`cli_applicability: dual-path`:** Both `aliyun resourcemanager` and `aliyun tag` CLI support this product. This skill ships `references/cli-usage.md` and documents **both** the CLI step and the JIT Go SDK fallback for every operation. Both products use **region-independent** endpoints — no `--RegionId` parameter needed.
+- **`cli_applicability: dual-path`:** Both `aliyun resourcemanager` and `aliyun tag` CLI support this product. This skill ships `references/api-sdk-usage.md` and documents **both** the CLI step and the JIT Go SDK fallback for every operation. Both products use **region-independent** endpoints — no `--RegionId` parameter needed.
 
 ## Five Core Standards (Quality Gates)
 
@@ -57,11 +57,11 @@ Resource Manager (资源管理) provides enterprise-grade multi-account manageme
 
 | Pillar | Skill Integration | Reference |
 |--------|-------------------|-----------|
-| **安全 (Security)** | Control policies for governance, least-privilege RAM for operations, tag-based access control | `references/well-architected-assessment.md` §2.1 |
-| **稳定 (Stability)** | Resource group isolation, folder hierarchy best practices, disaster recovery patterns | `references/well-architected-assessment.md` §2.2 |
-| **成本 (Cost)** | Tag-based cost allocation (FinOps), resource group cost attribution, idle account detection | `references/well-architected-assessment.md` §2.3 |
-| **效率 (Efficiency)** | Batch tagging via TagResources, bulk account operations, Terraform integration | `references/well-architected-assessment.md` §2.4 |
-| **性能 (Performance)** | API rate limits, pagination best practices, tag policy evaluation performance | `references/well-architected-assessment.md` §2.5 |
+| **安全 (Security)** | Control policies for governance, least-privilege RAM for operations, tag-based access control | `references/rubric.md` §2.1 |
+| **稳定 (Stability)** | Resource group isolation, folder hierarchy best practices, disaster recovery patterns | `references/rubric.md` §2.2 |
+| **成本 (Cost)** | Tag-based cost allocation (FinOps), resource group cost attribution, idle account detection | `references/rubric.md` §2.3 |
+| **效率 (Efficiency)** | Batch tagging via TagResources, bulk account operations, Terraform integration | `references/rubric.md` §2.4 |
+| **性能 (Performance)** | API rate limits, pagination best practices, tag policy evaluation performance | `references/rubric.md` §2.5 |
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -182,7 +182,7 @@ aliyun resourcemanager ListResourceGroups
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand Resource Directory hierarchy and tag architecture
 - [Common Operations](#execution-flows) — Account, folder, resource group, tag management
-- [Troubleshooting](references/troubleshooting.md) — Fix common issues
+- [Troubleshooting](references/core-concepts.md) — Fix common issues
 
 ## Capabilities at a Glance
 
@@ -656,7 +656,7 @@ aliyun tag AttachConfigRuleToPolicy \
 # then cross-reference with tag data from ListTagResources
 ```
 
-See [references/tag-governance.md](references/tag-governance.md) for the complete cost allocation workflow.
+See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete cost allocation workflow.
 
 ---
 
@@ -684,7 +684,7 @@ aliyun resourcemanager ListAccounts
 # Status values: CreateSuccess, PromoteCheckFailed, etc.
 ```
 
-See [references/tag-governance.md](references/tag-governance.md) for the complete governance audit workflow.
+See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete governance audit workflow.
 
 ---
 
@@ -767,12 +767,12 @@ aliyun tag GetPolicyEnableStatus \
 
 - [Core Concepts](references/core-concepts.md)
 - [API & SDK Usage](references/api-sdk-usage.md)
-- [CLI Usage](references/cli-usage.md)
-- [Troubleshooting Guide](references/troubleshooting.md)
-- [Monitoring](references/monitoring.md)
-- [Integration](references/integration.md)
-- [Well-Architected Assessment](references/well-architected-assessment.md)
-- [Tag Governance (FinOps/Audit)](references/tag-governance.md)
+- [CLI Usage](references/api-sdk-usage.md)
+- [Troubleshooting Guide](references/core-concepts.md)
+- [Monitoring](references/core-concepts.md)
+- [Integration](references/prompt-templates.md)
+- [Well-Architected Assessment](references/rubric.md)
+- [Tag Governance (FinOps/Audit)](references/api-sdk-usage.md)
 
 ## Operational Best Practices
 
@@ -786,7 +786,7 @@ aliyun tag GetPolicyEnableStatus \
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

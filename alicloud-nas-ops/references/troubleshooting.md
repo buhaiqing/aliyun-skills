@@ -11,7 +11,7 @@
 | `InvalidSnapshot.NotFound` | Snapshot ID does not exist | Verify with `DescribeSnapshots` |
 | `InvalidVSwitchId.NotFound` | vSwitch ID does not exist in VPC | Delegate to `alicloud-vpc-ops` |
 | `InvalidParameter` | Missing or malformed parameter | Cross-check against `aliyun nas <op> --help` and OpenAPI |
-| `InvalidParameter.ProtocolType` | Protocol type doesn't match `FileSystemType` | See [SKILL.md](../../SKILL.md#parameter-matrix-verified-against-aliyun-nas-createfilesystem---help) parameter matrix |
+| `InvalidParameter.ProtocolType` | Protocol type doesn't match `FileSystemType` | See [SKILL.md](../SKILL.md#parameter-matrix-verified-against-aliyun-nas-createfilesystem---help) parameter matrix |
 | `InvalidParameter.StorageType` | Storage type invalid for the chosen FS type | Same matrix |
 | `InvalidParameter.Priority` | Rule priority out of range (1–100) | Use 1–100 |
 | `InvalidParameter.SourceCidrIp` | CIDR malformed | Use valid IPv4 CIDR (e.g., `10.0.0.0/8`) |
@@ -59,7 +59,7 @@ mismatch is using `ProtocolType=NFS` with `FileSystemType=cpfs` (CPFS uses
 `ProtocolType=cpfs`).
 
 **Fix:** Re-check the parameter matrix in
-[SKILL.md](../../SKILL.md#parameter-matrix-verified-against-aliyun-nas-createfilesystem---help).
+[SKILL.md](../SKILL.md#parameter-matrix-verified-against-aliyun-nas-createfilesystem---help).
 
 ```bash
 # Wrong:

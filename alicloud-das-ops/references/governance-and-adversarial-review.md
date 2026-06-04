@@ -96,5 +96,5 @@ hallucination, and idempotency gaps before merge or execution.
 
 ## See Also
 
-- [alicloud-skill-generator governance](../alicloud-skill-generator/references/governance-and-adversarial-review.md)
+- [alicloud-skill-generator governance](../../alicloud-skill-generator/references/governance-and-adversarial-review.md)
 - [Agent Skill OpenSpec](https://agentskills.io/specification)

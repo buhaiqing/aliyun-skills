@@ -593,7 +593,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 
 ## Quality Gate (GCL)
 
-Thirteenth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + Oracle-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Thirteenth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + Oracle-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

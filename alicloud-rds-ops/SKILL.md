@@ -9,7 +9,7 @@ description: >-
   (CPU/memory/IOPS/connections/TPS/QPS), check disk and resource usage, and
   inspect HA or network configuration, or run SQL / execute a `.sql` script file
   against a MySQL instance (via `mysql` client or RDS Data API — see
-  references/sql-execution.md; `aliyun rds` alone cannot run SQL files). Also
+  references/advanced/sql-execution.md; `aliyun rds` alone cannot run SQL files). Also
   reach for this skill when the user reports a slow or unreachable database,
   wants to upgrade an instance, migrate from self-hosted to RDS, plan a backup
   strategy, or automate any RDS operation — even if they just say "my Alibaba
@@ -75,7 +75,7 @@ and failure recovery.
 
 不知道从哪里开始？按需选一个：
 
-- **"怎么把 SQL 文件跑进 RDS"** → [SQL Execution Runbook](references/sql-execution.md)（含 `mysql` 客户端和 RDS Data API 两种路径）
+- **"怎么把 SQL 文件跑进 RDS"** → [SQL Execution Runbook](references/advanced/sql-execution.md)（含 `mysql` 客户端和 RDS Data API 两种路径）
 - **"我需要 1 条自然语言提示词"** → [Prompts Handbook](references/prompts.md)（34 条分类示例）
 - **"实例有异常，帮我巡检一下"** → [RDS Cruise 巡检工作流](references/cruise.md) + [Alert Diagnosis](references/alert-diagnosis.md)
 - **"我想看核心概念/术语"** → [Core Concepts](references/core-concepts.md)
@@ -97,7 +97,7 @@ and failure recovery.
 - Task involves **performance monitoring** (CPU, memory, IOPS, connections, TPS/QPS)
 - Task involves **slow query logs** (describe, analyze)
 - Task involves **executing SQL** or running a **`.sql` file** on RDS MySQL (use
-  `mysql` client or `aliyun rds-data` — see [SQL Execution](references/sql-execution.md);
+  `mysql` client or `aliyun rds-data` — see [SQL Execution](references/advanced/sql-execution.md);
   **not** `aliyun rds` alone)
 - Task involves **parameter groups** (describe, modify)
 - Task involves **security groups / whitelists** (describe, modify)
@@ -1251,7 +1251,7 @@ aliyun rds DescribeReadDBInstances \
 
 见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
-详见 [SQL Execution](references/sql-execution.md) 了解 `mysql` 客户端和 RDS Data API 用法。
+详见 [SQL Execution](references/advanced/sql-execution.md) 了解 `mysql` 客户端和 RDS Data API 用法。
 
 ## Intelligent Diagnosis Workflow (Agent-Readable)
 
@@ -1292,6 +1292,27 @@ Response Workflow** documented in [Alert Diagnosis & Root Cause Analysis](refere
 ### Quick Diagnosis CLI (All-in-One)
 
 详见 [RDS Cruise 巡检工作流](references/cruise.md)
+
+---
+
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 性能预测、容量规划 | [advanced/aiops-prediction.md](references/advanced/aiops-prediction.md) |
+| 成本分析、资源优化 | [advanced/finops-analysis.md](references/advanced/finops-analysis.md) |
+
+### ⚠️ Security-Sensitive Operations
+
+以下操作涉及数据变更，**执行前必须获得用户显式确认**：
+
+| 场景 | 文档 | 风险等级 |
+|------|------|---------|
+| SQL 文件执行 | [advanced/sql-execution.md](references/advanced/sql-execution.md) | 🔴 高（可执行 DROP/TRUNCATE） |
+
+---
 
 ## Well-Architected Assessment (卓越架构)
 
@@ -1337,9 +1358,9 @@ Phase 3: Validate — Data integrity, application smoke tests, traffic switch
 
 | 工作流 | 触发频率 | 输出 | 参考 |
 |--------|----------|------|------|
-| 利用率审计 | 每周 | 低利用率实例列表 + 节省金额 | [FinOps §1](references/finops-analysis.md#1-实例利用率评估) |
-| 成本审计 | 每月 | 成本趋势 + 异常实例 | [FinOps §5](references/finops-analysis.md#5-成本预警规则) |
-| 预留审计 | 每季度 | 预留覆盖率 + 建议购买 | [FinOps §3](references/finops-analysis.md#3-预留实例优化) |
+| 利用率审计 | 每周 | 低利用率实例列表 + 节省金额 | [FinOps §1](references/advanced/finops-analysis.md#1-实例利用率评估) |
+| 成本审计 | 每月 | 成本趋势 + 异常实例 | [FinOps §5](references/advanced/finops-analysis.md#5-成本预警规则) |
+| 预留审计 | 每季度 | 预留覆盖率 + 建议购买 | [FinOps §3](references/advanced/finops-analysis.md#3-预留实例优化) |
 
 #### Right-sizing 建议
 
@@ -1372,7 +1393,7 @@ reserved_savings = (on_demand_annual - reserved_annual)
 total_savings = Σ downgrade_savings + Σ reserved_savings + Σ storage_savings
 ```
 
-> **详细 FinOps 分析**: 参考 [FinOps Cost Optimization](references/finops-analysis.md)
+> **详细 FinOps 分析**: 参考 [FinOps Cost Optimization](references/advanced/finops-analysis.md)
 
 | Billing | Best For | Savings |
 |---------|----------|---------|
@@ -1401,7 +1422,7 @@ total_savings = Σ downgrade_savings + Σ reserved_savings + Σ storage_savings
 
 ## SQL Execution (Agent Quick Reference)
 
-> **Full runbook:** [references/sql-execution.md](references/sql-execution.md)
+> **Full runbook:** [references/advanced/sql-execution.md](references/advanced/sql-execution.md)
 
 | User intent | Agent action |
 |-------------|--------------|
@@ -1419,12 +1440,12 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Core Concepts](references/core-concepts.md)
 - [API & SDK Usage](references/api-sdk-usage.md)
 - [CLI Usage](references/cli-usage.md)
-- [SQL Execution (mysql client & RDS Data API)](references/sql-execution.md)
+- [SQL Execution (mysql client & RDS Data API)](references/advanced/sql-execution.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Alert Diagnosis & Root Cause Analysis](references/alert-diagnosis.md)
-- [AIOps Prediction & Anomaly Detection](references/aiops-prediction.md)
-- [FinOps Cost Optimization](references/finops-analysis.md)
+- [AIOps Prediction & Anomaly Detection](references/advanced/aiops-prediction.md)
+- [FinOps Cost Optimization](references/advanced/finops-analysis.md)
 - [Observability (Metrics/Logs/Traces 联动)](references/observability.md)
 - [RDS Cruise (巡检工作流)](references/cruise.md)
 - [Fault Pattern Knowledge Base](references/knowledge-base.md)
@@ -1452,7 +1473,7 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 ## Quality Gate (GCL)
 
 This skill is the **third rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
 Every runtime execution of an `alicloud-rds-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 
@@ -1462,7 +1483,7 @@ in a GCL loop before the result is returned to the user.
 > |---|---|
 > | [`references/rubric.md`](references/rubric.md) | The 5 core + 3 Aliyun-specific rubric dimensions, per-op Safety sub-rules, the 6-class / 12-regex SQL classification, and 4 worked examples |
 > | [`references/prompt-templates.md`](references/prompt-templates.md) | The Generator and Critic prompt templates (with `{{env.*}}` / `{{user.*}}` / `{{output.*}}` placeholders) |
-> | [`references/sql-execution.md`](references/sql-execution.md) | Path A (`mysql`) / Path B (`rds-data`) / Path C (DMS) decision tree — referenced by both rubric and prompt templates for SQL Execution ops |
+> | [`references/advanced/sql-execution.md`](references/advanced/sql-execution.md) | Path A (`mysql`) / Path B (`rds-data`) / Path C (DMS) decision tree — referenced by both rubric and prompt templates for SQL Execution ops |
 >
 > The full rationale, termination rules, anti-patterns, and rollout roadmap
 > live in `AGENTS.md` §12. This section is only a pointer + per-skill override.

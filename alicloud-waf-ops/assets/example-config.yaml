@@ -1,0 +1,57 @@
+# WAF Instance Configuration
+# Example: alicloud-waf-ops
+
+RegionId: cn-hangzhou
+
+# Instance settings
+Instance:
+  RegionId: cn-hangzhou
+  InstanceId: "waf_xxx"
+  Edition: "enterprise"  # "basic", "pro", "enterprise"
+
+# Domain protection
+Domain:
+  RegionId: cn-hangzhou
+  InstanceId: "waf_xxx"
+  Domain: "example.com"
+  ListenPorts:
+    - Protocol: "https"
+      Port: 443
+    - Protocol: "http"
+      Port: 80
+  OriginAddress: "1.2.3.4"
+  OriginPort: 80
+  Protocol: "http"
+  LoadBalancing: "rr"  # "rr" (round-robin), "iphash", "random"
+
+# Access Control Rules
+AccessControl:
+  - RuleName: "block-bad-ip"
+    Domain: "example.com"
+    Action: "forbidden"  # "forbidden", "challenge", "monitor"
+    Ip: "192.168.1.100"
+    TTL: 300
+
+# Defense Rules
+DefenseRules:
+  - RuleName: "cc-rate-limit"
+    Domain: "example.com"
+    RuleType: "cc"
+    DefenseType: "rateLimit"
+    RateLimit: 100
+    Interval: 60
+
+# Logging
+Logging:
+  RegionId: cn-hangzhou
+  InstanceId: "waf_xxx"
+  LogOn: true
+  SLSProject: "waf-log-project"
+  SLSLogStore: "waf-access-log"
+
+# Delegation boundaries
+Delegation:
+  DDoS: "alicloud-ddos-ops"
+  RAM: "alicloud-ram-ops"
+  ECS: "alicloud-ecs-ops"
+  SLB: "alicloud-slb-ops"

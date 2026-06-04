@@ -190,11 +190,11 @@ aliyun polardb DescribeDBClusters --DBType PostgreSQL --RegionId "{{env.ALIBABA_
 | Create Cluster | Create new PostgreSQL cluster | High | [CLI Usage](references/cli-usage.md#create-db-cluster) |
 | Describe Clusters | List all clusters | Low | [CLI Usage](references/cli-usage.md#describe-db-clusters) |
 | Create Account | Create database account | Medium | [CLI Usage](references/cli-usage.md#create-account) |
-| Execute SQL | Run SQL on cluster | High | [SQL Execution](references/sql-execution.md) |
-| Storage Prediction | Predict storage growth | Low | [AIOps Storage](references/aiops-storage-prediction.md) |
-| Connection Prediction | Predict connection peaks | Low | [AIOps Connection](references/aiops-connection-prediction.md) |
-| Anomaly Detection | Detect 12 anomaly patterns | Low | [AIOps Anomaly](references/aiops-anomaly-detection.md) |
-| Auto-remediation | Auto-fix with safety controls | High | [AIOps Remediation](references/aiops-auto-remediation.md) |
+| Execute SQL | Run SQL on cluster | High | [SQL Execution](references/advanced/sql-execution.md) |
+| Storage Prediction | Predict storage growth | Low | [AIOps Storage](references/advanced/aiops-storage-prediction.md) |
+| Connection Prediction | Predict connection peaks | Low | [AIOps Connection](references/advanced/aiops-connection-prediction.md) |
+| Anomaly Detection | Detect 12 anomaly patterns | Low | [AIOps Anomaly](references/advanced/aiops-anomaly-detection.md) |
+| Auto-remediation | Auto-fix with safety controls | High | [AIOps Remediation](references/advanced/aiops-auto-remediation.md) |
 
 ## Operation Flows
 
@@ -266,7 +266,7 @@ aliyun polardb DescribeDBClusters \
 
 **Execute**
 
-See [SQL Execution Reference](references/sql-execution.md) for detailed implementation.
+See [SQL Execution Reference](references/advanced/sql-execution.md) for detailed implementation.
 
 ### Flow: AIOps Storage Prediction
 
@@ -280,7 +280,7 @@ See [SQL Execution Reference](references/sql-execution.md) for detailed implemen
 
 **Execute**
 
-See [AIOps Storage Prediction](references/aiops-storage-prediction.md) for detailed implementation.
+See [AIOps Storage Prediction](references/advanced/aiops-storage-prediction.md) for detailed implementation.
 
 **Output Example**
 
@@ -328,7 +328,7 @@ See [AIOps Storage Prediction](references/aiops-storage-prediction.md) for detai
 
 **Execute**
 
-See [AIOps Anomaly Detection](references/aiops-anomaly-detection.md) for detailed implementation.
+See [AIOps Anomaly Detection](references/advanced/aiops-anomaly-detection.md) for detailed implementation.
 
 **Output Example**
 
@@ -388,12 +388,12 @@ graph TD
 | [Core Concepts](references/core-concepts.md) | Architecture and terminology |
 | [Monitoring](references/monitoring.md) | Metrics and monitoring setup |
 | [Troubleshooting](references/troubleshooting.md) | Common issues and solutions |
-| [SQL Execution](references/sql-execution.md) | Execute SQL on cluster |
-| [Slow Query Analysis](references/slow-query-analysis.md) | Analyze slow queries |
-| [AIOps Storage Prediction](references/aiops-storage-prediction.md) | Storage trend prediction |
-| [AIOps Connection Prediction](references/aiops-connection-prediction.md) | Connection trend prediction |
-| [AIOps Anomaly Detection](references/aiops-anomaly-detection.md) | 12-pattern anomaly detection |
-| [AIOps Auto-remediation](references/aiops-auto-remediation.md) | Auto-fix with safety controls |
+| [SQL Execution](references/advanced/sql-execution.md) | Execute SQL on cluster |
+| [Slow Query Analysis](references/advanced/slow-query-analysis.md) | Analyze slow queries |
+| [AIOps Storage Prediction](references/advanced/aiops-storage-prediction.md) | Storage trend prediction |
+| [AIOps Connection Prediction](references/advanced/aiops-connection-prediction.md) | Connection trend prediction |
+| [AIOps Anomaly Detection](references/advanced/aiops-anomaly-detection.md) | 12-pattern anomaly detection |
+| [AIOps Auto-remediation](references/advanced/aiops-auto-remediation.md) | Auto-fix with safety controls |
 
 ## Implementation Checklist
 
@@ -410,9 +410,31 @@ When implementing this skill:
 
 ---
 
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 异常检测、根因分析 | [advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md) |
+| 连接数预测、容量规划 | [advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md) |
+| 存储预测 | [advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md) |
+| 自动修复方案 | [advanced/aiops-auto-remediation.md](references/advanced/aiops-auto-remediation.md) |
+| 慢查询深度分析 | [advanced/slow-query-analysis.md](references/advanced/slow-query-analysis.md) |
+
+### ⚠️ Security-Sensitive Operations
+
+以下操作涉及数据变更，**执行前必须获得用户显式确认**：
+
+| 场景 | 文档 | 风险等级 |
+|------|------|---------|
+| SQL 文件执行 | [advanced/sql-execution.md](references/advanced/sql-execution.md) | 🔴 高（可执行 DROP/TRUNCATE） |
+
+---
+
 ## Quality Gate (GCL)
 
-Twelfth rollout of GCL per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + PG-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Twelfth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + PG-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

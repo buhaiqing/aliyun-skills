@@ -2,7 +2,7 @@
 
 ## Enhanced Self-Healing Framework (MANDATORY)
 
-All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
@@ -11,7 +11,7 @@ All installation flows MUST follow the **Enhanced Self-Healing Framework** defin
 - **Health Verification:** Post-installation validation with health score ≥ 8/10
 - **Graceful Degradation:** Clear fallback paths when self-healing fails
 
-For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 ## API/SDK Profile
 

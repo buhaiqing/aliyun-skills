@@ -1083,7 +1083,6 @@ db.getSiblingDB("config").migrations.find()
 - [API & SDK Usage](api-sdk-usage.md) — Complete API reference
 - [Troubleshooting Guide](troubleshooting.md) — General error handling
 - [Monitoring & Alerts](monitoring.md) — Metrics and alerting setup
-- [Well-Architected Assessment](well-architected-assessment.md) — Security and stability
 
 ---
 

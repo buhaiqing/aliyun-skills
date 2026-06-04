@@ -718,6 +718,6 @@ func main() {
 
 ## Related References
 
-- [CLI Usage](cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
-- [API/SDK Usage](api-sdk-usage.md) - CMS SDK 完整接口文档
-- [Monitoring](monitoring.md) - PolarDB PostgreSQL 存储指标监控配置
+- [CLI Usage](../cli-usage.md) - `aliyun cms GetMetricStatisticsData` 详细参数说明
+- [API/SDK Usage](../api-sdk-usage.md) - CMS SDK 完整接口文档
+- [Monitoring](../monitoring.md) - PolarDB PostgreSQL 存储指标监控配置

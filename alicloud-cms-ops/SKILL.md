@@ -1344,6 +1344,17 @@ fi
 
 ---
 
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 性能预测、容量规划 | [advanced/aiops-prediction.md](references/advanced/aiops-prediction.md) |
+| 成本分析、资源优化 | [advanced/finops-analysis.md](references/advanced/finops-analysis.md) |
+
+---
+
 ## Well-Architected Assessment (卓越架构)
 
 This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to CMS.
@@ -1407,9 +1418,9 @@ Phase 3: Resolve — Auto-remediation or escalate to human with full diagnostic 
 - [Knowledge Base](references/knowledge-base.md) — 常见故障模式库
 - [Observability Integration](references/observability.md) — Metrics/Logs/Traces 联动
 - [Prompts Handbook](references/prompts.md) — 常用提示词手册
-- [AIOps Prediction](references/aiops-prediction.md)
+- [AIOps Prediction](references/advanced/aiops-prediction.md)
 - [SecOps Monitoring](references/secops-monitoring.md)
-- [FinOps Analysis](references/finops-analysis.md)
+- [FinOps Analysis](references/advanced/finops-analysis.md)
 
 ## Operational Best Practices
 
@@ -1423,7 +1434,7 @@ Phase 3: Resolve — Auto-remediation or escalate to human with full diagnostic 
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

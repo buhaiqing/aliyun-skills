@@ -8,7 +8,7 @@
 
 ### Enhanced Self-Healing Framework (MANDATORY)
 
-All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
+All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
@@ -42,7 +42,7 @@ The Agent MUST use enhanced self-healing for Go runtime JIT download:
 - Workspace initialized
 - Dependencies cached
 
-For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
+For detailed implementation, see [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md) Section 3.2.
 
 ### JIT SDK Script Template
 

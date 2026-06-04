@@ -21,4 +21,4 @@ aliyun ecs DescribeDisks --RegionId "{{user.region}}" --output cols=InstanceId,D
 
 ## FinOps 详情
 
-参见 [FinOps Cost Optimization](../alicloud-rds-ops/references/finops-analysis.md) 了解完整的成本分析方法。
+参见 [FinOps Cost Optimization](../../alicloud-rds-ops/references/advanced/finops-analysis.md) 了解完整的成本分析方法。
