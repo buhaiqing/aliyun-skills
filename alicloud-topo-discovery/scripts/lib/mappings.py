@@ -73,4 +73,50 @@ MAPPINGS = {
             MappingRule(hcl_attr="vswitch_id", path="VSwitchId"),
         ],
     ),
+    "nat": MappingSpec(
+        resource_type="nat",
+        terraform_type="alicloud_nat_gateway",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="description", path="Description", required=False),
+            MappingRule(hcl_attr="nat_type", path="NatType"),
+            MappingRule(hcl_attr="internet_charge_type", path="InternetChargeType"),
+        ],
+    ),
+    "eip": MappingSpec(
+        resource_type="eip",
+        terraform_type="alicloud_eip",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="bandwidth", path="Bandwidth", type="int"),
+            MappingRule(hcl_attr="internet_charge_type", path="InternetChargeType"),
+            MappingRule(hcl_attr="instance_charge_type", path="InstanceChargeType"),
+        ],
+    ),
+    "sg": MappingSpec(
+        resource_type="sg",
+        terraform_type="alicloud_security_group",
+        rules=[
+            MappingRule(hcl_attr="name", path="SecurityGroupName"),
+            MappingRule(hcl_attr="description", path="Description", required=False),
+        ],
+    ),
+    "oss": MappingSpec(
+        resource_type="oss",
+        terraform_type="alicloud_oss_bucket",
+        rules=[
+            MappingRule(hcl_attr="bucket", path="Name"),
+            MappingRule(hcl_attr="storage_class", path="StorageClass"),
+        ],
+    ),
+    "ram": MappingSpec(
+        resource_type="ram",
+        terraform_type="alicloud_ram_role",
+        rules=[
+            MappingRule(hcl_attr="name", path="RoleName"),
+            MappingRule(hcl_attr="description", path="Description", required=False),
+            MappingRule(hcl_attr="arn", path="Arn"),
+            MappingRule(hcl_attr="assume_role_policy", path="AssumeRolePolicyDocument"),
+        ],
+    ),
 }

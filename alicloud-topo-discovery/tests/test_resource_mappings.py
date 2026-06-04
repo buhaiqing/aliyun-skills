@@ -146,15 +146,98 @@ class TestSlbMapping:
         assert "bandwidth = 5" in hcl  # int
 
 
-class TestMappingsRegistry:
-    """Verify MAPPINGS dict contains all 5 Phase 1 resource types."""
+class TestNatMapping:
+    """Phase 3: NAT Gateway mapping integration."""
 
-    def test_all_five_types_present(self):
-        assert "vpc" in MAPPINGS
-        assert "vswitch" in MAPPINGS
-        assert "ecs" in MAPPINGS
-        assert "rds" in MAPPINGS
-        assert "slb" in MAPPINGS
+    def test_nat_block_generated(self, mapper, load_fixture):
+        data = load_fixture("nat")
+        spec = MAPPINGS["nat"]
+        bn = mapper.generate_block_name("alicloud_nat_gateway", data, spec)
+        hcl = mapper.map_resource("nat", data, spec, bn)
+        assert 'resource "alicloud_nat_gateway"' in hcl
+        assert 'name = "prod-natgw"' in hcl
+
+    def test_nat_type_mapped(self, mapper, load_fixture):
+        data = load_fixture("nat")
+        spec = MAPPINGS["nat"]
+        bn = mapper.generate_block_name("alicloud_nat_gateway", data, spec)
+        hcl = mapper.map_resource("nat", data, spec, bn)
+        assert 'nat_type = "Enhanced"' in hcl
+
+
+class TestEipMapping:
+    """Phase 3: EIP mapping integration."""
+
+    def test_eip_block_generated(self, mapper, load_fixture):
+        data = load_fixture("eip")
+        spec = MAPPINGS["eip"]
+        bn = mapper.generate_block_name("alicloud_eip", data, spec)
+        hcl = mapper.map_resource("eip", data, spec, bn)
+        assert 'resource "alicloud_eip"' in hcl
+        assert "bandwidth = 100" in hcl
+
+    def test_eip_charge_types(self, mapper, load_fixture):
+        data = load_fixture("eip")
+        spec = MAPPINGS["eip"]
+        bn = mapper.generate_block_name("alicloud_eip", data, spec)
+        hcl = mapper.map_resource("eip", data, spec, bn)
+        assert 'internet_charge_type = "PayByTraffic"' in hcl
+
+
+class TestSgMapping:
+    """Phase 3: SecurityGroup mapping integration."""
+
+    def test_sg_block_generated(self, mapper, load_fixture):
+        data = load_fixture("sg")
+        spec = MAPPINGS["sg"]
+        bn = mapper.generate_block_name("alicloud_security_group", data, spec)
+        hcl = mapper.map_resource("sg", data, spec, bn)
+        assert 'resource "alicloud_security_group"' in hcl
+        assert 'name = "prod-web-sg"' in hcl
+
+
+class TestOssMapping:
+    """Phase 3: OSS bucket mapping integration."""
+
+    def test_oss_block_generated(self, mapper, load_fixture):
+        data = load_fixture("oss")
+        spec = MAPPINGS["oss"]
+        bn = mapper.generate_block_name("alicloud_oss_bucket", data, spec)
+        hcl = mapper.map_resource("oss", data, spec, bn)
+        assert 'resource "alicloud_oss_bucket"' in hcl
+
+    def test_oss_storage_class(self, mapper, load_fixture):
+        data = load_fixture("oss")
+        spec = MAPPINGS["oss"]
+        bn = mapper.generate_block_name("alicloud_oss_bucket", data, spec)
+        hcl = mapper.map_resource("oss", data, spec, bn)
+        assert 'storage_class = "Standard"' in hcl
+
+
+class TestRamMapping:
+    """Phase 3: RAM role mapping integration."""
+
+    def test_ram_block_generated(self, mapper, load_fixture):
+        data = load_fixture("ram")
+        spec = MAPPINGS["ram"]
+        bn = mapper.generate_block_name("alicloud_ram_role", data, spec)
+        hcl = mapper.map_resource("ram", data, spec, bn)
+        assert 'resource "alicloud_ram_role"' in hcl
+
+    def test_ram_arn_mapped(self, mapper, load_fixture):
+        data = load_fixture("ram")
+        spec = MAPPINGS["ram"]
+        bn = mapper.generate_block_name("alicloud_ram_role", data, spec)
+        hcl = mapper.map_resource("ram", data, spec, bn)
+        assert 'arn = "acs:ram::1234567890:role/ecs-role"' in hcl
+
+
+class TestMappingsRegistry:
+    """Verify MAPPINGS dict contains all Phase 1-3 resource types."""
+
+    def test_all_current_types_present(self):
+        for rt in ["vpc", "vswitch", "ecs", "rds", "slb", "nat", "eip", "sg", "oss", "ram"]:
+            assert rt in MAPPINGS, f"{rt} missing from MAPPINGS"
 
     def test_each_spec_has_rules(self):
         for rt, spec in MAPPINGS.items():
