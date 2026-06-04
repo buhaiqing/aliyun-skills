@@ -71,7 +71,7 @@ Per-Skill Defaults. The default classification:
 
 Reference mapping (extract from `AGENTS.md` §12.8 as a guide):
 
-- `required` examples: ECS, Redis, RDS, RAM, KMS, EIP, VPC, NAT,
+- `required` examples: ECS, Redis, RDS, RAM, KMS, EIP, DTS, VPC, NAT,
   MongoDB, Elasticsearch, PolarDB×4.
 - `recommended` examples: SLB, ACK, ACK-Serverless, FC, ECI, CMS.
 - `optional` examples: ActionTrail, Billing, DAS, ResourceManager,

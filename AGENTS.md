@@ -497,6 +497,7 @@ GCL is **only required** on high-side-effect skills. Default `max_iter` is **2**
 | `alicloud-ram-ops` | **required** | 2 | detach policy / delete user / rotate AccessKey |
 | `alicloud-kms-ops` | **required** | 2 | schedule key deletion is irreversible |
 | `alicloud-eip-ops` | **required** | 2 | release EIP can break production |
+| `alicloud-dts-ops` | **required** | 2 | delete / reset / stop DTS job (irreversible data flow loss) |
 | `alicloud-vpc-ops` | **required** | 2 | delete VPC / vSwitch / NAT / SG |
 | `alicloud-nat-ops` | **required** | 2 | delete NAT gateway / SNAT / DNAT |
 | `alicloud-slb-ops` | recommended | 3 | listener / backend server delete |
@@ -547,12 +548,12 @@ quality gap.
 
 ### 12.11 Rollout Roadmap
 
-- **Phase 1** ✅ — GCL spec added to `AGENTS.md`; piloted on `alicloud-ecs-ops` and extended to 13 `required` skills (ECS, Redis, RDS, RAM, KMS, EIP, VPC, NAT, MongoDB, ES, PolarDB×4). Each has `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section. `alicloud-skill-generator` P0 checklist updated with 4 GCL + 2 GCL-P1 mandatory items; `references/gcl-rollout-spec.md` added.
+- **Phase 1** ✅ — GCL spec added to `AGENTS.md`; piloted on `alicloud-ecs-ops` and extended to **14 `required` skills** (ECS, Redis, RDS, RAM, KMS, EIP, **DTS**, VPC, NAT, MongoDB, ES, PolarDB×4). Each has `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section. `alicloud-skill-generator` P0 checklist updated with 4 GCL + 2 GCL-P1 mandatory items; `references/gcl-rollout-spec.md` added.
 - **Phase 2** ✅ — `scripts/gcl_runner.py` (mechanical regex-based Critic, subprocess Generator, JSON trace per §12.6); `scripts/gcl_runner_test.py` (60 unit tests, ~0.02s). `scripts/README.md` + `alicloud-skill-generator/references/gcl-orchestrator-agent.md` (pi-subagents integration).
 - **Phase 3-A** ✅ — LLM-based Critic (designed; not yet implemented; `critique()` interface is forward-compatible).
 - **Phase 3-B** ✅ — `scripts/gcl_cms_alarm_setup.py` (idempotent alarm creation; reads `crosscheck-report-*.json`; creates/updates 5 phantom alarms: GCL-Phantom-Pass, GCL-Phantom-Fail, GCL-Resource-Mismatch, GCL-Api-Errors, GCL-Timing-Anomaly; dry-run mode). `alicloud-cms-ops/references/rubric.md` enhanced from Phase 5 lean to Phase 3-B full (added §2 Phantom Alarm Schema, §4-5 worked examples). `alicloud-cms-ops/references/prompt-templates.md` enhanced (added Phantom alarm Generator/Critic rules + cross-skill delegation). `alicloud-cms-ops/references/gcl-cms-alarm-guide.md` (architecture, thresholds, cron integration, alert response playbook, dashboard). `alicloud-cms-ops/SKILL.md` bumped 2.1.0 → 2.2.0.
 - **Phase 3-C** ✅ — **`scripts/gcl_actiontrail_crosscheck.py`** (cloud-side audit; `LookupEvents` re-verifies each `gcl-trace-*.json`; catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY`). `scripts/gcl_actiontrail_crosscheck_test.py` (25 unit tests). `alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`. `alicloud-actiontrail-ops/SKILL.md` bumped 1.0.0 → 1.1.0 with a lightweight `## Quality Gate (GCL)` cross-checker role section.
-- **Phase 4** ⏳ — wire rubric pass-rate to `alicloud-cms-ops` alarms (real incidents refine thresholds).
+- **Phase 4** ✅ — wire rubric pass-rate to `alicloud-cms-ops` alarms (real incidents refine thresholds). `scripts/gcl_passrate_reporter.py` (aggregates GCL traces → per-skill + per-dimension pass-rates → `aliyun cms PutCustomMetric` to `acs_custom_gcl` namespace). `scripts/gcl_cms_alarm_setup.py` extended with 3 pass-rate alarms: GCL-Safety-Fail-Rate (P1), GCL-Correctness-Drop (P2), GCL-Traceability-Gap (P3). `alicloud-cms-ops/references/gcl-passrate-metrics-guide.md` (architecture, cron pipeline, alarm thresholds, dashboard). `AGENTS.md` §12.8: DTS added as 14th `required` skill.
 - **Phase 5** ✅ — GCL rollout extended to all 8 `recommended` skills (SLB, ACK, ASK, FC, ECI, CMS, ResourceManager, AgentRun). Each gets lean `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section with `max_iter=3`. Meta / read-only skills (`ActionTrail`, `Billing`, `DAS`) remain `optional` per §12.8.
 
 ### 12.12 Aliyun-Specific Differences vs. JD Cloud GCL

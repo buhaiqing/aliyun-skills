@@ -10,9 +10,10 @@ Generator-Critic-Loop (GCL) adversarial quality gate, defined in
 |---|---|
 | `gcl_runner.py` | Standalone Python 3.10+ CLI runner. Zero external dependencies. |
 | `gcl_runner_test.py` | Pure-stdlib `unittest` suite. 60 tests, ~0.02s runtime. |
-| `gcl_cms_alarm_setup.py` | **Phase 3-B** alarm setup: idempotent PutMetricAlarm creator for phantom-op findings. Reads `crosscheck-report-*.json`, creates/updates 5 alarms (GCL-Phantom-Pass/Fail/Resource-Mismatch/Api-Errors/Timing-Anomaly). |
+| `gcl_cms_alarm_setup.py` | **Phase 3-B + Phase 4** alarm setup: idempotent PutMetricAlarm creator for phantom-op findings AND real pass-rate metrics. Reads `crosscheck-report-*.json`, creates/updates 5 phantom alarms (GCL-Phantom-Pass/Fail/Resource-Mismatch/Api-Errors/Timing-Anomaly). Also creates 3 pass-rate alarms (GCL-Safety-Fail-Rate, GCL-Correctness-Drop, GCL-Traceability-Gap) watching `acs_custom_gcl` namespace. |
 | `gcl_actiontrail_crosscheck.py` | **Phase 3-C** cross-checker: verifies GCL traces against ActionTrail `LookupEvents`. Catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY`. |
 | `gcl_actiontrail_crosscheck_test.py` | Pure-stdlib `unittest` suite. 25 tests, ~0.01s runtime. |
+| `gcl_passrate_reporter.py` | **Phase 4** pass-rate reporter: aggregates GCL traces, computes per-skill and per-dimension pass-rates, pushes to CMS custom metrics (`acs_custom_gcl`). |
 | `README.md` | This file. |
 
 ## What `gcl_runner.py` Does
@@ -209,9 +210,9 @@ unittest.TextTestRunner(verbosity=2).run(suite)
 | Phase | Scope | Status |
 |---|---|---|
 | Phase 2 (this) | Mechanical Critic, subprocess Generator, JSON trace | ✅ Shipped 2026-06-04 |
-| Phase 3 | LLM-based Critic, ActionTrail cross-check | Pending |
-| Phase 4 | CMS alarm on SAFETY_FAIL rate | Pending |
-| Phase 5 | Auto-rollout to 7 `recommended` skills (SLB, ACK, etc.) | Pending |
+| Phase 3 | LLM-based Critic, ActionTrail cross-check | ✅ Shipped 2026-06-04 |
+| Phase 4 | CMS alarm on SAFETY_FAIL rate + pass-rate metrics | ✅ Shipped 2026-06-04 |
+| Phase 5 | Auto-rollout to 7 `recommended` skills (SLB, ACK, etc.) | ✅ Shipped 2026-06-04 |
 
 ## Related
 

@@ -21,8 +21,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.0.0"
-  last_updated: "2026-05-16"
+  version: "1.1.0"
+  last_updated: "2026-06-04"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -500,6 +500,39 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - **Security:** Only associate EIPs with resources that have proper security group rules/NAT configurations.
 - **Monitoring:** Track EIP bandwidth utilization; upgrade before reaching limits.
 
+
+## Quality Gate (GCL)
+
+This skill is the **sixth rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-eip-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Two references in this directory carry the GCL contract:**
+> [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+### GCL Scope for EIP
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, sixth skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Most-scrutinized ops | `ReleaseEipAddress` (irreversible — IP returns to pool), `UnassociateEipAddress` (network interruption), `ModifyEipAddress` bandwidth decrease (packet drops if below traffic) |
+
+### Per-Op Safety Highlights
+
+| Operation | Hard condition |
+|---|---|
+| `ReleaseEipAddress` | **6 checks**: (a) EIP `Available`; (b) explicit user confirmation naming IP + ID; (c) warning: IP returns to Alibaba pool; (d) DNS / firewall / 3rd-party API key audit; (e) production EIP requires maintenance window; (f) 2-step unbind-then-release pattern |
+| `UnassociateEipAddress` | **5 checks**: (a) EIP `InUse`; (b) explicit network interruption warning; (c) user confirmation naming EIP + target; (d) production EIP requires maintenance window; (e) `InstanceType` cross-verified via `DescribeEipAddresses` |
+| `ModifyEipAddress` bandwidth decrease | CMS traffic pre-check: avg traffic last 1h must NOT exceed new bandwidth |
+| `ModifyEipAddress` billing switch | Explicit warning about cost model change; production EIP requires maintenance window |
+| `AssociateEipAddress` | Target region match; no existing EIP on target (or user justifies overwrite); production EIP rule |
+
+### Changelog
+1.1.0 | 2026-06-04 | Sixth rollout: `## Quality Gate (GCL)` + `references/rubric.md` + `references/prompt-templates.md`. Per-op Safety sub-rules with production EIP detection, 2-step release pattern, traffic pre-check.
+
+---
 
 ## See Also — Meta-Skill Rules
 

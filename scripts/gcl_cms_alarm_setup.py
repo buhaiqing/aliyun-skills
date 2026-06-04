@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-gcl_cms_alarm_setup.py — Phase 3-B: Create / update CMS alarm rules for
-GCL phantom-op findings from `crosscheck-report-*.json`.
+gcl_cms_alarm_setup.py — Phase 3-B + Phase 4: Create / update CMS alarm rules for
+GCL phantom-op findings AND real pass-rate metrics.
 
 Idempotent: creates alarms only if they don't exist, updates only if
 threshold changes, deletes if the issue is resolved. Run after
@@ -34,9 +34,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -83,6 +85,34 @@ ALARMS: List[Dict[str, Any]] = [
         "evaluation_count": 3,
         "severity": "P4",
     },
+    # ── Phase 4: Real pass-rate alarms ──────────────────────────────────────
+    {
+        "name": "GCL-Safety-Fail-Rate",
+        "json_path_metric": "gcl_safety_fail_count",
+        "namespace": "acs_custom_gcl",
+        "threshold": 1,  # > 1 SAFETY_FAIL in window
+        "comparison_operator": ">",
+        "evaluation_count": 1,
+        "severity": "P1",
+    },
+    {
+        "name": "GCL-Correctness-Drop",
+        "json_path_metric": "gcl_global_pass_rate_correctness",
+        "namespace": "acs_custom_gcl",
+        "threshold": 90,  # < 90% (operator: "<")
+        "comparison_operator": "<",
+        "evaluation_count": 2,
+        "severity": "P2",
+    },
+    {
+        "name": "GCL-Traceability-Gap",
+        "json_path_metric": "gcl_global_pass_rate_traceability",
+        "namespace": "acs_custom_gcl",
+        "threshold": 80,  # < 80% (operator: "<")
+        "comparison_operator": "<",
+        "evaluation_count": 2,
+        "severity": "P3",
+    },
 ]
 
 EXIT_CLEAN = 0
@@ -106,7 +136,11 @@ def load_latest_report(report_dir: Path) -> Optional[Dict[str, Any]]:
 
 
 def extract_metric_value(report: Dict[str, Any], json_path: Tuple[str, ...]) -> int:
-    """Traverse the report dict along json_path and return the value (or 0)."""
+    """Traverse the report dict along json_path and return the value (or 0).
+
+    Used by Phase 3-B phantom alarms to extract finding counts from
+    crosscheck reports.
+    """
     current: Any = report
     for key in json_path:
         if isinstance(current, dict):
@@ -114,6 +148,11 @@ def extract_metric_value(report: Dict[str, Any], json_path: Tuple[str, ...]) -> 
         else:
             return 0
     return int(current) if isinstance(current, (int, float)) else 0
+
+
+def is_passrate_alarm(alarm: Dict[str, Any]) -> bool:
+    """Return True if this is a Phase 4 pass-rate alarm (metric-based)."""
+    return "json_path_metric" in alarm
 
 
 # ---------------------------------------------------------------------------
@@ -143,15 +182,23 @@ def call_describe_alarm_list(name: str, region: str) -> List[Dict[str, Any]]:
 def call_put_metric_alarm(config: Dict[str, Any], region: str) -> int:
     """Call `aliyun cms PutMetricAlarm` with the given config.
 
+    Supports two alarm types:
+    - Phantom alarms (Phase 3-B): use ``json_path`` to fetch value from crosscheck report
+    - Pass-rate alarms (Phase 4): use ``json_path_metric`` + ``namespace`` for custom metrics
+
     Returns exit code.
     """
+    namespace = config.get("namespace", "acs_custom")
+    metric_name = config.get("json_path_metric") or config["name"].lower().replace("-", "_")
+    statistics = "Average" if config.get("json_path_metric") else "Average"
+
     args = [
         "aliyun", "cms", "PutMetricAlarm",
         "--RegionId", region,
         "--AlarmName", config["name"],
-        "--MetricName", config["name"].lower().replace("-", "_"),
-        "--Namespace", "acs_custom",
-        "--Statistics", "Average",
+        "--MetricName", metric_name,
+        "--Namespace", namespace,
+        "--Statistics", statistics,
         "--ComparisonOperator", config["comparison_operator"],
         "--Threshold", str(config["threshold"]),
         "--Period", "300",
@@ -201,8 +248,16 @@ def reconcile(
 
     for alarm in ALARMS:
         name = alarm["name"]
-        value = extract_metric_value(report, alarm["json_path"])
-        should_exist = value > alarm["threshold"]
+        is_pr = is_passrate_alarm(alarm)
+
+        if is_pr:
+            # Phase 4 pass-rate alarm: always desired (CMS evaluates metric stream)
+            value = 0
+            should_exist = True
+        else:
+            # Phase 3-B phantom alarm: create only if finding count exceeds threshold
+            value = extract_metric_value(report, alarm["json_path"])
+            should_exist = value > alarm["threshold"]
 
         # Check current state in CMS
         existing = call_describe_alarm_list(name, region)
