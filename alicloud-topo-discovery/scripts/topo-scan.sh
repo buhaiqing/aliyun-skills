@@ -1,12 +1,33 @@
 #!/bin/bash
 set -euo pipefail
 
-REPORT_MODE="${1:-brief}"
+# ---- Argument parsing ----
+REPORT_MODE="brief"
 REGION_ID="${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}"
 OUTPUT_DIR="${TOPO_OUTPUT_DIR:-.}"
+ASSUME_ROLE=""
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --assume-role) ASSUME_ROLE="$2"; shift 2 ;;
+        --mode|-m) REPORT_MODE="$2"; shift 2 ;;
+        --region|-r) REGION_ID="$2"; shift 2 ;;
+        --output-dir|-o) OUTPUT_DIR="$2"; shift 2 ;;
+        brief|detailed) REPORT_MODE="$1"; shift ;;
+        *) echo "[ERROR] Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+# ---- STS AssumeRole (optional) ----
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ -n "$ASSUME_ROLE" ]]; then
+    echo "[DIAG] Using cross-account role: $ASSUME_ROLE"
+    source "$SCRIPT_DIR/sts-helper.sh" --role-arn "$ASSUME_ROLE"
+fi
+
 SCAN_TIMESTAMP=$(date +%FT%T%z)
 
-echo "🔍 Starting network topology scan... Mode: $REPORT_MODE | Region: $REGION_ID"
+echo "[DIAG] Starting network topology scan... Mode: $REPORT_MODE | Region: $REGION_ID"
 
 # Safety Gate: Read-Only Verification
 FORBIDDEN="Create|Delete|Modify|Update|Associate|Unassociate|Authorize|Revoke|Stop|Start|Reboot|Run|Invoke|Attach|Detach|Release"
