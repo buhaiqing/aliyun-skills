@@ -18,6 +18,16 @@ aliyun plugin install --names aliyun-cli-sas
 aliyun sas <OperationName> --Param1 value1 --Param2 value2
 ```
 
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun sas DescribeVulList --PageSize 50 | jq '{total: .TotalCount, vulns: [.VulList[]? | {name: .Name, severity: .Severity}]}'
+```
+
 - Output is **JSON by default** — do not pass `--output json` for plain JSON
 - Use `--output cols=...,rows=...` for JMESPath tabular extraction
 - All commands are non-interactive by default

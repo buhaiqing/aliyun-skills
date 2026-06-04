@@ -52,3 +52,14 @@
 | Extract fields | `aliyun cs GET /clusters --output cols=cluster_id,name rows=clusters[].{cluster_id,name}` | JMESPath tabular mode |
 | Poll with waiter | `aliyun cs GET /clusters/{id} --waiter expr='state' to=running timeout=1800 interval=30` | Waiter for long-running ops |
 | Body from file | `aliyun cs POST /clusters --body file:///tmp/cluster.json` | Avoid inline JSON escaping |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

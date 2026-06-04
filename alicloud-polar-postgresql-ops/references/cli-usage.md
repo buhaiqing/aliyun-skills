@@ -8,6 +8,15 @@
 
 ## Prerequisites
 
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Example:
+```bash
+aliyun adb DescribeDBClusters | jq '{clusters: [.Items.DBCluster[]? | {id: .DBClusterId, status: .Status}]}'
+```
+
 ```bash
 # 安装 aliyun CLI
 /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"

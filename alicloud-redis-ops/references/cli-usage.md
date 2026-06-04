@@ -10,6 +10,16 @@
 
 ## Conventions (Agent Execution)
 
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+
 - Output is **JSON by default** — NO `--output json` needed for plain JSON
 - Use `--output cols=...,rows=...` for JMESPath tabular extraction
 - `--no-interactive` does NOT exist in `aliyun` CLI — all commands are non-interactive by default
@@ -92,3 +102,14 @@
 | Extract fields | `aliyun r-kvstore describe-instances --output cols=InstanceId,InstanceStatus,InstanceClass rows=Instances.KVStoreInstance[].{InstanceId,InstanceStatus,InstanceClass}` | JMESPath tabular mode |
 | Poll state | `for i in $(seq 1 60); do STATUS=$(aliyun r-kvstore describe-instances --InstanceId r-bp1zxszhcgatnx**** --output cols=InstanceStatus rows=Instances.KVStoreInstance[0].InstanceStatus); [ "$STATUS" = "Normal" ] && break; sleep 10; done` | Shell loop polling |
 | Poll with `--waiter` | `aliyun r-kvstore describe-instances --InstanceId r-bp1zxszhcgatnx**** --waiter expr='Instances.KVStoreInstance[0].InstanceStatus' to=Normal timeout=600 interval=10` | Native CLI waiter (when supported) |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

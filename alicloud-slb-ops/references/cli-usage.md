@@ -348,3 +348,14 @@ for i in $(seq 1 24); do
   sleep 5
 done
 ```
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

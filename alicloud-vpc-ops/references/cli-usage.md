@@ -123,3 +123,14 @@
 | Create BGP Group | `aliyun vpc CreateBgpGroup --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --BgpGroupId "my-group"` | |
 | List BGP Peers | `aliyun vpc DescribeBgpPeers --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}` | |
 | Create BGP Peer | `aliyun vpc CreateBgpPeer --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --BgpGroupId {{user.bgp_group_id}}` | |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

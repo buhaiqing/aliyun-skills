@@ -53,3 +53,14 @@ aliyun polardb DescribeDBClusterAttribute \
 
 Core operations (create, describe, modify, delete) are fully covered by CLI. Advanced
 operations (GDN management, TDE configuration, audit log settings) may require SDK.
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

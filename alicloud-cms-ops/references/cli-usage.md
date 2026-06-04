@@ -48,6 +48,16 @@ command namespace.
 
 ## Common Patterns
 
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Datapoints[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun cms DescribeMetricList --PageSize 50 | jq '{code: .Code, metrics: [.Values[]]}'
+```
+
 ### Authentication
 
 ```bash

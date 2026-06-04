@@ -50,3 +50,14 @@
 | List FULLNAT | `aliyun vpc DescribeFullNatEntries --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --NatGatewayId {{user.nat_gateway_id}}` | |
 | Create FULLNAT | `aliyun vpc CreateFullNatEntry --RegionId {{user.region}} --NatGatewayId {{user.nat_gateway_id}} --FullNatIp "{{user.fullnat_ip}}" --DestinationCidrBlock "{{user.dest_cidr}}" --IpProtocol TCP --InternalIp "{{user.internal_ip}}" --InternalPort "{{user.internal_port}}"` | |
 | Delete FULLNAT | `aliyun vpc DeleteFullNatEntry --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --FullNatEntryId {{user.fullnat_entry_id}}` | |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

@@ -47,3 +47,14 @@
 | Add EIP to Plan | `aliyun vpc AddCommonBandwidthPackageIp --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --BandwidthPackageId {{user.bandwidth_package_id}} --IpInstanceId {{user.eip_id}}` | |
 | Remove EIP from Plan | `aliyun vpc RemoveCommonBandwidthPackageIp --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --BandwidthPackageId {{user.bandwidth_package_id}} --IpInstanceId {{user.eip_id}}` | |
 | Delete Plan | `aliyun vpc DeleteCommonBandwidthPackage --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --BandwidthPackageId {{user.bandwidth_package_id}}` | Remove all EIPs first |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+

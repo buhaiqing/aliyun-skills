@@ -116,3 +116,14 @@ aliyun plugin install --names aliyun-cli-rds-data
 | Execute SQL (Data API) | `aliyun rds-data execute-statement --resource-arn acs:rds:... --secret-arn acs:rds:... --database db --sql "SELECT 1"` | Requires `aliyun-cli-rds-data` plugin |
 | Batch INSERT (Data API) | `aliyun rds-data batch-execute-statement --sql "INSERT ..." --parameter-sets '[[...]]'` | Not a general SQL file runner |
 | Get caller account (ARN) | `aliyun sts GetCallerIdentity` | Build `resource-arn` for Data API |
+
+### jq Best Practice (JSON Processing)
+
+- Use `jq` for complex JSON transformations after `aliyun` commands
+- Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
+- Use `--PageSize` to control result sets: `--PageSize 50`
+- Example:
+```bash
+aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
+```
+
