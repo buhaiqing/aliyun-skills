@@ -1,0 +1,101 @@
+[
+  {
+    "query": "Create a new OSS bucket called 'prod-images' in cn-hangzhou with Standard storage class",
+    "should_trigger": true
+  },
+  {
+    "query": "List all my OSS buckets across all regions",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up a lifecycle rule on my OSS bucket to tier down logs to IA after 30 days and Archive after 90 days",
+    "should_trigger": true
+  },
+  {
+    "query": "Upload a 2GB file to OSS using multipart upload with resumption support",
+    "should_trigger": true
+  },
+  {
+    "query": "Generate a presigned URL valid for 1 hour for a private object in my OSS bucket",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure CORS to allow my domain https://example.com to make GET requests to my OSS bucket",
+    "should_trigger": true
+  },
+  {
+    "query": "Restore a frozen Archive object in my OSS bucket with expedited restore",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up cross-region replication from my Shanghai bucket to my Singapore bucket",
+    "should_trigger": true
+  },
+  {
+    "query": "Enable server-side encryption with KMS on my bucket using my KMS key",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure Referer anti-leech on my OSS bucket to only allow requests from example.com",
+    "should_trigger": true
+  },
+  {
+    "query": "Bulk delete all .log files in my OSS bucket prefix logs/2024/",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up static website hosting on my bucket with index.html as the default page",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to move 5TB of data from S3 to OSS",
+    "should_trigger": true,
+    "note": "May need delegation to DTS/SMS — but OSS-side configuration is in scope"
+  },
+  {
+    "query": "Process an image in my OSS bucket to 200x200 thumbnail and save as new object",
+    "should_trigger": true
+  },
+  {
+    "query": "Check the storage size and object count of my bucket",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a new ECS instance",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to manage my RDS MySQL instance backups",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up CDN with my custom domain",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure RAM policy for read access to my Kafka cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Delete my OSS bucket",
+    "should_trigger": true,
+    "note": "Destructive — safety gate must trigger; should still activate skill"
+  },
+  {
+    "query": "How do I create a VPC?",
+    "should_trigger": false
+  },
+  {
+    "query": "Set up a Redis cluster with cluster mode",
+    "should_trigger": false
+  },
+  {
+    "query": "Show me my OSS access logs for last week",
+    "should_trigger": true
+  },
+  {
+    "query": "I want to set up Serverless Function Compute to process my OSS uploads",
+    "should_trigger": false,
+    "note": "This is an FC question, not pure OSS — would delegate to FC skill"
+  }
+]
