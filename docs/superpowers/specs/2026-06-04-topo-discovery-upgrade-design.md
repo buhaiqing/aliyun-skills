@@ -42,6 +42,15 @@
 | Q3 | Baseline 存储后端 | **三种都支持(local/Git/OSS),--backend 切换** | 最灵活,+1 周 |
 | Q4 | 实施优先级 | **MVP 优先** | v1.0 = scan-topo + export-hcl + baseline;v1.1 = diff + blueprint |
 
+### 2.5 Decisions Locked in Final Review(第二轮用户确认)
+
+| # | 决策 | 选择 | 影响 |
+|---|------|------|------|
+| OQ-1 | git backend 存放结构 | **子路径** `baselines/YYYY-MM-DD/` | 跟业务代码同 repo 共存;CI commit path 固定 |
+| OQ-2 | oss backend 加密 | **不支持**(仅依赖 bucket 自身策略) | 文档明确警告 bucket policy 必须配置 |
+| OQ-3 | GCL 集成时机 | **v1.0 必须**(与项目 §12 一致) | W10 milestone 强制包含 GCL 评审 |
+| OQ-4 | 文档长度 & 工期 | **满意,直接进入 writing-plans** | 529 行 spec 保持现状;12-14 周工期确认 |
+
 ### 2.1 重新评估的工期(诚实披露)
 
 原 Top-18 估算 6-8 周;加入 cross-account 和 3 backend 后:
@@ -205,8 +214,8 @@ aliyun-topo-discovery baseline --backend git
 | Backend | 适用 | 配置项 | 失败行为 |
 |---------|------|--------|----------|
 | `local`(默认) | 个人/小团队 | `--output-dir` | 直接写本地 |
-| `git` | 中小团队,需 PR 审计 | `--git-repo`, `--git-branch`, `--git-user`, `--git-email` | 自动 commit + push;push 失败 → fallback 到 local + 报警 |
-| `oss` | 大账号/合规 | `--oss-bucket`, `--oss-prefix`, `--oss-access-key`(可选,默认用主凭证) | multipart upload;失败 → 重试 3 次 → 报警 |
+| `git` | 中小团队,需 PR 审计 | `--git-repo`, `--git-branch`, `--git-path`(默认 `baselines/`),`--git-user`, `--git-email` | 每次 commit 到 `baselines/YYYY-MM-DD/` 子路径;自动 commit + push;push 失败 → fallback 到 local + 报警 |
+| `oss` | 大账号/合规 | `--oss-bucket`, `--oss-prefix`(默认 `topo-baseline/`), `--oss-access-key`(可选,默认用主凭证) | multipart upload;失败 → 重试 3 次 → 报警;**⚠️ 不做 ServerSide 加密,仅依赖 bucket policy —— 用户必须自行配置** |
 
 #### 3.3.4 保留策略
 - 默认 90 天
@@ -462,14 +471,14 @@ alicloud-topo-discovery/
 | R6 | 大账号 export 性能(>1000 资源) | 中 | 中 | 并行 API + 流式生成 + progress 报告 |
 | R7 | `terraform.tfstate` 含敏感字段泄漏 | 低 | 高 | state 文件加 `.gitignore` 提示 + 文档警告 |
 
-### 8.1 Open Questions(需用户后续确认)
+### 8.1 Open Questions(已决,见 §2.5)
 
-| # | Question | 选项 |
-|---|----------|------|
-| OQ-1 | baseline 的 `git` backend,默认是单 branch 还是 `baselines/YYYY-MM-DD` 路径? | 单 branch(简单) / 子路径(可与 infra 代码共存) |
-| OQ-2 | `oss` backend 是否支持 ServerSide 加密(避免 baseline 文件泄漏)? | 支持(KMS) / 不支持(文档警告) |
-| OQ-3 | export-hcl 失败时(部分资源失败)是否需要 retry 选项? | 是(`--retry 3`) / 否(快速失败) |
-| OQ-4 | GCL 集成是 v1.0 必须还是 nice-to-have? | 必须(与项目 §12 一致) / nice-to-have(v1.0 不做) |
+| # | Question | 决策 | 状态 |
+|---|----------|------|------|
+| OQ-1 | git backend 存放结构 | 子路径 `baselines/YYYY-MM-DD/` | ✅ Locked(§2.5) |
+| OQ-2 | oss backend ServerSide 加密 | 不支持,依赖 bucket policy | ✅ Locked(§2.5) |
+| OQ-3 | GCL 集成时机 | v1.0 必须 | ✅ Locked(§2.5) |
+| OQ-4 | 文档长度 & 工期 | 满意,直接 writing-plans | ✅ Locked(§2.5) |
 
 ---
 
