@@ -119,4 +119,93 @@ MAPPINGS = {
             MappingRule(hcl_attr="assume_role_policy", path="AssumeRolePolicyDocument"),
         ],
     ),
+    "polardb": MappingSpec(
+        resource_type="polardb",
+        terraform_type="alicloud_polardb_cluster",
+        rules=[
+            MappingRule(hcl_attr="description", path="DBClusterDescription"),
+            MappingRule(hcl_attr="db_type", path="DBType"),
+            MappingRule(hcl_attr="db_version", path="DBVersion"),
+            MappingRule(hcl_attr="db_node_class", path="DBNodeClass"),
+            MappingRule(hcl_attr="db_node_storage", path="DBNodeStorage", type="int"),
+            MappingRule(hcl_attr="vswitch_id", path="VSwitchId"),
+        ],
+    ),
+    "redis": MappingSpec(
+        resource_type="redis",
+        terraform_type="alicloud_redis_instance",
+        rules=[
+            MappingRule(hcl_attr="instance_name", path="InstanceName"),
+            MappingRule(hcl_attr="instance_class", path="InstanceClass"),
+            MappingRule(hcl_attr="engine_version", path="EngineVersion"),
+            MappingRule(hcl_attr="connection_domain", path="ConnectionDomain"),
+            MappingRule(hcl_attr="port", path="Port", type="int"),
+        ],
+    ),
+    "kms": MappingSpec(
+        resource_type="kms",
+        terraform_type="alicloud_kms_key",
+        rules=[
+            MappingRule(hcl_attr="description", path="Description", required=False),
+            MappingRule(hcl_attr="key_spec", path="KeySpec"),
+            MappingRule(hcl_attr="usage", path="KeyUsage"),
+            MappingRule(hcl_attr="origin", path="Origin"),
+        ],
+    ),
+    "actiontrail": MappingSpec(
+        resource_type="actiontrail",
+        terraform_type="alicloud_actiontrail",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="oss_bucket_name", path="OssBucketName"),
+            MappingRule(hcl_attr="oss_key_prefix", path="OssKeyPrefix", required=False),
+        ],
+    ),
+    "nas": MappingSpec(
+        resource_type="nas",
+        terraform_type="alicloud_nas_file_system",
+        rules=[
+            MappingRule(hcl_attr="description", path="Description", required=False),
+            MappingRule(hcl_attr="storage_type", path="StorageType"),
+            MappingRule(hcl_attr="protocol_type", path="ProtocolType"),
+        ],
+    ),
+    "fc": MappingSpec(
+        resource_type="fc",
+        terraform_type="alicloud_fc_service",
+        rules=[
+            MappingRule(hcl_attr="name", path="ServiceName"),
+            MappingRule(hcl_attr="description", path="Description", required=False),
+            MappingRule(hcl_attr="role", path="Role"),
+        ],
+    ),
+    "vpn": MappingSpec(
+        resource_type="vpn",
+        terraform_type="alicloud_vpn_connection",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="local_subnet", path="LocalSubnet"),
+            MappingRule(hcl_attr="remote_subnet", path="RemoteSubnet"),
+        ],
+    ),
+    "ack": MappingSpec(
+        resource_type="ack",
+        terraform_type="alicloud_cs_kubernetes",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="cluster_type", path="ClusterType"),
+            MappingRule(hcl_attr="version", path="Version"),
+            MappingRule(hcl_attr="worker_number", path="WorkerNumber", type="int"),
+            MappingRule(hcl_attr="vswitch_ids", path="VSwitchIds.VSwitchId", type="list"),
+            MappingRule(hcl_attr="vpc_id", path="VpcId"),
+        ],
+    ),
+    "sag": MappingSpec(
+        resource_type="sag",
+        terraform_type="alicloud_sag",
+        rules=[
+            MappingRule(hcl_attr="name", path="Name"),
+            MappingRule(hcl_attr="cidr_block", path="CidrBlock"),
+        ],
+    ),
 }

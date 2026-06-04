@@ -232,11 +232,103 @@ class TestRamMapping:
         assert 'arn = "acs:ram::1234567890:role/ecs-role"' in hcl
 
 
-class TestMappingsRegistry:
-    """Verify MAPPINGS dict contains all Phase 1-3 resource types."""
+class TestPolardbMapping:
+    def test_polardb_block(self, mapper, load_fixture):
+        data = load_fixture("polardb")
+        spec = MAPPINGS["polardb"]
+        bn = mapper.generate_block_name("alicloud_polardb_cluster", data, spec)
+        hcl = mapper.map_resource("polardb", data, spec, bn)
+        assert 'resource "alicloud_polardb_cluster"' in hcl
+        assert 'db_node_storage = 200' in hcl
 
-    def test_all_current_types_present(self):
-        for rt in ["vpc", "vswitch", "ecs", "rds", "slb", "nat", "eip", "sg", "oss", "ram"]:
+
+class TestRedisMapping:
+    def test_redis_block(self, mapper, load_fixture):
+        data = load_fixture("redis")
+        spec = MAPPINGS["redis"]
+        bn = mapper.generate_block_name("alicloud_redis_instance", data, spec)
+        hcl = mapper.map_resource("redis", data, spec, bn)
+        assert 'resource "alicloud_redis_instance"' in hcl
+        assert "port = 6379" in hcl
+
+
+class TestKmsMapping:
+    def test_kms_block(self, mapper, load_fixture):
+        data = load_fixture("kms")
+        spec = MAPPINGS["kms"]
+        bn = mapper.generate_block_name("alicloud_kms_key", data, spec)
+        hcl = mapper.map_resource("kms", data, spec, bn)
+        assert 'resource "alicloud_kms_key"' in hcl
+
+
+class TestActiontrailMapping:
+    def test_actiontrail_block(self, mapper, load_fixture):
+        data = load_fixture("actiontrail")
+        spec = MAPPINGS["actiontrail"]
+        bn = mapper.generate_block_name("alicloud_actiontrail", data, spec)
+        hcl = mapper.map_resource("actiontrail", data, spec, bn)
+        assert 'resource "alicloud_actiontrail"' in hcl
+
+
+class TestNasMapping:
+    def test_nas_block(self, mapper, load_fixture):
+        data = load_fixture("nas")
+        spec = MAPPINGS["nas"]
+        bn = mapper.generate_block_name("alicloud_nas_file_system", data, spec)
+        hcl = mapper.map_resource("nas", data, spec, bn)
+        assert 'resource "alicloud_nas_file_system"' in hcl
+
+
+class TestFcMapping:
+    def test_fc_block(self, mapper, load_fixture):
+        data = load_fixture("fc")
+        spec = MAPPINGS["fc"]
+        bn = mapper.generate_block_name("alicloud_fc_service", data, spec)
+        hcl = mapper.map_resource("fc", data, spec, bn)
+        assert 'resource "alicloud_fc_service"' in hcl
+
+
+class TestVpnMapping:
+    def test_vpn_block(self, mapper, load_fixture):
+        data = load_fixture("vpn")
+        spec = MAPPINGS["vpn"]
+        bn = mapper.generate_block_name("alicloud_vpn_connection", data, spec)
+        hcl = mapper.map_resource("vpn", data, spec, bn)
+        assert 'resource "alicloud_vpn_connection"' in hcl
+
+
+class TestAckMapping:
+    def test_ack_block(self, mapper, load_fixture):
+        data = load_fixture("ack")
+        spec = MAPPINGS["ack"]
+        bn = mapper.generate_block_name("alicloud_cs_kubernetes", data, spec)
+        hcl = mapper.map_resource("ack", data, spec, bn)
+        assert 'resource "alicloud_cs_kubernetes"' in hcl
+        assert "worker_number = 3" in hcl
+
+    def test_ack_vswitch_ids_list(self, mapper, load_fixture):
+        data = load_fixture("ack")
+        spec = MAPPINGS["ack"]
+        bn = mapper.generate_block_name("alicloud_cs_kubernetes", data, spec)
+        hcl = mapper.map_resource("ack", data, spec, bn)
+        assert 'vswitch_ids = ["vsw-bp1aevb8sfi8mh1qj5t9"]' in hcl
+
+
+class TestSagMapping:
+    def test_sag_block(self, mapper, load_fixture):
+        data = load_fixture("sag")
+        spec = MAPPINGS["sag"]
+        bn = mapper.generate_block_name("alicloud_sag", data, spec)
+        hcl = mapper.map_resource("sag", data, spec, bn)
+        assert 'resource "alicloud_sag"' in hcl
+
+
+class TestMappingsRegistry:
+    """Verify MAPPINGS dict contains all 18 resource types."""
+
+    def test_all_eighteen_types_present(self):
+        for rt in ["vpc","vswitch","ecs","rds","slb","nat","eip","sg","oss","ram",
+                    "polardb","redis","kms","actiontrail","nas","fc","vpn","ack","sag"]:
             assert rt in MAPPINGS, f"{rt} missing from MAPPINGS"
 
     def test_each_spec_has_rules(self):

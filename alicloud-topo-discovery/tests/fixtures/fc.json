@@ -1,0 +1,12 @@
+{
+  "ServiceName": "prod-inference",
+  "Description": "Model inference service",
+  "Role": "acs:ram::1234567890:role/aliyunfcddefaultrole",
+  "ServiceId": "s-bp1aevb8sfi8mh1qj5tl",
+  "CreationTime": "2026-04-01T08:00:00Z",
+  "FunctionName": "predict",
+  "Runtime": "python3.10",
+  "MemorySize": 1024,
+  "FunctionId": "f-bp1aevb8sfi8mh1qj5tm",
+  "CodeSize": 1024000
+}

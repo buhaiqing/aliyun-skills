@@ -1,0 +1,7 @@
+{
+  "SmartAGId": "sag-bp1aevb8sfi8mh1qj5tq",
+  "Name": "prod-sag-hq",
+  "CidrBlock": "10.200.0.0/16",
+  "Status": "Active",
+  "CreateTime": 1712000000
+}
