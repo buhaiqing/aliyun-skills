@@ -1,7 +1,23 @@
-"""Common pytest fixtures for alicloud-topo-discovery Phase 1 tests."""
+"""Common pytest fixtures for alicloud-topo-discovery Phase 1 tests.
+
+Also configures sys.path so tests can do
+`from scripts.lib.<module> import ...` (the canonical import path for
+this skill's internal library). The skill's root directory
+(alicloud-topo-discovery/) is added to sys.path, making the `scripts/`
+subdir importable as a package.
+"""
 import json
+import sys
 from pathlib import Path
 import pytest
+
+# Make `scripts.lib.*` imports work in tests.
+# Adding the skill dir to sys.path means `scripts` resolves to
+# alicloud-topo-discovery/scripts/, NOT the repo-root scripts/ dir
+# (which contains gcl_runner.py for the project meta-skill).
+SKILL_DIR = Path(__file__).parent.parent
+if str(SKILL_DIR) not in sys.path:
+    sys.path.insert(0, str(SKILL_DIR))
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
