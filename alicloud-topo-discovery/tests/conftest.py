@@ -48,3 +48,9 @@ def temp_output_dir(tmp_path):
     output = tmp_path / "hcl-export"
     output.mkdir()
     return output
+
+
+@pytest.fixture
+def temp_baseline_root(tmp_path):
+    """Returns a fresh temp directory for baseline tests."""
+    return tmp_path
