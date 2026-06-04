@@ -1,0 +1,20 @@
+{
+  "LoadBalancerId": "lb-bp1aevb8sfi8mh1qj5td",
+  "LoadBalancerName": "prod-web-lb",
+  "LoadBalancerSpec": "slb.s2.small",
+  "AddressType": "internet",
+  "InternetChargeType": "paybytraffic",
+  "Bandwidth": 5,
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+  "Status": "active",
+  "CreationTime": "2026-02-15T12:00:00Z",
+  "Tags": {
+    "Tag": [
+      {
+        "TagKey": "env",
+        "TagValue": "prod"
+      }
+    ]
+  }
+}
