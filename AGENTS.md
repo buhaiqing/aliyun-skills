@@ -409,7 +409,7 @@ diff /tmp/skill_code.txt /tmp/ref_code.txt
 
 | 文档 | 说明 |
 |------|------|
-| `README.md` | 项目概述、CLI 安装、凭证配置 |
+| `README.md` / `README_CN.md` | 项目概述、CLI 安装、凭证配置（英文版 / 中文版） |
 | `REQUIREMENTS.md` | 各 Skill 功能需求详情、架构设计、技术规范 |
 | `alicloud-skill-generator/SKILL.md` | **Meta Skill 生成器** — 生成新 skill 的完整工作流、P0/P1 检查清单、Token Efficiency 规则 |
 | `alicloud-skill-generator/references/governance-and-adversarial-review.md` | 治理与对抗性审查 — 合并前的安全/弹性/UX 审查场景（24+ 场景） |

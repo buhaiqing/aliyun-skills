@@ -1,88 +1,89 @@
 # aliyun-skills
 
-阿里云相关的Agent Skills
+Alibaba Cloud Agent Skills
 
-## 概述
+## Overview
 
-本项目是阿里云（Alibaba Cloud）运维 Agent Skills 集合，提供云产品的自动化运维、监控和管理能力。
+This project is a collection of Alibaba Cloud operations Agent Skills, providing automated operations, monitoring, and management capabilities for cloud products.
 
-> **需求与开发文档**：参见 [REQUIREMENTS.md](REQUIREMENTS.md)，包含所有 Skill 的功能需求详情、架构设计、技术规范与开发指南。
+> **Requirements & Development Documentation**: See [REQUIREMENTS.md](REQUIREMENTS.md), which contains functional requirements, architecture design, technical specifications, and development guides for all Skills.
 
-## 核心价值
+## Core Value
 
-**Skills Farm 是一套 Meta Skill（元技能）体系**——将运维知识转化为结构化的、AI Agent 可解析、可执行、可验证的声明式规范。
+**Skills Farm is a Meta Skill system** — transforming operations knowledge into structured, AI Agent-parseable, executable, and verifiable declarative specifications.
 
-### 关键特性
+### Key Features
 
-| 特性 | 说明 |
-|------|------|
-| **占位符机制** | `{{env.*}}`（环境变量）、`{{user.*}}`（用户输入）、`{{output.*}}`（输出捕获），实现人机双通道 |
-| **职责委托** | `SHOULD/SHOULD NOT Use` 定义边界，跨产品操作自动委派 |
-| **生成器** | 基于 OpenAPI 规范自动生成 Skill 框架模板，支持人工审核和完善 |
-| **CLI-first 执行** | 优先使用 `aliyun` CLI（静态 Go 二进制），CLI 不支持时 JIT 构建 Go SDK 脚本 |
-| **安全机制** | 凭证隔离（`{{env.*}}` 不暴露）、操作安全门（删除/恢复需确认） |
-| **跨平台设计** | 基于标准 Markdown + OpenSpec，支持多种 Agent 框架接入 |
+| Feature | Description |
+|---------|-------------|
+| **Placeholder System** | `{{env.*}}` (environment variables), `{{user.*}}` (user input), `{{output.*}}` (output capture), enabling human-machine dual-channel interaction |
+| **Delegation** | `SHOULD/SHOULD NOT Use` defines boundaries, cross-product operations are automatically delegated |
+| **Generator** | Automatically generates Skill framework templates from OpenAPI specs, supporting human review and refinement |
+| **CLI-first Execution** | Prefers `aliyun` CLI (static Go binary); JIT builds Go SDK scripts when CLI is insufficient |
+| **Security Mechanism** | Credential isolation (`{{env.*}}` never exposed), operation safety gates (delete/recovery require confirmation) |
+| **Cross-platform Design** | Based on standard Markdown + OpenSpec, compatible with multiple Agent frameworks |
 
-## 项目结构
+## Project Structure
 
 ```
 aliyun-skills/
-├── README.md                          # 本文件
-├── REQUIREMENTS.md                    # 需求开发文档（功能详情、架构设计、技术规范）
-├── go.mod                              # Go 模块配置（可选）
-├── .env.example                       # 环境变量示例
-├── .gitignore                         # Git 排除规则
-├── alicloud-jit-setup.sh              # JIT Go SDK 一键部署脚本
-├── alicloud-skill-generator/          # Skill 生成器（Meta Skill）
+├── README.md                          # English version
+├── README_CN.md                       # Chinese version
+├── REQUIREMENTS.md                    # Requirements & development docs (functional details, architecture design, technical specs)
+├── go.mod                              # Go module configuration (optional)
+├── .env.example                       # Environment variable template
+├── .gitignore                         # Git exclusion rules
+├── alicloud-jit-setup.sh              # JIT Go SDK one-click setup script
+├── alicloud-skill-generator/          # Skill Generator (Meta Skill)
 │   ├── SKILL.md
 │   ├── assets/
 │   └── references/
-│       ├── alicloud-skill-template.md   # Skill 模板
+│       ├── alicloud-skill-template.md   # Skill template
 │       └── governance-and-adversarial-review.md
-├── alicloud-ecs-ops/                  # 云服务器 ECS
-├── alicloud-rds-ops/                  # 云数据库 RDS
-├── alicloud-redis-ops/                # 云数据库 Redis/Tair
-├── alicloud-ack-ops/                  # 容器服务 ACK
-├── alicloud-slb-ops/                  # 负载均衡 SLB/CLB
-├── alicloud-ram-ops/                  # 访问控制 RAM
-├── alicloud-cms-ops/                  # 云监控 CMS
-├── alicloud-das-ops/                  # 数据库自治服务 DAS
-├── alicloud-kms-ops/                  # 密钥管理服务 KMS
-├── alicloud-sas-ops/                  # 云安全中心 Security Center (SAS)
-├── alicloud-polar-mysql-ops/          # PolarDB MySQL版
-├── alicloud-polar-pg-ops/             # PolarDB PostgreSQL版
-├── alicloud-polar-oracle-ops/         # PolarDB Oracle兼容版
-└── alicloud-topo-discovery/          # [发现类 Skill] 网络拓扑与资源清单
+├── alicloud-ecs-ops/                  # Elastic Compute Service (ECS)
+├── alicloud-rds-ops/                  # ApsaraDB RDS
+├── alicloud-redis-ops/                # ApsaraDB for Redis/Tair
+├── alicloud-ack-ops/                  # Container Service for Kubernetes (ACK)
+├── alicloud-slb-ops/                  # Server Load Balancer (SLB/CLB)
+├── alicloud-ram-ops/                  # Resource Access Management (RAM)
+├── alicloud-cms-ops/                  # Cloud Monitor Service (CMS)
+├── alicloud-das-ops/                  # Database Autonomy Service (DAS)
+├── alicloud-kms-ops/                  # Key Management Service (KMS)
+├── alicloud-sas-ops/                  # Security Center (SAS)
+├── alicloud-polar-mysql-ops/          # PolarDB for MySQL
+├── alicloud-polar-pg-ops/             # PolarDB for PostgreSQL
+├── alicloud-polar-oracle-ops/         # PolarDB for Oracle (compatible)
+└── alicloud-topo-discovery/          # [Discovery Skill] Network topology & resource inventory
 ```
 
-## 快速开始
+## Quick Start
 
-### 1. 安装 aliyun CLI
+### 1. Install aliyun CLI
 
 ```bash
-# 官方一键安装（自动检测 OS + 架构）
+# Official one-click install (auto-detects OS + architecture)
 /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
 ```
 
-### 2. 配置凭证
+### 2. Configure Credentials
 
 ```bash
-# 方式一：环境变量（推荐）
+# Method 1: Environment variables (recommended)
 export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
-# 方式二：交互式配置
+# Method 2: Interactive configuration
 aliyun configure
 ```
 
-### 3. 生成新 Skill
+### 3. Generate a New Skill
 
-在 Agent Runtime 中引用生成器，然后提供提示词：
+Reference the generator in an Agent Runtime, then provide a prompt:
 
-> "生成阿里云 ECS 的 Skill，名称 alicloud-ecs-ops，核心功能：实例生命周期管理、磁盘、快照"
+> "Generate a Skill for Alibaba Cloud ECS, name alicloud-ecs-ops, core features: instance lifecycle management, disks, snapshots"
 
-**生成结构**：
+**Generated structure**:
 ```
 alicloud-ecs-ops/
 ├── SKILL.md
@@ -97,71 +98,71 @@ alicloud-ecs-ops/
     └── example-config.yaml
 ```
 
-## 阿里云 CLI 行为特征
+## aliyun CLI Behavior
 
-### 正确 CLI 调用模式
+### Correct CLI Invocation
 
 ```bash
-# RPC 风格 API（大部分产品）
+# RPC-style API (most products)
 aliyun <product> <OperationName> --RegionId cn-hangzhou --Param1 value1
 
-# 示例
+# Examples
 aliyun ecs DescribeInstances --RegionId cn-hangzhou
 aliyun rds DescribeDBInstances --RegionId cn-hangzhou
 
-# JMESPath 字段提取
+# JMESPath field extraction
 aliyun ecs DescribeInstances --output cols=InstanceId,Status rows=Instances.Instance[]
 
-# 轮询等待
+# Polling with waiter
 aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
   --waiter expr='Instances.Instance[0].Status' to=Running timeout=300
 ```
 
-## aliyun CLI 安装
+## Installing aliyun CLI
 
-**官方一键安装（自动检测 OS + 架构）：**
+**Official one-click install (auto-detects OS + architecture):**
 ```bash
 /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
 ```
 
-`install.sh` 自动处理：
-- **macOS**: 下载 `universal` 包（Intel + Apple Silicon 通吃）
+`install.sh` handles automatically:
+- **macOS**: Downloads the `universal` package (Intel + Apple Silicon compatible)
 - **Linux AMD64**: `aliyun-cli-linux-latest-amd64.tgz`
 - **Linux ARM64**: `aliyun-cli-linux-latest-arm64.tgz`
-- 安装到 `/usr/local/bin/aliyun`
+- Installs to `/usr/local/bin/aliyun`
 
-**其他方式：**
+**Alternative methods:**
 ```bash
 # macOS Homebrew
 brew install aliyun-cli
 ```
 
-## 凭证配置
+## Credential Configuration
 
-### 方式一：从模板生成 .env 文件（推荐）
+### Method 1: Generate .env from Template (recommended)
 
 ```bash
-# 1. 复制模板
+# 1. Copy the template
 cp .env.example .env
 
-# 2. 编辑配置，替换为实际凭证值
+# 2. Edit configuration with actual credentials
 vim .env
 ```
 
-`.env.example` 包含以下变量：
+`.env.example` contains the following variables:
 
-| 变量名 | 说明 | 示例 |
-|--------|------|------|
+| Variable | Description | Example |
+|----------|-------------|---------|
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` | AccessKey ID | `YOUR_ACCESS_KEY_ID` |
-| `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | AccessKey 密钥 | `YOUR_ACCESS_KEY_SECRET` |
-| `ALIBABA_CLOUD_REGION_ID` | 默认地域 | `cn-hangzhou` |
+| `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | AccessKey Secret | `YOUR_ACCESS_KEY_SECRET` |
+| `ALIBABA_CLOUD_REGION_ID` | Default region | `cn-hangzhou` |
 
-**加载环境变量：**
+**Load environment variables:**
 ```bash
 source .env
 ```
 
-### 方式二：直接导出环境变量
+### Method 2: Export Environment Variables Directly
 
 ```bash
 export ALIBABA_CLOUD_ACCESS_KEY_ID="..."
@@ -169,13 +170,13 @@ export ALIBABA_CLOUD_ACCESS_KEY_SECRET="..."
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 ```
 
-### 方式三：交互式配置
+### Method 3: Interactive Configuration
 
 ```bash
 aliyun configure
 ```
 
-**配置文件：**
+**Configuration file:**
 ```json
 {
   "current": "default",
@@ -191,45 +192,46 @@ aliyun configure
 }
 ```
 
-## Skill 编写要点
+## Skill Authoring Guidelines
 
-- CLI 示例：用 `bash`，JSON 用 `json`，YAML 用 `yaml`
-- 表格展示：产品列表、监控指标、告警阈值
-- 凭证配置见上方环境变量章节
+- CLI examples: use `bash`, JSON uses `json`, YAML uses `yaml`
+- Tables: product lists, monitoring metrics, alert thresholds
+- Credential configuration: see the environment variables section above
 
-## 验证
+## Validation
 
 ```bash
-# 检查 Markdown 格式
+# Check Markdown formatting
 npx markdownlint-cli2 "alicloud-*/SKILL.md"
 ```
 
-验证：CLI 命令可执行、链接有效、示例正确。
+Verify: CLI commands are executable, links are valid, examples are correct.
 
-## 参考资源
+## References
 
 - [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli)
 - [Alibaba Cloud SDK for Go](https://github.com/alibabacloud-go)
 - [Agent Skills OpenSpec](https://agentskills.io/specification)
-- [阿里云帮助文档](https://help.aliyun.com)
+- [Alibaba Cloud Documentation](https://help.aliyun.com)
 
-## 常见问题
+## FAQ
 
 | Q | A |
 |---|---|
-| Skill 和 MCP Server 关系？ | Skill 是文档，MCP 是执行服务 |
-| 一个 Skill 覆盖多产品？ | 建议单一职责，通过 Reference 互相引用 |
-| 如何更新 Skill？ | 修改后更新 version 和变更历史 |
+| Relationship between Skills and MCP Server? | Skills are documentation, MCP is the execution service |
+| Can one Skill cover multiple products? | Single responsibility is recommended; cross-reference via References |
+| How to update a Skill? | Modify the files, then update the version and changelog |
 
 ---
 
-### 关联文档
+### Related Documents
 
-| 文档 | 说明 |
-|------|------|
-| [REQUIREMENTS.md](REQUIREMENTS.md) | **需求开发文档** — 所有 Skill 的功能需求详情、架构设计、技术规范与开发指南 |
-| [alicloud-skill-generator/SKILL.md](alicloud-skill-generator/SKILL.md) | Skill 生成器完整使用说明 |
+| Document | Description |
+|----------|-------------|
+| [REQUIREMENTS.md](REQUIREMENTS.md) | **Requirements & Development Documentation** — functional details, architecture design, technical specs, and development guides for all Skills |
+| [alicloud-skill-generator/SKILL.md](alicloud-skill-generator/SKILL.md) | Complete usage guide for the Skill Generator |
+| [README_CN.md](README_CN.md) | Chinese version of this document |
 
 ---
 
-参考 `alicloud-skill-generator/SKILL.md` 了解生成器的完整使用说明。
+See `alicloud-skill-generator/SKILL.md` for complete usage of the generator.

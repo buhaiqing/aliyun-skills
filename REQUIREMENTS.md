@@ -1,6 +1,6 @@
 # Aliyun Skills — 需求开发文档
 
-> 本文档是 [README.md](README.md) 的配套需求开发文档，详细描述本项目所有阿里云运维 Agent Skills 的功能需求、架构设计、技术规范与开发指南。
+> 本文档是 [README_CN.md](README_CN.md)（中文） / [README.md](README.md)（English）的配套需求开发文档，详细描述本项目所有阿里云运维 Agent Skills 的功能需求、架构设计、技术规范与开发指南。
 
 ---
 
