@@ -37,6 +37,22 @@ command namespace.
 | PutContact | `aliyun cms PutContact` | Create/update contact |
 | DeleteContact | `aliyun cms DeleteContact` | Delete contact |
 
+### New in Phase 3-H: Dynamic Instance Management
+
+| Operation | CLI Command | Description |
+|-----------|-------------|-------------|
+| CreateMetricRuleBlackList | `aliyun cms CreateMetricRuleBlackList` | Create alarm blacklist (silence specific instances) |
+| DescribeMetricRuleBlackList | `aliyun cms DescribeMetricRuleBlackList` | List alarm blacklists |
+| EnableMetricRuleBlackList | `aliyun cms EnableMetricRuleBlackList` | Enable a blacklist |
+| DisableMetricRuleBlackList | `aliyun cms DisableMetricRuleBlackList` | Disable a blacklist (restore alerts) |
+| DeleteMetricRuleBlackList | `aliyun cms DeleteMetricRuleBlackList` | Delete a blacklist permanently |
+| PutResourceMetricRule | `aliyun cms PutResourceMetricRule` | Create/update alarm with dynamic Resources |
+| PutMetricRuleTargets | `aliyun cms PutMetricRuleTargets` | Update notification targets |
+| PutEventRule | `aliyun cms PutEventRule` | Create event-based alarm |
+| PutEventRuleTargets | `aliyun cms PutEventRuleTargets` | Configure event notification |
+| DescribeEventRuleList | `aliyun cms DescribeEventRuleList` | List event rules |
+| DescribeEventList | `aliyun cms DescribeEventList` | Query historical events |
+
 ### SDK-Only Operations (CLI Coverage Gaps)
 
 | Operation | Reason | SDK Package |
@@ -183,6 +199,344 @@ aliyun cms PutCustomMetric \
 | `InvalidParameter` | `The specified parameter is invalid` | Check parameter values |
 | `ResourceNotFound` | `The specified resource is not found` | Verify resource ID |
 | `Forbidden` | `User not authorized` | Check RAM permissions |
+
+## Advanced: Dynamic Instance Management (Phase 3-H)
+
+### Cross-Product Instance Discovery Pattern
+
+**Principle**: Don't hardcode product-specific queries. Use skill delegation to get dynamic parameters.
+
+```bash
+# Generic pattern (product-agnostic)
+# 1. Get query parameters from skill delegation
+# 2. Build and execute query dynamically
+# 3. Transform to CMS Resources format
+
+# Step 1: Query instances (example: ECS)
+OUTPUT=$(aliyun {{product}} {{query_command}} \
+  --RegionId {{region_id}} \
+  --Tag '[{"Key":"{{tag_key}}","Value":"{{tag_value}}"}]' \
+  --{{status_param}} {{status_value}} \
+  --PageSize 100 \
+  --output cols={{id_field}} rows={{jmespath}})
+
+# Step 2: Extract and transform
+INSTANCE_IDS=$(echo "$OUTPUT" | grep -oE '{{id_pattern}}')
+RESOURCES=$(echo "$INSTANCE_IDS" | jq -R -s -c \
+  'split("\n")[:-1] | map({"{{resource_key}}": .})')
+
+# Step 3: Create alarm
+aliyun cms PutResourceMetricRule \
+  --RuleName "{{alarm_name}}" \
+  --Namespace "{{namespace}}" \
+  --MetricName "{{metric_name}}" \
+  --Resources "$RESOURCES" \
+  ...
+```
+
+### Example 6: Alarm Blacklist (Silence Specific Instances)
+
+```bash
+# Create temporary blacklist (24h silence)
+aliyun cms CreateMetricRuleBlackList \
+  --Name "EIP-eip-xxx-Temporary-Silence" \
+  --Namespace "acs_vpc_eip" \
+  --MetricName "OutBandwidthDropRate" \
+  --Resources '["eip-uf6xii12c69nz0x5e718o"]' \
+  --Scope "USER" \
+  --EffectiveTime "2026-06-05T15:00:00Z/2026-06-06T15:00:00Z" \
+  --RegionId cn-shanghai
+
+# Query blacklist
+aliyun cms DescribeMetricRuleBlackList \
+  --RegionId cn-shanghai \
+  --Namespace acs_vpc_eip
+
+# Disable blacklist (restore alerts)
+aliyun cms DisableMetricRuleBlackList \
+  --BlackListId "blacklist-xxx" \
+  --RegionId cn-shanghai
+
+# Delete blacklist
+aliyun cms DeleteMetricRuleBlackList \
+  --BlackListId "blacklist-xxx" \
+  --RegionId cn-shanghai
+```
+
+### Example 7: Dynamic Instance Targeting with Tag Filter
+
+```bash
+#!/bin/bash
+# Dynamic instance discovery and alarm creation
+
+REGION="cn-hangzhou"
+ALARM_NAME="Production-ECS-CPU-Dynamic"
+
+# Step 1: Discover instances by tag
+OUTPUT=$(aliyun ecs DescribeInstances \
+  --RegionId $REGION \
+  --Tag '[{"Key":"env","Value":"production"}]' \
+  --Status Running \
+  --PageSize 100 \
+  --output cols=InstanceId rows=Instances.Instance[])
+
+# Step 2: Extract instance IDs
+INSTANCE_IDS=$(echo "$OUTPUT" | grep -oE 'i-[a-z0-9]+')
+COUNT=$(echo "$INSTANCE_IDS" | wc -l)
+
+echo "Discovered $COUNT instances"
+
+# Step 3: Validate count (safety check)
+if [ "$COUNT" -eq 0 ]; then
+  echo "ERROR: No instances match filter criteria"
+  exit 1
+elif [ "$COUNT" -gt 100 ]; then
+  echo "WARNING: Large instance set ($COUNT), consider adding more filters"
+  # HITL: Pause for manual confirmation
+  read -p "Continue? (y/n) " confirm
+  [ "$confirm" != "y" ] && exit 0
+fi
+
+# Step 4: Transform to Resources JSON
+RESOURCES=$(echo "$INSTANCE_IDS" | jq -R -s -c \
+  'split("\n")[:-1] | map({instanceId: .})')
+
+# Step 5: Create alarm with dynamic resources
+aliyun cms PutResourceMetricRule \
+  --RuleName "$ALARM_NAME" \
+  --Namespace "acs_ecs_dashboard" \
+  --MetricName "cpu_total" \
+  --Resources "$RESOURCES" \
+  --Escalations.Critical.Statistics "Average" \
+  --Escalations.Critical.ComparisonOperator "GreaterThanThreshold" \
+  --Escalations.Critical.Threshold "90" \
+  --Escalations.Critical.Times 3 \
+  --Period 60 \
+  --ContactGroups '["ops-team"]' \
+  --RegionId $REGION
+
+echo "Alarm created successfully for $COUNT instances"
+```
+
+### Example 8: Auto-Correction on Zero Instances
+
+```bash
+#!/bin/bash
+# Auto-correction when filter returns zero instances
+
+REGION="cn-hangzhou"
+TAG_KEY="env"
+TAG_VALUE="production"
+
+echo "Attempting to query instances with Tag[$TAG_KEY]=$TAG_VALUE"
+
+# First attempt (may have case issues)
+OUTPUT=$(aliyun ecs DescribeInstances \
+  --RegionId $REGION \
+  --Tag "[{\"Key\":\"$TAG_KEY\",\"Value\":\"$TAG_VALUE\"}]" \
+  --Status Running \
+  --PageSize 100)
+
+INSTANCE_IDS=$(echo "$OUTPUT" | grep -oE 'i-[a-z0-9]+')
+COUNT=$(echo "$INSTANCE_IDS" | wc -l)
+
+# Auto-correction: Fix common issues
+if [ "$COUNT" -eq 0 ]; then
+  echo "No instances found. Attempting auto-correction..."
+  
+  # Try 1: Lowercase tag key
+  echo "Try 1: Using lowercase tag key..."
+  OUTPUT=$(aliyun ecs DescribeInstances \
+    --RegionId $REGION \
+    --Tag '[{"Key":"env","Value":"production"}]' \
+    --PageSize 100)
+  COUNT=$(echo "$OUTPUT" | grep -oE 'i-[a-z0-9]+' | wc -l)
+  
+  if [ "$COUNT" -gt 0 ]; then
+    echo "✓ Success with lowercase tag key: $COUNT instances"
+  else
+    # Try 2: Remove status filter
+    echo "Try 2: Removing status filter..."
+    OUTPUT=$(aliyun ecs DescribeInstances \
+      --RegionId $REGION \
+      --Tag '[{"Key":"env","Value":"production"}]' \
+      --PageSize 100)
+    COUNT=$(echo "$OUTPUT" | grep -oE 'i-[a-z0-9]+' | wc -l)
+    
+    if [ "$COUNT" -gt 0 ]; then
+      echo "✓ Success without status filter: $COUNT instances"
+      echo "⚠ Warning: May include stopped instances"
+    else
+      echo "✗ Auto-correction failed. Manual intervention required."
+      exit 1
+    fi
+  fi
+fi
+
+# Proceed with alarm creation...
+```
+
+### Example 9: Scheduled Instance List Refresh
+
+```bash
+#!/bin/bash
+# Cron job: Refresh alarm rule instance list hourly
+
+REGION="cn-hangzhou"
+ALARM_NAME="Auto-Refresh-Alarm"
+RULE_ID="rule-xxx"  # Get from DescribeMetricAlarmList
+
+# Query current instances
+NEW_INSTANCES=$(aliyun ecs DescribeInstances \
+  --RegionId $REGION \
+  --Tag '[{"Key":"auto-alert","Value":"enabled"}]' \
+  --Status Running \
+  --PageSize 100 | \
+  grep -oE 'i-[a-z0-9]+' | \
+  jq -R -s -c 'split("\n")[:-1] | map({instanceId: .})')
+
+NEW_COUNT=$(echo "$NEW_INSTANCES" | jq '. | length')
+echo "Found $NEW_COUNT current instances"
+
+# Get existing alarm resources
+CURRENT=$(aliyun cms DescribeMetricAlarmList \
+  --AlarmName "$ALARM_NAME" \
+  --RegionId $REGION \
+  --output json)
+
+CURRENT_COUNT=$(echo "$CURRENT" | jq -r '.AlarmList.Alarm[0].Resources | length')
+echo "Alarm currently has $CURRENT_COUNT instances"
+
+# Compare and update if different
+if [ "$NEW_COUNT" -ne "$CURRENT_COUNT" ]; then
+  echo "Instance count changed ($CURRENT_COUNT → $NEW_COUNT), updating alarm..."
+  
+  aliyun cms PutResourceMetricRule \
+    --RuleId "$RULE_ID" \
+    --RuleName "$ALARM_NAME" \
+    --Namespace "acs_ecs_dashboard" \
+    --MetricName "cpu_total" \
+    --Resources "$NEW_INSTANCES" \
+    --RegionId $REGION
+  
+  echo "✓ Alarm updated with new instance list"
+else
+  echo "No change in instance count"
+fi
+```
+
+### Example 10: Event-Based Alert
+
+```bash
+# Create event rule for instance reboot
+aliyun cms PutEventRule \
+  --RuleName "ECS-Reboot-Event-Alert" \
+  --EventType "ecs" \
+  --GroupId "245146569" \
+  --EventPattern '{"eventName": ["Instance:Reboot", "Instance:Redeploy"]}' \
+  --Level "WARN" \
+  --Status "ENABLED" \
+  --RegionId cn-hangzhou
+
+# Configure notification
+aliyun cms PutEventRuleTargets \
+  --RuleName "ECS-Reboot-Event-Alert" \
+  --ContactGroups '["ops-team"]' \
+  --RegionId cn-hangzhou
+
+# Query recent events
+aliyun cms DescribeEventList \
+  --EventType "ecs" \
+  --StartTime "2026-06-01T00:00:00Z" \
+  --EndTime "2026-06-05T23:59:59Z" \
+  --PageSize 100 \
+  --RegionId cn-hangzhou
+```
+
+### Example 11: Composite Expression Alert
+
+```bash
+# Multi-condition alert: CPU > 80 AND Memory > 90
+aliyun cms PutResourceMetricRule \
+  --RuleName "ECS-High-Resource-Combined" \
+  --Namespace "acs_ecs_dashboard" \
+  --MetricName "cpu_total" \
+  --ExpressionRaw '$Average > 80 && $memory_usedutilization > 90' \
+  --Escalations.Critical.Statistics "Average" \
+  --Escalations.Critical.ComparisonOperator "GreaterThanThreshold" \
+  --Escalations.Critical.Threshold "1" \
+  --Escalations.Critical.Times 2 \
+  --Period 60 \
+  --Resources '[{"instanceId":"i-xxx"},{"instanceId":"i-yyy"}]' \
+  --ContactGroups '["ops-team"]' \
+  --RegionId cn-hangzhou
+
+# Instance-specific thresholds
+aliyun cms PutResourceMetricRule \
+  --RuleName "ECS-CPU-Conditional" \
+  --Namespace "acs_ecs_dashboard" \
+  --MetricName "cpu_total" \
+  --ExpressionRaw '$Average > ($instanceId == "i-xxx" ? 90 : 70)' \
+  --Escalations.Critical.Statistics "Average" \
+  --Escalations.Critical.ComparisonOperator "GreaterThanThreshold" \
+  --Escalations.Critical.Threshold "1" \
+  --Escalations.Critical.Times 3 \
+  --Period 60 \
+  --Resources '[{"instanceId":"i-xxx"},{"instanceId":"i-yyy"},{"instanceId":"i-zzz"}]' \
+  --ContactGroups '["ops-team"]' \
+  --RegionId cn-hangzhou
+```
+
+## Auto-Processing vs HITL Decision Framework
+
+When implementing dynamic instance management, use this framework:
+
+### Confidence Scoring
+
+```bash
+# Calculate confidence before execution
+calculate_confidence() {
+  local count=$1
+  local is_critical=$2
+  local confidence=0
+  
+  # Instance count range (10-50 is optimal)
+  if [ "$count" -ge 10 ] && [ "$count" -le 50 ]; then
+    confidence=$((confidence + 25))
+  fi
+  
+  # Filter explicitness
+  confidence=$((confidence + 20))
+  
+  # Environment (non-critical = +20)
+  if [ "$is_critical" != "true" ]; then
+    confidence=$((confidence + 20))
+  fi
+  
+  # Standard operation (+15)
+  confidence=$((confidence + 15))
+  
+  # Rollback ready (+10)
+  confidence=$((confidence + 10))
+  
+  echo $confidence
+}
+
+# Usage
+COUNT=25
+IS_CRITICAL="false"
+CONFIDENCE=$(calculate_confidence $COUNT $IS_CRITICAL)
+
+echo "Confidence Score: $CONFIDENCE/100"
+
+if [ "$CONFIDENCE" -ge 80 ]; then
+  echo "✓ AUTO-PROCESS: Executing with confidence"
+  # Execute alarm creation
+else
+  echo "🛑 HITL REQUIRED: Manual confirmation needed"
+  # HITL workflow
+fi
+```
 
 ## References
 

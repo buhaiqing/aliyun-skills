@@ -82,6 +82,116 @@ complex request structures, JIT build a Go SDK script.
 | DescribeIdleResources | Idle/underutilized resource detection | Low | None |
 | DescribeCostOptimization | Cost optimization suggestions | Medium | Low |
 
+## Phase 3-H: Dynamic Instance-Level Alert Management (NEW)
+
+### Overview
+
+Phase 3-H introduces **dynamic instance discovery** and **intelligent alert management** capabilities. Instead of hardcoding instance IDs, agents can now:
+
+1. **Query instances dynamically** based on tags, status, and filters
+2. **Transform results** to CMS Resources format automatically
+3. **Apply confidence scoring** to decide auto-processing vs HITL
+4. **Self-diagnose and auto-correct** common filter issues
+5. **Manage alarm lifecycle** with blacklist, threshold tuning, and event alerts
+
+### Key Capabilities
+
+| Capability | CLI Command | Description | Risk Level |
+|------------|-------------|-------------|------------|
+| **Dynamic Instance Discovery** | Cross-skill delegation | Query instances by tags/status across products | None |
+| **Alarm Blacklist** | `CreateMetricRuleBlackList` | Silence alerts for specific instances | Low |
+| **Threshold Tuning** | `PutResourceMetricRule` | Adjust thresholds, periods, trigger counts | Low |
+| **Notification Management** | `PutMetricRuleTargets` | Update contact groups, webhooks | Low |
+| **Event-Based Alerts** | `PutEventRule` | Monitor system events (reboot, failover) | Medium |
+| **Composite Expressions** | `PutResourceMetricRule` | Multi-condition alerts with ExpressionRaw | Medium |
+| **Auto-Processing** | Confidence scoring | Automatic execution when confidence ≥ 80 | - |
+| **HITL Workflow** | Manual confirmation | Human review when confidence < 80 or critical | - |
+
+### Confidence Scoring Framework
+
+```
+confidence = (
+  instance_count_in_range(10-50) ? 25 : 0 +
+  filter_explicit ? 20 : 0 +
+  non_critical_env ? 20 : 0 +
+  standard_operation ? 15 : 0 +
+  rollback_ready ? 10 : 0 +
+  high_success_rate ? 10 : 0
+)
+
+if confidence >= 80: AUTO-PROCESS
+if confidence < 80: HITL_REQUIRED
+```
+
+### HITL Trigger Conditions
+
+**Must pause for human review when:**
+- 🔴 Instance count = 0 or > 100
+- 🔴 Critical production environment
+- 🟠 Match rate > 80% of all instances
+- 🟠 Permanent silence operation
+- 🟡 First execution of filter pattern
+- 🟡 Complex composite filters
+
+### Quick Reference: When to Use Which
+
+| Use Case | Phase | Key Command | Auto/HITL |
+|----------|-------|-------------|-----------|
+| Silence specific instance temporarily | 3-C | `CreateMetricRuleBlackList` | Auto (if confidence ≥ 80) |
+| Adjust alarm threshold | 3-D | `PutResourceMetricRule` | Auto |
+| Change notification channel | 3-E | `PutMetricRuleTargets` | Auto |
+| Monitor reboot events | 3-F | `PutEventRule` | Auto |
+| CPU AND Memory high alert | 3-G | `PutResourceMetricRule + ExpressionRaw` | HITL (complex) |
+| Tag-based batch targeting | 3-H | `DescribeInstances + PutResourceMetricRule` | Depends on confidence |
+| Critical prod environment | 3-H | Any | **HITL** |
+
+### Variable Convention (Phase 3-H Extended)
+
+| Placeholder | Meaning | Agent Action |
+|-------------|---------|--------------|
+| `{{user.filters}}` | JSON filter criteria (tags, status, etc.) | Ask once; validate |
+| `{{user.product}}` | Product type (ecs, rds, etc.) | Delegate to skill |
+| `{{output.dynamic_resources}}` | Auto-generated Resources JSON | Populate from query |
+| `{{user.max_instances}}` | Max instances per rule (default 50) | Use default if not specified |
+| `{{user.confidence_threshold}}` | HITL trigger threshold (default 80) | Use default |
+| `{{output.confidence_score}}` | Calculated confidence (0-100) | Display to user |
+| `{{trace.filter_hash}}` | Hash of filter for change detection | Auto-generate |
+
+### Cross-Skill Delegation Pattern
+
+**Never hardcode product-specific queries!** Use skill delegation:
+
+```
+User: "Monitor all production ECS instances"
+  ↓
+Delegate: `alicloud-ecs-ops`
+  ↓
+Return: {
+    "query_command": "DescribeInstances",
+    "id_field": "InstanceId",
+    "resource_key": "instanceId",
+    "status_param": "Status",
+    "status_value": "Running",
+    "id_pattern": "i-[a-z0-9]+"
+  }
+  ↓
+Build query dynamically using returned parameters
+```
+
+### Safety & Self-Healing
+
+1. **Empty Instance List**: Auto-diagnose (case mismatch, status filter, etc.)
+2. **Too Many Instances**: Suggest adding more specific filters
+3. **Filter Validation**: Verify tag keys/values exist before execution
+4. **Instance Existence**: Critic re-queries to verify all instances exist
+5. **Rollback**: Every operation has corresponding delete/disable command
+
+### Reference Documents
+
+- [Prompt Templates](references/prompt-templates.md) - Phase 3-C through 3-H complete GCL templates
+- [CLI Usage Guide](references/cli-usage.md) - All new commands with examples
+- [Self-Review & Optimization](references/prompt-templates.md#self-review--optimization-mechanism) - Auto-diagnosis patterns
+
 ## Trigger & Scope (Agent-Readable)
 
 ### SHOULD Use This Skill When

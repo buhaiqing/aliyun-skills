@@ -902,8 +902,381 @@ done
 
 ---
 
+## Phase 3-H: Dynamic Instance-Level Alert Management Troubleshooting
+
+This section covers issues specific to **dynamic instance discovery**, **HITL workflows**, and **auto-correction** capabilities introduced in Phase 3-H.
+
+### Issue: Empty Instance List (0 Instances Match Filter)
+
+**Symptoms:**
+- Delegation to product skill returns `instance_count: 0`
+- Confidence score drops to 0, triggering HITL
+- Filter appears correct but no instances found
+
+**Root Causes & Auto-Correction:**
+
+| Cause | Diagnostic | Auto-Correction | Manual Fix |
+|-------|------------|-----------------|------------|
+| **Tag case mismatch** | Tag key/value case-sensitive | Suggest correct case | Update filter with exact case |
+| **Wrong region** | Instance in different region | Auto-detect correct region | Change `--RegionId` |
+| **Status filter too strict** | `status=Running` excludes stopped | Suggest removing status filter | Use broader status or remove |
+| **Tag doesn't exist** | `DescribeTags` returns no match | List available tags | Use existing tag key/value |
+| **Instance deleted** | `DescribeInstances` returns empty | N/A (genuine empty) | Verify instance existence |
+| **Time filter on event** | Event-based rules need event name | Suggest correct event pattern | Use correct event type |
+
+**Auto-Correction Flow:**
+
+```bash
+# When instance_count = 0, auto-diagnose:
+
+# Step 1: Check tag existence
+aliyun <product> DescribeTags --RegionId <region>
+# → If tag not found → Suggest: "Tag 'Env' not found. Did you mean 'env'?"
+
+# Step 2: Check instance status distribution
+aliyun <product> DescribeInstances --RegionId <region> | jq '.Instances.Instance[].Status'
+# → If all Stopped → Suggest: "Remove status filter to include all states"
+
+# Step 3: Check region
+aliyun <product> DescribeInstances --RegionId <other-region>
+# → If found in other region → Suggest: "Switch to region cn-beijing?"
+
+# Step 4: List valid values
+aliyun <product> DescribeInstances --RegionId <region> --PageSize 100
+# → Show sample instances with their tags/status
+```
+
+**HITL Prompt when Auto-Correction Fails:**
+
+```
+[HITL] No instances matched filter: {"tag:env": "prod", "status": "Running"}
+
+Auto-Diagnosis Results:
+❌ Tag 'env' not found on any instances
+✓ Found tag 'Environment' on 45 instances
+✓ Found instances with status: Running(20), Stopped(15)
+
+Suggested Corrections:
+1. Use tag 'Environment' instead of 'env':
+   Filter: {"tag:Environment": "prod"}
+   Expected matches: 20 instances
+
+2. Remove status filter (optional):
+   Filter: {"tag:Environment": "prod"}
+   Expected matches: 45 instances
+
+3. View all instances and their tags:
+   Run: aliyun ecs DescribeInstances --RegionId cn-hangzhou
+
+Choose action (1-3) or CANCEL: __
+```
+
+---
+
+### Issue: Too Many Instances Match (> 100)
+
+**Symptoms:**
+- `instance_count: 247` returned
+- Confidence score reduced to 0
+- HITL triggered due to safety threshold
+
+**Root Causes & Resolution:**
+
+| Cause | Impact | Resolution |
+|-------|--------|------------|
+| **Broad filter** (`status=Running`) | Affects all running instances | Add specific tags to narrow scope |
+| **Missing environment filter** | Cross-environment selection | Add `tag:env` or `tag:project` filter |
+| **Wildcard match** (`tag:Name=*`) | Matches everything | Remove wildcard, use explicit values |
+| **All instances targeted** | Production risk | Use batch processing (50 per rule) |
+
+**Batch Processing Solution:**
+
+```bash
+# When > 100 instances, split into batches:
+
+# 1. Get all instance IDs
+INSTANCES=$(aliyun ecs DescribeInstances ... | jq -r '.Instances.Instance[].InstanceId')
+
+# 2. Split into chunks of 50
+CHUNKS=$(echo "$INSTANCES" | xargs -n 50)
+
+# 3. Create separate alarm rules per chunk
+for i in $(seq 0 $((${#CHUNKS[@]} - 1))); do
+  CHUNK="${CHUNKS[$i]}"
+  aliyun cms PutResourceMetricRule \
+    --RuleName "HighCPU-Batch-$i" \
+    --Resources "[{\"instanceId\":\"$(echo $CHUNK | tr ' ' '\",\"instanceId\":\"')\"}]" \
+    ...
+done
+
+# Result: Multiple rules, each covering ≤ 50 instances
+```
+
+**HITL Prompt for Large Scope:**
+
+```
+[HITL] Filter matches 247 instances (> 100 safety threshold)
+
+⚠️  This operation will affect 247 instances across:
+   - Regions: cn-hangzhou (150), cn-beijing (97)
+   - Environments: production (200), staging (47)
+
+Options:
+1. [CONFIRM] Proceed with all 247 instances (requires explicit acknowledgment)
+2. [BATCH] Split into 5 batches (50 instances each)
+3. [NARROW] Add filter to reduce scope
+4. [VIEW] Show all matched instances
+5. [CANCEL] Abort operation
+
+Recommended: Option 2 (BATCH) for safer rollout
+Your choice: __
+```
+
+---
+
+### Issue: Cross-Skill Delegation Failure
+
+**Symptoms:**
+- Delegation to product skill returns error
+- Cannot query instances dynamically
+- Fallback to manual instance ID list required
+
+**Common Causes:**
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `skill not found` | Product skill not installed | Install `alicloud-{product}-ops` skill |
+| `permission denied` | RAM policy missing | Grant `ReadOnlyAccess` or product-specific permissions |
+| `query_command not returned` | Skill doesn't support dynamic queries | Use static instance ID list |
+| `invalid filter format` | Filter JSON malformed | Validate JSON syntax |
+| `timeout` | Too many instances | Add pagination or reduce scope |
+
+**Fallback Strategy:**
+
+```bash
+# When delegation fails, fallback to manual approach:
+
+# 1. Ask user for product CLI pattern
+PRODUCT="ecs"  # or rds, slb, etc.
+
+# 2. Manual instance discovery
+aliyun $PRODUCT DescribeInstances \
+  --RegionId cn-hangzhou \
+  --PageSize 100 \
+  --Tag.1.Key env \
+  --Tag.1.Value production
+
+# 3. Extract instance IDs manually
+INSTANCE_IDS=$(aliyun ... | jq -r '.Instances.Instance[].InstanceId')
+
+# 4. Build Resources JSON
+RESOURCES=$(echo "$INSTANCE_IDS" | jq -R -s -c 'split("\n") | map(select(. != "")) | map({"instanceId": .})')
+
+# 5. Use in CMS rule
+aliyun cms PutResourceMetricRule \
+  --Resources "$RESOURCES" \
+  ...
+```
+
+---
+
+### Issue: Confidence Score Below Threshold (60-79)
+
+**Symptoms:**
+- Calculated confidence: 65
+- HITL recommended but not mandatory
+- User unsure whether to proceed
+
+**Confidence Breakdown & Improvement:**
+
+```
+Current Confidence: 65/100 (HITL_RECOMMENDED)
+
+Breakdown:
+✓ Instance count (15/25): 8 instances (acceptable range)
+✓ Filter explicit (20/20): Specific tags provided
+⚠ Environment (10/20): Production environment detected
+✓ Standard operation (15/15): Threshold adjustment
+✓ Rollback available (10/10): Delete command exists
+⚠ Historical success (5/10): First execution
+
+Recommendations to increase confidence:
+1. Switch to staging environment (+10 points)
+2. Use broader filter to get 10-50 instances (+10 points)
+3. Execute once successfully to build history (+5 points)
+
+Current recommendation: Proceed with caution or use HITL
+```
+
+**Decision Matrix:**
+
+| Score Range | Decision | User Guidance |
+|-------------|----------|---------------|
+| 60-69 | HITL_STRONGLY_RECOMMENDED | Show improvement suggestions |
+| 70-79 | HITL_RECOMMENDED | Explain risks, let user decide |
+| 80-89 | AUTO_WITH_LOGGING | Proceed but log for audit |
+| 90-100 | AUTO_PROCESS | Silent execution |
+
+---
+
+### Issue: Instance Existence Verification Failure
+
+**Symptoms:**
+- Generator creates rule successfully
+- Critic verification finds instances don't exist
+- Score mismatch: `correctness: 0`
+
+**Root Causes:**
+
+| Cause | Explanation | Fix |
+|-------|-------------|-----|
+| **Instance deleted** | Instance removed after discovery | Re-run discovery before execution |
+| **Region mismatch** | Instance in different region than rule | Ensure region consistency |
+| **Instance ID typo** | Malformed instance ID | Validate ID format per product |
+| **Cross-account** | Instance in different Alibaba account | Verify account ID |
+| **Timing issue** | Instance state changed mid-operation | Add retry with fresh query |
+
+**Critic Verification Flow:**
+
+```json
+{
+  "critic_verification": {
+    "step": "verify_instance_existence",
+    "requested_instances": ["i-xxx1", "i-xxx2", "i-xxx3"],
+    "delegation": {
+      "skill": "alicloud-ecs-ops",
+      "query": "DescribeInstances",
+      "result": {
+        "found": ["i-xxx1", "i-xxx2"],
+        "not_found": ["i-xxx3"]
+      }
+    },
+    "correctness_score": 0.67,
+    "suggestion": "Instance i-xxx3 not found. Update Resources to only include existing instances.",
+    "action": "MODIFY_AND_RETRY"
+  }
+}
+```
+
+---
+
+### Issue: HITL Prompt Timeout / No Response
+
+**Symptoms:**
+- HITL prompt displayed but user doesn't respond
+- Operation hangs waiting for input
+- Need automatic timeout handling
+
+**Timeout Strategy:**
+
+| Timeout | Action | Default Behavior |
+|---------|--------|------------------|
+| 30 seconds | Reminder | Show "Please respond within 2 minutes" |
+| 2 minutes | Final warning | "Auto-cancel in 30 seconds" |
+| 2.5 minutes | **Auto-cancel** | Abort with reason: "User timeout" |
+
+**Configuration:**
+
+```bash
+# Set HITL timeout (optional, default: 150 seconds)
+export CMS_HITL_TIMEOUT=300  # 5 minutes
+
+# Set default action on timeout: cancel|continue|schedule
+export CMS_HITL_TIMEOUT_ACTION=cancel
+```
+
+---
+
+### Issue: Rollback After Failed Operation
+
+**Symptoms:**
+- Operation partially succeeded
+- Some instances affected, others not
+- Need to undo changes
+
+**Rollback Procedures:**
+
+| Operation | Rollback Command | Verification |
+|-----------|-----------------|--------------|
+| `CreateMetricRuleBlackList` | `DeleteMetricRuleBlackList` | Verify blacklist removed |
+| `PutResourceMetricRule` | `DeleteMetricRule` | Verify rule deleted |
+| `PutMetricRuleTargets` | `PutMetricRuleTargets` (empty) | Verify contacts removed |
+| `PutEventRule` | `DeleteEventRule` | Verify rule deleted |
+| `EnableAlarm` | `DisableAlarm` | Verify state=DISABLED |
+
+**Auto-Rollback Flow:**
+
+```bash
+# If operation fails mid-way, auto-rollback:
+
+# 1. Track affected resources
+AFFECTED_INSTANCES="i-xxx1 i-xxx2 i-xxx3"
+
+# 2. Execute rollback for each
+for instance in $AFFECTED_INSTANCES; do
+  aliyun cms DeleteMetricRuleBlackList \
+    --RegionId cn-hangzhou \
+    --RuleName "TempBlacklist-$instance"
+done
+
+# 3. Verify rollback
+aliyun cms DescribeMetricRuleBlackList \
+  --RegionId cn-hangzhou
+# → Should not show deleted blacklists
+```
+
+---
+
+### Quick Diagnostic Checklist
+
+When troubleshooting Phase 3-H issues, follow this order:
+
+```bash
+# 1. Verify CLI works
+aliyun version
+
+# 2. Verify credentials
+aliyun sts GetCallerIdentity
+
+# 3. Verify product skill delegation works
+# (Simulate delegation to target product)
+aliyun ecs DescribeRegions  # or rds, slb, etc.
+
+# 4. Test filter manually
+aliyun ecs DescribeInstances \
+  --RegionId cn-hangzhou \
+  --Tag.1.Key env \
+  --Tag.1.Value production
+
+# 5. Verify instance count
+count=$(aliyun ... | jq '.Instances.Instance | length')
+echo "Matched instances: $count"
+
+# 6. Check confidence factors
+# - Instance count in range (10-50)?
+# - Filter explicit?
+# - Non-critical environment?
+# - Rollback available?
+
+# 7. Simulate HITL decision
+if [ $count -eq 0 ]; then
+  echo "DECISION: HITL_MANDATORY (empty list)"
+elif [ $count -gt 100 ]; then
+  echo "DECISION: HITL_REQUIRED (too many instances)"
+elif [ $confidence -lt 80 ]; then
+  echo "DECISION: HITL_RECOMMENDED (low confidence)"
+else
+  echo "DECISION: AUTO_PROCESS"
+fi
+```
+
+---
+
 ## References
 
 - [CMS API Error Codes](https://help.aliyun.com/zh/cms/cloudmonitor-1-0/developer-reference/api-cms-2019-01-01-overview)
 - [RAM Policies for CMS](https://help.aliyun.com/zh/ram/user-guide/grant-permissions-to-the-ram-user)
 - [CMS Quotas and Limits](https://help.aliyun.com/zh/cms/cloudmonitor-1-0/product-overview/quotas)
+- [SKILL.md Phase 3-H Summary](../SKILL.md#phase-3-h-dynamic-instance-level-alert-management-new) - Capability overview
+- [rubric.md HITL Scoring](rubric.md#3-phase-3-h--hitl-confidence-scoring-framework) - Confidence calculation details
+- [prompt-templates.md](prompt-templates.md) - Complete GCL templates for all operations
