@@ -8,6 +8,8 @@ risk_level: "中"
 execution_time_estimate: "5-10 分钟"
 ---
 
+> **脚本**: [`runbooks/scripts/capacity-planning.py`](scripts/capacity-planning.py) — 全自动执行本 runbook
+
 # 容量规划检查
 
 ## 1. 场景描述

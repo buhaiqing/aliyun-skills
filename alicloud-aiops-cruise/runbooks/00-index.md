@@ -1,4 +1,4 @@
-# Runbook 索引 — 阿里云全链路巡检场景索引
+# Runbook 索引 — 阿里云全链路 AIOps 巡检场景索引
 
 > **入口索引**。每个 runbook 定义一个巡检场景的完整流程、阈值、报告模板和持续改进机制。
 
@@ -91,7 +91,7 @@ Phase 3: 推理 + 报告
 ## 文件结构
 
 ```
-alicloud-link-cruise/
+alicloud-aiops-cruise/
 ├── SKILL.md                                 ← 主入口（本文件）
 ├── runbooks/
 │   ├── 00-index.md                          ← 索引（本文档）

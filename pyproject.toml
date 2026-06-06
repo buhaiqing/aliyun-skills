@@ -29,3 +29,19 @@ dev = [
 testpaths = ["alicloud-topo-discovery/tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short --strict-markers"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["N802", "N803", "N806", "N815", "N816"]  # 允许产品API名含大写 (DescribeInstances等)
+
+[tool.ruff.lint.per-file-ignores]
+"alicloud-aiops-cruise/runbooks/scripts/*.py" = ["F403", "F405", "E501"]  # 允许 from _shared import * + 表格格式行长
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

@@ -8,6 +8,8 @@ risk_level: "低"
 execution_time_estimate: "5-15 分钟（50 台资源以内）"
 ---
 
+> **脚本**: [`runbooks/scripts/daily-health-check.py`](scripts/daily-health-check.py) — 全自动执行本 runbook
+
 # 日常健康巡检
 
 ## 1. 场景描述
@@ -600,6 +602,62 @@ echo "=== DOCKER ==="; docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev
   echo "$DIAG_RESULT"
 done
 ```
+
+#### Step 2.9: 动态基线异常评分
+
+> 基于过去 7 天的历史数据，对每个资源的指标计算 Z-Score 异常评分。
+> 完整规范见 `references/dynamic-baseline.md`。
+> **固定阈值 vs 动态基线取最高等级**，两者互补而非替代。
+
+```bash
+# 基线窗口: 最近 7 天 (1h 粒度)
+BASELINE_START=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
+BASELINE_END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+# ── ECS CPU Z-Score ──
+for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId'); do
+  CPU_HISTORY=$(aliyun cms DescribeMetricList \
+    --Namespace acs_ecs_dashboard \
+    --MetricName CPUUtilization \
+    --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
+    --Period 3600 \
+    --StartTime "$BASELINE_START" --EndTime "$BASELINE_END" \
+    | jq '.Datapoints | fromjson | [.[].Average]')
+  CPU_MEAN=$(echo "$CPU_HISTORY" | jq 'add / length // 0')
+  CPU_STD=$(echo "$CPU_HISTORY" | jq --argjson m "$CPU_MEAN" '(map(. - $m | . * .) | add / length | sqrt) // 0')
+  CPU_CURRENT=$(echo "$CPU_HISTORY" | jq '.[-1] // 0')
+  if [ "$(echo "$CPU_STD > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    CPU_Z=$(echo "scale=2; ($CPU_CURRENT - $CPU_MEAN) / $CPU_STD" | bc -l 2>/dev/null || echo "0")
+    if [ "$(echo "$CPU_Z > 3.0" | bc -l 2>/dev/null)" = "1" ]; then
+      echo "[ANOMALY] ECS $INST_ID CPU Z-Score=${CPU_Z} 🔴"
+    elif [ "$(echo "$CPU_Z > 2.0" | bc -l 2>/dev/null)" = "1" ]; then
+      echo "[ANOMALY] ECS $INST_ID CPU Z-Score=${CPU_Z} 🟡"
+    fi
+  fi
+done
+
+# ── RDS CPU Z-Score ──
+for DB_ID in $(echo "$RDS_LIST" | jq -r '.[].DBInstanceId'); do
+  RDS_CPU_HISTORY=$(aliyun cms DescribeMetricList \
+    --Namespace acs_rds_dashboard \
+    --MetricName CpuUsage \
+    --Dimensions "[{\"instanceId\":\"$DB_ID\"}]" \
+    --Period 3600 \
+    --StartTime "$BASELINE_START" --EndTime "$BASELINE_END" \
+    | jq '.Datapoints | fromjson | [.[].Average]')
+  RDS_MEAN=$(echo "$RDS_CPU_HISTORY" | jq 'add / length // 0')
+  RDS_STD=$(echo "$RDS_CPU_HISTORY" | jq --argjson m "$RDS_MEAN" '(map(. - $m | . * .) | add / length | sqrt) // 0')
+  RDS_CURRENT=$(echo "$RDS_CPU_HISTORY" | jq '.[-1] // 0')
+  if [ "$(echo "$RDS_STD > 0" | bc -l 2>/dev/null)" = "1" ]; then
+    RDS_Z=$(echo "scale=2; ($RDS_CURRENT - $RDS_MEAN) / $RDS_STD" | bc -l 2>/dev/null || echo "0")
+    if [ "$(echo "$RDS_Z > 3.0" | bc -l 2>/dev/null)" = "1" ]; then
+      echo "[ANOMALY] RDS $DB_ID CPU Z-Score=${RDS_Z} 🔴"
+    fi
+  fi
+done
+```
+
+> **验证方式**: 在已有 7 天指标数据的 ECS 上运行巡检，检查 Step 2.9 是否输出 `[ANOMALY]` 标记。
 
 ### Phase 3: 推理 + 报告
 

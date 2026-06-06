@@ -235,7 +235,15 @@ Additionally, every skill MUST include a **Well-Architected Framework** table (f
 | Round | Scope | Key Checks |
 |-------|-------|-----------|
 | **R1: Structural** | Frontmatter/Trigger/Variables/Token Efficiency | C1-C6, C6 MUST PASS |
-| **R2: Content** | CLI validation/error codes/safety gates/link integrity/dedup | F1-F7, F5/F6 MUST PASS |
+| **R2: Content** | CLI validation/error codes/safety gates/link integrity/dedup/TODO.md sync | F1-F8, F5/F6/F8 MUST PASS |
+
+其中新增 **F8** 检查项：
+
+| 编号 | 检查项 | 说明 | 要求 |
+|------|--------|------|------|
+| **F8** | TODO.md 同步 | 本次所有新增/修改的功能是否已在 `TODO.md` 中更新为 `✅` | 每次更新必须同步更新 TODO.md |
+
+> **F6（Token Efficiency）和 F8（TODO.md 同步）是强制通过项**，不通过不得提交。
 
 Any issue found → fix one by one → all must pass before finishing.
 

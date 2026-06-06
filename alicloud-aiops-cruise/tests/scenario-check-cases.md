@@ -1,6 +1,6 @@
 # 场景验证案例
 
-> 用于测试和验证 `alicloud-link-cruise` 的各种巡检场景。
+> 用于测试和验证 `alicloud-aiops-cruise` 的各种巡检场景。
 > 每个 Case 包含: 输入条件 → 期望行为 → 验证路径。
 
 ## Phase 1: 前置交互验证

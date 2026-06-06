@@ -1,4 +1,4 @@
-module github.com/aliyun-skills/alicloud-link-cruise/assets/code-snippets
+module github.com/aliyun-skills/alicloud-aiops-cruise/assets/code-snippets
 
 go 1.21
 

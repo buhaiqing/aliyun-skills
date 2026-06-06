@@ -66,6 +66,7 @@ metadata:
 | **不替代** | 本 Skill 不替代任何产品级 Skill（如 `alicloud-ecs-ops`, `alicloud-vpc-ops`） |
 | **组合调用** | 本 Skill 通过调用各产品 API 的只读接口，实现跨产品拓扑聚合 |
 | **发现 vs 操作** | 本 Skill 负责"发现"，产品 Skill 负责"操作"；若用户发现后需要修改资源，应引导至对应产品 Skill |
+| **AIOps 集成** | `alicloud-aiops-cruise` 在巡检中调用本 skill 的 `topo-render.py` 渲染拓扑图，并叠加健康状态覆盖层 |
 
 ## Trigger & Scope
 
@@ -90,6 +91,35 @@ metadata:
 - User 需要配置安全策略 → 引导至安全相关 Skill
 - User 需要通过 `terraform apply` 创建云资源 → 引导至 `alicloud-terraform-ops` (待实现)
 
+## Quality Gate (GCL)
+
+本 Skill 遵循 AGENTS.md §12 Generator-Critic-Loop 质量门。
+
+### Rubric Dimensions
+
+见 [references/gcl-rubric.md](references/gcl-rubric.md)。
+
+| 维度 | 权重 | 说明 |
+|---|---|---|
+| **Correctness** | 25% | 拓扑关系和资源清单与实际情况一致 |
+| **Safety** | 30% | 纯读操作，任何写操作为 0 |
+| **Idempotency** | 15% | 同一输入多次扫描结果一致 |
+| **Traceability** | 20% | 报告含完整执行上下文（命令、参数、输出路径） |
+| **Spec Compliance** | 10% | 遵循 manifest-schema 和字段映射规范 |
+
+### Sub-Mode Rubric
+
+| Sub-Mode | Correctness 侧重点 | Safety 检查点 |
+|----------|-------------------|---------------|
+| scan-topo | 输出格式完整、拓扑关系准确 | 只读门禁 |
+| export-hcl | 字段映射精度 | 无敏感泄露 |
+| baseline | 目录结构完整 | 无数据删除 |
+| baseline-diff | Diff 准确度 | 只读 Diff |
+
+### GCL Prompt
+
+Generator → Critic 循环详见 [references/gcl-rubric.md](references/gcl-rubric.md)，遵循 AGENTS.md §12 的标准流程。
+
 ## Pre-flight Interaction (用户决策)
 
 在执行扫描前，**必须** 向用户确认以下选项：
@@ -112,6 +142,14 @@ metadata:
 
 4. 项目名称/标识 (可选):
    [输入]: 自定义报告标题前缀 (默认自动从 VPC 名称提取)
+
+5. 输出格式 (可选):
+   [a] ASCII 树形图 —— 终端友好 (默认)
+   [b] Mermaid 图 —— 可视化拓扑
+   [c] 两者都要 (推荐)
+
+6. 健康状态叠加 (可选，与 `alicloud-aiops-cruise` 联动):
+   [输入]: 巡检 JSON 报告路径 (自动叠加健康状态到拓扑中)
 
 请回复选项编号或描述，确认后开始扫描。
 ```
@@ -156,60 +194,79 @@ metadata:
    aliyun vpc DescribeRegions --RegionId "$ALIBABA_CLOUD_REGION_ID" >/dev/null 2>&1 || { echo "ERROR: API check failed"; exit 1; }
    ```
 
-### Phase 2: Parallel Data Collection
+#### 📊 输出格式 (Token 效率优化)
 
-Execute CLI commands in parallel (background) for speed:
+所有 CLI 命令的 JSON 输出必须用 `jq` 过滤到最小必要字段，避免全量 JSON 输出造成 Token 浪费：
 
 ```bash
-# VPC & VSwitch (Foundation)
-aliyun vpc DescribeVpcs --RegionId "$ALIBABA_CLOUD_REGION_ID" &
+# 优化前: 输出全量 JSON（可能 100+ 行）
+aliyun ecs DescribeInstances --RegionId $REGION_ID
+
+# 优化后: 仅输出 ID + Name + Type + Status
+aliyun ecs DescribeInstances --RegionId $REGION_ID \
+  | jq '.Instances.Instance[] | {InstanceId, InstanceName, InstanceType, Status}'
+```
+
+各 API 的字段过滤规则见 `references/execution-commands.md` 的 JSON 输出路径映射。
+
+### Phase 2: Parallel Data Collection
+
+Execute CLI commands in parallel (background) for speed.
+
+> **注意**：`topo-scan.sh` 中实现了多 VPC 扫描 + 健康状态叠加 + Mermaid 图生成。
+> 下面为示意流程，完整实现见 `scripts/topo-scan.sh`。
+
+```bash
+# VPC & VSwitch (Foundation) — 先等 VPC 返回再查 VSwitch
+aliyun vpc DescribeVpcs --RegionId "$ALIBABA_CLOUD_REGION_ID" > /tmp/topo_vpcs.json &
 PID_VPC=$!
 
-aliyun vpc DescribeVSwitches --RegionId "$ALIBABA_CLOUD_REGION_ID" --VpcId "$(echo $VPC_JSON|jq -r '.Vpcs.Vpc[0].VpcId')" &
-PID_VSW=$!
+# 并行查 SLB/NAT/EIP
+aliyun slb DescribeLoadBalancers --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 100 > /tmp/topo_slbs.json &
+aliyun vpc DescribeNatGateways --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 50 > /tmp/topo_nats.json &
+aliyun vpc DescribeEipAddresses --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 50 > /tmp/topo_eips.json &
 
-# Network Resources
-aliyun slb DescribeLoadBalancers --RegionId "$ALIBABA_CLOUD_REGION_ID" &
-PID_SLB=$!
-
-aliyun vpc DescribeNatGateways --RegionId "$ALIBABA_CLOUD_REGION_ID" &
-PID_NAT=$!
-
-aliyun vpc DescribeEipAddresses --RegionId "$ALIBABA_CLOUD_REGION_ID" &
-PID_EIP=$!
+# 等 VPC 返回后查 VSwitch
+wait $PID_VPC
+FIRST_VPC_ID=$(python3 -c "import json;d=json.load(open('/tmp/topo_vpcs.json'));print(d.get('Vpcs',{}).get('Vpc',[{}])[0].get('VpcId',''))" 2>/dev/null)
+if [ -n "$FIRST_VPC_ID" ]; then
+  aliyun vpc DescribeVSwitches --RegionId "$ALIBABA_CLOUD_REGION_ID" --VpcId "$FIRST_VPC_ID" --PageSize 50 > /tmp/topo_vswitches.json &
+fi
 
 # ECS Instances (Optional for detailed mode)
 if [ "$REPORT_MODE" = "detailed" ]; then
-  aliyun ecs DescribeInstances --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 100 &
-  PID_ECS=$!
-  
-  aliyun ecs DescribeSecurityGroups --RegionId "$ALIBABA_CLOUD_REGION_ID" &
-  PID_SG=$!
-  
-  aliyun cs DescribeClustersV1 --page_size 50 &
-  PID_ACK=$!
-  
-  aliyun rds DescribeDBInstances --RegionId "$ALIBABA_CLOUD_REGION_ID" &
-  PID_RDS=$!
+  aliyun ecs DescribeInstances --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 100 > /tmp/topo_ecs.json &
+  aliyun ecs DescribeSecurityGroups --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 100 > /tmp/topo_sgs.json &
+  aliyun cs DescribeClustersV1 --page_size 50 > /tmp/topo_ack.json &
+  aliyun rds DescribeDBInstances --RegionId "$ALIBABA_CLOUD_REGION_ID" --PageSize 100 > /tmp/topo_rds.json &
 fi
 
-# Wait for all parallel commands
-wait $PID_VPC $PID_VSW $PID_SLB $PID_NAT $PID_EIP
+# Wait for remaining background jobs
+wait
 ```
 
 ### Phase 3: Topology Generation (Template Rendering)
 
-1. Parse JSON responses
-2. Build resource-to-VSwitch mapping
-3. Load appropriate template from `templates/`:
-   - `topology-vpc.md` for tree topology
-   - `mermaid-diagram.md` for Mermaid output
-   - `inventory-summary.md` or `inventory-full.md` based on mode
-4. Apply variable substitution:
-   ```bash
-   TEMPLATE_DIR="$(dirname "$0")/templates"
-   awk -v vpc_name="$VPC_NAME" -v vpc_cidr="$VPC_CIDR" '{gsub(/{{vpc_name}}/, vpc_name); gsub(/{{vpc_cidr}}/, vpc_cidr); print}' "$TEMPLATE_DIR/topology-vpc.md"
-   ```
+`topo-render.py` 自动完成：
+
+1. 加载 `/tmp/topo_*.json` 数据
+2. 构建 VSwitch → 资源映射（ECS/SLB/RDS 按归属交换机分组）
+3. 加载健康状态覆盖层（如果 `--health-json` 传入）
+4. 生成输出：
+   - **ASCII 树形图**：终端友好，`report.md`
+   - **Mermaid 图**：可视化拓扑，支持渲染，`topology.mermaid.md`
+5. 写文件到输出目录
+
+> 旧有模板文件 `templates/vpc-topology.md` 保留作参考。完整渲染逻辑由 `topo-render.py` 实现。
+
+### Phase 4: Report Compilation
+
+**Single File Mode:**
+
+支持 **ASCII 树形图 + Mermaid 图** 两种格式，可通过 Pre-flight 选项选择。
+
+- ASCII 树形图：终端友好，直接可读
+- Mermaid 图：支持渲染成可视化图表，适合文档嵌入
 
 ### Phase 4: Report Compilation
 
@@ -303,8 +360,10 @@ This skill uses read-only Describe APIs which are free. Minimal API call volume:
 
 | Operation | Expected API Calls | Time Estimate |
 |-----------|-------------------|---------------|
-| Full scan (all VPCs) | ~10-20 Describe calls | < 30s |
+| Full scan (all VPCs, multi-region) | ~10-20 Describe calls | < 30s |
 | Brief mode | ~5 Describe calls | < 10s |
+| + Health overlay | +0 (复用已有数据) | +0s |
+| + HCL export | ~10-30 API calls | < 60s |
 
 
 

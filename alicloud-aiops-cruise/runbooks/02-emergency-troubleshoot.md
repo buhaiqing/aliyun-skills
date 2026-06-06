@@ -8,6 +8,8 @@ risk_level: "高"
 execution_time_estimate: "3-8 分钟"
 ---
 
+> **脚本**: [`runbooks/scripts/emergency-troubleshoot.py`](scripts/emergency-troubleshoot.py) — 全自动执行本 runbook
+
 # 故障应急排查
 
 ## 1. 场景描述

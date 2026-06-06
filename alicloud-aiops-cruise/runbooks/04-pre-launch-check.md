@@ -8,6 +8,8 @@ risk_level: "高"
 execution_time_estimate: "10-20 分钟"
 ---
 
+> **脚本**: [`runbooks/scripts/pre-launch-check.py`](scripts/pre-launch-check.py) — 全自动执行本 runbook
+
 # 大促前全链路预检
 
 ## 1. 场景描述

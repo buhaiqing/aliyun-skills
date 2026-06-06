@@ -1,4 +1,4 @@
-# 阿里云全链路巡检 — Go Code Snippets
+# 阿里云全链路 AIOps 巡检 — Go Code Snippets
 
 > 当 `aliyun` CLI 无法覆盖某些操作（主要是 DAS 数据库自治服务）时，Agent 从本目录动态生成 Go 代码并执行。
 >
@@ -18,7 +18,7 @@
 ## 使用方式
 
 ```bash
-cd alicloud-link-cruise/assets/code-snippets
+cd alicloud-aiops-cruise/assets/code-snippets
 
 # 第一次：拉取依赖
 go mod tidy
