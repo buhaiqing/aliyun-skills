@@ -148,6 +148,52 @@ status: mandatory
     "cost": 0.0
   },
 
+  "incidents": [
+    {
+      "incident_id": "uuid",
+      "schema_version": "1.0.0",
+      "customer": "string",
+      "timestamp": "ISO8601",
+      "run_id": "uuid",
+      "level": "CRITICAL | WARNING | INFO",
+      "score": 0.0,
+      "resource_type": "ECS|SLB|RDS|Redis|NAT|EIP|SG|ACK|OTHER",
+      "resource_id": "string",
+      "resource_name": "string | null",
+      "region": "string",
+      "rule_id": "string",
+      "rule_version": "semver",
+      "title": "string",
+      "dedup_key": "string | null",
+      "metric": "string | null",
+      "current_value": 0.0,
+      "threshold_critical": 0.0,
+      "threshold_warning": 0.0,
+      "baseline_mean": 0.0,
+      "baseline_std": 0.0,
+      "z_score": 0.0,
+      "impact": "string",
+      "suggestion": "string",
+      "fix_commands": ["string"],
+      "status": "open | acknowledged | in_progress | resolved | suppressed",
+      "assignee": "string | null",
+      "ttl_hours": 168,
+      "parent_incident_id": "uuid | null",
+      "related_incidents": ["uuid"],
+      "trace": {
+        "runbook_id": "string",
+        "runbook_version": "semver",
+        "scenario": "daily_check | emergency | capacity | pre_launch",
+        "commands_executed": [{"command": "string", "params": {}, "response_excerpt": "string", "duration_ms": 0}],
+        "total_api_calls": 0,
+        "detection_method": "z-score | percentile | stl | static-threshold | hybrid",
+        "report_path": "string"
+      },
+      "tags": ["string"],
+      "metadata": {}
+    }
+  ],
+
   "critical_findings": [
     {
       "title": "string",

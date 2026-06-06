@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 import sys
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from _shared import *
@@ -87,7 +88,7 @@ def troubleshoot(args):
         if findings["root_cause"] and prod != "SLB":
             break
         log("DIAG", f"S: {prod}")
-        raw = q([cli, api, "--RegionId", region])
+        raw = q_cached([cli, api, "--RegionId", region])
         if not raw:
             continue
         cur = raw
@@ -102,7 +103,7 @@ def troubleshoot(args):
             if not rid:
                 continue
             if prod == "SLB":
-                health = q(["slb", "DescribeHealthStatus", "--RegionId", region, "--LoadBalancerId", rid])
+                health = q_cached(["slb", "DescribeHealthStatus", "--RegionId", region, "--LoadBalancerId", rid])
                 if health:
                     backs = health.get("BackendServers", {}).get("BackendServer", [])
                     unhealthy = [b for b in backs if b.get("ServerHealthStatus") != "normal"]
@@ -173,25 +174,84 @@ def make_report(findings, args):
             f"# 故障排查报告\n客户={args.customer} 报障={args.reported_time}\n\n## 根因\n{findings['root_cause']}\n{findings['evidence']}\n\n## 问题\n"
         )
         for c in findings.get("critical", []):
-            f.write(f"- 🔴 {c['type']}/{c['id']} {c.get('metric', '')}={c.get('value', '')}\n")
+            f.write(f"- [CRITICAL] {c['type']}/{c['id']} {c.get('metric', '')}={c.get('value', '')}\n")
         for w in findings.get("warning", []):
             f.write(
-                f"- 🟡 {w['type']}/{w['id']} {w.get('metric', '')}={w.get('value', '')} {w.get('suggestion', '')}\n"
+                f"- [WARNING] {w['type']}/{w['id']} {w.get('metric', '')}={w.get('value', '')} {w.get('suggestion', '')}\n"
             )
         f.write("\n## 操作事件\n")
         for e in findings.get("actiontrail", []):
             f.write(f"- {e['time']} {e['name']}\n")
     rpt = {"report_id": rid, **findings}
+    # Sprint 9: MD Incidents 章节 - 在此处临时挂入, json.dump 后再写
+    md_incidents_pending = None
+    # Sprint 9: 增 incidents[] (incident-schema v1.0.0)
+    crit_raw = []
+    warn_raw = []
+    for c in findings.get("critical", []):
+        crit_raw.append({
+            "r": c.get("resource_id", c.get("id", "")),
+            "t": c.get("type", "OTHER"),
+            "m": c.get("metric", c.get("detail", "")),
+            "v": c.get("value", 0),
+            "th": c.get("thresholds", "0/0"),
+            "impact": c.get("detail", c.get("impact", "")),
+            "suggestion": c.get("suggestion", ""),
+        })
+    for w in findings.get("warning", []):
+        warn_raw.append({
+            "r": w.get("resource_id", w.get("id", "")),
+            "t": w.get("type", "OTHER"),
+            "m": w.get("metric", w.get("detail", "")),
+            "v": w.get("value", 0),
+            "th": w.get("thresholds", "0/0"),
+            "impact": w.get("detail", w.get("impact", "")),
+            "suggestion": w.get("suggestion", ""),
+        })
+    if crit_raw or warn_raw:
+        run_id_uuid = str(uuid.uuid4())
+        incidents = findings_to_incidents(
+            crit_raw, warn_raw,
+            customer=args.customer, run_id=run_id_uuid, region=args.region,
+            runbook_id="02-emergency-troubleshoot", runbook_version="1.1.0",
+            scenario="emergency", report_path=js,
+        )
+        rpt["incidents"] = incidents
+        rpt["incidents_meta"] = {
+            "schema_version": "1.0.0",
+            "total": len(incidents),
+            "critical": sum(1 for i in incidents if i["level"] == "CRITICAL"),
+            "warning": sum(1 for i in incidents if i["level"] == "WARNING"),
+        }
     with open(js, "w") as f:
         json.dump(rpt, f, indent=2)
+    # Sprint 9: MD 报告增 Incidents 章节
+    if rpt.get("incidents"):
+        with open(md, "a") as f:
+            f.write(format_incidents_section_md(rpt))
     if findings.get("critical"):
-        with open(os.path.join(args.output_dir, ".need_escalation"), "w") as f:
-            f.write(f"report_id={rid}\ncritical={len(findings['critical'])}\n")
+        # Sprint 12: safe_append 不覆盖
+        from lib_idempotent import safe_append
+        safe_append(os.path.join(args.output_dir, ".need_escalation"),
+                    f"report_id={rid} critical={len(findings['critical'])}")
     log("RESULT", f"report={md}")
     return md
 
 
 def main():
+    # Sprint 12 Stage 2 D1: 重入检查
+    from lib_idempotent import acquire_lock, release_lock, is_locked
+    lock_name = f"emergency-troubleshoot.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
+    if not acquire_lock(lock_name, ttl=600):
+        print(f"[ERROR] TYPE=LOCKED FIX=有其他 emergency-troubleshoot 正在运行")
+        sys.exit(10)
+    try:
+        _main_locked()
+    finally:
+        release_lock(lock_name)
+
+
+def _main_locked():
     ap = argparse.ArgumentParser(description="故障应急排查")
     ap.add_argument("--resource-group-id", help="限定排查范围")
     ap.add_argument("--customer", required=True)

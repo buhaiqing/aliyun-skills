@@ -11,9 +11,12 @@ daily-health-check.py — 全量健康巡检
 import argparse
 import json
 import os
+import subprocess
 import sys
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from _shared import *
 
@@ -30,7 +33,7 @@ P = [
         "Instances.Instance",
         {"CPUUtilization": {W: 70, C: 85}, "memory_usage": {W: 80, C: 90}, "DiskUsage": {W: 75, C: 90}},
     ),
-    ("compute", "ACK", "csk", "DescribeClusters", RG_YES, TAG_YES, "", "cluster_id", "Clusters", {}),
+    ("compute", "ACK", "cs", "DescribeClustersV1", RG_YES, TAG_YES, "", "cluster_id", "clusters", {}),
     (
         "compute",
         "ECI",
@@ -176,14 +179,14 @@ def _list(prod, region, rg_id="", tag_k="", tag_v=""):
     jq_path = prod[I_JQ]
     is_full = (not rg_id) or rg_id == "default"
     if not is_full and rg_id and has_rg:
-        d = q([cli, api, "--RegionId", region, "--ResourceGroupId", rg_id])
+        d = q_cached([cli, api, "--RegionId", region, "--ResourceGroupId", rg_id])
         if d:
             return dig(d, jq_path)
     if not is_full and tag_k and has_tag:
-        d = q([cli, api, "--RegionId", region, "--Tag.1.Key", tag_k, "--Tag.1.Value", tag_v])
+        d = q_cached([cli, api, "--RegionId", region, "--Tag.1.Key", tag_k, "--Tag.1.Value", tag_v])
         if d:
             return dig(d, jq_path)
-    d = q([cli, api, "--RegionId", region])
+    d = q_cached([cli, api, "--RegionId", region])
     return dig(d, jq_path) if d else []
 
 
@@ -218,7 +221,7 @@ def confirm(discovered, args):
             skip = args.skip and name.lower() in args.skip.lower().split(",")
             if inc and not skip:
                 selected[name] = items
-                continue
+            continue
         ans = input(f"  [x] {name:16s} {len(items):3d} 个 (Y/n): ").strip().lower()
         if not ans or ans[0] == "y":
             selected[name] = items
@@ -227,7 +230,7 @@ def confirm(discovered, args):
 
 
 def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
-    metrics, anomalies = {}, []
+    metrics, anomalies, baseline_data = {}, [], {}
     for res in resources:
         rid = res.get(id_f, "")
         if not rid:
@@ -270,8 +273,7 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
             if rk not in metrics:
                 metrics[rk] = {"_type": name, "_id": rid}
             metrics[rk][mk] = round(avg, 2)
-            if list(mdefs.keys()).index(mk) >= 2:
-                continue
+            # 基线数据采集（所有指标均采集，用于动态基线评分）
             bd = q(
                 [
                     "cms",
@@ -299,71 +301,170 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
                 except Exception:
                     bdps = []
             bvals = [p.get("Average", 0) for p in bdps if isinstance(p, dict)]
-            if len(bvals) < 10:
+            # Sprint 11.5: 同时保留时间戳供 Prophet 使用
+            btimes = [p.get("timestamp", p.get("Timestamp", 0)) for p in bdps if isinstance(p, dict)]
+            if len(bvals) < BASELINE_MIN_POINTS:
                 continue
-            mean = sum(bvals) / len(bvals)
-            std = (sum((v - mean) ** 2 for v in bvals) / len(bvals)) ** 0.5
-            if std == 0:
+            # 保存基线数据用于异常评分
+            if rk not in baseline_data:
+                baseline_data[rk] = {}
+            baseline_data[rk][mk] = {"values": bvals, "timestamps": btimes}
+            # 按指标方法映射做异常评分
+            method = _get_anomaly_method(ns, mk)
+            if not method:
                 continue
-            recent = bvals[-3:]
-            rz = [(v - mean) / std for v in recent]
-            if sum(1 for z in rz if z > 2.0) < 2:
+            # 降噪检查
+            if not _has_consecutive_anomaly(bvals, method, ANOMALY_WARN_Z):
                 continue
-            cz = round(rz[-1], 2)
-            if cz > 3.0:
+            if method in (ANOMALY_METHOD_ZSCORE, ANOMALY_METHOD_DUAL):
+                z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
+            elif method == ANOMALY_METHOD_PERCENTILE:
+                z, level = compute_anomaly_score_percentile(bvals, bvals[-1])
+            elif method == ANOMALY_METHOD_STL:  # Sprint 11
+                z, level = compute_anomaly_score_stl(bvals, bvals[-1])
+                if z is None:  # 数据不足 fallback
+                    z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
+            elif method == ANOMALY_METHOD_PROPHET:  # Sprint 11.5
+                z, level = compute_anomaly_score_prophet(bvals, btimes, bvals[-1])
+                if z is None:  # 数据不足/模型失败 fallback STL → Z-Score
+                    z, level = compute_anomaly_score_stl(bvals, bvals[-1])
+                    if z is None:
+                        z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
+            else:
+                continue
+            if level in ("CRITICAL", "WARNING"):
+                mean = sum(bvals) / len(bvals)
+                std = (sum((v - mean) ** 2 for v in bvals) / len(bvals)) ** 0.5
                 anomalies.append(
                     {
                         "id": rid,
                         "p": name,
                         "m": mk,
-                        "z": cz,
-                        "v": round(recent[-1], 2),
+                        "z": round(z, 2) if z else 0,
+                        "v": round(bvals[-1], 2),
                         "mean": round(mean, 2),
-                        "l": "CRITICAL",
+                        "std": round(std, 2) if std else 0,
+                        "l": level,
+                        "method": method,
                     }
                 )
-                warn("E030", f"{name}/{rid}/{mk} z={cz} CRITICAL")
-            elif cz > 2.0:
-                anomalies.append(
-                    {
-                        "id": rid,
-                        "p": name,
-                        "m": mk,
-                        "z": cz,
-                        "v": round(recent[-1], 2),
-                        "mean": round(mean, 2),
-                        "l": "WARNING",
-                    }
-                )
-    return metrics, anomalies
+                log(level, f"{name}/{rid}/{mk} z={z} [{level}] ")
+    return metrics, anomalies, baseline_data
+
+
+
+
+
+def _collect_ack(clusters: list, region: str) -> dict:
+    """ACK independent collector for cluster/node-level acs_k8s metrics.
+    Node-level metrics (node.cpu.capacity, node.memory.limit, etc.)
+    require the ags-metrics-collector addon installed on the cluster."""
+    from datetime import datetime, timezone, timedelta
+    result = {"metrics": {}, "backtrack": None, "audit": None, "limits": None}
+    if not clusters:
+        return result
+    log("DIAG", "_collect_ack clusters=%d" % len(clusters))
+    now = datetime.now(timezone.utc)
+    # Sprint 8: 归一化到 5min 桶使 CMS 跨调用命中缓存
+    end = normalize_time_to_bucket(now, 5)
+    d7s = normalize_time_to_bucket(now - timedelta(days=7), 5)
+    for cluster in clusters:
+        cid = cluster.get("cluster_id", "")
+        cname = cluster.get("name", "") or cid
+        if not cid:
+            continue
+        cl_dims = json.dumps([{"cluster": cid}])
+        for metric, mk in [("cluster.cpu.utilization", "cpu_util"), ("cluster.memory.utilization", "mem_util")]:
+            data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s", "--MetricName", metric,
+                      "--Dimensions", cl_dims, "--Period", "300", "--StartTime", d7s, "--EndTime", end])
+            if not data: continue
+            dps = data.get("Datapoints", "[]")
+            if isinstance(dps, str):
+                try: dps = json.loads(dps)
+                except Exception: dps = []
+            vals = [p.get("Average", 0) for p in dps if isinstance(p, dict)]
+            if not vals: continue
+            rk = "ack_%s_%s" % (cid, mk)
+            result["metrics"][rk] = {"_type": "ACK", "_id": cid}
+            result["metrics"][rk][mk] = round(sum(vals) / len(vals), 2)
+        raw_nodes = q_cached(["cs", "GET", "/clusters/" + cid + "/nodes", "--region", region])
+        if not raw_nodes: continue
+        nodes = raw_nodes.get("nodes", [])
+        log("DIAG", "  cluster=%s nodes=%d" % (cname, len(nodes)))
+        node_names = []
+        for node in nodes:
+            nname = node.get("node_name", "") or node.get("instance_id", "")
+            if not nname: continue
+            node_names.append(nname)
+            nd = json.dumps([{"cluster": cid, "node": nname}])
+            for metric, mk in [("node.cpu.oversale_rate", "cpu_oversale"), ("node.memory.oversale_rate", "mem_oversale")]:
+                data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s", "--MetricName", metric,
+                          "--Dimensions", nd, "--Period", "300", "--StartTime", d7s, "--EndTime", end])
+                if not data: continue
+                dps = data.get("Datapoints", "[]")
+                if isinstance(dps, str):
+                    try: dps = json.loads(dps)
+                    except Exception: dps = []
+                vals = [p.get("Average", 0) for p in dps if isinstance(p, dict)]
+                if not vals: continue
+                rk = "ack_%s_%s_%s" % (cid, nname, mk)
+                result["metrics"][rk] = {"_type": "ACK", "_id": "%s/%s" % (cid, nname)}
+                result["metrics"][rk][mk] = round(sum(vals) / len(vals), 2)
+        if node_names:
+            result["limits"] = _collect_k8s_limits(region, cid, node_names, d7=d7s, end=end)
+        result["backtrack"] = backtrack_cms(region, cid, node_names, days=7, end_time=normalize_time_to_bucket(now, 5))
+        result["audit"] = check_audit_log_enabled(region, cid)
+        # K8s events via local kubectl (non-blocking, permission issues are warnings only)
+        result["k8s_events"] = _collect_k8s_events_local(cid, region)
+        if result["k8s_events"]["status"] != "OK":
+            log("WARN", "k8s_events: %s" % result["k8s_events"]["message"])
+    log("RESULT", "_collect_ack metrics=%d" % len(result["metrics"]))
+    return result
 
 
 def collect_and_score(selected, region):
     now = datetime.now(UTC)
-    end = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Sprint 8: 归一化到 5min 桶
+    end = normalize_time_to_bucket(now.replace(tzinfo=None), 5)
     h6 = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
     d7 = (now - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    metrics, anomalies = {}, []
+    metrics, anomalies, baseline_data = {}, [], {}
+    ack_data = {"backtrack": None, "audit": None, "limits": None}
     with ThreadPoolExecutor(max_workers=8) as pool:
         futures = []
         for name, resources in selected.items():
+            if name == "ACK":
+                continue
             prod = P_BY_NAME.get(name)
-            assert prod
+            if not prod:
+                continue
             ns, id_f, mdefs = prod[I_CMS], prod[I_ID], prod[I_METRICS]
             if not ns:
                 continue
             futures.append(pool.submit(_collect_one, name, resources, ns, id_f, mdefs, h6, d7, end))
         for fut in as_completed(futures):
             try:
-                m, a = fut.result()
+                m, a, bd = fut.result()
                 metrics.update(m)
                 anomalies.extend(a)
+                baseline_data.update(bd)
             except Exception as e:
-                err("E099", f"metrics: {e}")
-    return metrics, anomalies
+                err("E099", "metrics: %s" % e)
+    ack_resources = selected.get("ACK", [])
+    if ack_resources:
+        ack_result = _collect_ack(ack_resources, region)
+        metrics.update(ack_result.get("metrics", {}))
+        ack_data["backtrack"] = ack_result.get("backtrack")
+        ack_data["audit"] = ack_result.get("audit")
+        ack_data["limits"] = ack_result.get("limits")
+        ack_data["k8s_events"] = ack_result.get("k8s_events")
+    return metrics, anomalies, baseline_data, ack_data
 
 
-def report(selected, metrics, anomalies, args):
+
+
+def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None):
+    rpt = {}  # Sprint 11: 初始化避免 UnboundLocalError
     rid = f"cruise-{args.customer or 'x'}-{datetime.now().strftime('%Y%m%dT%H%M%S')}"
     os.makedirs(args.output_dir, exist_ok=True)
     md = os.path.join(args.output_dir, f"{rid}.md")
@@ -383,6 +484,23 @@ def report(selected, metrics, anomalies, args):
                 warnings.append(
                     {"r": mdic.get("_id", ""), "t": t, "m": mk, "v": mv, "th": f"{mt.get('w', 0)}/{mt.get('c', 0)}"}
                 )
+    # 构建 anomaly_scores（完整 JSON schema）
+    anomaly_scores = []
+    for a in anomalies:
+        score = {
+            "instance_id": a.get("id", ""),
+            "metric": a.get("m", ""),
+            "current_value": a.get("v", 0),
+            "baseline_mean": a.get("mean", 0),
+            "baseline_std": a.get("std", 0),
+            "z_score": a.get("z", 0),
+            "level": a.get("l", "WARNING"),
+            "method": a.get("method", "z-score"),
+            "window_days": 7,
+            "bucket_strategy": "global",
+            "resource_type": a.get("p", ""),
+        }
+        anomaly_scores.append(score)
     with open(md, "w") as f:
         f.write(f"# 巡检报告 {rid}\n客户={args.customer} 区域={args.region}\n\n## 资源\n")
         for n, items in sorted(selected.items()):
@@ -393,27 +511,237 @@ def report(selected, metrics, anomalies, args):
         f.write("\n## Warning\n")
         for w in warnings:
             f.write(f"- {w['r']} {w['t']}/{w['m']}={w['v']} (阈{w['th']})\n")
-        if anomalies:
-            f.write("\n## 异常评分\n")
-            for a in anomalies:
-                f.write(f"- {a['id']} {a['p']}/{a['m']} z={a['z']} v={a['v']} mean={a['mean']} [{a['l']}]\n")
+        # Sprint 9: Incidents (incident-schema v1.0.0) 摘要
+        if rpt.get("incidents_meta"):
+            meta = rpt["incidents_meta"]
+            f.write(f"\n## Incidents (schema {meta['schema_version']})\n")
+            f.write(f"总计: {meta['total']} (CRITICAL={meta['critical']}, WARNING={meta['warning']}, INFO={meta['info']})\n\n")
+            f.write("| Level | Rule | Resource | Metric | Value | Title |\n")
+            f.write("|:------|:-----|:---------|:-------|------:|:------|\n")
+            for i in rpt.get("incidents", []):
+                f.write(f"| {i['level']} | `{i['rule_id']}` | {i['resource_type']}/{i['resource_id'][:20]} | {i.get('metric', '-')} | {i.get('current_value', '-')} | {i['title']} |\n")
+        # 异常评分摘要表格
+        if anomaly_scores:
+            f.write("\n" + format_anomaly_scores_table(anomaly_scores) + "\n")
+        # ACK report section
+        if ack_data:
+            ack_resources = selected.get("ACK", [])
+            if ack_resources:
+                f.write("\n---\n## ACK CLUSTER INSPECTION\n")
+                for cl in ack_resources:
+                    cname = cl.get("name", cl.get("cluster_id", ""))
+                    f.write("\n### %s\n" % cname)
+                audit = ack_data.get("audit")
+                if audit:
+                    f.write("\n**SLS 审计日志**: " + ("ENABLED" if audit.get("audit_enabled") else "DISABLED") + "\n")
+                bt = ack_data.get("backtrack")
+                if bt:
+                    f.write("\n### 7 天回溯分析\n")
+                    f.write(format_backtrack_report(bt) + "\n")
+                limits = ack_data.get("limits")
+                if limits:
+                    f.write(format_limits_report(limits) + "\n")
+                k8s_events = ack_data.get("k8s_events")
+                if k8s_events:
+                    f.write(format_k8s_events_report(k8s_events) + "\n")
     rpt = {
         "report_id": rid,
         "customer": args.customer,
         "resources": {n: len(items) for n, items in selected.items()},
         "critical": criticals,
         "warning": warnings,
-        "anomaly": anomalies,
+        "anomaly_scores": anomaly_scores,
+        "ack": {
+            "backtrack": ack_data.get("backtrack"),
+            "audit": ack_data.get("audit"),
+            "limits": ack_data.get("limits"),
+            "k8s_events": ack_data.get("k8s_events"),
+        } if ack_data else None,
     }
+    # Sprint 9: 增 incidents[] 数组 (incident-schema v1.0.0)
+    if os.environ.get("AIOPS_INCIDENTS", "1") == "1":
+        run_id_uuid = str(uuid.uuid4())
+        json_report_path = js  # 后面会被 json.dump 写入
+        incidents = findings_to_incidents(
+            criticals, warnings,
+            customer=args.customer, run_id=run_id_uuid, region=args.region,
+            runbook_id="01-daily-health-check", runbook_version="2.3.0",
+            scenario="daily_check", report_path=json_report_path,
+        )
+        # anomalies 转 incidents
+        for a in anomaly_scores:
+            incidents.append(anomaly_to_incident(
+                a, customer=args.customer, run_id=run_id_uuid, region=args.region,
+                runbook_id="01-daily-health-check", runbook_version="2.3.0",
+                scenario="daily_check", report_path=json_report_path,
+            ))
+        rpt["incidents"] = incidents
+        rpt["incidents_meta"] = {
+            "schema_version": "1.0.0",
+            "total": len(incidents),
+            "critical": sum(1 for i in incidents if i["level"] == "CRITICAL"),
+            "warning": sum(1 for i in incidents if i["level"] == "WARNING"),
+            "info": sum(1 for i in incidents if i["level"] == "INFO"),
+        }
     with open(js, "w") as f:
-        json.dump(rpt, f, indent=2)
+        json.dump(rpt, f, indent=2, default=str)
     if criticals:
-        with open(os.path.join(args.output_dir, ".need_escalation"), "w") as f:
-            f.write(f"report_id={rid}\ncritical={len(criticals)}\n")
+        # Sprint 12: 改用 safe_append 不覆盖,保留历史需升级记录
+        from lib_idempotent import safe_append
+        safe_append(os.path.join(args.output_dir, ".need_escalation"),
+                    f"report_id={rid} critical={len(criticals)}")
     return md, js, rpt
 
 
+
+
+
+def format_limits_report(limits):
+    """Format limits overcommit results as Markdown section.
+    Documents ags-metrics-collector dependency for node-level acs_k8s metrics."""
+    if not limits or not limits.get("nodes"):
+        return ""
+    lines = ["\n### \u8282\u70b9\u8d44\u6e90\u5206\u914d\u68c0\u67e5 (Limits \u8d85\u5206\u68c0\u6d4b)\n"]
+    has_data = any(n["cpu"].get("capacity") is not None or n["memory"].get("capacity") is not None for n in limits["nodes"])
+    if not has_data:
+        lines.append("[WARN] \u65e0\u6cd5\u83b7\u53d6\u8282\u70b9\u8d44\u6e90\u6570\u636e\n\n")
+        lines.append("\u5df2\u626b\u63cf %d \u4e2a\u8282\u70b9\uff0c\u4f46\u4e91\u76d1\u63a7\uff08CMS\uff09\u6ca1\u6709\u91c7\u96c6\u5230\u8282\u70b9\u7684\u8d44\u6e90\u5bb9\u91cf\u548c\u5df2\u5206\u914d\u91cf\u6570\u636e\u3002\n" % len(limits["nodes"]))
+        lines.append("\u8fd9\u662f\u56e0\u4e3a\u5f53\u524d ACK \u96c6\u7fa4\u672a\u5b89\u88c5\u8282\u70b9\u7ea7\u76d1\u63a7\u7ec4\u4ef6 `ags-metrics-collector`\uff0c\u8282\u70b9\u7ea7\u7684\u8d44\u6e90\u6307\u6807\u4e0d\u4f1a\u4e0a\u62a5\u5230\u4e91\u76d1\u63a7\u3002\n\n")
+        lines.append("**\u5982\u4f55\u5f00\u542f\u8282\u70b9\u8d44\u6e90\u76d1\u63a7\uff1f**\n\n")
+        lines.append("\u5b89\u88c5 `ags-metrics-collector`\uff1a\n\n")
+        lines.append("```bash\n")
+        lines.append("aliyun cs POST /clusters/{cluster_id}/components/install \\\\\n")
+        lines.append("  --region {region} \\\\\n")
+        lines.append("  --body '{\"addons\":[{\"name\":\"ags-metrics-collector\"}]}'\n")
+        lines.append("```\n\n")
+        lines.append("\u9700\u8981 RAM \u6743\u9650 `cs:InstallClusterAddons`\uff0c\u5b89\u88c5\u540e 5-10 \u5206\u949f\u6570\u636e\u5373\u53ef\u4e0a\u62a5\uff0c\u91cd\u65b0\u8fd0\u884c\u5de1\u68c0\u5373\u53ef\u3002\n")
+        return "".join(lines)
+
+    lines.append("**\u68c0\u67e5\u539f\u7406**\uff1a\u6bcf\u4e2a\u8282\u70b9\u90fd\u6709\u56fa\u5b9a\u7684\u8d44\u6e90\u603b\u91cf\uff08Capacity\uff09\uff0c")
+    lines.append("**\u8d44\u6e90\u5206\u914d\u6bd4\u4f8b** = \u6240\u6709Pod\u7533\u8bf7\u7684Limits\u603b\u548c \u00f7 \u8282\u70b9\u8d44\u6e90\u603b\u91cf \u00d7 100%\u3002\n\n")
+    lines.append("| \u8282\u70b9 | CPU\u603b\u91cf(\u6838) | \u5df2\u5206\u914d(\u6838) | \u5206\u914d\u6bd4\u4f8b | \u7ed3\u8bba | \u5185\u5b58\u603b\u91cf(MB) | \u5df2\u5206\u914d(MB) | \u5206\u914d\u6bd4\u4f8b | \u7ed3\u8bba | CPU\u4f7f\u7528\u7387 | \u5185\u5b58\u4f7f\u7528\u7387 |\n")
+    lines.append("|------|-----------:|----------:|--------:|:---:|------------:|-----------:|--------:|:---:|:--------:|:--------:|\n")
+    for n in limits["nodes"]:
+        lines.append("| %s | %s | %s | %s%% | %s | %s | %s | %s%% | %s | %s%% | %s%% |\n" % (
+            n["name"][:24], n["cpu"].get("capacity","-"), n["cpu"].get("limit","-"),
+            n["cpu"].get("oversale_ratio","-"), n["cpu"].get("level","SAFE"),
+            n["memory"].get("capacity","-"), n["memory"].get("limit","-"),
+            n["memory"].get("oversale_ratio","-"), n["memory"].get("level","SAFE"),
+            n.get("cpu_usage","-"), n.get("mem_usage","-")))
+    crit = [n for n in limits["nodes"] if "CRITICAL" in n["cpu"].get("level","") or "CRITICAL" in n["memory"].get("level","")]
+    warn = [n for n in limits["nodes"] if "WARNING" in n["cpu"].get("level","") or "WARNING" in n["memory"].get("level","")]
+    if crit:
+        lines.append("\n### \U0001f534 \u9700\u8981\u7acb\u5373\u5904\u7406\n\n")
+        for cn in crit:
+            lines.append("**%s**\n" % cn["name"])
+            if cn["cpu"].get("oversale_ratio",0) >= 200:
+                lines.append("  \u2776 **\u7d27\u6025\u6269\u5bb9**\uff1a\u7acb\u5373\u5411\u8282\u70b9\u6c60\u6dfb\u52a0\u65b0\u8282\u70b9\n")
+    if warn:
+        lines.append("\n### \U0001f7e1 \u5efa\u8bae\u5173\u6ce8\n\n")
+        for wn in warn:
+            lines.append("- %s\n" % wn["name"])
+    if not crit and not warn:
+        lines.append("\n\u2705 **\u6240\u6709\u8282\u70b9\u8d44\u6e90\u5206\u914d\u6b63\u5e38**\uff0c\u65e0\u9700\u5904\u7406\u3002\n\n")
+    return "".join(lines)
+
+
+def _write_topology_health_json(rpt, output_dir):
+    """Write simplified health JSON for topo-render.py --health-json."""
+    health = {}
+    for c in rpt.get("critical", []):
+        health[c["r"]] = {"level": "CRITICAL", "type": c["t"], "z_score": 0}
+    for w in rpt.get("warning", []):
+        health[w["r"]] = {"level": "WARNING", "type": w["t"], "z_score": 0}
+    for a in rpt.get("anomaly_scores", []):
+        rid = a.get("instance_id", "")
+        if rid and rid not in health:
+            health[rid] = {"level": a.get("level", "INFO"), "type": a.get("resource_type", ""),
+                          "z_score": a.get("z_score", 0)}
+    hpath = os.path.join(output_dir, "topology-health.json")
+    with open(hpath, "w") as f:
+        json.dump(health, f, indent=2, default=str)
+    log("RESULT", f"topology health JSON: {len(health)} resources")
+    return hpath
+
+
+def _call_topo_render(health_json_path, output_dir, region):
+    """Call topo-scan.sh (from topo-discovery) with health overlay.
+    Non-blocking: if topo-scan.sh is missing or fails, log warning and continue."""
+    script_dir = Path(__file__).resolve().parent
+    topo_sh = script_dir.parent.parent.parent / "alicloud-topo-discovery" / "scripts" / "topo-scan.sh"
+    topo_sh = topo_sh.resolve()
+
+    if not topo_sh.exists():
+        log("WARN", f"topo-scan.sh not found at {topo_sh}, skipping topology render")
+        return None
+
+    topo_output = os.path.join(output_dir, "topology")
+    os.makedirs(topo_output, exist_ok=True)
+
+    log("DIAG", f"calling topo-scan.sh --health-json {health_json_path}")
+    try:
+        r = subprocess.run(
+            [str(topo_sh), "--mode", "brief", "--health-json", health_json_path,
+             "--output-dir", topo_output, "--format", "both", "--region", region],
+            capture_output=True, text=True, timeout=120,
+            env={**os.environ, "TOPO_OUTPUT_DIR": topo_output},
+        )
+        if r.returncode != 0:
+            log("WARN", f"topo-scan.sh exit={r.returncode}: {r.stderr[:200]}")
+            return None
+        # Find generated report
+        topo_report = os.path.join(topo_output, "report.md")
+        if os.path.exists(topo_report):
+            with open(topo_report) as f:
+                content = f.read()
+            log("RESULT", f"topology report: {len(content)} bytes from {topo_report}")
+            return content
+        else:
+            log("WARN", f"topology report not found at {topo_report}")
+            return None
+    except subprocess.TimeoutExpired:
+        log("WARN", "topo-scan.sh timed out after 120s, skipping topology")
+        return None
+    except Exception as e:
+        log("WARN", f"topo-scan.sh error: {e}")
+        return None
+
+
+def _merge_topology_into_report(md_path, topo_content):
+    """Merge topology content into the cruise Markdown report."""
+    if not topo_content:
+        return
+    try:
+        with open(md_path) as f:
+            md = f.read()
+        # Insert topology before the last section (optimization suggestions / audit trail)
+        marker = "## Critical"
+        if marker in md:
+            idx = md.index(marker)
+            md = md[:idx] + "\n" + topo_content + "\n\n" + md[idx:]
+            with open(md_path, "w") as f:
+                f.write(md)
+            log("RESULT", f"topology merged into {md_path}")
+        else:
+            log("WARN", "could not find insertion point in report")
+    except Exception as e:
+        log("WARN", f"merge topology failed: {e}")
+
+
 def main():
+    # Sprint 12 Stage 2 D1: 重入检查 (file lock)
+    from lib_idempotent import acquire_lock, release_lock, is_locked
+    lock_name = f"daily-health-check.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
+    if not acquire_lock(lock_name, ttl=900):  # 15 分钟
+        print(f"[ERROR] TYPE=LOCKED FIX=有其他 daily-health-check 正在运行 (is_locked={is_locked(lock_name)})")
+        sys.exit(10)
+    try:
+        _main_locked()
+    finally:
+        release_lock(lock_name)
+
+
+def _main_locked():
     ap = argparse.ArgumentParser(description="全量健康巡检")
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--resource-group-id")
@@ -427,6 +755,7 @@ def main():
     ap.add_argument("--skip")
     ap.add_argument("--non-interactive", action="store_true")
     ap.add_argument("--describe", action="store_true")
+    ap.add_argument("--no-cache", action="store_true", help="Sprint 8: bypass result cache")
     args = ap.parse_args()
     print(f"\n{'=' * 50}\n  {os.path.basename(__file__)} v2.3.0\n{'=' * 50}")
     if args.describe:
@@ -441,9 +770,14 @@ def main():
     selected = confirm(discovered, args)
     if not selected:
         sys.exit(0)
-    metrics, anomalies = collect_and_score(selected, region)
-    md, js, rpt = report(selected, metrics, anomalies, args)
+    metrics, anomalies, baseline_data, ack_data = collect_and_score(selected, region)
+    md, js, rpt = report(selected, metrics, anomalies, args, ack_data, baseline_data)
+    # Phase 4: 拓扑渲染（非阻塞）
+    hpath = _write_topology_health_json(rpt, args.output_dir)
+    topo_content = _call_topo_render(hpath, args.output_dir, region)
+    _merge_topology_into_report(md, topo_content)
     print(f"\n{'=' * 50}\n  完成: {md}\n{'=' * 50}")
+    log("DIAG", f"cache_stats: {cache_stats()}")
     sys.exit(
         exit_code(
             len(discovered) > 0, len(rpt.get("critical", [])) + sum(1 for a in anomalies if a.get("l") == "CRITICAL")

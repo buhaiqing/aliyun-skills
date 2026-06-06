@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sys
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 
@@ -66,7 +67,7 @@ PRODUCTS = [
 
 
 def _trend_one(pname, cli, api, idf, ns, jq_path, mdefs, region, d7, end):
-    raw = q([cli, api, "--RegionId", region])
+    raw = q_cached([cli, api, "--RegionId", region])
     if not raw:
         return (pname, [])
     items = dig(raw, jq_path)
@@ -154,7 +155,7 @@ def collect_trends(region):
 def finops_check(region):
     log("DIAG", "finops_check")
     suggestions = []
-    items = dig(q(["ecs", "DescribeInstances", "--RegionId", region]), "Instances.Instance")
+    items = dig(q_cached(["ecs", "DescribeInstances", "--RegionId", region]), "Instances.Instance")
     for inst in items:
         iid = inst.get("InstanceId", "")
         itype = inst.get("InstanceType", "")
@@ -205,7 +206,9 @@ def report(trends, finops, args):
         if not trends:
             f.write("当前资源组未发现可监控的数据库/计算资源，无趋势数据。\n")
         else:
-            f.write("## 趋势预测\n| 产品 | 资源 | 指标 | 当前 | 增长/天 | 预计达阈 |\n|------|------|------|------|--------|--------|\n")
+            f.write(
+                "## 趋势预测\n| 产品 | 资源 | 指标 | 当前 | 增长/天 | 预计达阈 |\n|------|------|------|------|--------|--------|\n"
+            )
             for pn, pd in sorted(trends.items()):
                 for p in pd:
                     dd = f"{p['days']}天" if p["days"] < 90 else ">90天无忧"
@@ -215,14 +218,55 @@ def report(trends, finops, args):
             for fn in finops:
                 f.write(f"| {fn['id']} | {fn['type']} | {fn['cpu_7d_avg']}% | {fn['suggestion']} |\n")
     with open(js, "w") as f:
-        json.dump(
-            {"report_id": rid, "customer": args.customer, "trends": trends, "finops": finops}, f, indent=2, default=str
-        )
+        rpt = {"report_id": rid, "customer": args.customer, "trends": trends, "finops": finops}
+        # Sprint 9: 增 incidents[] - 容量规划以 trends 中“预计 X 天后耗尽”作为 incidents
+        incidents = []
+        for pn, pd in trends.items():
+            for p in pd:
+                if p.get("days", 999) < 30:  # 30天内耗尽 = WARNING
+                    incidents.append(to_incident({
+                        "r": p.get("id", ""),
+                        "t": pn,
+                        "m": p.get("metric", "Capacity"),
+                        "v": p.get("growth", 0),
+                        "th": "0/90",
+                        "impact": f"{pn} 资源预计 {p.get('days', 0)} 天后耗尽",
+                        "suggestion": "考虑扩容或优化",
+                    }, customer=args.customer, run_id=str(uuid.uuid4()),
+                        region=args.region, runbook_id="03-capacity-planning",
+                        runbook_version="1.0.0", scenario="capacity", report_path=js,
+                        level_override="WARNING" if p.get("days", 0) >= 7 else "CRITICAL"))
+        if incidents:
+            rpt["incidents"] = incidents
+            rpt["incidents_meta"] = {
+                "schema_version": "1.0.0",
+                "total": len(incidents),
+                "critical": sum(1 for i in incidents if i["level"] == "CRITICAL"),
+                "warning": sum(1 for i in incidents if i["level"] == "WARNING"),
+            }
+        json.dump(rpt, f, indent=2, default=str)
+    # Sprint 9: MD 报告增 Incidents 章节
+    if rpt.get("incidents"):
+        with open(md, "a") as f:
+            f.write(format_incidents_section_md(rpt))
     log("RESULT", f"report={md}")
     return md
 
 
 def main():
+    # Sprint 12 Stage 2 D1: 重入检查
+    from lib_idempotent import acquire_lock, release_lock
+    lock_name = f"capacity-planning.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
+    if not acquire_lock(lock_name, ttl=900):
+        print(f"[ERROR] TYPE=LOCKED FIX=有其他 capacity-planning 正在运行")
+        sys.exit(10)
+    try:
+        _main_locked()
+    finally:
+        release_lock(lock_name)
+
+
+def _main_locked():
     ap = argparse.ArgumentParser(description="容量规划")
     ap.add_argument("--resource-group-id", help="限定范围 (当前为全量扫描)")
     ap.add_argument("--tag-key")

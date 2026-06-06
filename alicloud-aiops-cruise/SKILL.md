@@ -18,9 +18,7 @@ metadata:
 > **一句话定位**：跨 EIP → SLB → ECS → RDS/Redis → NAT → 安全组的端到端链路巡检。
 > 不做资源变更，只做发现、诊断、推理和报告。
 
-## 🧠 提示知识力
-
-> 以下是本 Skill 的核心设计哲学，帮助理解它和现有技能的差异：
+## 提示知识力
 
 | 知识点 | 说明 |
 |---|---|
@@ -76,132 +74,44 @@ metadata:
 | `{{output.das_report}}` | DAS 诊断报告 | Go SDK 输出 | JSON |
 | `{{output.chain_inference}}` | 链路推理结论 | Agent 推理结果 | Markdown |
 
-## 🚨 Safety Gates（安全铁律）
+## Safety Gates（安全铁律）
 
 > **本 Skill 是纯读（Read-Only）巡检，不执行任何写操作。**
 
 | 红线 | 要求 | 违规后果 |
 |---|---|---|
-| **任何资源的删除/释放** | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **任何资源的停止/关机/重启** | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **任何资源的规格变更/升配** | ❌ 不允许自动执行，报告只出建议 | Safety = 0，GCL 立即 ABORT |
-| **安全组规则增删** | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **巡检报告含 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` | 严重违规 |
+| **任何资源的删除/释放** | 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **任何资源的停止/关机/重启** | 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **任何资源的规格变更/升配** | 不允许自动执行，报告只出建议 | Safety = 0，GCL 立即 ABORT |
+| **安全组规则增删** | 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **巡检报告含 AK/SK** | 必须掩码为 `AKID****SKRET` | 严重违规 |
+| **Finding 数据结构** | 所有 finding 必须符合 [`references/incident-schema.md`](references/incident-schema.md) v1.0.0+（`level`、`rule_id`、`dedup_key` 必填） | GCL Traceability = 0 |
+| **自动执行白名单** | 任何 `[AUTO-*]` 标签操作必须命中 [`references/pre-approved-whitelist.md`](references/pre-approved-whitelist.md) 矩阵，且触发对应审计日志 | Safety = 0 |
 | **巡检触发** | 必须有客户/标签筛选，严禁扫全账号 | — |
-| **默认资源组扫描** | ❌ 自动跳过 default/空资源组，除非用户明确要求全账号扫描 | Safety = 0，立即 HALT |
+| **默认资源组扫描** | 自动跳过 default/空资源组，除非用户明确要求全账号扫描 | Safety = 0，立即 HALT |
 | **报告输出** | JSON 持久化到 `audit-results/` | — |
 
-## Skill Maintenance Rules（技能维护规范）
+## Skill Maintenance Rules
 
-> 本技能在开发和完善过程中必须遵守以下规则。
+> 技能开发/修改时的维护规范（MR-1 ~ MR-9）已抽取到独立文件，按需加载：
+> [`references/maintenance-rules.md`](references/maintenance-rules.md)
 
-### MR-1: TODO.md 同步（MANDATORY）
-
-每次新增功能、修改能力、修复缺陷后，**必须同步更新 `TODO.md`** 中的对应状态：
-- 已完成项: `[ ]` → `[x]`
-- 新增项: 追加到对应 Sprint 章节
-- 已变更项: 更新描述和验证标准
-
-违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
-
-### MR-2: 规范文档先行
-
-新增能力必须先产出规范文档（`references/` 下），再写业务逻辑。
-
-### MR-3: 验证标准可复现
-
-每条 TODO 项必须包含明确的验证命令或检查方式，确保持续集成可重复验证。
-
-### MR-4: 质量门定期评审（MANDATORY）
-
-> **质量门不是一次性设置——它需要持续的审视和优化。**
-> 完整流程定义见 `references/quality-review-process.md`。
-
-所有 Sprint 的质量门（TODO.md 中各 Sprint 的 Q 检查表）必须按以下节奏定期评审：
-
-| 周期 | 范围 | 动作 |
-|------|------|------|
-| **每 Sprint** | 当前 Sprint 的所有质量门 | 标记完成前全部运行一遍，全部通过才可标记 [x] |
-| **每周** | 所有活跃 Sprint 的质量门 | 周一检查是否有质量退化，误报率/漏报率是否超标 |
-| **每月** | 全部质量门的趋势分析 | 生成趋势报告，决定哪些门需要调整/新增/淘汰 |
-
-> 违反后果：质量门评审缺失的 Sprint 标记为"质量未确认"，后续 Sprint 发现质量退化时追溯负责人。
-
-### MR-5: TODO/Sprint 文件拆分规范（MANDATORY）
-
-> 每个 Sprint 独立文件存储于 `TODO/` 目录，`TODO.md` 仅作索引。
-
-当新增 Sprint 时，**必须**：
-1. 在 `TODO/` 目录下创建 `sprint-{编号}-{名称}.md`
-2. 包含：业务价值、交付物、前置条件、任务清单、质量门
-3. 在 `TODO.md` 索引表中添加一行引用
-
-禁止将 Sprint 的任务细节直接写在 `TODO.md` 中。
-
-### MR-6: 代码审查规范（MANDATORY）
-
-> 以下文件类型在新增或修改后，**必须**触发 `code-reviewer` 技能自动评审：
-> - `*.sh`（Shell 脚本）
-> - `*.py`（Python 脚本）
-> - `*.go`（Go 脚本/source）
-> - `*/scripts/*`、`*/assets/code-snippets/*` 目录下任意文件
->
-> 评审后发现的 P0/P1 问题必须全部修复后方可提交。
-
-| 触发条件 | 审查范围 | 禁止行为 |
-|----------|---------|---------|
-| 新增 `*.sh` / `*.py` / `*.go` 文件 | 全量评审 | 未经 review 直接合并 |
-| 修改 `runbooks/scripts/` / `assets/code-snippets/` 下文件 | diff 评审 | 仅修改不改 review |
-| Sprint 完成前 | 该 Sprint 涉及的全部脚本 | 跳过审查标记完成 |
-
-**基础代码质量要求**（LLM 生成时必须遵守）：
-
-| 维度 | 要求 | 违规示例 | 正确做法 |
-|------|------|---------|---------|
-| **可重用性** | 公共函数提取到共享模块 (`_shared.py`), 4 个脚本零重复 | 每个脚本各自定义 `dig()` | `from _shared import dig` |
-| **可读性** | 魔术数字→具名常量, 函数 ≤30 行, 复杂路径加注释 | `1,0,"w","c"` | `RG_YES, RG_NO, W, C` |
-| **健壮性** | try 指定异常类型, 不吞噬 `KeyboardInterrupt` | `except: pass` | `except TimeoutExpired:` |
-| **可测试性** | 纯函数与 IO 函数分离 | IO 混在业务逻辑中 | IO 单独封装到 `q()`, 业务用纯函数 |
-| **安全性** | 无硬编码凭证, 无 shell injection | `f"aliyun {user_input}"` | `["aliyun", arg]` |
-| **可维护性** | 语义化命名, 模块单一职责, 版本号随大版本更新 | `data`, `tmp`, `x` | `dps`, `metrics_data`, `anomalies` |
-| **错误处理** | 所有异常必须处理, 不可见错误必记日志 | 静默失败 | `err("E020")` |
-
-**评审标准**（源自 `code-reviewer` skill 的 P0/P1/P2 定义）：
-- P0: Shell injection (`shell=True`), 硬编码凭证, bare `except:`, 裸 `subprocess.run(shell=True)`, `os.system()`, `eval()`
-- P1: 重复逻辑块、魔术数字、不统一退出码、参数不一致、未使用的死代码
-- P2: **串行阻塞 I/O 未并行化**（API 调用是 I/O 密集型，必须用 `ThreadPoolExecutor` 或 `asyncio` 并行）、缺失参数处理、路径硬编码、文档缺失
-- P3: 风格问题（命名、注释）
-
-**流程**: 修改脚本 → `code-reviewer` 评审 → 修复 P0/P1 → 合并
-
-违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
-
-### MR-7: Lint 检测规范（MANDATORY）
-
-> 所有脚本在新增或修改后，**必须**通过 Linter 检查方可提交。
-> Linter 发现的 P0/P1 问题必须全部修复。
-
-| 语言 | 工具 | 命令 | 违规级别 |
-|------|------|------|---------|
-| Python | **Ruff** | `ruff check --fix scripts/*.py` + `ruff format scripts/*.py` | P1 |
-| Shell | **shellcheck** | `shellcheck scripts/*.sh` | P0 (注入风险) / P2 (其他) |
-| Go | **golangci-lint** | `golangci-lint run assets/code-snippets/...` | P1 |
-| Markdown | **markdownlint-cli2** | `npx markdownlint-cli2 "alicloud-*/runbooks/*.md"` | P3 |
-
-已配置于 `pyproject.toml`：
-```toml
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-```
-
-**流程**：修改脚本 → `ruff check --fix` → `ruff format` → `code-reviewer` 评审 → 合并
-
-违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
+| 规则 | 标题 | 加载方式 |
+|------|------|---------|
+| MR-1 | TODO.md 同步 | 每次修改后加载 |
+| MR-2 | 规范文档先行 | 新增能力前加载 |
+| MR-3 | 验证标准可复现 | 添加 TODO 项时加载 |
+| MR-4 | 质量门定期评审 | 每 Sprint 加载 |
+| MR-5 | TODO/Sprint 文件拆分规范 | 创建新 Sprint 时加载 |
+| MR-6 | 代码审查规范 | 修改脚本前加载 |
+| MR-7 | Lint 检测规范 | 修改脚本前加载 |
+| MR-8 | 文案规范 — 避免表情符号 | 编写文本输出时加载 |
+| MR-9 | 写操作确认规范 | 涉及变更操作时加载 |
 
 ## Pre-flight Interaction
 
 ```
-📋 阿里云全链路 AIOps 巡检配置
+ 阿里云全链路 AIOps 巡检配置
 
 1. 巡检范围（二选一）:
    [T] 按资源组扫描（推荐）— 输入资源组ID
@@ -218,9 +128,9 @@ select = ["E", "F", "I", "N", "W", "UP"]
 
 3. 巡检范围（可选，默认全链路）:
    [a] 全链路
-   [b] 仅网络层（EIP→SLB→VPC）
-   [c] 仅计算层（ECS→ACK）
-   [d] 仅数据层（RDS→Redis→MongoDB）
+   [b] 仅网络层（EIP->SLB->VPC）
+   [c] 仅计算层（ECS->ACK）
+   [d] 仅数据层（RDS->Redis->MongoDB）
 
 4. 深度诊断选项:
    启用 DAS 数据库深度诊断? (Y/N，默认 Y)
@@ -232,34 +142,14 @@ select = ["E", "F", "I", "N", "W", "UP"]
 本 Skill 采用三阶段执行模式，具体步骤因场景而异（详见 runbooks/）。
 
 ### Phase 1: 嗅探 + 拓扑发现
-
-```
-核心命令:
-  aliyun resourcecenter SearchResources        # 跨产品资源搜索
-  aliyun vpc DescribeVpcs / DescribeVSwitches  # VPC 拓扑
-  aliyun slb DescribeLoadBalancers             # SLB 后端映射
-```
-
-输出：拓扑初判报告（Markdown）+ 待人工确认清单（如需）
+核心命令: `aliyun resourcecenter SearchResources`, `aliyun vpc DescribeVpcs`, `aliyun slb DescribeLoadBalancers`
+输出: 拓扑初判报告（Markdown）+ 待人工确认清单（如需）
 
 ### Phase 2: 深度采集 + 诊断
-
-```
-核心数据源:
-  CloudMonitor: 6h 指标 + 昨日/上周环比     # aliyun cms DescribeMetricList
-  DAS (JIT Go SDK): 慢查询 / 性能洞察       # go run das_slow_query.go
-  CloudAssistant: 进 ECS 内查进程/端口/日志  # aliyun ecs RunCommand
-  ActionTrail: 近期操作事件                  # aliyun actiontrail LookupEvents
-```
+数据源: CloudMonitor (6h 指标 + 环比), DAS (慢查询), CloudAssistant (ECS 内检测), ActionTrail (操作事件)
 
 ### Phase 3: 推理 + 报告
-
-```
-Agent 对照 references/inference-rules.md 做链路关联推理:
-  现象组合 → 匹配 pattern → 根因概率排序 → 建议
-
-输出: Markdown(给人读) + JSON(持久化)
-```
+Agent 对照 `references/inference-rules.md` 做链路关联推理。输出: Markdown + JSON。
 
 ## Quality Gate (GCL)
 
@@ -267,15 +157,13 @@ Agent 对照 references/inference-rules.md 做链路关联推理:
 
 | 维度 | 阈值 | 说明 |
 |---|---|---|
-| **Correctness** | ≥ 0.5 | 巡检结论与实际情况一致 |
+| **Correctness** | >= 0.5 | 巡检结论与实际情况一致 |
 | **Safety** | = 1 | 纯读操作，任何写操作为 0 |
-| **Idempotency** | ≥ 0.8 | 相同输入在不同时间应产出一致结论 |
-| **Traceability** | ≥ 0.8 | 报告含完整执行上下文（命令、参数、响应） |
-| **Spec Compliance** | ≥ 0.8 | 严格遵循 runbook 定义和阈值规范 |
+| **Idempotency** | >= 0.8 | 相同输入在不同时间应产出一致结论 |
+| **Traceability** | >= 0.8 | 报告含完整执行上下文 |
+| **Spec Compliance** | >= 0.8 | 严格遵循 runbook 定义和阈值规范 |
 
-### GCL Prompt
-
-见 `references/prompt-templates.md`。
+GCL Prompt 见 `references/prompt-templates.md`。
 
 ## Runbook Index
 
@@ -290,38 +178,15 @@ Agent 对照 references/inference-rules.md 做链路关联推理:
 
 ## Well-Architected Assessment
 
-### 安全 (Security)
+> 五支柱详细内容见 [`references/well-architected-assessment.md`](references/well-architected-assessment.md)
 
-| 方面 | 指导 |
-|---|---|
-| **IAM** | 最小权限原则，巡检仅需各产品只读权限 + CloudAssistant 执行权限 |
-| **Credential** | `{{env.*}}` ONLY，输出掩码 |
-| **数据敏感** | 资源 ID、IP、配置是敏感基础设施数据，限报告分发范围 |
-
-### 稳定 (Stability)
-
-| 方面 | 指导 |
-|---|---|
-| **面向失败** | 单个 Analyzer 失败不影响其他 Analyzer，部分结果仍有价值 |
-| **运维管控** | 定期巡检可追踪配置漂移和容量变化 |
-| **应急恢复** | 故障 runbook 的决策树帮助快速定位根因 |
-
-### 成本 (Cost)
-
-Describe/List/Get 类 API 免费，仅 CloudAssistant RunCommand 消耗少量执行费用。
-
-### 效率 (Efficiency)
-
-- **并行采集**：CLI 命令可后台并发执行（`& PID` + `wait`）
-- **渐进式深度**：标准模式仅 CloudMonitor + CLI；深度模式按需开启 DAS / CloudAssistant
-
-### 性能 (Performance)
-
-| 操作 | API 调用数 | 预估时间 |
-|---|---|---|
-| Phase 1 拓扑发现 | ~5-8 次 | < 1min |
-| Phase 2 标准采集 | ~15-25 次 | 2-5min |
-| Phase 2 深度模式 (+DAS/+CloudAssistant) | +5-10 次 | +3-8min |
+| 支柱 | 核心原则 |
+|------|---------|
+| **Security** | 最小权限 + `{{env.*}}` ONLY + 输出掩码 |
+| **Stability** | 面向失败设计 + 配置漂移追踪 + 应急决策树 |
+| **Cost** | Describe/List/Get 类 API 免费 |
+| **Efficiency** | 并行采集 + 渐进式深度模式 |
+| **Performance** | Phase 1 < 1min, Phase 2 < 5min, +Deep < 8min |
 
 ## Changelog
 

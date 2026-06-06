@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import sys
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from _shared import *
@@ -70,7 +71,7 @@ def stress_test(region, multiplier):
     log("DIAG", f"stress_test multiplier={multiplier}x")
     results = {}
     for pname, cli, api, idf, ns, jq_path, mdefs in PRODUCTS:
-        items = dig(q([cli, api, "--RegionId", region]), jq_path)
+        items = dig(q_cached([cli, api, "--RegionId", region]), jq_path)
         if not items:
             continue
         pdata = []
@@ -127,7 +128,7 @@ def stress_test(region, multiplier):
                         "stressed": stressed,
                         "threshold": f"{mt[W]}/{mt[C]}",
                         "safe": safe,
-                        "action": "✅ 余量充足" if safe else "⚠️ 建议升配(需人工确认)",
+                        "action": "PASS 余量充足" if safe else "WARN 建议升配(需人工确认)",
                     }
                 )
                 log("DIAG", f"{pname}/{rname} {mk}: {baseline}×{multiplier}={stressed} {'OK' if safe else 'WARN'}")
@@ -153,23 +154,63 @@ def report(stress, multiplier, args):
                 )
                 for p in pd:
                     f.write(
-                        f"| {p['name'][:16]} | {p['metric']} | {p['baseline']} | {p['stressed']} | {p['threshold']} | {'✅' if p['safe'] else '⚠️'} | {p['action']} |\n"
+                        f"| {p['name'][:16]} | {p['metric']} | {p['baseline']} | {p['stressed']} | {p['threshold']} | {'PASS' if p['safe'] else 'WARN'} | {p['action']} |\n"
                     )
         if upgrades:
-            f.write("\n## 📋 升配建议 (需人工确认)\n")
+            f.write("\n##  升配建议 (需人工确认)\n")
             for i, u in enumerate(upgrades, 1):
                 f.write(f"{i}. {u['name']}: {u['baseline']}×{multiplier}={u['stressed']} > {u['threshold']}\n")
     rpt = {"report_id": rid, "multiplier": multiplier, "resources": stress, "upgrade_count": len(upgrades)}
+    # Sprint 9: 增 incidents[] - 预检中需升配的资源 = CRITICAL (大促前必须处理)
+    if upgrades:
+        incidents = [to_incident({
+            "r": u.get("id", ""),
+            "t": u.get("type", "OTHER"),
+            "m": "StressTest",
+            "v": u.get("stressed", 0),
+            "th": f"{u.get('threshold', 0)}/0",
+            "impact": f"大促 {multiplier}x 压力下，{u.get('name', u.get('id', ''))} 资源预测 {u.get('stressed', 0)}>{u.get('threshold', 0)}",
+            "suggestion": "升配或扩容, 参见 [AUTO-CONFIRM] 名单",
+        }, customer=args.customer, run_id=str(uuid.uuid4()),
+            region=args.region, runbook_id="04-pre-launch-check",
+            runbook_version="1.0.0", scenario="pre_launch", report_path=js,
+            level_override="CRITICAL") for u in upgrades]
+        rpt["incidents"] = incidents
+        rpt["incidents_meta"] = {
+            "schema_version": "1.0.0",
+            "total": len(incidents),
+            "critical": len(incidents),
+            "warning": 0,
+        }
     with open(js, "w") as f:
         json.dump(rpt, f, indent=2, default=str)
+    # Sprint 9: MD 报告增 Incidents 章节
+    if rpt.get("incidents"):
+        with open(md, "a") as f:
+            f.write(format_incidents_section_md(rpt))
     if upgrades:
-        with open(os.path.join(args.output_dir, ".need_escalation"), "w") as f:
-            f.write(f"report_id={rid}\n注意: 升配建议需人工确认后执行\n")
+        # Sprint 12: safe_append 不覆盖
+        from lib_idempotent import safe_append
+        safe_append(os.path.join(args.output_dir, ".need_escalation"),
+                    f"report_id={rid} 注意: 升配建议需人工确认后执行")
     log("RESULT", f"report={md}")
     return md
 
 
 def main():
+    # Sprint 12 Stage 2 D1: 重入检查
+    from lib_idempotent import acquire_lock, release_lock
+    lock_name = f"pre-launch-check.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
+    if not acquire_lock(lock_name, ttl=900):
+        print(f"[ERROR] TYPE=LOCKED FIX=有其他 pre-launch-check 正在运行")
+        sys.exit(10)
+    try:
+        _main_locked()
+    finally:
+        release_lock(lock_name)
+
+
+def _main_locked():
     ap = argparse.ArgumentParser(description="大促前预检")
     ap.add_argument("--resource-group-id", help="限定范围 (当前为全量)")
     ap.add_argument("--tag-key")

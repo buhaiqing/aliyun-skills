@@ -142,3 +142,53 @@
 | 增强型(按量) | 1,000,000 | 5,000 | 超大规模，按使用量计费 |
 
 > **巡检注意**：SNAT 端口耗尽（连接数接近上限 + 短连接过多）是阿里云 NAT 网关最常见的故障模式。检查 `aliyun cms` 中 `SnatConnection` 指标的趋势。
+
+## 动态基线异常检测方法映射
+
+> **用途**：每个指标根据其统计特征选择最合适的异常检测方法。在 `_shared.py` 的 `METRIC_ANOMALY_METHOD` 中定义。
+
+### 方法说明
+
+| 方法 | 原理 | 适用指标特征 | 判定方式 |
+|------|------|-------------|---------|
+| **Z-Score** | μ ± Z×σ | 正态分布、稳定基线 | Z>2 Warning, Z>3 Critical |
+| **Percentile (P95/P99)** | 分位数偏离 | 突发特征、非正态分布 | >P95 Warning, >P99 Critical |
+| **Dual (Z-Score + Fixed)** | 两者取最高 | 递增趋势（如磁盘） | 同时用 Z-Score 和固定阈值 |
+
+### 完整映射表
+
+| 命名空间 | 指标 | 方法 | 说明 |
+|----------|------|------|------|
+| acs_ecs_dashboard | CPUUtilization | Z-Score | CPU 呈日周期，推荐 STL 分桶 |
+| acs_ecs_dashboard | memory_usage | Z-Score | 内存使用平稳 |
+| acs_ecs_dashboard | DiskReadIOPS | Percentile | IOPS 突刺特征 |
+| acs_ecs_dashboard | DiskWriteIOPS | Percentile | IOPS 突刺特征 |
+| acs_ecs_dashboard | InternetInRate | Percentile | 带宽突刺特征 |
+| acs_ecs_dashboard | InternetOutRate | Percentile | 带宽突刺特征 |
+| acs_rds_dashboard | CpuUsage | Z-Score | RDS CPU 有业务周期 |
+| acs_rds_dashboard | DiskUsage | Dual | 递增趋势，双重判定防止漏报 |
+| acs_rds_dashboard | ConnectionUsage | Z-Score | 连接数变化平稳 |
+| acs_rds_dashboard | SlowQueryCount | Percentile | 慢查询偶发性突增 |
+| acs_redis_dashboard | memory_usage | Z-Score | 内存使用平稳 |
+| acs_redis_dashboard | UsedConnection | Percentile | 连接数有突刺 |
+| acs_slb_dashboard | ActiveConnection | Percentile | 连接数突刺 |
+| acs_slb_dashboard | NewConnection | Percentile | 新建连接突刺 |
+| acs_slb_dashboard | UnhealthyServerCount | Z-Score | 健康检查失败平稳 |
+| acs_nat_gateway | SnatConnection | Z-Score | 变化缓慢 |
+| acs_vpc_eip | net_in.rate_percentage | Percentile | 带宽突刺特征 |
+
+### 降噪策略
+
+| 场景 | 策略 | 实现 |
+|------|------|------|
+| 短期突刺 | 连续 2+ 采样点超标才标记 | `ANOMALY_MIN_CONSECUTIVE = 2` |
+| 数据不足 | < 24h 数据回退到固定阈值 | `BASELINE_MIN_POINTS = 24` |
+| 零值容忍 | IOPS 可能为零（无流量） | `if max(history) == 0: skip` |
+
+### 基线窗口
+
+| 策略 | 窗口 | 数据点数 | 适用阶段 |
+|------|------|---------|---------|
+| 快速上线 | 7 天 × 1h | 168 | 新接入环境 |
+| 标准（推荐） | 30 天 × 1h | 720 | 正式生产 |
+| 含节假日 | 90 天 × 1h | 2160 | 有季节性业务 |

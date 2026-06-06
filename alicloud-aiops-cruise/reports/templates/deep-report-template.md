@@ -55,6 +55,16 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ## 🟡 Warning 问题（{{warning_count}} 项）— 计划处理
 
+## 📊 异常评分摘要（动态基线）
+
+| 实例 | 类型 | 指标 | 当前值 | 基线μ | Z-Score | 方法 | 等级 |
+|---|---|---|---|---|---|---|---|
+{% for score in anomaly_scores %}
+| {{score.instance_id[:20]}} | {{score.resource_type}} | {{score.metric}} | {{score.current_value}} | {{score.baseline_mean}} | {{score.z_score}} | {{score.method}} | {% if score.level == 'CRITICAL' %}🔴 CRITICAL{% elif score.level == 'WARNING' %}🟡 WARNING{% else %}🔵 INFO{% endif %} |
+{% endfor %}
+
+---
+
 {% for issue in warning_issues %}
 ### #{{loop.index}} {{issue.title}}
 

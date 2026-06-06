@@ -36,7 +36,7 @@ Step 3: CloudAssistant 进 ECS 查监听
   → 确认服务进程是否在监听该端口
 
 Step 4: 查 ECS 内防火墙
-  aliyun ecs RunCommand --CommandContent "iptables -L -n | grep <端口号>"
+  [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "iptables -L -n | grep <端口号>"
   → 如有 DROP 规则，添加 ACCEPT
 
 Step 5: 验证
@@ -58,7 +58,7 @@ Step 5: 验证
 
 ```
 Step 1: 查 ECS 连接状态分布
-  aliyun ecs RunCommand --CommandContent "ss -tan | awk '{print \$1}' | sort | uniq -c"
+  [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "ss -tan | awk '{print \$1}' | sort | uniq -c"
   → CLOSE_WAIT 过多 → 应用未正确关闭连接
   → TIME_WAIT 过多 → 短连接场景正常
 
@@ -93,11 +93,11 @@ Step 5: 验证
 
 ```
 Step 1: CloudAssistant 查 TOP 进程
-  aliyun ecs RunCommand --CommandContent "ps aux --sort=-%cpu | head -10"
+  [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "ps aux --sort=-%cpu | head -10"
   → 定位 CPU 消耗最高的进程
 
 Step 2: 查内存消耗
-  aliyun ecs RunCommand --CommandContent "ps aux --sort=-%mem | head -10"
+  [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "ps aux --sort=-%mem | head -10"
   → 定位内存消耗最高的进程
 
 Step 3: 分析是否为预期行为
@@ -171,11 +171,11 @@ Step 2: DAS 查空间分析（JIT Go SDK）
 
 Step 3: 选择修复策略（按优先级）
   ├─ 方案A: 存储空间扩容（最快，不停服）
-  │   aliyun rds ModifyDBInstanceSpec --DBInstanceId rm-xxx --DBInstanceStorage 200
+  │   [AUTO-CONFIRM] aliyun rds ModifyDBInstanceSpec --DBInstanceId rm-xxx --DBInstanceStorage 200  (待 L2 准入)
   │
   ├─ 方案B: 清理 binlog（仅适用 MySQL）
-  │   CALL mysql.rds_cycle_binlog();  -- 清理已消费的 binlog
-  │   或 aliyun rds ModifyDBInstanceSpec --BinlogRetentionHours 24
+  │   [AUTO-NOTIFY] CALL mysql.rds_cycle_binlog();  -- 清理已消费的 binlog（命中 W-02）
+  │   [SUGGESTED] aliyun rds ModifyDBInstanceSpec --BinlogRetentionHours 24
   │
   ├─ 方案C: 清理大表归档
   │   → 导出历史数据到 OSS，删除本地表
@@ -216,7 +216,7 @@ Step 2: 判断大key类型
 
 Step 3: 选择修复策略
   ├─ 方案A: 惰性删除（逐出策略改为 allkeys-lru）
-  │   aliyun r-kvstore ModifyInstanceConfig --Config '{"maxmemory-policy":"allkeys-lru"}'
+  │   [AUTO-NOTIFY] aliyun r-kvstore ModifyInstanceConfig --Config '{"maxmemory-policy":"allkeys-lru"}'  (命中 W-03)
   │
   ├─ 方案B: 本地缓存兜底
   │   在应用层加本地缓存（Caffeine/Guava），减少 Redis 压力
@@ -275,7 +275,107 @@ Step 4: 验证
 
 ---
 
-## 6. 安全层
+## 6. ACK 容器层
+
+### ACK-LIMITS-01: CPU Limits 超分 + 实际负载低
+
+| 属性 | 内容 |
+|---|---|
+| **现象** | `node.cpu.limit / node.cpu.capacity > 120%` AND `node.cpu.usage_rate / node.cpu.capacity < 60%` |
+| **推理** | Pod CPU limit 设置虚高（开发者习惯性填大值），导致节点"数字上超分"但实际压力不大 |
+| **级别** | 🟡 Warning |
+
+**🔧 修复步骤：**
+
+```
+Step 1: 确认超分节点
+  node.cpu.limit / node.cpu.capacity = {ratio}%  → 超分 {over} core
+
+Step 2: 钻取 Top 5 高 limit Pod
+  pod.cpu.limit → 按节点过滤 → 按 limit 倒排
+  → 得到 [{pod, namespace, limit, usage, oversale_rate}, ...]
+
+Step 3: 判断每个 Pod 是否可优化
+  ┌─ usage_rate / limit < 30% → 明显虚高，建议降 limit 至 {usage*2}
+  ├─ usage_rate / limit 30~60% → 可优化，建议降 limit 至 {usage*1.5}
+  └─ usage_rate / limit > 60% → 合理，保持不动
+
+Step 4: 降 limit（需用户确认）
+  kubectl edit deployment {name} -n {ns} --cpu-limits={new_value}
+  → 或通过 ACK 控制台修改
+
+Step 5: 验证
+  重新采集 node.cpu.limit / node.cpu.capacity → 确认超卖比下降
+```
+
+---
+
+### ACK-LIMITS-02: CPU Limits 超分 + 实际负载高
+
+| 属性 | 内容 |
+|---|---|
+| **现象** | `node.cpu.limit / node.cpu.capacity > 120%` AND `node.cpu.usage_rate / node.cpu.capacity > 70%` |
+| **推理** | 双重风险：超分 + 高负载，流量尖峰必然触发 CPU Throttling |
+| **级别** | 🔴 Critical |
+
+**🔧 修复步骤：**
+
+```
+Step 1: 紧急判断
+  查看 node.cpu.usage_rate 是否接近 node.cpu.limit
+  → 如果 usage 已超过 node.cpu.capacity * 0.8 → 有 immediate Throttling 风险
+
+Step 2: 紧急扩容（需用户确认）
+  方案A: 节点池扩容（水平扩展，加节点）
+    aliyun cs POST /clusters/{clusterId}/nodepools/{poolId} --body '{{"desired_size": {new_size}}}'
+  方案B: 增加 Pod 副本数 + 降单副本 limit
+    kubectl scale deployment {name} -n {ns} --replicas={current*2}
+    → 配合降 limit 确保新的总 limit 不超
+
+Step 3: 长期治理
+  对高 limit 低 usage 的 Pod 降 limit（同 ACK-LIMITS-01 Step 3）
+  实施 HPA 让 Pod 自动扩缩
+
+Step 4: 验证
+  观察 5min 后 node.cpu.usage_rate 是否回落，Throttling 是否消失
+```
+
+---
+
+### ACK-LIMITS-03: Memory Limits 超分
+
+| 属性 | 内容 |
+|---|---|
+| **现象** | `node.memory.limit / node.memory.capacity > 120%` |
+| **推理** | 内存超分，物理内存有限不会被 swap 消化，OOMKill 风险真实存在 |
+| **级别** | 🟡 Warning（>120%）/ 🔴 Critical（>150%） |
+
+**🔧 修复步骤：**
+
+```
+Step 1: 查 OOMKill 记录
+  acs_k8s → pod 维度 → 查 OOMKill 事件
+  → 或通过 DescribeClusterEvents 查近期 OOM 事件
+
+Step 2: 查节点内存实际 usage
+  node.memory.working_set / node.memory.capacity → 实际水位
+  ┌─ 实际水位 < 70% → 超分但无实际压力，可优化 limit
+  └─ 实际水位 > 70% → 有实质 OOM 风险 → 立即扩容
+
+Step 3: 钻取高内存 limit Pod
+  pod.memory.limit 倒排 → 结合 pod.memory.working_set 判断真实需求
+
+Step 4: 修复
+  → 降低虚高 memory limit
+  → 对确需大内存的 Pod 增加 resource reservation（保证节点有足够 allocatable）
+
+Step 5: 验证
+  观察 24h 内 OOMKill 事件是否归零
+```
+
+---
+
+## 7. 安全层
 
 ### SG-01/SG-02: 安全组 0.0.0.0/0 高危规则
 
@@ -311,7 +411,7 @@ Step 4: 验证
 
 ---
 
-## 7. 综合链路
+## 8. 综合链路
 
 ### FULL-01: 全链路正常但用户报障
 
@@ -354,4 +454,5 @@ Step 4: 查第三方依赖
 3. 链路上游优先：SLB 异常先于 ECS 排查
 4. 数据层优先于计算层：RDS 异常比 ECS 异常更影响用户感知
 5. 确认性优先：有明确证据的排前面，"可能"的排后面
+6. **ACK 超分优先**：limits 超卖比 > 150% 且实际负载 > 70% → 立即标记 Critical
 ```

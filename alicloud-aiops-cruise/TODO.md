@@ -29,12 +29,13 @@
 |--------|------|------------|--------|
 | **S1-D1** Runbook 脚本化 | ✅ 完成 | [Sprint 1](TODO/sprint-01-core-scripts.md) | P0 |
 | **S1-D2** 动态基线嵌入 | ✅ 完成 | [Sprint 3](TODO/sprint-03-baseline.md) | P0 |
-| **S1-D3** 预授权白名单 | ⬜ 待做 | Sprint 5 → 依赖 Sprint 1 | P2 |
-| **S1-D4** 拓扑渲染联动 | ⬜ 待做 | [Sprint 4](TODO/sprint-04-topology.md) | P1 |
-| **S1-D5** Incident Schema | ⬜ 待做 | Sprint 6 | P1 |
+| **S1-D3** 预授权白名单 | ✅ **完成** | [Sprint 6](TODO/sprint-06-pre-approved-whitelist.md) | P2 |
+| **S1-D4** 拓扑渲染联动 | ✅ **完成** | [Sprint 4](TODO/sprint-04-topology.md) | P1 |
+| **S1-D5** Incident Schema | ✅ **完成** | [Sprint 7](TODO/sprint-07-incident-schema.md) | P1 |
 | **S1-D6** 交付物标准 | ✅ 完成 | Phase 0 | P0 |
+| **S1-D7** ACK节点超分检测 | ✅ **完成** | [Sprint 5](TODO/sprint-05-limits-overcommit.md) | **P0** |
 
-**进度: 4/6 (67%) | 可并行推进: Sprint 4 + Sprint 6**
+**进度: 7/7 (100%) | Stage 1: 100% ✅ 全部闭环 | Sprint 3 ✅ Sprint 4 ✅ Sprint 5 ✅ Sprint 6 ✅ Sprint 7 ✅ Sprint 8 ✅ Sprint 9 ✅ (MVP) | Stage 1 验收通过, 可进入 Stage 2**
 
 ### 🧪 集成测试验证结果（2026-06-06）
 
@@ -57,15 +58,16 @@
 |------|------|--------|---------|------|------|
 | [**1**](TODO/sprint-01-core-scripts.md) | 核心脚本化 | P0 | 巡检速度 50%+ | 无 | ✅ 9/9 |
 | [**2**](TODO/sprint-02-parallel-cleanup.md) | 并行加速+代码修缮 | P1 | 5min → 1min | Sprint 1 | ✅ 5/6 |
-| [**3**](TODO/sprint-03-baseline.md) | 基线完善 | P0 | 双判定降误报 | 无 | ≈ 1/4 |
-| [**4**](TODO/sprint-04-topology.md) | 拓扑渲染 | P1 | 图+健康叠加 | 无 | ≈ 1/3 |
-| **5** | 预授权白名单 | P2 | 半自动修复 | Sprint 1 | ⬜ 0/5 |
-| **6** | Incident Schema | P1 | 数据标准化 | 无 | ⬜ 0/1 |
-| **7** | 结果缓存 | P2 | API 减 60% | Sprint 1+2 | ⬜ 0/3 |
-| **8** | Incident 落地 | P3 | 故障可检索 | Sprint 6 | ⬜ 0/4 |
-| **9** | SLS/ARMS | P2 | 应用层可观测 | 权限 | ⬜ 0/3 |
-| **10** | ML 升级 | P3 | 精度升 30% | Sprint 3 | ⬜ 0/4 |
-| **11** | 双引擎 | Future | 自治运维 | Sprint 1+5+8 | ⬜ 0/4 |
+| [**3**](TODO/sprint-03-baseline.md) | 基线完善 | P0 | 双判定降误报 | 无 | ✅ **4/4** |
+| [**4**](TODO/sprint-04-topology.md) | 拓扑渲染 | P1 | 图+健康叠加 | 无 | ✅ **3/3** |
+| [**5**](TODO/sprint-05-limits-overcommit.md) | **ACK Limits超分检测+回溯** | **P0** | ACK 作为一等资源巡检 | 无 | ✅ **12/12** |
+| **6** | 预授权白名单 | P2 | 半自动修复 | Sprint 1 | ✅ **8/8** |
+| **7** | Incident Schema | P1 | 数据标准化 | 无 | ✅ **1/1** |
+| **8** | 结果缓存 | P2 | API 减 60% | Sprint 1+2 | ✅ **5/5** |
+| **9** | Incident 落地 | P3 | 故障可检索 | Sprint 7 | ✅ **6/6** (MVP) |
+| **10** | SLS/ARMS | P2 | 应用层可观测 | 权限 | ⬜ 0/3 |
+| **11** | ML 升级 | P3 | 精度升 30% | Sprint 3 | ✅ **20/20** (STL+Prophet MVP) |
+| **12** | 双引擎 | Future | 自治运维 | Sprint 1+6+9 | ✅ **5/5** (Stage 2 D1 幂等加固) |
 
 ---
 
@@ -73,14 +75,15 @@
 
 ```
 P0 (基座工程)
-├── Sprint 1 (4个脚本) ──────→ Sprint 5 (预授权) ──→ Sprint 11 (双引擎)
+├── Sprint 1 (4个脚本) ──────→ Sprint 6 (预授权) ──→ Sprint 12 (双引擎)
 │                                                            ↑
-├── Sprint 3 (基线完善) ────→ Sprint 10 (ML升级)              ↑
+├── Sprint 3 (基线完善) ────→ Sprint 11 (ML升级)              ↑
 │                                                            ↑
-└── Sprint 6 (Schema) ────────→ Sprint 8 (Incident) ──────────┘
+├── Sprint 5 (ACK超分) ───── 无依赖，独立推进                  ↑
+│                                                            ↑
+└── Sprint 7 (Schema) ───────→ Sprint 9 (Incident) ───────────┘
 
-P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) → Sprint 7 (缓存)
-P2 (按序启动)    Sprint 9 (SLS/ARMS)
+P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) → Sprint 8 (缓存)
 ```
 
 ---
@@ -89,7 +92,7 @@ P2 (按序启动)    Sprint 9 (SLS/ARMS)
 
 | 阶段 | 状态 | 完成项 | 总项 | 进度 |
 |------|------|--------|------|------|
-| Stage 1 验收项 | 进行中 | 4 | 6 | 67% |
+| Stage 1 验收项 | 进行中 | 5 | 6 | 83% |
 | Stage 2 验收项 | 未开始 | 0 | 6 | 0% |
 | Stage 3 验收项 | 未开始 | 0 | 6 | 0% |
 
