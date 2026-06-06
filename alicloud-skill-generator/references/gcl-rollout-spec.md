@@ -435,7 +435,7 @@ Two rows pointing to `rubric.md` and `prompt-templates.md`.
 
 ### Step 7: Run 2-round self-review
 
-Per `AGENTS.md` §11:
+Per `AGENTS.md` §11 (see [Post-Update Self-Review](../../docs/post-update-self-review.md)):
 
 - **Round 1** (C1–C6): frontmatter, trigger/scope, variables, 5 core
   standards, Well-Architected, Token Efficiency.

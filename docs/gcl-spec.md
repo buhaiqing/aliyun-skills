@@ -215,9 +215,9 @@ are common and a second pass is cheap).
 - ❌ **Trace leaks secrets** — `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, Redis/RDS passwords, etc. must be sanitized
   per §6 → banned
 
-## 10. Relationship with §11 Self-Review (AGENTS.md)
+## 10. Relationship with Post-Update Self-Review (AGENTS.md)
 
-| Aspect | §11 Post-Update Self-Review | §12 GCL |
+| Aspect | Post-Update Self-Review ([docs/post-update-self-review.md](post-update-self-review.md)) | §12 GCL |
 |---|---|---|
 | When | After a `SKILL.md` / `references/*` is **edited** | During **runtime execution** of that skill |
 | Who | The author Agent (single context) | Generator + Critic (isolated contexts) + Orchestrator |

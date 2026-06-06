@@ -372,7 +372,12 @@ instance:
 - SKILL.md 已有完整 Pre-flight → Execute → Validate → Recover
 - `assets/example-config.yaml` 中的完整流程示例和 SDK 文件中的 Complete Setup 函数是重复内容 → 删除
 
-### TE 边界 — 不可压缩的内容
+### TE-7: 专业内容分层
+- AIOps/FinOps 等深度分析放 `references/advanced/`，仅在用户触发深度诊断时加载
+- SQL 执行等安全敏感操作放在 `references/advanced/sql-execution.md`，标注为 **Security-Sensitive**，要求在 Pre-flight Checks 中增加显式确认行
+- **收益**：每个 agent 会话节省 ~3,000-8,000 tokens（取决于 advanced/ 内容量）
+
+### TE Boundary — Non-compressible Content
 | 可压缩 | 不可压缩 |
 |--------|---------|
 | DocStrings、静态表格、重复流程 | Agent 可执行命令本身（参数、JSON paths） |
