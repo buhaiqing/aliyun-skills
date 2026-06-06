@@ -953,17 +953,11 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 
 ### Operation: Intelligent Inspection（智能巡检）
 
-一键执行ACK集群的全面健康检查，整合集群状态 + 节点状态 + CMS指标。
+一键执行ACK集群的全面健康检查。整合集群状态 + 节点状态 + CMS 指标 + 综合评分。Full CLI script at [references/intelligent-inspection.md](references/intelligent-inspection.md).
 
-#### 执行流程
+**5-step workflow:** Cluster state check → Node health → CPU/metrics via CMS → Addon status → Scoring report.
 
-1. 调用 `DescribeClusterDetail` 检查集群状态
-2. 调用 `DescribeClusterNodes` 检查所有节点状态
-3. 调用 `alicloud-cms-ops` 查询集群CPU/内存指标
-4. 调用 `alicloud-ecs-ops` 检查异常节点的ECS状态
-5. 综合评分并生成巡检报告
-
-#### 巡检评分标准
+**Scoring criteria:**
 
 | 维度 | 评分依据 | 权重 |
 |------|---------|------|
@@ -972,102 +966,6 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 | 集群CPU使用率 | <70%=100, 70-85%=60, >85%=0 | 20% |
 | 集群内存使用率 | <75%=100, 75-90%=60, >90%=0 | 20% |
 | Addon状态 | 全部正常=100, 有异常=0 | 10% |
-
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# ack-intelligent-inspection.sh
-# Usage: ./ack-intelligent-inspection.sh <ClusterId> <RegionId>
-
-CLUSTER_ID="$1"
-REGION="$2"
-SCORE=0
-
-echo "=== ACK Cluster Intelligent Inspection ==="
-echo "Cluster: $CLUSTER_ID"
-echo "Region: $REGION"
-echo ""
-
-# 1. Cluster state check
-STATE=$(aliyun cs GET /clusters/$CLUSTER_ID | jq -r '.state')
-echo "[1/5] Cluster State: $STATE"
-[ "$STATE" = "running" ] && SCORE=$((SCORE + 25))
-
-# 2. Node health check
-NODES=$(aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq -r '.nodes[] | .node_status')
-TOTAL=$(echo "$NODES" | wc -l | tr -d ' ')
-READY=$(echo "$NODES" | grep -c "Ready" || true)
-if [ "$TOTAL" -gt 0 ]; then
-  RATIO=$((READY * 100 / TOTAL))
-  echo "[2/5] Nodes Ready: $READY/$TOTAL ($RATIO%)"
-  [ "$RATIO" -eq 100 ] && SCORE=$((SCORE + 25))
-  [ "$RATIO" -ge 90 ] && [ "$RATIO" -lt 100 ] && SCORE=$((SCORE + 15))
-else
-  echo "[2/5] Nodes: N/A"
-fi
-
-# 3. Cluster CPU usage
-CPU=$(aliyun cms DescribeMetricList \
-  --Namespace acs_k8s_dashboard \
-  --MetricName CpuUsage \
-  --Dimensions "[{\"clusterId\":\"$CLUSTER_ID\"}]" \
-  --Period 60 \
-  --StartTime "$(date -u -v-15M +%Y-%m-%dT%H:%M:%SZ)" \
-  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
-echo "[3/5] Cluster CPU: $CPU%"
-
-# 4. Cluster memory usage
-MEM=$(aliyun cms DescribeMetricList \
-  --Namespace acs_k8s_dashboard \
-  --MetricName MemoryUsage \
-  --Dimensions "[{\"clusterId\":\"$CLUSTER_ID\"}]" \
-  --Period 60 \
-  --StartTime "$(date -u -v-15M +%Y-%m-%dT%H:%M:%SZ)" \
-  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
-echo "[4/5] Cluster Memory: $MEM%"
-
-# 5. Addon status
-ADDONS=$(aliyun cs GET /clusters/$CLUSTER_ID/addons | jq -r '.addons[] | .state')
-ADDON_OK=$(echo "$ADDONS" | grep -c "active" || true)
-ADDON_TOTAL=$(echo "$ADDONS" | wc -l | tr -d ' ')
-echo "[5/5] Addons Active: $ADDON_OK/$ADDON_TOTAL"
-[ "$ADDON_OK" -eq "$ADDON_TOTAL" ] && [ "$ADDON_TOTAL" -gt 0 ] && SCORE=$((SCORE + 10))
-
-echo ""
-echo "=== Inspection Score: $SCORE/100 ==="
-if [ "$SCORE" -ge 80 ]; then
-  echo "Status: HEALTHY"
-elif [ "$SCORE" -ge 60 ]; then
-  echo "Status: WARNING - Review recommended"
-else
-  echo "Status: CRITICAL - Immediate action required"
-fi
-```
-
-#### 输出格式
-
-```json
-{
-  "inspection_time": "2026-05-14T10:00:00Z",
-  "resource_type": "ack",
-  "resource_id": "c-xxx",
-  "overall_score": 85,
-  "dimensions": [
-    {"name": "集群状态", "score": 100, "status": "healthy"},
-    {"name": "节点Ready比例", "score": 100, "status": "healthy", "value": "5/5"},
-    {"name": "集群CPU使用率", "score": 80, "status": "warning", "value": "72%"},
-    {"name": "集群内存使用率", "score": 60, "status": "critical", "value": "88%"},
-    {"name": "Addon状态", "score": 100, "status": "healthy"}
-  ],
-  "recommendations": [
-    "集群内存使用率88%超过警告阈值，建议扩容节点或优化调度",
-    "集群CPU使用率72%超过警告阈值，建议检查工作负载"
-  ]
-}
-```
 
 ## Prerequisites
 
@@ -1104,356 +1002,39 @@ fi
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to ACK.
+Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html).
 
-### 安全 (Security)
-
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `cs:Describe*`, `CreateCluster` scoped to `acs:cs:*:*:cluster/*` |
-| **Credentials** | Use `{{env.*}}` only. Use STS for temporary tokens on worker nodes |
-| **Network** | Private API server endpoint. Enable network policies (Calico/Terway). Node pools in VPC |
-| **Workload Security** | Enable PSS/OPA Gatekeeper. Restrict privileged containers. Enable audit logging |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | Multi-AZ VSwitches for worker nodes. Auto-scaling node pools. Pod disruption budgets |
-| **面向精细的运维管控** | Monitor cluster API server latency, node memory/CPU pressure, pod restart rates |
-| **面向风险的应急快恢** | Snapshot etcd before upgrades. **RTO:** < 10 min for node failure. **RPO:** 0 (etcd backup) |
-
-#### DR Runbook
-```
-Phase 1: Verify — Check cluster API health, node status, pod distribution
-Phase 2: Restore — Replace unhealthy nodes or restore etcd from snapshot
-Phase 3: Validate — Pod scheduling, service connectivity, application health
-```
-
-### 成本 (Cost)
-
-| Billing | Best For | Savings |
-|---------|----------|---------|
-| 按量付费 ECS | Dev/test, volatile workloads | N/A |
-| 包年包月 ECS | Stable production nodes | Up to 85% |
-| Spot instances | Fault-tolerant/batch workloads | Up to 90% |
-
-**Waste:** Nodes with CPU < 10% for 7d → downsize. Idle LoadBalancers → delete. Over-provisioned resource quotas → reduce.
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `cs:Describe*`, `CreateCluster`. Private API server endpoint. Enable network policies + PSS/OPA Gatekeeper. Enable audit logging |
+| **Stability** | Multi-AZ VSwitches. Auto-scaling node pools. Pod disruption budgets. Snapshot etcd before upgrades. RTO < 10min for node failure, RPO=0 |
+| **Cost** | Postpaid dev/test, Prepaid up to 85% off, Spot up to 90%. Nodes with CPU < 10% for 7d → downsize. Idle LBs → delete |
+| **Efficiency** | HPA + cluster autoscaler. Helm/GitOps pipelines. JSON output for CI/CD |
+| **Performance** | cpu_utilization > 80% scale up, < 30% down. memory_utilization > 85% alert. Monitor kubeapiserver latency |
 
 ---
 
 ## FinOps Operations (成本优化运维)
 
-### Operation: Resource Optimization Analysis (资源优化分析)
-
-分析集群资源利用率，识别浪费和优化机会。
-
-#### 执行流程
-
-1. 收集节点资源使用率指标 (CMS)
-2. 分析 Pod 资源请求 vs 实际使用
-3. 识别闲置节点 (CPU < 10% 持续 7天)
-4. 识别过度配置的 Pod (请求 > 实际使用 50%)
-5. 生成优化建议报告
-
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# ack-resource-optimization.sh
-# Usage: ./ack-resource-optimization.sh <ClusterId> <RegionId>
-
-CLUSTER_ID="$1"
-REGION="$2"
-
-echo "=== ACK Resource Optimization Analysis ==="
-
-# 1. Get node metrics from CMS
-START=$(date -u -v-7d +%Y-%m-%dT%H:%M:%SZ)
-END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-echo ""
-echo "### Node Resource Utilization (7-day average) ###"
-
-# Get node list
-NODES=$(aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq -r '.nodes[] | .instance_id')
-
-for NODE_ID in $NODES; do
-  CPU=$(aliyun cms DescribeMetricList \
-    --Namespace acs_ecs_dashboard \
-    --MetricName cpu.utilization \
-    --Dimensions "[{\"instanceId\":\"$NODE_ID\"}]" \
-    --Period 86400 \
-    --StartTime "$START" \
-    --EndTime "$END" \
-    --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
-  
-  MEM=$(aliyun cms DescribeMetricList \
-    --Namespace acs_ecs_dashboard \
-    --MetricName memory.utilization \
-    --Dimensions "[{\"instanceId\":\"$NODE_ID\"}]" \
-    --Period 86400 \
-    --StartTime "$START" \
-    --EndTime "$END" \
-    --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
-  
-  echo "Node: $NODE_ID | CPU: ${CPU}% | Memory: ${MEM}%"
-  
-  # Flag idle nodes
-  if [ "${CPU}" != "N/A" ] && [ $(echo "${CPU} < 10" | bc) -eq 1 ]; then
-    echo "  ⚠️  IDLE NODE: CPU < 10% for 7 days - Consider downsizing"
-  fi
-done
-
-# 2. Pod resource request vs usage analysis (via kubeconfig)
-echo ""
-echo "### Pod Resource Over-provisioning ###"
-aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig-$CLUSTER_ID
-export KUBECONFIG=/tmp/kubeconfig-$CLUSTER_ID
-
-kubectl top pods -A --sort-by=cpu | head -20
-kubectl get pods -A -o custom-columns='NAMESPACE:.metadata.namespace,POD:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,MEM_REQ:.spec.containers[*].resources.requests.memory' | head -30
-
-# 3. PVC utilization analysis
-echo ""
-echo "### PVC Storage Utilization ###"
-kubectl get pvc -A -o custom-columns='NAMESPACE:.metadata.namespace,PVC:.metadata.name,STATUS:.status.phase,CAPACITY:.spec.resources.requests.storage'
-
-echo ""
-echo "=== Optimization Recommendations ==="
-echo "1. Review idle nodes for downsizing or removal"
-echo "2. Adjust Pod resource requests to match actual usage"
-echo "3. Resize PVCs that are over-provisioned"
-```
-
-#### 输出格式
-
-```json
-{
-  "analysis_time": "2026-05-26T10:00:00Z",
-  "cluster_id": "c-xxx",
-  "optimization_score": 65,
-  "idle_resources": [
-    {"type": "node", "id": "i-xxx", "cpu_avg": "8%", "recommendation": "downsize or remove"}
-  ],
-  "over_provisioned_pods": [
-    {"namespace": "default", "pod": "web-app", "cpu_request": "4", "cpu_usage": "1.2", "waste_ratio": "70%"}
-  ],
-  "storage_over_provisioned": [
-    {"namespace": "data", "pvc": "data-pvc", "capacity": "500Gi", "usage_estimate": "100Gi"}
-  ],
-  "estimated_monthly_savings": "¥2,400",
-  "actions": [
-    "Remove 2 idle nodes → Save ¥800/month",
-    "Reduce Pod CPU requests → Save ¥600/month",
-    "Resize PVCs → Save ¥1,000/month"
-  ]
-}
-```
-
----
-
-### Operation: Idle Resource Detection (闲置资源检测)
-
-识别集群中闲置的节点、Pod、PVC、SLB。
-
-#### 闲置判定标准
-
-| 资源类型 | 闲置判定标准 | 建议操作 |
-|----------|-------------|----------|
-| Node | CPU < 10% 持续 7天 | 缩容节点池或删除 |
-| Pod | Running 但无流量 24小时 | 检查应用状态，停止 |
-| PVC | Bound 但 Pod 无挂载 7天 | 检查使用，删除 |
-| SLB | 无后端健康服务器 24小时 | 检查关联，删除 |
-
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# ack-idle-resource-detection.sh
-# Usage: ./ack-idle-resource-detection.sh <ClusterId>
-
-CLUSTER_ID="$1"
-echo "=== ACK Idle Resource Detection ==="
-
-# 1. Idle nodes
-echo ""
-echo "### Idle Nodes (CPU < 10% for 7 days) ###"
-aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig
-export KUBECONFIG=/tmp/kubeconfig
-
-kubectl top nodes --sort-by=cpu
-
-# 2. Idle pods (no network traffic)
-echo ""
-echo "### Potentially Idle Pods ###"
-kubectl get pods -A -o wide | awk '{print $1, $2, $7}' | while read NS POD IP; do
-  if [ "$IP" != "<none>" ]; then
-    # Check if pod has recent logs
-    LAST_LOG=$(kubectl logs $POD -n $NS --since=24h 2>/dev/null | wc -l)
-    if [ "$LAST_LOG" -eq 0 ]; then
-      echo "Pod: $NS/$POD - No logs in 24h - Potentially idle"
-    fi
-  fi
-done
-
-# 3. Idle PVCs
-echo ""
-echo "### Idle PVCs (Bound but unused) ###"
-kubectl get pvc -A -o json | jq -r '.items[] | select(.status.phase=="Bound") | "\(.metadata.namespace)/\(.metadata.name)"' | while read PVC; do
-  NS=$(echo $PVC | cut -d/ -f1)
-  NAME=$(echo $PVC | cut -d/ -f2)
-  # Check if any pod mounts this PVC
-  MOUNTED=$(kubectl get pods -n $NS -o json | jq -r '.items[] | select(.spec.volumes[]?.persistentVolumeClaim?.claimName=="$NAME")' | wc -l)
-  if [ "$MOUNTED" -eq 0 ]; then
-    echo "PVC: $PVC - No pods mounting - Potentially idle"
-  fi
-done
-
-# 4. Idle SLBs (delegate to alicloud-slb-ops)
-echo ""
-echo "### SLBs Associated with Cluster ###"
-aliyun cs GET /clusters/$CLUSTER_ID | jq -r '.cluster_id'
-echo "Note: For SLB idle detection, delegate to alicloud-slb-ops"
-```
-
----
-
-### Operation: Cost Allocation by Namespace (Namespace 成本分摊)
-
-计算各 Namespace 的资源消耗和成本分摊。
-
-#### 成本分摊公式
-
-```
-Namespace_Cost = Σ(Pod_CPU_Request / Node_CPU_Total × Node_Hourly_Cost) + Σ(Pod_Memory_Request / Node_Memory_Total × Node_Hourly_Cost) + Σ(PVC_Size × Disk_Price_GB_Month / Month_Days)
-```
-
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# ack-cost-allocation.sh
-# Usage: ./ack-cost-allocation.sh <ClusterId> <NodeHourlyCost> <DiskPriceGB>
-
-CLUSTER_ID="$1"
-NODE_COST="$2"  # e.g., ¥1.5/hour
-DISK_COST="$3"  # e.g., ¥0.35/GB/month
-
-aliyun cs GET /k8s/$CLUSTER_ID/user_config > /tmp/kubeconfig
-export KUBECONFIG=/tmp/kubeconfig
-
-echo "=== Namespace Cost Allocation ==="
-echo "Node Hourly Cost: ¥$NODE_COST"
-echo "Disk Cost: ¥$DISK_COST/GB/month"
-
-# Get namespace resource requests
-kubectl get pods -A -o json | jq -r '
-  .items[] | 
-  {
-    ns: .metadata.namespace,
-    cpu_req: .spec.containers[].resources.requests.cpu,
-    mem_req: .spec.containers[].resources.requests.memory
-  } | 
-  group_by(.ns) | 
-  map({namespace: .[0].ns, total_pods: length})
-' > /tmp/ns-stats.json
-
-echo ""
-echo "### Resource Requests by Namespace ###"
-kubectl top pods -A | awk 'NR>1 {ns[$1]++; cpu[$1]+=$2; mem[$1]+=$3} END {for (n in ns) print n, ns[n], cpu[n], mem[n]}'
-
-echo ""
-echo "### PVC Usage by Namespace ###"
-kubectl get pvc -A -o custom-columns='NAMESPACE:.metadata.namespace,PVC:.metadata.name,CAPACITY:.spec.resources.requests.storage' | awk 'NR>1 {ns[$1]++; cap[$1]+=$2} END {for (n in ns) print n, ns[n], cap[n]}'
-
-echo ""
-echo "Note: For precise cost calculation, integrate with billing data via alicloud-billing-ops"
-```
-
----
-
-### Operation: Spot Instance Optimization (竞价实例优化)
-
-分析竞价实例使用情况和优化建议。
-
-#### 竞价实例最佳实践
-
-| 场景 | 建议 | 风险控制 |
-|------|------|----------|
-| 批处理任务 | 使用 Spot | 多 AZ 分布 + 重试机制 |
-| 无状态服务 | Spot + 按量混合 | 混合节点池配置 |
-| 有状态服务 | 避免 Spot | 使用包年包月或按量 |
-| 关键数据库 | 禁止 Spot | 专用节点池 |
-
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# ack-spot-optimization.sh
-# Usage: ./ack-spot-optimization.sh <ClusterId>
-
-CLUSTER_ID="$1"
-echo "=== ACK Spot Instance Optimization ==="
-
-# Get node pools
-echo ""
-echo "### Node Pool Spot Instance Usage ###"
-aliyun cs GET /clusters/$CLUSTER_ID/nodepools | jq '.nodepools[] | {name, nodepool_id, spot_strategy, instance_type, desired_size}'
-
-# Check spot instances in cluster
-echo ""
-echo "### Spot Instances in Cluster ###"
-aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq '.nodes[] | select(.spot_strategy=="SpotAsPriceGo" or .spot_strategy=="SpotWithPriceLimit") | {instance_id, instance_type, spot_strategy}'
-
-echo ""
-echo "### Recommendations ###"
-echo "1. Use Spot instances for batch/stateless workloads"
-echo "2. Mix Spot + On-demand for resilience (e.g., 70% Spot + 30% On-demand)"
-echo "3. Configure spot-autoscaler-addon for automatic spot instance management"
-echo "4. Multi-AZ distribution to reduce spot interruption impact"
-```
-
----
-
-### Operation: Budget Alert Integration (预算告警集成)
-
-配置集群成本预算告警。
-
-#### 预算告警配置
-
-```bash
-# Budget threshold alerts via CloudMonitor
-# Configure alert when cluster cost exceeds budget threshold
-
-aliyun cms PutMetricRuleTargets \
-  --RuleId "ack-cost-alert" \
-  --Namespace "acs_user_dashboard" \
-  --MetricName "cluster_monthly_cost" \
-  --Threshold "500" \
-  --ComparisonOperator "GreaterThanThreshold" \
-  --Statistics "Average" \
-  --Period "86400" \
-  --ContactGroups "ops-team"
-```
-
-#### 成本告警规则建议
-
-| 告警 | 阈值 | 严重等级 | 响应 |
-|------|------|----------|------|
-| 月度成本超标 | >80% 预算 | P2 | 审查资源使用，识别浪费 |
-| 日成本激增 | >150% 基线 | P3 | 检查自动扩缩容活动 |
-| 闲置资源累积 | >3个闲置节点 | P3 | 执行闲置资源清理 |
-
-### 效率 (Efficiency)
+Cost optimization workflows for ACK clusters. **Only load the specific reference when the user asks for that capability.**
+
+| Operation | Purpose | Reference |
+|-----------|---------|-----------|
+| **Resource Optimization Analysis** | Analyze cluster resource utilization, identify waste, generate optimization recommendations | Full CLI script and examples at [references/finops-resource-optimization.md](references/finops-resource-optimization.md) |
+| **Idle Resource Detection** | Identify idle nodes, pods, PVCs, and SLBs | Full spec at [references/finops-idle-detection.md](references/finops-idle-detection.md) |
+| **Cost Allocation by Namespace** | Calculate per-namespace resource consumption and cost split | Full script at [references/finops-cost-allocation.md](references/finops-cost-allocation.md) |
+| **Spot Instance Optimization** | Analyze spot instance usage and optimization suggestions | Full guide at [references/finops-spot-optimization.md](references/finops-spot-optimization.md) |
+| **Budget Alert Integration** | Configure cluster budget threshold alerts | Full spec at [references/finops-budget-alert.md](references/finops-budget-alert.md) |
+
+### Efficiency
 
 - **Auto-scaling:** HPA for pods, cluster autoscaler for nodes
 - **GitOps:** Cluster state managed via Helm/GitOps pipelines
 - **CI/CD:** JSON output by default, compatible with pipelines
 
-### 性能 (Performance)
+### Performance
 
 | Metric | CMS Namespace | Scale Up | Scale Down | Window |
 |--------|--------------|----------|------------|--------|

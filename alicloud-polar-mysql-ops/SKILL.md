@@ -763,217 +763,17 @@ PolarDB 慢查询分析报告:
 
 ---
 
-## PolarDB MySQL Cruise (Health Check Workflow)
+## FinOps & AIOps Sections
 
-For comprehensive cluster health assessment when user requests "巡检" or "health check":
+Professional cost optimization, capacity prediction, and anomaly detection workflows. **Only load the specific reference when the user asks for that capability** — do not read during standard operations.
 
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| 1 | **DescribeDBClusterAttribute** | Verify cluster exists, get status | HALT if NotFound |
-| 2 | **DescribeDBNodes** | Check all node health statuses | Alert if Unhealthy node |
-| 3 | **DescribeDBClusterEndpoints** | Verify connectivity endpoints | Log warning if no endpoint |
-| 4 | **DescribeBackupPolicy** | Check backup schedule configured | Alert if no backup policy |
-| 5 | **DescribeBackups** | Verify recent backup success | Alert if > 24h no backup |
-| 6 | **DescribeAccounts** | Audit accounts | Warn if no accounts |
-| 7 | **DescribeDatabases** | Check database count | Log for awareness |
-
----
-
-## FinOps: PolarDB Node-Level Resource Analysis
-
-For comprehensive cost optimization through node-level resource efficiency analysis.
-
-### Extended Cruise Workflow (Step 8)
-
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| **8** | **DescribeDBNodes + GetMetricStatisticsData** | Node-level CPU/Memory efficiency | Alert if reader node CPU < 30% |
-
-### Quick Analysis
-
-```bash
-# Get all nodes with roles (RegionId optional but recommended)
-aliyun polardb DescribeDBNodes \
-  --DBClusterId "{{user.db_cluster_id}}" \
-  --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
-  --output cols=DBNodeId,Role,ZoneId,HealthStatus rows=Items.DBDetail[]
-```
-
-### Output Example
-
-```
-PolarDB 节点级分析:
-├── 主节点 (polar-xxx-writer) - CPU: avg 45%, peak 78%
-├── 只读节点1 (polar-xxx-reader-1) - CPU: avg 8% ⚠️ 利用率低
-├── 只读节点2 (polar-xxx-reader-2) - CPU: avg 35%
-└── 优化建议: 移除只读节点1 (节省 ￥800/月)
-```
-
-> **完整实现**请参阅: [references/advanced/finops-node-analysis.md](references/advanced/finops-node-analysis.md)
-
----
-
-## FinOps: PolarDB Storage Tier (PSLevel) Cost Optimization
-
-For comprehensive cost optimization through storage tier (PSLevel) efficiency analysis.
-
-### Extended Cruise Workflow (Step 9)
-
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| **9** | **DescribeDBClusterAttribute + CMS Metrics** | Storage tier suitability + pack optimization | Alert if IOPS < 30% tier capacity |
-
-### Analysis Scope
-
-- **存储层级适配度**: PSLevel1-5 性能与成本对比，识别过度/不足配置
-- **存储包购买建议**: 基于当前用量和增长趋势推荐最优规格
-- **数据分层策略**: 热/冷数据分布分析，归档路径建议
-
-### Output Example
-
-```
-PolarDB 存储层级分析:
-├── 当前配置: PSLevel2 - IOPS利用率24% ⚠️ 过度配置
-├── 建议降级: PSLevel3 - 预期节省23%
-├── 存储包建议: 1TB包 - 月度节省￥170
-└── 数据分层: 冷数据77% - 归档至PSLevel5节省65%
-```
-
-> **完整实现**请参阅: [references/advanced/finops-storage-tier-analysis.md](references/advanced/finops-storage-tier-analysis.md)
-
----
-
-## AIOps: PolarDB Storage Space Trend Prediction
-
-For predictive capacity planning through storage growth trend analysis.
-
-### Extended Cruise Workflow (Step 10)
-
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| **10** | **CMS GetMetricStatisticsData + Trend Analysis** | Storage growth prediction (30/60/90 days) | Alert if predicted to reach 85% within 30 days |
-
-### Analysis Scope
-
-- **存储增长预测**: 基于30天历史数据预测 30/60/90 天存储增长趋势
-- **阈值到达时间**: 预测达到 85%/95%/100% 阈值的具体日期
-- **扩容建议生成**: 根据预警级别自动触发扩容建议和存储包购买推荐
-
-### Prediction Accuracy
-
-| Algorithm | Accuracy Target | Use Case |
-|-----------|-----------------|----------|
-| Linear Regression | 85-95% | 稳定增长趋势 |
-| Weighted Moving Average | 82-92% | 波动型增长 |
-| Exponential Smoothing | 88-95% | 季节性波动 |
-
-### Output Example
-
-```
-PolarDB 存储空间趋势预测:
-├── 当前使用: 750.5 GB / 1000 GB (75.05%)
-├── 增长分析: 日增 0.25%, 月增 7.5%
-├── 未来预测:
-│   ├── 30天后: 825.5 GB (82.6%)
-│   ├── 60天后: 900.5 GB (90.1%) ⚠️
-│   └── 90天后: 975.5 GB (97.6%) 🚨
-├── 阈值预测:
-│   ├── 85%预警: 40天后 (2026-07-05)
-│   ├── 95%高危: 80天后 (2026-08-15)
-│   └── 100%满载: 100天后 (2026-09-04)
-└── 扩容建议: 增加 250GB + 购买 500GB 存储包
-```
-
-> **完整实现**请参阅: [references/advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md)
-
----
-
-## AIOps: PolarDB Connection Trend Prediction
-
-For proactive connection bottleneck prevention through business cycle analysis.
-
-### Extended Cruise Workflow (Step 11)
-
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| **11** | **CMS GetMetricStatisticsData + Cycle Detection** | Connection peak prediction | Alert if predicted peak > 80% of max_connections |
-
-### Analysis Scope
-
-- **业务周期识别**: 检测日/周/月周期模式，识别高峰时段
-- **高峰连接预测**: 预测下一个高峰时段的连接数峰值
-- **瓶颈风险评估**: 评估 80%/90%/100% 阈值风险，提前预警
-
-### Cycle Detection Confidence
-
-| Cycle Type | Detection Method | Confidence Target |
-|------------|------------------|-------------------|
-| Daily Cycle | Hourly pattern analysis | > 80% |
-| Weekly Cycle | Workday vs weekend analysis | > 70% |
-| Monthly Cycle | STL decomposition | > 85% |
-
-### Output Example
-
-```
-PolarDB 连接数趋势预测:
-├── 当前连接: 2,850 / 5,000 (57.0%)
-├── 周期检测:
-│   ├── 日周期: 高峰 10:00-12:00 (置信度 88%)
-│   └── 周周期: 高峰 周一/周二 (置信度 72%)
-├── 高峰预测:
-│   ├── 下一个高峰: 3,800 (76.0%) @ 2026-05-27 10:00
-│   └── 本周高峰: 4,200 (84.0%) @ 2026-05-28 10:00
-├── 阈值风险:
-│   ├── 80%预警: ⚠️ 将达到 (medium)
-│   ├── 90%高危: ⚠️ 将达到 (high)
-│   └── 100%上限: ✅ 不会超过
-└── 优化建议: 调整 max_connections → 6000，预热连接池
-```
-
-> **完整实现**请参阅: [references/advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md)
-
----
-
-## AIOps: PolarDB Anomaly Detection
-
-For automated performance anomaly detection with root cause correlation.
-
-### Extended Cruise Workflow (Step 12)
-
-| Step | Operation | Purpose | Alert Threshold |
-|------|-----------|---------|-----------------|
-| **12** | **Multi-Metric Analysis + Correlation** | Anomaly detection + root cause tracing | Alert on CPU spike > 50% sudden increase |
-
-### Detection Architecture
-
-| Layer | Algorithm | Detection Type |
-|-------|-----------|----------------|
-| Layer 1 | Threshold comparison | Static threshold (CPU > 85%, SlowQueries > 50/h) |
-| Layer 2 | Trend analysis | Moving average + slope (连续3周期上升 > 10%) |
-| Layer 3 | Sudden spike detection | Statistical deviation (突增 > 50%) |
-
-### Root Cause Chain Model
-
-```
-异常传播链路:
-CPU Spike (突增) → Slow Query Increase (慢查询增加) → Lock Wait (锁等待) → Connection Bottleneck (连接瓶颈)
-```
-
-### Output Example
-
-```
-PolarDB 异常检测报告:
-├── 主异常: CPU突增 85.2% (基线 33% → 当前 85.2%, 突增 52%)
-├── 关联异常: 慢查询增加 (120/h, 基线 20/h)
-├── 根因链路:
-│   CPU突增 → 慢查询 → 锁等待 45s → 连接瓶颈 92%
-├── Top慢SQL:
-│   ├── SELECT * FROM orders WHERE... (12.5s, 扫描850万行)
-│   └── UPDATE inventory SET... (8.3s, 锁等待12s)
-└── 优化建议: SQL限流 + 索引优化 + 调整连接池
-```
-
-> **完整实现**请参阅: [references/advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md)
+| Section | Purpose | Reference |
+|---------|---------|-----------|
+| **FinOps: Node Analysis** | Node-level CPU/memory efficiency analysis for cost optimization | [references/advanced/finops-node-analysis.md](references/advanced/finops-node-analysis.md) |
+| **FinOps: Storage Tier** | PSLevel1-5 cost comparison, storage pack recommendations | [references/advanced/finops-storage-tier-analysis.md](references/advanced/finops-storage-tier-analysis.md) |
+| **AIOps: Storage Prediction** | 30/60/90 day storage growth trend prediction | [references/advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md) |
+| **AIOps: Connection Prediction** | Business cycle detection + connection peak prediction | [references/advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md) |
+| **AIOps: Anomaly Detection** | Multi-metric anomaly detection with root cause chain | [references/advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md) |
 
 ---
 
@@ -999,27 +799,26 @@ PolarDB 异常检测报告:
 
 ## Intelligent Diagnosis Workflow
 
-| User Input Pattern | Diagnosis Type | AIOps Enhancement |
-|-------------------|----------------|-------------------|
-| "CPU 告警" / "CPU 高" | CPU Performance | **AIOps Anomaly Detection** (根因链路追踪) |
-| "磁盘告警" / "空间不足" | Disk Capacity (storage) | **AIOps Storage Prediction** (30/60/90天趋势) |
-| "连接数告警" | Connection Exhaustion | **AIOps Connection Prediction** (周期高峰预测) |
-| "慢查询" / "SQL 慢" | Query Performance | Anomaly Detection (慢查询关联) |
-| "集群宕机" / "连不上" | Availability | Manual diagnosis |
-| "巡检异常" / "健康检查失败" | General Health | Extended Cruise Workflow (Step 8-12) |
-| "异常检测" / "根因分析" | Anomaly Detection | **AIOps Layer 1-3** (阈值/趋势/突增) |
-| "容量预测" / "趋势分析" | Capacity Planning | **AIOps Prediction** (存储/连接) |
+When user reports an anomaly, map to the appropriate AIOps reference. Full diagnosis playbooks at `references/advanced/` — only load the relevant one.
 
-### Supported Anomaly Patterns
+| User Input | Diagnosis Type | AIOps Reference |
+|------------|---------------|-----------------|
+| "CPU 高/告警", "慢查询" | CPU / Query Performance | [Anomaly Detection](references/advanced/aiops-anomaly-detection.md) |
+| "磁盘告警/空间不足" | Disk Capacity | [Storage Prediction](references/advanced/aiops-storage-prediction.md) |
+| "连接数告警" | Connection Exhaustion | [Connection Prediction](references/advanced/aiops-connection-prediction.md) |
+| "巡检异常", "健康检查失败" | General Health | [Cruise Workflow](#finops--aiops-sections) Step 8-12 |
+| "异常检测", "根因分析" | Anomaly Detection | [Layer 1-3](references/advanced/aiops-anomaly-detection.md) |
 
-| # | Pattern | Detection Criteria | Common Causes | Recommended Action |
-|---|---------|-------------------|---------------|-------------------|
-| 1 | **CPU-IOPS双高** | CPU > 80% + IOPS 接近上限 | 复杂查询/分析型SQL、短时间内大量并发 | 检查慢查询、优化SQL、增加只读节点 |
-| 2 | **连接-慢查询关联** | Connections 高 + SlowQueries 增加 | 连接池耗尽、慢查询积累阻塞 | 排查慢SQL、优化连接池、检查阻塞 |
-| 3 | **内存-缓冲池瓶颈** | Memory > 85% + BufferPoolHitRate < 95% | 缓冲池配置不足、大表全表扫描 | 扩容内存、优化SQL、调整缓冲池大小 |
-| 4 | **存储-延迟模式** | StorageUsage > 85% + Latency 突增 | 存储空间不足、写入阻塞 | 扩容存储、清理历史数据、归档冷数据 |
+**Supported anomaly patterns:**
 
-> **Note:** For complex anomaly diagnosis (SQL throttling, deadlock analysis, auto-scaling), delegate to `alicloud-das-ops`.
+| # | Pattern | Criteria | Action |
+|---|---------|----------|--------|
+| 1 | **CPU-IOPS双高** | CPU > 80% + IOPS near limit | Check slow queries, optimize SQL, add read-only node |
+| 2 | **连接-慢查询关联** | Connections high + SlowQueries increasing | Optimize connection pool, check blocking |
+| 3 | **内存-缓冲池瓶颈** | Memory > 85% + BufferPoolHitRate < 95% | Scale memory, adjust buffer pool |
+| 4 | **存储-延迟模式** | StorageUsage > 85% + Latency spike | Scale storage, archive cold data |
+
+> Complex diagnosis (SQL throttling, deadlock analysis): delegate to `alicloud-das-ops`.
 
 ---
 
@@ -1048,51 +847,17 @@ PolarDB 异常检测报告:
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to PolarDB MySQL.
+Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html).
 
-### 安全 (Security)
-
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `polardb:Describe*`, `polardb:CreateDBCluster` scoped to `acs:polardb:*:*:dbcluster/*` |
-| **Network** | VPC-only. White-list application IPs — never `0.0.0.0/0`. SSL encryption for in-transit data |
-| **Data at Rest** | Enable TDE. Use cluster-level encryption keys |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | Deploy read-write nodes + multiple read-only nodes across zones. Auto-failover < 30s |
-| **面向精细的运维管控** | Monitor CPU, connections, IOPS, storage. CMS alerts at 80% |
-| **面向风险的应急快恢** | Point-in-time restore via backup. **RTO:** < 10 min. **RPO:** 0 (binlog) |
-
-### 成本 (Cost)
-
-| Billing | Best For | Savings |
-|---------|----------|---------|
-| Postpaid (按量) | Dev/test, variable workloads | N/A |
-| Prepaid (包年包月) | Stable production | Up to 60% |
-| Serverless | Unpredictable workloads | Pay per capacity unit |
-| Storage Pack | Large storage needs | Lower per-GB cost |
-
-**Waste:** Read-only nodes with < 5% query routing → remove or consolidate. Storage > 70% free → consider downgrade at next cycle.
-
-### 效率 (Efficiency)
-
-- **Read-Write Splitting:** Automatic routing to read-only nodes
-- **Parallel Query:** Enable for analytical queries on large datasets
-- **CI/CD:** JSON output by default, compatible with pipelines
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Scale Up | Scale Down | Window |
-|--------|--------------|----------|------------|--------|
-| CpuUsage | `acs_polardb_dashboard` | > 80% | < 40% | 5 min |
-| ConnectionUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
-| IopsUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
-| StorageUsage | `acs_polardb_dashboard` | > 85% | < 60% | 5 min |
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `polardb:Describe*`, `polardb:CreateDBCluster`. VPC-only, never `0.0.0.0/0`. Enable TDE + SSL |
+| **Stability** | Multi-AZ read-write + read-only nodes. Auto-failover < 30s. PITR via backup. RPO=0 (binlog) |
+| **Cost** | Postpaid for dev, Prepaid up to 60% off, Serverless for variable. Storage Pack for large needs. Remove <5% read-only nodes |
+| **Efficiency** | Read-write splitting. Parallel Query for analytics. JSON output for CI/CD |
+| **Performance** | CPU > 80% scale up, < 40% scale down. ConnectionUsage > 80% alert. StorageUsage > 85% alert
 
 ## Reference Directory
 

@@ -388,126 +388,33 @@ aliyun polardb-io UpgradeDBCluster \
 
 ---
 
-### Operation: Intelligent Inspection (PolarDB Oracle 智能巡检)
+### Operation: Intelligent Inspection
 
-**Purpose**: 主动发现 PolarDB Oracle 实例性能瓶颈、存储风险和会话异常
+**Purpose:** Proactive discovery of PolarDB Oracle performance bottlenecks, storage risks, and session anomalies.
 
-**Five-Step Workflow**:
-1. **Discovery**: `aliyun polardb-io DescribeDBClusters` 列出集群
-2. **Collection**: 批量采集 CPU/Memory/IOPS/Storage/Sessions 指标
-3. **Detection**: 应用已定义的4种异常模式检测
-4. **Diagnosis**: 深度分析慢SQL、表空间使用、会话状态
-5. **Report**: 生成巡检报告 (Markdown格式)
+**5-step workflow:** Discovery (list clusters) → Collection (CPU/Memory/IOPS/Storage/Sessions) → Detection (4 anomaly pattern rules) → Diagnosis (slow SQL, tablespace, sessions) → Report (Markdown).
 
-#### CLI Script Template
+Full CLI script template at [references/cli-usage.md](references/cli-usage.md#intelligent-inspection).
 
-```bash
-#!/bin/bash
-# polar-oracle-intelligent-inspection.sh
-# Usage: ./polar-oracle-intelligent-inspection.sh <DBClusterId> <RegionId>
+**Inspection scoring:**
 
-set -e
+| Metric | Threshold | Score |
+|--------|-----------|-------|
+| CPUUtilization | < 80% | 10 |
+| StorageUsage | < 85% | 10 |
+| Sessions | < 80% max | 10 |
+| SlowQuery | < 5/hour | 10 |
 
-DBClusterId=${1}
-RegionId=${2:-cn-hangzhou}
-OUTPUT_DIR=${OUTPUT_DIR:-"./reports/polardb-inspection-$(date +%Y%m%d)"}
+**Total < 40 → Critical** (immediate action required)
 
-mkdir -p "$OUTPUT_DIR"
+**Anomaly detection rules:**
 
-echo "## PolarDB Oracle 智能巡检报告 - ${DBClusterId}"
-echo "巡检时间: $(date '+%Y-%m-%d %H:%M:%S')"
-echo ""
-
-# Step 1: Discovery - 列出集群信息
-echo "### 1. 集群信息"
-aliyun polardb-io DescribeDBClusterAttribute \
-  --DBClusterId "$DBClusterId" \
-  --RegionId "$RegionId" \
-  --output json | jq -r '.DBClusterId, .DBClusterStatus, .DBVersion, .DBNodeClass'
-
-# Step 2: Collection - 采集性能指标
-echo ""
-echo "### 2. 性能指标采集"
-
-# CPU 和内存使用率
-aliyun polardb-io DescribeDBClusterPerformance \
-  --DBClusterId "$DBClusterId" \
-  --RegionId "$RegionId" \
-  --Key "CPUUtilization,MemoryUtilization" \
-  --StartTime "$(date -d '1 hour ago' +%Y-%m-%dT%H:%MZ)" \
-  --EndTime "$(date +%Y-%m-%dT%H:%MZ)" \
-  --output json
-
-# IOPS 和连接数
-aliyun polardb-io DescribeDBClusterPerformance \
-  --DBClusterId "$DBClusterId" \
-  --RegionId "$RegionId" \
-  --Key "IOPS,Connections" \
-  --StartTime "$(date -d '1 hour ago' +%Y-%m-%dT%H:%MZ)" \
-  --EndTime "$(date +%Y-%m-%dT%H:%MZ)" \
-  --output json
-
-# Step 3: Detection - 存储空间检查
-echo ""
-echo "### 3. 存储空间检测"
-aliyun polardb-io DescribeDBClusters \
-  --DBClusterId "$DBClusterId" \
-  --RegionId "$RegionId" \
-  --output json | jq -r '.Items.DBCluster[] | select(.DBClusterId=="'"$DBClusterId"'") | .DBClusterId, .StorageUsed, .StorageMax'
-
-echo ""
-echo "### 4. 巡检得分"
-
-# 巡检评分规则
-echo "| 指标 | 阈值 | 得分 |"
-echo "|------|------|------|"
-echo "| CPU使用率 | < 80% | 10分 |"
-echo "| 存储空间使用率 | < 85% | 10分 |"
-echo "| 会话数 | < 80%上限 | 10分 |"
-echo "| 慢SQL | < 5/hour | 10分 |"
-echo ""
-echo "**总分 < 40分 → Critical 需要立即处理**"
-
-# Step 5: Report - 保存报告
-echo ""
-echo "---"
-echo "巡检完成，报告已保存至: $OUTPUT_DIR"
-```
-
-#### Inspection Scoring
-
-| 指标 | 阈值 | 得分 |
-|------|------|------|
-| CPU使用率 | < 80% | 10分 |
-| 存储空间使用率 | < 85% | 10分 |
-| 会话数 | < 80%上限 | 10分 |
-| 慢SQL | < 5/hour | 10分 |
-
-**总分 < 40分 → Critical** (需要立即处理)
-
-#### 异常检测规则
-
-| 规则名称 | 检测指标 | 阈值 | 级别 |
-|----------|----------|------|------|
-| CPU使用率过高 | CPUUtilization | > 80% | Warning |
-| CPU使用率严重过高 | CPUUtilization | > 95% | Critical |
-| 内存使用率过高 | MemoryUtilization | > 85% | Warning |
-| 存储空间不足 | StorageUsage | > 85% | Warning |
-| 连接数过高 | Connections | > 80% max | Warning |
-
-#### 使用示例
-
-```bash
-# 对单个集群进行巡检
-./polar-oracle-intelligent-inspection.sh pc-bp123456789abcde cn-hangzhou
-
-# 批量巡检所有集群
-for cluster in $(aliyun polardb-io DescribeDBClusters --output json | jq -r '.Items.DBCluster[].DBClusterId'); do
-  ./polar-oracle-intelligent-inspection.sh "$cluster" cn-hangzhou
-done
-```
-
----
+| Rule | Metric | Threshold |
+|------|--------|-----------|
+| CPU high | CPUUtilization | > 80% (Warning) / > 95% (Critical) |
+| Memory high | MemoryUtilization | > 85% |
+| Storage low | StorageUsage | > 85% |
+| Connection high | Connections | > 80% max |
 
 ## PolarDB IO Cruise (Health Check)
 
@@ -528,49 +435,17 @@ done
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to PolarDB Oracle-compatible.
+Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html).
 
-### 安全 (Security)
-
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `polardb:Describe*` scoped to `acs:polardb:*:*:dbcluster/*` |
-| **Credential Security** | `{{env.*}}` only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print secrets |
-| **Network** | VPC-only. White-list app IPs. SSL encryption |
-| **Migration Security** | Use ADAM for Oracle→PolarDB migration assessment. Test schema compatibility before production cutover |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | Multi-AZ deployment. Auto-failover < 30s. Compatible with Oracle HA patterns |
-| **面向精细的运维管控** | Cruise health check: backup status, node health, account audit |
-| **面向风险的应急快恢** | Point-in-time restore. **RTO:** < 15 min. **RPO:** 0 |
-
-### 成本 (Cost)
-
-| Billing | Best For | Savings |
-|---------|----------|---------|
-| Prepaid (包年包月) | Stable Oracle migration workloads | Up to 60% |
-| Postpaid (按量) | Migration testing phase | N/A |
-
-**Waste:** Oracle-compatible features unused after migration → disable. Idle clusters after cutover → decommission original Oracle.
-
-### 效率 (Efficiency)
-
-- **Oracle Compatibility:** Reduce migration effort with high Oracle syntax compatibility
-- **ADAM:** Use Alibaba Cloud Database Autonomy Management for migration assessment
-- **CI/CD:** JSON output by default
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Scale Up | Scale Down | Window |
-|--------|--------------|----------|------------|--------|
-| CpuUsage | `acs_polardb_dashboard` | > 80% | < 40% | 5 min |
-| ConnectionUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
-| IopsUsage | `acs_polardb_dashboard` | > 80% | < 50% | 5 min |
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `polardb:Describe*`. VPC-only, never `0.0.0.0/0`. Enable SSL. Use ADAM for migration assessment before production cutover |
+| **Stability** | Multi-AZ deployment. Auto-failover < 30s. PITR. RTO < 15min, RPO=0. Cruise: backup, node health, account audit |
+| **Cost** | Prepaid up to 60% off. Postpaid for migration testing. Disable unused Oracle-compatible features after migration. Decommission original Oracle after cutover |
+| **Efficiency** | High Oracle PL/SQL compatibility reduces migration effort. ADAM for assessment. JSON output for CI/CD |
+| **Performance** | CpuUsage > 80% scale up, < 40% down. ConnectionUsage > 80% alert. IOPSUsage > 80% alert |
 
 ## Reference Directory
 

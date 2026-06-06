@@ -1314,111 +1314,17 @@ Response Workflow** documented in [Alert Diagnosis & Root Cause Analysis](refere
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to RDS.
+Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html).
 
-### 安全 (Security)
-
-| Assessment Area | Guidance |
-|-----------------|----------|
-| **IAM** | Never use `AdministratorAccess`. Require: `rds:Describe*`, `rds:Create*` scoped to `acs:rds:*:*:dbinstance/*` |
-| **Credentials** | Use `{{env.*}}` only. Never print secrets |
-| **Network** | VPC-only deployment. White-list application IPs — never `0.0.0.0/0` |
-| **Data at Rest** | Enable TDE for compliance. SSL for in-transit encryption |
-| **SQL Security** | Use parameterized queries. Review slow logs for suspicious patterns |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | HighAvailability edition with primary+standby. Cross-AZ. Auto-failover < 30s |
-| **面向精细的运维管控** | Daily backup + binlog incremental. Monitor CPU/Memory/IOPS/Disk at 80% |
-| **面向风险的应急快恢** | Point-in-time restore via `RestoreDBInstance`. **RTO:** < 30 min. **RPO:** 0 (binlog streaming) |
-
-#### DR Runbook
-```
-Phase 1: Verify — Check status, recent backups, binlog retention
-Phase 2: Restore — Restore to NEW instance (never overwrite production)
-Phase 3: Validate — Data integrity, application smoke tests, traffic switch
-```
-
-### 成本 (Cost) — 扩展版
-
-#### 成本可见性
-
-| 维度 | API/方法 | 输出 | 用途 |
-|------|----------|------|------|
-| 实例月成本 | Billing API | 规格 × 单价 × 天数 | 成本追踪 |
-| 存储成本 | DescribeResourceUsage | 存量 × 存储单价 | 存储优化 |
-| 备份成本 | DescribeBackups | 备份量 × 备份单价 | 备份策略优化 |
-| 跨地域成本 | DescribeCrossRegionBackup | 跨地域量 × 单价 | 跨地域评估 |
-
-#### FinOps 工作流
-
-| 工作流 | 触发频率 | 输出 | 参考 |
-|--------|----------|------|------|
-| 利用率审计 | 每周 | 低利用率实例列表 + 节省金额 | [FinOps §1](references/advanced/finops-analysis.md#1-实例利用率评估) |
-| 成本审计 | 每月 | 成本趋势 + 异常实例 | [FinOps §5](references/advanced/finops-analysis.md#5-成本预警规则) |
-| 预留审计 | 每季度 | 预留覆盖率 + 建议购买 | [FinOps §3](references/advanced/finops-analysis.md#3-预留实例优化) |
-
-#### Right-sizing 建议
-
-| Pattern | Condition | Recommendation | Savings |
-|---------|-----------|----------------|---------|
-| CPU浪费 | avg < 10% 7d | 降级 2档规格 | 60-80% |
-| CPU轻度浪费 | avg 10-30% 7d | 降级 1档规格 | 30-50% |
-| 内存浪费 | avg < 30% 7d | 降级规格 | 30-50% |
-| 存储浪费 | 使用率 < 30% | 缩容存储至 2倍实际 | 按实际节省 |
-| IOPS浪费 | avg < 20% 7d | 存储类型降级 | 20-30% |
-
-#### 预留实例优化
-
-| Running Duration | Recommendation | Savings |
-|------------------|----------------|---------|
-| 30-180 days | 包月 | 30-40% |
-| > 180 days | 包年 | 60-80% |
-| > 365 days | 包3年 | 70-85% |
-
-#### 节省计算
-
-```bash
-# 降级节省公式
-downgrade_savings = (current_rate - target_rate) × 24 × 30
-
-# 预留节省公式
-reserved_savings = (on_demand_annual - reserved_annual)
-
-# 合计节省潜力
-total_savings = Σ downgrade_savings + Σ reserved_savings + Σ storage_savings
-```
-
-> **详细 FinOps 分析**: 参考 [FinOps Cost Optimization](references/advanced/finops-analysis.md)
-
-| Billing | Best For | Savings |
-|---------|----------|---------|
-| 按量付费 | Dev/test | N/A |
-| 包年包月 | Production | Up to 80% |
-| Serverless | Unpredictable workloads | Pay per request |
-
-**Waste Detection (FinOps §4):** CPU < 10% AND IOPS < 50 for 7d → downgrade. Unused databases → consolidate. Idle instances (Connections = 0) → archive or delete.
-
-### 效率 (Efficiency)
-
-- **Automated Backups:** Set `BackupPeriod` for scheduled daily backups
-- **Parameter Groups:** `ModifyParameter` with scheduled apply to avoid interruption
-- **CI/CD:** JSON output by default, compatible with pipelines
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Scale Up | Scale Down | Window |
-|--------|--------------|----------|------------|--------|
-| CpuUsage | `acs_rds_dashboard` | > 80% | < 40% | 5 min |
-| IOPSUsage | `acs_rds_dashboard` | > 80% | < 50% | 5 min |
-| MemoryUsage | `acs_rds_dashboard` | > 85% | < 60% | 5 min |
-| ActiveSession | `acs_rds_dashboard` | > 20 | < 5 | 5 min |
-
-**Key guidance:** Use `DescribeDBInstancePerformance` for baselines. `DescribeSlowLogRecords` for > 1s queries. Distribute reads across RO nodes if connection limits reached.
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `rds:Describe*`, `rds:Create*`. VPC-only, never `0.0.0.0/0`. Enable TDE + SSL. Use parameterized queries |
+| **Stability** | HA primary+standby, cross-AZ. Auto-failover < 30s. Daily backup + binlog. PITR. RTO < 30min, RPO=0 |
+| **Cost** | Postpaid dev/test, Prepaid up to 80% off, Serverless for variable. FinOps: CPU < 10% + IOPS < 50 for 7d → downgrade. Full analysis at [references/advanced/finops-analysis.md](references/advanced/finops-analysis.md) |
+| **Efficiency** | Automated backups. Parameter groups with scheduled apply. JSON output for CI/CD |
+| **Performance** | CPU > 80% scale up, < 40% down. IOPSUsage > 80% alert. Use `DescribeDBInstancePerformance` for baselines |
 
 ## SQL Execution (Agent Quick Reference)
 

@@ -1187,18 +1187,11 @@ done
 
 ### Operation: Intelligent Inspection（智能巡检）
 
-一键执行Redis/Tair实例的全面健康检查，整合CMS指标 + 实例配置 + 慢查询分析。
+一键执行 Redis 实例的全面健康检查。整合 Redis 状态 + CMS 指标 + 慢查询 + 白名单 + 备份状态分析。Full CLI script at [references/intelligent-inspection.md](references/intelligent-inspection.md).
 
-#### 执行流程
+**5-step workflow:** DescribeInstances (status) → CMS CPU/memory/connections/latency → DescribeSlowLogs → DescribeSecurityIps → DescribeBackups → Scoring report.
 
-1. 调用 `DescribeInstances` 检查实例状态和配置
-2. 调用 `alicloud-cms-ops` 查询最近15分钟的CPU/内存/连接/延迟指标
-3. 调用 `DescribeSlowLogs` 检查最近1小时的慢查询
-4. 调用 `DescribeSecurityIps` 检查白名单配置
-5. 调用 `DescribeBackups` 检查最近备份状态
-6. 综合评分并生成巡检报告
-
-#### 巡检评分标准
+**Scoring criteria:**
 
 | 维度 | 评分依据 | 权重 |
 |------|---------|------|
@@ -1207,104 +1200,11 @@ done
 | 内存使用率 | <75%=100, 75-90%=60, >90%=0 | 20% |
 | 连接使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
 | 延迟 | AvgRt<5ms=100, 5-20ms=60, >20ms=0 | 15% |
-| 备份状态 | 最近一次成功=100, 失败=0 | 10% |
+| 备份状态 | 最近成功=100, 失败=0 | 10% |
 
-#### 执行 — CLI
-
-```bash
-#!/bin/bash
-# redis-intelligent-inspection.sh
-# Usage: ./redis-intelligent-inspection.sh <InstanceId> <RegionId>
-
-INSTANCE_ID="$1"
-REGION="$2"
-SCORE=0
-
-echo "=== Redis/Tair Intelligent Inspection ==="
-echo "Instance: $INSTANCE_ID"
-echo "Region: $REGION"
-echo ""
-
-# 1. Instance status check
-STATUS=$(aliyun r-kvstore describe-instances \
-  --RegionId "$REGION" \
-  --InstanceId "$INSTANCE_ID" \
-  --output cols=InstanceStatus rows=Instances.KVStoreInstance[0].InstanceStatus)
-echo "[1/5] Instance Status: $STATUS"
-[ "$STATUS" = "Normal" ] && SCORE=$((SCORE + 20))
-
-# 2. CPU usage check
-CPU=$(aliyun cms DescribeMetricList \
-  --Namespace acs_kvstore_dashboard \
-  --MetricName CpuUsage \
-  --Dimensions "[{\"instanceId\":\"$INSTANCE_ID\"}]" \
-  --Period 60 \
-  --StartTime "$(date -u -v-15M +%Y-%m-%dT%H:%M:%SZ)" \
-  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  --output cols=Average rows=Datapoints[0].Average 2>/dev/null || echo "N/A")
-echo "[2/5] CPU Usage: $CPU%"
-# (Threshold logic would be implemented in production)
-
-# 3. Slow log check
-SLOW_COUNT=$(aliyun r-kvstore describe-slow-logs \
-  --InstanceId "$INSTANCE_ID" \
-  --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)" \
-  --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  --output cols=TotalCount rows=TotalCount 2>/dev/null || echo "0")
-echo "[3/5] Slow Logs (1h): $SLOW_COUNT"
-
-# 4. Backup check
-BACKUP_STATUS=$(aliyun r-kvstore describe-backups \
-  --InstanceId "$INSTANCE_ID" \
-  --PageSize 1 \
-  --output cols=BackupStatus rows=Backups.Backup[0].BackupStatus 2>/dev/null || echo "N/A")
-echo "[4/5] Last Backup: $BACKUP_STATUS"
-[ "$BACKUP_STATUS" = "Success" ] && SCORE=$((SCORE + 10))
-
-# 5. Whitelist check
-WHITELIST=$(aliyun r-kvstore describe-security-ips \
-  --InstanceId "$INSTANCE_ID" \
-  --output cols=SecurityIpList rows=SecurityIpGroups.SecurityIpGroup[0].SecurityIpList 2>/dev/null || echo "N/A")
-echo "[5/5] Whitelist: $WHITELIST"
-
-echo ""
-echo "=== Inspection Score: $SCORE/100 ==="
-if [ "$SCORE" -ge 80 ]; then
-  echo "Status: HEALTHY"
-elif [ "$SCORE" -ge 60 ]; then
-  echo "Status: WARNING - Review recommended"
-else
-  echo "Status: CRITICAL - Immediate action required"
-fi
-```
-
-#### 输出格式
-
-```json
-{
-  "inspection_time": "2026-05-14T10:00:00Z",
-  "resource_type": "redis",
-  "resource_id": "r-bp1zxszhcgatnx****",
-  "overall_score": 85,
-  "dimensions": [
-    {"name": "实例状态", "score": 100, "status": "healthy"},
-    {"name": "CPU使用率", "score": 80, "status": "warning", "value": "75%"},
-    {"name": "内存使用率", "score": 60, "status": "critical", "value": "92%"},
-    {"name": "连接使用率", "score": 90, "status": "healthy", "value": "45%"},
-    {"name": "延迟", "score": 100, "status": "healthy", "value": "2ms"},
-    {"name": "备份状态", "score": 100, "status": "healthy"}
-  ],
-  "recommendations": [
-    "内存使用率92%超过严重阈值，建议扩容或优化数据",
-    "CPU使用率75%超过警告阈值，建议检查慢查询"
-  ]
-}
-```
+**Output format** — Same JSON schema as all other inspection skills (score, dimensions, recommendations).
 
 ### Supported Anomaly Patterns
-
-```yaml
-Supported Anomaly Patterns:
   1. 内存-连接数双高: Memory>85% + Connections>阈值
   2. 响应延迟-吞吐瓶颈: Latency突增 + Throughput下降
   3. 缓存命中率突降: HitRate从95%降至80%
@@ -1550,56 +1450,15 @@ fi
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to Redis/Tair.
-
-### 安全 (Security)
-
-| Assessment Area | Guidance |
-|-----------------|----------|
-| **IAM Permissions** | Never use `AdministratorAccess`. Required: `r-kvstore:Describe*`, `r-kvstore:CreateInstance`, scoped to `acs:r-kvstore:*:*:instance/*` |
-| **Credential Security** | Use `{{env.*}}` placeholders only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print or log credentials |
-| **Network Isolation** | Always deploy in VPC. Use VPC endpoints. Set SecurityIPList to application server IPs only — never `0.0.0.0/0` |
-| **Data at Rest** | Enable SSL/TLS encrypted connections. Use TDE for disk instances. Set `EnableSSL=true` |
-| **Account Security** | Create separate accounts per application. Use least-privilege Redis ACL. Regularly rotate passwords |
-
-### 稳定 (Stability)
-
-| Assessment Area | Guidance |
-|-----------------|----------|
-| **面向失败的架构设计** | Use cluster edition or standard edition with read-only replicas. Enable auto-failover (< 30s) |
-| **面向精细的运维管控** | Monitor `ConnectionUsage`, `MemoryUsage`, `QPSUse`, `KeyCount`. Set CloudMonitor alerts at 80% |
-| **面向风险的应急快恢** | Daily backup + AOF persistence. Test restore quarterly. **RTO:** < 10 min. **RPO:** < 1 hour |
-
-### 成本 (Cost)
-
-| Billing Model | Best For | Savings |
-|--------------|----------|---------|
-| **按量付费** | Dev/test, short-term | N/A |
-| **包年包月** | Production caches | Up to 70% |
-| **Read-Only Replicas** | Read-heavy workloads (avoid over-provisioning primary) | Cost-effective scaling |
-
-**Waste Detection:** Memory usage < 30% for 7+ days → downgrade. Connection count consistently < 10 → downgrade.
-
-### 效率 (Efficiency)
-
-| Pattern | Guidance |
-|---------|----------|
-| **Auto-Renewal** | Enable auto-renewal to avoid service interruption |
-| **Hot-Reload Config** | Use `ModifyInstanceConfig` for parameter changes without restart |
-| **CI/CD** | All outputs are JSON by default. Compatible with pipeline parsing |
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Scale Up | Scale Down | Window |
-|--------|--------------|----------|------------|--------|
-| CpuUsage | `acs_kvstore_dashboard` | > 80% | < 40% | 5 min |
-| MemoryUsage | `acs_kvstore_dashboard` | > 85% | < 50% | 5 min |
-| ConnectionUsage | `acs_kvstore_dashboard` | > 80% | < 40% | 5 min |
-| QPSUse | `acs_kvstore_dashboard` | > 80% | < 50% | 5 min |
-
-**Key guidance:** Use Tair data types (e.g., TairString, TairHash) for optimized memory. Monitor `SlowLogCount`. Consider sharding (cluster edition) when single-node QPS exceeds 100k.
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `r-kvstore:Describe*` for read, `r-kvstore:CreateInstance`, `Modify*` for mutating. VPC-only deployment. Set SecurityIPList to app server IPs only. Enable SSL/TLS. Create separate accounts per app with minimal ACL |
+| **Stability** | Cluster/standard with read-only replicas + auto-failover (< 30s). **Scenario:** Monitor ConnectionUsage/MemoryUsage/QPSUse/KeyCount → alert at 80% → daily backup + AOF persistence → test restore quarterly |
+| **Cost** | Prepaid up to 70% off. Read-only replicas for read-heavy workloads. Waste: Memory < 30% for 7d → downgrade. Connections < 10 consistently → downgrade |
+| **Efficiency** | Enable auto-renewal. Use `ModifyInstanceConfig` for hot-reload. JSON output for pipeline |
+| **Performance** | CPU > 80% → scale up. Memory > 85% → scale up. Connection > 80% → scale up. QPS > 80% → scale up. Use Tair data types (TairString, TairHash). Shard at > 100k QPS/node |
 
 ---
 

@@ -1425,18 +1425,11 @@ printResponse(response.Body)
 
 ### Operation: Intelligent Inspection（智能巡检）
 
-一键执行数据库实例的DAS全面健康检查，整合巡检评分 + CMS指标 + 自治事件。
+一键执行数据库实例的DAS全面健康检查。Full Go SDK script at [references/intelligent-inspection.md](references/intelligent-inspection.md).
 
-#### 执行流程
+**6-step workflow:** GetInstanceInspections (DAS native score) → CreateDiagnosticReport if < 60 → CMS metrics (CPU/conn/IOPS) via cms-ops → Autonomous events via GetAutonomousNotifyEventsInRange → DAS Pro status check → Scoring report.
 
-1. 调用 `GetInstanceInspections` 获取巡检评分
-2. 如果评分 < 60，调用 `CreateDiagnosticReport` 生成诊断报告
-3. 调用 `alicloud-cms-ops` 查询最近15分钟的CPU/连接/IOPS指标
-4. 调用 `GetAutonomousNotifyEventsInRange` 检查近期自治事件
-5. 调用 `GetDasProServiceUsage` 检查Pro许可状态
-6. 综合评分并生成巡检报告
-
-#### 巡检评分标准
+**Scoring criteria:**
 
 | 维度 | 评分依据 | 权重 |
 |------|---------|------|
@@ -1444,198 +1437,22 @@ printResponse(response.Body)
 | CPU使用率 | <70%=100, 70-85%=60, >85%=0 | 20% |
 | 连接使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
 | IOPS使用率 | <70%=100, 70-85%=60, >85%=0 | 15% |
-| 自治事件 | 无严重事件=100, 有警告=60, 有严重=0 | 10% |
+| 自治事件 | 无严重=100, 有警告=60, 有严重=0 | 10% |
 | DAS Pro状态 | 已激活=100, 未激活=60 | 10% |
 
-#### 执行 — JIT Go SDK
-
-```go
-package main
-
-import (
-    "encoding/json"
-    "fmt"
-    "os"
-    "time"
-
-    openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    das "github.com/alibabacloud-go/das-20200116/v5/client"
-    "github.com/alibabacloud-go/tea/tea"
-)
-
-func newDASClient() (*das.Client, error) {
-    config := &openapi.Config{
-        AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
-        AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
-        Endpoint:        tea.String("das.cn-shanghai.aliyuncs.com"),
-    }
-    return das.NewClient(config)
-}
-
-func main() {
-    instanceId := os.Getenv("INSTANCE_ID")
-    if instanceId == "" {
-        fmt.Println("INSTANCE_ID is required")
-        os.Exit(1)
-    }
-
-    client, err := newDASClient()
-    if err != nil {
-        panic(err)
-    }
-
-    dimensions := []map[string]interface{}{}
-    recommendations := []string{}
-
-    // 1. Get inspection score
-    inspectReq := &das.GetInstanceInspectionsRequest{
-        RegionId:   tea.String("cn-shanghai"),
-        InstanceId: tea.String(instanceId),
-    }
-    inspectResp, err := client.GetInstanceInspections(inspectReq)
-    if err == nil {
-        score := inspectResp.Body.Data.Score
-        dimensions = append(dimensions, map[string]interface{}{
-            "name": "DAS巡检评分", "score": score, "status": "healthy",
-        })
-        if score != nil && *score < 60 {
-            recommendations = append(recommendations, "DAS巡检评分低于60，建议创建诊断报告进行详细分析")
-        }
-    }
-
-    // 2. Check autonomous events (last 24h)
-    now := time.Now().UTC()
-    startTime := now.Add(-24 * time.Hour).Format("2006-01-02T15:04:05Z")
-    endTime := now.Format("2006-01-02T15:04:05Z")
-
-    eventReq := &das.GetAutonomousNotifyEventsInRangeRequest{
-        RegionId:   tea.String("cn-shanghai"),
-        InstanceId: tea.String(instanceId),
-        StartTime:  tea.String(startTime),
-        EndTime:    tea.String(endTime),
-    }
-    eventResp, err := client.GetAutonomousNotifyEventsInRange(eventReq)
-    if err == nil && eventResp.Body.Data != nil {
-        dimensions = append(dimensions, map[string]interface{}{
-            "name": "自治事件", "score": 100, "status": "healthy",
-        })
-    }
-
-    // 3. Check DAS Pro usage
-    proReq := &das.GetDasProServiceUsageRequest{
-        RegionId:   tea.String("cn-shanghai"),
-        InstanceId: tea.String(instanceId),
-    }
-    proResp, err := client.GetDasProServiceUsage(proReq)
-    if err == nil && proResp.Body.Data != nil {
-        dimensions = append(dimensions, map[string]interface{}{
-            "name": "DAS Pro状态", "score": 100, "status": "healthy",
-        })
-    }
-
-    result := map[string]interface{}{
-        "inspection_time": time.Now().UTC().Format("2006-01-02T15:04:05Z"),
-        "resource_type":   "database",
-        "resource_id":     instanceId,
-        "dimensions":      dimensions,
-        "recommendations": recommendations,
-    }
-    b, _ := json.MarshalIndent(result, "", "  ")
-    fmt.Println(string(b))
-}
-```
-
-#### 输出格式
-
-```json
-{
-  "inspection_time": "2026-05-14T10:00:00Z",
-  "resource_type": "database",
-  "resource_id": "rm-2ze8g2am97624****",
-  "overall_score": 75,
-  "dimensions": [
-    {"name": "DAS巡检评分", "score": 75, "status": "warning"},
-    {"name": "自治事件", "score": 100, "status": "healthy"},
-    {"name": "DAS Pro状态", "score": 100, "status": "healthy"}
-  ],
-  "recommendations": [
-    "DAS巡检评分75分，建议检查低分维度并优化",
-    "建议通过CreateDiagnosticReport生成详细诊断报告"
-  ],
-  "confidence_score": 0.82
-}
-```
-
-#### 置信度评分计算
-
-| 维度 | 权重 | 计算方式 |
-|------|------|----------|
-| 数据完整性 | 0.3 | 实际获取数据项 / 期望数据项 |
-| 异常模式匹配度 | 0.4 | 异常模式数量 / 阈值内的异常模式数 |
-| 历史相似案例 | 0.3 | 匹配到的历史案例数 / 总历史案例数 |
-
-**置信度等级**:
-- `0.9-1.0`: 极高置信度 - 可直接执行修复
-- `0.7-0.89`: 高置信度 - 建议人工复核
-- `0.5-0.69`: 中等置信度 - 需要更多证据
-- `0.3-0.49`: 低置信度 - 建议深入调查
-- `0.0-0.29`: 极低置信度 - 信息不足
+**Confidence levels:** 0.9-1.0 auto-fix, 0.7-0.89 human review recommended, < 0.5 insufficient info.
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to DAS.
-
-### 安全 (Security)
-
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `das:Get*`, `das:Describe*`. Write ops: `das:Create*`, `das:Set*`. Scoped to `acs:das:*:*:instance/*` |
-| **Credentials** | `{{env.*}}` only. Endpoint is cn-shanghai (global for DAS) |
-| **Diagnostic Data** | SQL samples and query optimization data may contain sensitive queries. Mask in output |
-| **Diagnostic Connections** | NEVER use production admin credentials for connectivity diagnosis. Use temporary test accounts |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | DAS IS the stability layer for database products. Inspection score + autonomous events provide proactive fault detection |
-| **面向精细的运维管控** | DAS Pro enables SQL throttling, auto-scaling, dead lock analysis — all proactive controls |
-| **面向风险的应急快恢** | Dead lock analysis → kill session. Space summary → free space. SQL throttling → protect DB from runaway queries |
-
-#### DR Runbook
-```
-Phase 1: Detect — DAS inspection score < 60 or CMS alert triggers
-Phase 2: Diagnose — GetInstanceInspections + CreateDiagnosticReport + CMS metrics
-Phase 3: Resolve — Auto-scaling, SQL throttling, session kill, or escalate with full diagnostic report
-```
-
-### 成本 (Cost)
-
-| Item | Cost | Optimization |
-|------|------|-------------|
-| DAS Basic | Free for RDS instances | Always enabled |
-| DAS Pro | Paid per instance/month | Evaluate per-database need; enable only for production DBs |
-
-**Waste:** Pro subscription on non-critical DBs (dev/test) → disable. Unused SQL insight storage → clean up.
-
-### 效率 (Efficiency)
-
-- **Auto-Scaling Config:** `SetAutoScalingConfig` for automatic storage/spec scaling based on usage
-- **SQL Throttling:** `CreateSqlLimitTask` and `EnableSqlConcurrencyControl` to automatically throttle runaway SQL patterns; `GetSqlConcurrencyControlKeywordsFromSqlText` to generate accurate keywords
-- **Cross-Skill Delegation:** DAS can trigger ECS/VPC/SLB skills for network-related database issues
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Alert Threshold | Window |
-|--------|--------------|-----------------|--------|
-| CpuUsage | `acs_rds_dashboard` / `acs_polardb_dashboard` | > 80% | 5 min |
-| IOPSUsage | `acs_rds_dashboard` | > 85% | 5 min |
-| ActiveConnection | `acs_rds_dashboard` | > 80% | 5 min |
-| SlowQueries | DAS `GetInstanceInspections` | > 10/min | 15 min |
-
-**Key guidance:** Use `GetQueryOptimizeData` for slow query analysis. `GetPfsSqlSamples` for Performance Insight deep analysis. Regular `GetInstanceInspections` for health scoring.
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `das:*` for read, `das:Create*`, `das:Set*` for mutating. Mask SQL in output. Never use production creds for connectivity diagnosis |
+| **Stability** | DAS inspection score + autonomous events for proactive fault detection. **Scenario:** Score < 60 → CreateDiagnosticReport → CMS metrics → resolve with auto-scaling/SQL throttling/session kill |
+| **Cost** | DAS Basic: free (RDS instances). DAS Pro: paid per instance, enable only for production DBs. Waste: Pro on dev/test → disable |
+| **Efficiency** | `SetAutoScalingConfig` for auto-scaling. `CreateSqlLimitTask`/`EnableSqlConcurrencyControl` for SQL throttling. Cross-skill delegation to ECS/VPC/SLB for network issues |
+| **Performance** | CPU > 80% → alert. IOPS > 85% → alert. Active connections > 80% → alert. Slow queries > 10/min → investigate. Use `GetQueryOptimizeData` for deep analysis |
 
 ## Troubleshooting Capability Enhancement
 

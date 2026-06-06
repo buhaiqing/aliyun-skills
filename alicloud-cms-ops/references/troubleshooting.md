@@ -350,47 +350,14 @@ ls -la $(go env GOMODCACHE)/github.com/alibabacloud-go/ 2>/dev/null || echo "No 
 
 **Auto-Heal Script:**
 
+See complete auto-heal scripts in [cli-install-diagnosis.md](cli-install-diagnosis.md), which includes `heal_cli_install()`, `heal_missing_go()`, and `heal_sdk_deps()` with the full SDK dependency resolution logic. Quick summary:
+
 ```bash
-#!/bin/bash
-# Automated SDK dependency healing
-heal_sdk_deps() {
-  local workspace="/tmp/aliyun-sdk-workspace"
-  mkdir -p "$workspace"
-  cd "$workspace"
-
-  # Init module if needed
-  [ ! -f "go.mod" ] && go mod init sdk-script 2>/dev/null
-
-  # Configure proxy (China optimization)
-  export GOPROXY=https://goproxy.cn,direct
-
-  local deps=(
-    "github.com/alibabacloud-go/darabonba-openapi/v2/client"
-    "github.com/alibabacloud-go/tea/tea"
-    "github.com/alibabacloud-go/cms-20190101/v7/client"
-  )
-
-  local ok=0
-  local fail=0
-  for dep in "${deps[@]}"; do
-    echo "[HEAL] Resolving $dep..."
-    if go get "$dep" 2>/dev/null; then
-      echo "[OK] $dep"
-      ((ok++))
-    else
-      echo "[FAIL] $dep"
-      ((fail++))
-    fi
-  done
-
-  go mod tidy 2>/dev/null
-
-  echo "[HEAL] SDK deps: $ok resolved, $fail failed"
-  [ "$fail" -eq 0 ] && return 0 || return 1
-}
-
-# Invoke if SDK build fails
-heal_sdk_deps
+# Resolve SDK dependencies (full script in cli-install-diagnosis.md)
+export GOPROXY=https://goproxy.cn,direct
+cd /tmp && mkdir -p sdk-workspace && cd sdk-workspace
+[ ! -f "go.mod" ] && go mod init sdk-script
+go get github.com/alibabacloud-go/cms-20190101/v7/client
 ```
 
 **Prevention:**

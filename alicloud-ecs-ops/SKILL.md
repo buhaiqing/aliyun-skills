@@ -1402,74 +1402,15 @@ aliyun ecs DescribeCloudAssistantStatus \
 
 ---
 
-## Well-Architected Assessment (卓越架构)
+## Well-Architected Assessment
 
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to ECS.
-
-### 安全 (Security)
-
-| Assessment Area | Guidance | CLI Verification |
-|-----------------|----------|-----------------|
-| **IAM Permissions** | Never use `AdministratorAccess`. Required minimum: `ecs:Describe*`, `ecs:Create*`, `ecs:Delete*` scoped to `acs:ecs:*:*:instance/*` | Review RAM policies attached to the executing user/role |
-| **Credential Security** | Use `{{env.*}}` placeholders only. Must mask credentials to `****` (first 4 chars + `****`) when outputting to console, logs, or error messages. Never print or log credentials. Rotate AccessKeys every 90 days. | `test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" \|\| echo "MISSING"` |
-| **Network Isolation** | Use VPC endpoints for API calls. Avoid public endpoints. Restrict security group inbound rules to minimum CIDRs. | `aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId <sg-id>` — scan for `0.0.0.0/0` |
-| **Data at Rest** | Enable disk encryption (`Encrypted=true`) for all data disks. Use `KMSKeyId` for custom keys. | `aliyun ecs DescribeDisks` → check `Encrypted` and `KMSKeyId` fields |
-| **Instance Security** | Restrict SSH/RDP access to specific source IPs via security group rules. Avoid `0.0.0.0/0` on ports 22/3389. | `aliyun ecs DescribeSecurityGroupAttribute` → verify no `0.0.0.0/0` on sensitive ports |
-
-### 稳定 (Stability)
-
-| Assessment Area | Guidance | Implementation |
-|-----------------|----------|----------------|
-| **面向失败的架构设计** | Deploy instances across multiple Availability Zones. Use Auto Scaling groups with health checks. Load balance with SLB. | Create instances in `≥ 2` zones. Use `RunInstances` with `MultiAzPolicy` parameter. |
-| **面向精细的运维管控** | Tag all instances (`Environment`, `Owner`, `Project`). Monitor CPU, memory, disk I/O via CMS. Set alert thresholds. | `aliyun ecs AddTags` on creation. CMS `DescribeMetricAlarmList` for alerting. |
-| **面向风险的应急快恢** | Backup via `CreateSnapshot` before any destructive operation. Test restore periodically. Document RTO/RPO targets. | **RTO:** < 15 min for single instance restart. **RPO:** < 4 hours (snapshot frequency). |
-| **Multi-AZ Deployment** | Distribute instances across zones to mitigate single-zone failure. Use SLB to distribute traffic. | `aliyun ecs DescribeZones` → create instances in `cn-hangzhou-a` AND `cn-hangzhou-b`. |
-
-#### 应急快恢 Runbook
-
-```
-Phase 1: Verify — Check instance status, public IP, security group, VPC config
-Phase 2: Restore — Replace system disk from snapshot OR restore from backup
-Phase 3: Validate — Confirm connectivity, application health, data integrity
-```
-
-### 成本 (Cost)
-
-| Billing Model | Best For | Savings vs Pay-As-You-Go |
-|--------------|----------|-------------------------|
-| **按量付费** | Dev/test, short-term, unpredictable workloads | N/A |
-| **包年包月** | Production, stable workloads (≥ 1 month) | Up to 85% |
-| **抢占式实例 (Spot)** | Fault-tolerant batch/spot workloads | Up to 90% |
-| **预留实例** | Predictable 24/7 workloads (1yr/3yr) | Up to 74% |
-
-#### Waste Detection
-- **Idle instances:** CPU < 10% AND network I/O < 1 MB/s for 7+ consecutive days → recommend downgrade or stop
-- **Orphaned snapshots:** Snapshots without active images/disks referencing them → recommend deletion
-- **Unattached disks:** Disks with `Status: Available` for 30+ days → recommend attach or delete
-- **Oversized instances:** Actual memory < 50% of provisioned for 14+ days → recommend right-sizing
-
-### 效率 (Efficiency)
-
-| Pattern | Guidance |
-|---------|----------|
-| **Batch Operations** | Use `RunInstances` for ≥ 3 instances. Avoid serial `CreateInstance` calls. |
-| **CI/CD Integration** | All SKILL.md outputs are JSON by default. Compatible with jq/yq for pipeline parsing. Store in CI artifacts. |
-| **Cloud Assistant** | Use `SendFile` + `RunCommand` for remote execution. Eliminates SSH key management overhead. |
-| **Automation** | Tag-based lifecycle: tag instances with `AutoShutdown=true` for scheduled stop actions. |
-
-### 性能 (Performance)
-
-| Metric | CMS Namespace | Scale Up Threshold | Scale Down Threshold | Monitoring Window |
-|--------|--------------|-------------------|---------------------|-------------------|
-| CPUUtilization | `acs_ecs_dashboard` | > 80% | < 30% | 5 min avg |
-| MemoryUsage | `acs_ecs_dashboard` | > 85% | < 50% | 5 min avg |
-| InternalBandwidth | `acs_ecs_dashboard` | > 70% | < 40% | 5 min avg |
-| DiskUsage | `acs_ecs_dashboard` | > 90% | < 70% | 5 min avg |
-
-**Key guidance:**
-- Use `cloud_essd` PL1+ disks for I/O-intensive workloads; benchmark expected IOPS per disk category.
-- Enable Auto Scaling with `min`, `max`, `desired` capacity. Test scale-out by simulating traffic spikes.
-- Monitor `InternalBandwidthRX`/`InternalBandwidthTX` for inter-zone bottlenecks.
+| Pillar | Key Guidance |
+|--------|-------------|
+| **Security** | IAM: `ecs:Describe*` for read, restricted `ecs:Create*/Delete*` for mutating. Mask creds in output. VPC endpoints, no public. Disk encryption (`Encrypted=true`). Restrict SSH/RDP to specific CIDRs, never `0.0.0.0/0`. CLI verify: `DescribeSecurityGroupAttribute` |
+| **Stability** | Multi-AZ deployment + Auto Scaling + SLB. Tag instances (`Environment`, `Owner`, `Project`). Snapshot before destructive ops. **Scenario:** Instance down → check status/security group → restore from snapshot → validate connectivity. **RTO:** < 15 min single, < 1 min HA. **RPO:** < 4h (snapshot) |
+| **Cost** | Prepaid up to 85% off, Spot up to 90%. Waste: CPU < 10% AND I/O < 1MB/s for 7d → downsize. Snapshot without source disk → delete. Disk `Available` for 30d → delete. Memory < 50% for 14d → right-size |
+| **Efficiency** | `RunInstances` (batch) over serial `CreateInstance`. `SendFile`+`RunCommand` (Cloud Assistant) over SSH. Tag-based lifecycle. JSON output for pipelines |
+| **Performance** | CPU > 80% → scale up. Memory > 85% → scale up. InternalBandwidth > 70% → scale up. Disk > 90% → scale up. Use `cloud_essd` PL1+ for I/O-intensive. Monitor `InternalBandwidthRX`/`TX` for inter-zone bottlenecks |
 
 ## Prerequisites
 

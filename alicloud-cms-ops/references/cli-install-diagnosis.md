@@ -567,10 +567,13 @@ heal_missing_cli() {
 heal_missing_go() {
   echo "[HEAL] Attempting to install Go runtime..."
 
+  # Fetch latest Go stable version dynamically
+  GO_VERSION=$(curl -sL "https://go.dev/dl/?mode=json" | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['version'])" 2>/dev/null || echo "go1.24.0")
+
   case "$(uname -s)" in
     Linux)
-      echo "[HEAL] Installing Go on Linux..."
-      curl -fsSL "https://go.dev/dl/go1.24.0.linux-${os_arch}.tar.gz" -o /tmp/go.tar.gz
+      echo "[HEAL] Installing Go ${GO_VERSION} on Linux..."
+      curl -fsSL "https://go.dev/dl/${GO_VERSION}.linux-${os_arch}.tar.gz" -o /tmp/go.tar.gz
       tar -C /usr/local -xzf /tmp/go.tar.gz
       export PATH=$PATH:/usr/local/go/bin
       echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
@@ -580,7 +583,8 @@ heal_missing_go() {
       if command -v brew &>/dev/null; then
         brew install go
       else
-        curl -fsSL "https://go.dev/dl/go1.24.0.darwin-${os_arch}.tar.gz" -o /tmp/go.tar.gz
+        echo "[HEAL] Installing Go ${GO_VERSION} on macOS..."
+        curl -fsSL "https://go.dev/dl/${GO_VERSION}.darwin-${os_arch}.tar.gz" -o /tmp/go.tar.gz
         tar -C /usr/local -xzf /tmp/go.tar.gz
         export PATH=$PATH:/usr/local/go/bin
       fi
