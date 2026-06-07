@@ -382,8 +382,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument(
-        "--trace-dir", type=Path, default=Path("audit-results/"),
-        help="Directory with gcl-trace-*.json files (default: audit-results/)",
+        "--trace-dir", type=Path,
+        default=Path(os.environ.get("ALIYUN_SKILLS_RUNTIME_ROOT", Path(__file__).resolve().parent.parent.parent / ".runtime")) / "audit" / "gcl-runner-ops",
+        help="Directory with gcl-trace-*.json files (Sprint 19: default = ${RUNTIME_ROOT}/audit/gcl-runner-ops)",
     )
     p.add_argument(
         "--since", default="24h",

@@ -659,7 +659,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     g = p.add_mutually_exclusive_group(required=True)
     g.add_argument("--trace", type=Path, help="Path to a single gcl-trace-*.json file")
-    g.add_argument("--trace-dir", type=Path, help="Directory containing gcl-trace-*.json files")
+    g.add_argument("--trace-dir", type=Path,
+                   default=Path(os.environ.get("ALIYUN_SKILLS_RUNTIME_ROOT", Path(__file__).resolve().parent.parent.parent / ".runtime")) / "audit" / "gcl-runner-ops",
+                   help="Directory containing gcl-trace-*.json files (Sprint 19: default = ${RUNTIME_ROOT}/audit/gcl-runner-ops)")
     p.add_argument("--report", type=Path, default=None, help="(With --trace-dir) write a JSON report to this path")
     p.add_argument("--strict", action="store_true", help="Exit non-zero on PHANTOM_PASS / PHANTOM_FAIL / UNTRACKED_OP findings")
     p.add_argument("--window-hours", type=int, default=24, help="Time window around trace mtime to search (default: 24)")

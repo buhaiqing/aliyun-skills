@@ -218,7 +218,7 @@ def _main_locked():
     ap.add_argument("--region", default=os.environ.get("ALIBABA_CLOUD_REGION_ID", "cn-hangzhou"))
     ap.add_argument("--customer", default="")
     ap.add_argument("--multiplier", type=float, default=3.0)
-    ap.add_argument("--output-dir", default="audit-results")
+    ap.add_argument("--output-dir", default=_shared._resolve_runbooks_output_dir())
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
     if args.describe:

@@ -348,7 +348,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
             """
         ),
     )
-    p.add_argument("--report-dir", type=Path, default=Path("audit-results/"), help="Directory with crosscheck-report-*.json files")
+    p.add_argument("--report-dir", type=Path,
+                   default=Path(os.environ.get("ALIYUN_SKILLS_RUNTIME_ROOT", Path(__file__).resolve().parent.parent.parent / ".runtime")) / "audit" / "gcl-runner-ops",
+                   help="Directory with crosscheck-report-*.json files (Sprint 19: default = ${RUNTIME_ROOT}/audit/gcl-runner-ops)")
     p.add_argument("--contact-group", default="gcl-oncall", help="CMS contact group for alarm notifications (default: gcl-oncall)")
     p.add_argument("--region", default="cn-hangzhou", help="Alarm region (default: cn-hangzhou)")
     p.add_argument("--webhook", default=None, help="Webhook URL for alarm (PagerDuty / Slack)")

@@ -1,0 +1,33 @@
+# 办公系统定时弹性策略
+# 适用: OA / ERP / CRM / 内部管理系统 (工作日 9-18 点)
+
+policy:
+  name: "office-hours-auto-scaling"
+  description: "工作日定时扩缩容，9:00 扩容 18:00 缩容"
+  scenario: "scheduled"  # S2
+
+  scaling_group:
+    min_size: 1
+    max_size: 8
+
+  schedule:
+    scale_up:
+      cron: "0 9 * * 1-5"       # 工作日 9:00
+      timezone: "Asia/Shanghai"
+      desired_capacity: 5
+
+    scale_down:
+      cron: "0 18 * * 1-5"      # 工作日 18:00
+      timezone: "Asia/Shanghai"
+      desired_capacity: 1
+
+  exceptions:
+    - name: "月底加班"
+      description: "每月最后两个工作日延迟到 21:00 缩容"
+      cron: "0 21 * * 1-5"
+      condition: "day >= (last_day - 2)"
+      override_scale_down: true
+    - name: "法定节假日"
+      description: "假期前一天 12:00 缩容，假期后 9:00 扩容"
+      condition: "calendar.contains(legal_holidays)"
+      # 需要外部日历 API 支撑

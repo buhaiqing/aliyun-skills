@@ -18,7 +18,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from _shared import log
+from _shared import log, _resolve_runbooks_output_dir
 
 __all__ = ["WorkflowRunner", "Workflow", "run_workflow"]
 
@@ -182,7 +182,7 @@ def main():
     ap.add_argument("--customer")
     ap.add_argument("--region", default=os.environ.get("ALIBABA_CLOUD_REGION_ID", "cn-hangzhou"))
     ap.add_argument("--resource-group-id", default="")
-    ap.add_argument("--output-dir", default="audit-results")
+    ap.add_argument("--output-dir", default=_resolve_runbooks_output_dir())
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
 

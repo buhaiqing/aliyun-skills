@@ -156,37 +156,32 @@ def finops_check(region):
     log("DIAG", "finops_check")
     suggestions = []
     items = dig(q_cached(["ecs", "DescribeInstances", "--RegionId", region]), "Instances.Instance")
+    # Sprint 15: 按 dimension 批量拉取 (q_cms_batch_by_dim)
+    # 演化: 串行 (N 次) → Sprint 14 (N 次并发) → Sprint 15 (ceil(N/50) 次)
+    # 100 ECS: 100 jobs → 100 并发调用 → 2 次 API 调用 (-98%)
+    end = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    d7 = (datetime.now(UTC) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    valid = []  # (inst, iid, itype)
+    rids = []
     for inst in items:
         iid = inst.get("InstanceId", "")
         itype = inst.get("InstanceType", "")
         if not iid:
             continue
-        data = q(
-            [
-                "cms",
-                "DescribeMetricList",
-                "--Namespace",
-                "acs_ecs_dashboard",
-                "--MetricName",
-                "CPUUtilization",
-                "--Dimensions",
-                json.dumps([{"instanceId": iid}]),
-                "--Period",
-                "3600",
-                "--StartTime",
-                (datetime.now(UTC) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "--EndTime",
-                datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            ]
-        )
-        if not data:
+        valid.append((inst, iid, itype))
+        rids.append(iid)
+    if not rids:
+        return suggestions
+    log("DIAG", f"finops_check: rids={len(rids)} (Sprint 15: 预期 API 调用 {max(1, (len(rids) + 49) // 50)} 次)")
+    # 单次 API 拉所有 ECS CPU (按 50 拆批, 内部)
+    data = q_cms_batch_by_dim(
+        "acs_ecs_dashboard", "CPUUtilization",
+        "instanceId", rids, "3600", d7, end, batch_size=50,
+    )
+    for (inst, iid, itype) in valid:
+        dps = data.get(iid, [])
+        if not dps:
             continue
-        dps = data.get("Datapoints", "[]")
-        if isinstance(dps, str):
-            try:
-                dps = json.loads(dps)
-            except Exception:
-                dps = []
         vals = [p.get("Average", 0) for p in dps if isinstance(p, dict)]
         if not vals:
             continue
@@ -273,7 +268,7 @@ def _main_locked():
     ap.add_argument("--tag-value")
     ap.add_argument("--region", default=os.environ.get("ALIBABA_CLOUD_REGION_ID", "cn-hangzhou"))
     ap.add_argument("--customer", default="")
-    ap.add_argument("--output-dir", default="audit-results")
+    ap.add_argument("--output-dir", default=_shared._resolve_runbooks_output_dir())
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
     if args.describe:

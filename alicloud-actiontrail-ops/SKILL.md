@@ -17,8 +17,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.1.0"
-  last_updated: "2026-06-04"
+  version: "1.2.0"
+  last_updated: "2026-06-07"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -120,6 +120,7 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 | `{{user.event_type}}` | Event type filter | Ask once; reuse |
 | `{{user.service_name}}` | Cloud service name filter | Ask once; reuse |
 | `{{user.event_name}}` | Event name filter | Ask once; reuse |
+| `{{user.data_event_selector_json}}` | JSON string for PutDataEventSelector EventSelector param | Ask once; reuse |
 | `{{output.trail_name}}` | From last API or CLI JSON response | Parse per OpenAPI or verified CLI path |
 | `{{output.trail_status}}` | Trail logging status (Enable/Disable) | Parse per OpenAPI or verified CLI path |
 | `{{output.request_id}}` | API request ID for tracking | Parse per OpenAPI or verified CLI path |
@@ -146,6 +147,12 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 | GetTrailStatus | `$.IsLogging` | boolean | Whether logging is enabled |
 | LookupEvents | `$.Events[]` | array | Event records |
 | LookupEvents | `$.NextToken` | string | Pagination token |
+| GetAccessKeyLastUsedEvents | `$.Events[]` | array | AK event records |
+| GetAccessKeyLastUsedIps | `$.Ips[]` | array | IP addresses used by AK |
+| GetAccessKeyLastUsedProducts | `$.Products[]` | array | Products accessed by AK |
+| GetAccessKeyLastUsedResources | `$.Resources[]` | array | Resources accessed by AK |
+| ListDataEventSelectors | `$.DataEventSelectors[]` | array | Data event selector list |
+| PutDataEventSelector | `$.RequestId` | string | Confirmation of selector configuration |
 
 ### Expected State Transitions
 
@@ -195,10 +202,18 @@ aliyun actiontrail DescribeTrails
 | UpdateTrail | Modify trail configuration | Medium | Medium |
 | DeleteTrail | Remove a trail | Low | **High** — irreversible |
 | LookupEvents | Search historical events | Medium | None |
-| GetAccessKeyLastUsedInfo | Query AccessKey last usage | Low | None |
+| GetAccessKeyLastUsedInfo | Query AccessKey last usage summary | Low | None |
+| GetAccessKeyLastUsedEvents | Query specific events called by an AccessKey | Low | None |
+| GetAccessKeyLastUsedIps | Query source IPs used by an AccessKey | Low | None |
+| GetAccessKeyLastUsedProducts | Query products accessed by an AccessKey | Low | None |
+| GetAccessKeyLastUsedResources | Query resources accessed by an AccessKey | Low | None |
 | EnableInsight | Enable insight analysis | Low | Low |
 | DisableInsight | Disable insight analysis | Low | Low |
 | LookupInsightEvents | Query insight events | Medium | None |
+| ListDataEventSelectors | List data event selectors for a trail | Low | None |
+| GetDataEventSelector | Get details of a data event selector | Low | None |
+| PutDataEventSelector | Configure data event selectors (OSS data-plane events) | Medium | Low |
+| DeleteDataEventSelector | Remove a data event selector | Low | Low |
 | CreateDeliveryHistoryJob | Backfill historical events | Medium | Low |
 | CreateComplianceTrail | Create a compliance-grade trail (all regions, all events) | Medium | Low |
 
@@ -532,6 +547,130 @@ aliyun actiontrail GetAccessKeyLastUsedInfo --AccessKeyId {{user.access_key_id}}
 | AccessKey not found | `AccessKeyNotFoundException` | HALT; verify AccessKey ID |
 | Throttling | `Throttling` | Retry with backoff |
 
+### Operation: Get AccessKey Last Used Events
+
+Queries the specific events invoked by an AccessKey, providing detailed audit context such as event names, target resources, and timestamps.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetAccessKeyLastUsedEvents --AccessKeyId {{user.access_key_id}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Events received | `$.Events` | Array of event records |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| AccessKey not found | `AccessKeyNotFoundException` | HALT; verify AccessKey ID |
+| Throttling | `Throttling` | Retry with backoff |
+
+### Operation: Get AccessKey Last Used IPs
+
+Queries the source IP addresses from which an AccessKey has made API calls, enabling geographic and network-based anomaly detection.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetAccessKeyLastUsedIps --AccessKeyId {{user.access_key_id}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| IPs received | `$.Ips` | Array of IP address strings |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| AccessKey not found | `AccessKeyNotFoundException` | HALT; verify AccessKey ID |
+| Throttling | `Throttling` | Retry with backoff |
+
+### Operation: Get AccessKey Last Used Products
+
+Queries the Alibaba Cloud products (services) that an AccessKey has accessed, providing visibility into which services the key has permissions for and is actively using.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetAccessKeyLastUsedProducts --AccessKeyId {{user.access_key_id}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Products received | `$.Products` | Array of product code strings |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| AccessKey not found | `AccessKeyNotFoundException` | HALT; verify AccessKey ID |
+| Throttling | `Throttling` | Retry with backoff |
+
+### Operation: Get AccessKey Last Used Resources
+
+Queries the specific resources that an AccessKey has accessed, providing the most granular view of AK activity for forensic investigation and resource-level audit.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetAccessKeyLastUsedResources --AccessKeyId {{user.access_key_id}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Resources received | `$.Resources` | Array of resource ARN strings |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| AccessKey not found | `AccessKeyNotFoundException` | HALT; verify AccessKey ID |
+| Throttling | `Throttling` | Retry with backoff |
+
 ### Operation: Enable Insight
 
 #### Pre-flight Checks
@@ -693,6 +832,166 @@ response, err := client.GetInsightTypes(request)
 |-------|---------|--------|
 | Network error | `RequestError` | Retry with backoff |
 
+### Operation: List Data Event Selectors
+
+Lists all data event selectors configured for a trail. Data event selectors control which **data-plane** events (e.g., OSS object read/write) are collected by ActionTrail.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+| Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Selectors received | `$.DataEventSelectors` | Array of selector objects (may be empty) |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Trail not found | `TrailNotFoundException` | HALT; verify trail name |
+| Network error | `RequestError` | Retry with backoff |
+
+### Operation: Get Data Event Selector
+
+Gets the details of a specific data event selector configuration, including which data event types, resources, and regions are being monitored.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+| Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail GetDataEventSelector --TrailName {{user.trail_name}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Selector details received | `$.DataEventSelector` | Selector configuration object |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Trail not found | `TrailNotFoundException` | HALT; verify trail name |
+| No selector configured | Empty response | Inform user; no data event selector exists for this trail |
+
+### Operation: Put Data Event Selector
+
+Configures or updates a data event selector for a trail. This operation enables ActionTrail to capture **data-plane events** (e.g., OSS `GetObject`, `PutObject`) in addition to management-plane events.
+
+> **Typical use case:** Enable OSS data event auditing to track who accessed, uploaded, or deleted objects in sensitive buckets.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+| Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
+| EventSelector JSON | Validate JSON structure | Valid JSON | HALT; fix JSON syntax |
+
+#### CLI Execution
+
+```bash
+# Example: Enable OSS data event collection for all buckets
+aliyun actiontrail PutDataEventSelector \
+  --TrailName {{user.trail_name}} \
+  --EventSelector '{"ServiceName":"oss","EventType":"All","ReadWriteType":"All"}'
+
+# Example: Enable OSS data event collection for specific bucket
+aliyun actiontrail PutDataEventSelector \
+  --TrailName {{user.trail_name}} \
+  --EventSelector '{"ServiceName":"oss","EventType":"All","ReadWriteType":"Read","ResourceName":"my-sensitive-bucket"}'
+
+# Example: Enable OSS data event collection with region filter
+aliyun actiontrail PutDataEventSelector \
+  --TrailName {{user.trail_name}} \
+  --EventSelector '{"ServiceName":"oss","EventType":"All","ReadWriteType":"Write","Region":"cn-hangzhou"}'
+```
+
+**EventSelector JSON structure:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ServiceName` | string | Yes | Data service name (e.g., `oss`, `rds`, `ecs`) |
+| `EventType` | string | Yes | Event type: `All`, `Read`, `Write` |
+| `ReadWriteType` | string | No | Read/write type: `Read`, `Write`, `All` |
+| `ResourceName` | string | No | Specific resource name to monitor |
+| `Region` | string | No | Specific region for data event collection |
+
+> **Note:** OSS is the most common data service for data event selectors. Service availability varies by region.
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Selector configured | `aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}` | New or updated selector appears in list |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Trail not found | `TrailNotFoundException` | HALT; verify trail name |
+| Invalid JSON | `InvalidParameter` | HALT; fix EventSelector JSON syntax |
+| Unsupported service | `InvalidParameter` | HALT; verify ServiceName is supported for data events |
+
+### Operation: Delete Data Event Selector
+
+Removes a data event selector from a trail, stopping collection of data-plane events for the configured service.
+
+> **⚠️ WARNING:** Deleting a data event selector permanently stops data-plane event collection. Historical data in OSS/SLS delivery is preserved.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Credentials | Env vars set | Non-empty | HALT |
+| Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
+| User confirmation | Ask user: "This will stop data-plane event collection for trail `{{user.trail_name}}`. Continue?" | Explicit "yes" | HALT |
+
+#### CLI Execution
+
+```bash
+aliyun actiontrail DeleteDataEventSelector --TrailName {{user.trail_name}}
+```
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Selector removed | `aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}` | Selector no longer in list |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Trail not found | `TrailNotFoundException` | HALT; verify trail name |
+| No selector exists | Empty response | Inform user; no selector to delete |
+
 ### Operation: Create Compliance Trail (Best Practice)
 
 Creates a trail that meets compliance requirements: all regions, all event types,
@@ -767,125 +1066,25 @@ client.StartLogging(startReq)
 | Trail exists | `TrailAlreadyExistsException` | HALT; use different name or update existing trail |
 | Quota exceeded | `QuotaExceeded` | HALT; max 5 trails per region, delete unused ones first |
 
-## Failure Recovery Reference
+> **Failure Recovery Reference:** See [references/failure-recovery.md](references/failure-recovery.md) for the complete error taxonomy table (19 error codes) and HALT vs Retry decision matrix.
 
-### Error Taxonomy
+> **Well-Architected Assessment:** See [references/well-architected.md](references/well-architected.md) for ActionTrail-specific WAF guidance (security/stability/cost/efficiency/performance pillars).
 
-| Error Code | Description | Retryable | Max Retries | Backoff | Agent Action |
-|------------|-------------|-----------|-------------|---------|--------------|
-| `TrailNotFoundException` | Specified trail does not exist | No | 0 | — | HALT; suggest listing trails with DescribeTrails |
-| `TrailAlreadyExistsException` | Trail name already in use | No | 0 | — | HALT; suggest a different trail name |
-| `InvalidParameter` | Invalid parameter value | No | 0 | — | HALT; check parameter values against API docs |
-| `InvalidParameterValue` | Parameter value out of range | No | 0 | — | HALT; check parameter constraints |
-| `Throttling` | Request throttled | Yes | 3 | Exponential (1s, 2s, 4s) | Wait and retry; reduce request rate |
-| `RequestError` | Network/connection error | Yes | 3 | Exponential (1s, 2s, 4s) | Check network connectivity; retry |
-| `ServiceUnavailable` | Service temporarily unavailable | Yes | 3 | Exponential (2s, 4s, 8s) | Wait and retry; check service status |
-| `InternalError` | Internal server error | Yes | 2 | Exponential (2s, 4s) | Retry; if persists, escalate |
-| `AccessDenied` | Insufficient permissions | No | 0 | — | HALT; check RAM policy permissions |
-| `InvalidAccessKeyId` | AccessKey ID not found | No | 0 | — | HALT; verify AccessKey ID |
-| `SignatureDoesNotMatch` | Request signature mismatch | No | 0 | — | HALT; check credential configuration |
-| `MissingParameter` | Required parameter missing | No | 0 | — | HALT; add required parameter |
-| `DependencyViolation` | Resource has dependencies | No | 0 | — | HALT; resolve dependencies first |
-| `QuotaExceeded` | Trail quota exceeded (max 5 per region) | No | 0 | — | HALT; delete unused trails or use different region |
-| `AccessKeyNotFoundException` | AccessKey ID not found for audit | No | 0 | — | HALT; verify AccessKey ID |
-| `InvalidEventType` | Invalid event type specified | No | 0 | — | HALT; use valid event types: ApiCall, ConsoleOperation, AliyunServiceEvent, PasswordReset, ConsoleSignin, ConsoleSignout |
-| `InsightTypeNotAvailable` | Invalid or not-yet-enabled InsightType | No | 0 | — | HALT; use valid types: IpInsight, ApiCallRateInsight, ApiErrorRateInsight, AkInsight, PolicyChangeInsight, PasswordChangeInsight, TrailConcealmentInsight |
-| `TimeRangeExceeded` | Time range exceeds 30 days or 90-day limit | No | 0 | — | HALT; adjust time range (max 30 days span, within 90 days) |
+> **GCL Cross-Checker:** See [references/gcl-crosscheck.md](references/gcl-crosscheck.md) for cross-check implementation details (finding types, companion script usage, changelog).
 
-### HALT vs Retry Decision Matrix
+## Reference Directory
 
-| Condition | Decision | Rationale |
-|-----------|----------|-----------|
-| Business error (TrailNotFound, InvalidParameter, AccessDenied) | **HALT** | User or configuration action required |
-| Throttling (Throttling) | **Retry** | Temporary; backoff resolves |
-| Network error (RequestError, ServiceUnavailable) | **Retry** | Temporary infrastructure issue |
-| Quota error (QuotaExceeded) | **HALT** | Requires resource cleanup or quota increase |
-| Credential error (InvalidAccessKeyId, SignatureDoesNotMatch) | **HALT** | Requires credential fix |
-| Missing parameter (MissingParameter) | **HALT** | Requires user input |
-
----
-
-## Well-Architected Assessment (卓越架构)
-
-This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to ActionTrail.
-
-### 安全 (Security) — *Primary Pillar for ActionTrail*
-
-| Area | Guidance |
-|------|----------|
-| **IAM** | Require: `actiontrail:LookupEvents`, `DescribeTrails` (read). `CreateTrail` (config). Scope to `acs:actiontrail:*:*:*` |
-| **Audit Trail** | ActionTrail IS the audit layer. Inspect for unauthorized API calls, privilege escalation, trail deletion |
-| **Credential Security** | Trail delivery buckets must have SSE-KMS encryption. Restrictive OSS/SLS policies |
-| **Trail Protection** | TrailConcealmentInsight detects attempts to disable/delete trails — attacker covering tracks |
-
-### 稳定 (Stability)
-
-| Area | Guidance |
-|------|----------|
-| **面向失败的架构设计** | Compliance Trail with `TrailRegion: All`, `EventRW: All` — no audit gaps |
-| **面向精细的运维管控** | 7 InsightTypes cover IP, AK, policy changes, password changes, trail concealment |
-| **面向风险的应急快恢** | Trail deleted → recreate Compliance Trail immediately. Restore from OSS delivery |
-
-### 成本 (Cost)
-
-Event storage: free for 90 days. OSS delivery for long-term (use lifecycle rules to tier cold data). Insights: free.
-
-### 效率 (Efficiency)
-
-- **Filters:** Filter `LookupEvents` by `ServiceName`, `EventName`, `EventAccessKeyId`
-- **Insight Events:** Automated anomaly detection eliminates manual review
-- **CI/CD:** Export to SLS for automated compliance scanning
-
-### 性能 (Performance)
-
-`LookupEvents`: ≤ 30 days per query, within 90 days. 50 results per page. `LookupInsightEvents`: 24h delay after enabling.
-
----
-
-## Quality Gate (GCL)
-
-This skill participates in the Generator-Critic-Loop (GCL) defined in
-[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
-in a **non-destructive cross-checker role**. Per `AGENTS.md` §12.8, this
-skill is classified as `optional` (read-only audit) and is therefore **not
-required to host its own `references/rubric.md` + `references/prompt-templates.md`**.
-
-| Aspect | Setting |
-|---|---|
-| Required? | **No** (Phase 3-C, read-only audit) |
-| GCL role | **Cross-checker** — verifies GCL traces against cloud-side ActionTrail events |
-| Companion script | [`alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`](../../alicloud-gcl-runner-ops/alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py) |
-| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
-
-### What the Cross-Check Catches
-
-| Finding | Severity | Meaning |
-|---|---|---|
-| `PHANTOM_PASS` | high | Local GCL said PASS but no ActionTrail event exists (op never ran) |
-| `PHANTOM_FAIL` | high | Local GCL said FAIL but ActionTrail has events (safety gate bypassed) |
-| `RESOURCE_MISMATCH` | medium | Event exists but `ResourceName` differs from local trace's args |
-| `TIMING_ANOMALY` | low | Event time > 1 hour from trace mtime (replay / clock drift / ingestion lag) |
-| `API_ERROR` | high | LookupEvents failed; cross-check infrastructure issue (NOT a phantom) |
-| `UNPARSEABLE_TRACE` | low | Trace command is not `aliyun ...` (dry-run, data-plane op) |
-
-### Usage (companion script)
-
-```bash
-# Cross-check a single trace
-python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
-  --trace audit-results/gcl-trace-20260604-103015-abc123.json
-
-# Cross-check ALL traces (CI mode)
-python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
-  --trace-dir audit-results/ \
-  --report audit-results/crosscheck-$(date +%Y%m%d).json \
-  --strict
-```
-
-### Changelog
-1.0.0 | 2026-06-04 | Phase 3-C: `## Quality Gate (GCL)` cross-checker role added. Companion script `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests). ActionTrail remains `optional` per §12.8.
-
----
+- [Core Concepts](references/core-concepts.md)
+- [API & SDK Usage](references/api-sdk-usage.md)
+- [CLI Usage](references/cli-usage.md)
+- [Troubleshooting Guide](references/troubleshooting.md)
+- [Failure Recovery](references/failure-recovery.md) — Error taxonomy (19 codes) + HALT/Retry matrix
+- [Well-Architected Assessment](references/well-architected.md) — WAF security/stability/cost/efficiency/performance
+- [GCL Cross-Checker](references/gcl-crosscheck.md) — Quality Gate cross-check with companion script
+- [Knowledge Base](references/knowledge-base.md) — Fault patterns (5 AT patterns + 2 cross-product scenarios)
+- [Integration](references/integration.md) — JIT Go SDK integration
+- [Monitoring](references/monitoring.md) — Monitoring and observability
+- [Prompts](references/prompts.md) — AIOps prompt templates
 
 ## See Also — Meta-Skill Rules
 

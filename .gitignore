@@ -89,6 +89,7 @@ ehthumbs.db
 .omo/
 .omp/
 .pi/
+infra-baseline/
 
 # GCL trace artifacts (per AGENTS.md §12.6; sanitized traces may still
 # leak operational context, so treat all traces as ephemeral by default)
@@ -99,3 +100,28 @@ report.md
 report-*.md
 rds-waste-report.md
 rds-*-report.md
+
+# ===== Runtime Data Root (Sprint 18) =====
+# 统一运行时数据根目录 (默认 ${SKILLS_DIR}/.runtime, 可通过环境变量 ALIYUN_SKILLS_RUNTIME_ROOT 覆盖)
+# 包含 baseline/audit/cache/logs/tmp 等子目录
+.runtime/
+.runtime-*/
+
+# Legacy paths (Sprint 18 之前, 现在用软链接兼容 → .runtime/)
+# 保留这些规则避免误提交历史数据
+infra-baseline/
+audit-results/
+
+# Skill-internal runtime data (legacy; Sprint 19+ 将逐步迁移到 .runtime/)
+alicloud-*/audit-results/
+alicloud-*/scripts/audit-results/
+alicloud-*/**/audit-results/
+
+# Python cache (跨 skill 通用)
+__pycache__/
+*.py[cod]
+*$py.class
+alicloud-*/**/__pycache__/
+
+# Test cache
+.pytest_cache/

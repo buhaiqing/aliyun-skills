@@ -66,6 +66,25 @@ class LocalBackend:
             return None
         return self.root / baselines[-1].isoformat()
 
+    def get_by_date(self, date_str: str) -> Optional[Path]:
+        """Return path to baseline directory for the given date, or None.
+
+        Args:
+            date_str: Date string in YYYY-MM-DD format (ISO 8601).
+
+        Returns:
+            Path to baseline directory, or None if not found.
+            Returns None (not raises) on invalid format for graceful error handling.
+        """
+        try:
+            target = date.fromisoformat(date_str)
+        except (ValueError, TypeError):
+            return None
+        candidate = self.root / target.isoformat()
+        if candidate.is_dir():
+            return candidate
+        return None
+
     def apply_retention(self, retention_days: int, today: Optional[date] = None) -> List[str]:
         """Mark directories older than retention_days with '.expired' suffix.
 

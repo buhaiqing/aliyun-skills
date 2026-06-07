@@ -1,10 +1,12 @@
 ---
 name: alicloud-aiops-cruise
-version: "1.0.0"
+version: "1.1.0"
 metadata:
   description: >-
-    阿里云全链路 AIOps 巡检 Skill — 从 EIP→SLB→ECS→RDS/Redis→NAT→安全组的端到端健康巡检、
-    故障排查、容量规划和预检。Agent 通过 aliyun CLI 编排阿里云原生服务
+    阿里云全链路 AIOps 巡检 + 感知 Agent 层 — 内置 7 个感知 Agent（HealthCruise/TopoScan/
+    ConfigDrift/CostWatch/SecurityScan/AuditTrail/AdvisorScan），实现从 EIP→SLB→ECS→
+    RDS/Redis→NAT→安全组的端到端健康巡检、故障排查、容量规划和预检。
+    Agent 通过 aliyun CLI 编排阿里云原生服务
     (CloudMonitor / DAS / CloudAssistant / ResourceCenter / ActionTrail / CloudFirewall)
     完成拓扑发现、指标采集、深度诊断和链路关联推理。
     纯读操作，不执行任何资源变更。
@@ -57,6 +59,50 @@ metadata:
 | 拓扑发现 | `alicloud-topo-discovery` | 用户需纯拓扑图时引导至此 |
 | ECS 详细诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
 | SLB 详细诊断 | `alicloud-slb-ops` | 引用 Describe* 命令模式 |
+
+## Perceive Layer — 感知 Agent
+
+本 Skill 内置了 **7 个感知 Agent**，统一放在 `scripts/agents/perceive/` 下，按领域分层组织：
+
+```
+scripts/agents/perceive/       # 感知层统一入口
+├── __init__.sh                # 统一调度入口，支持 --mode 子集选择
+├── infra/                     # 基础设施巡检（AIOps 核心链路）
+│   ├── healthcruise.sh        # 全链路巡检 EIP→SLB→ECS→RDS/Redis→NAT→安全组 | 每6h
+│   ├── toposcan.sh            # 拓扑发现 VPC/ECS/RDS/SLB 资源清单 | 每日/按需
+│   └── configdrift.sh         # 配置漂移检测 对比 Topo baseline | 按需
+├── cost/                      # 成本监察
+│   └── costwatch.sh           # 费用异常/到期预警/RI覆盖率/预算跟踪 | 每日
+├── security/                  # 安全监控
+│   ├── securityscan.sh        # 漏洞扫描/AK泄漏/基线检查 | 每日
+│   └── audittrail.sh          # 操作事件监控/异常API调用检测 | 实时/每日
+└── advisor/                   # 顾问建议
+    └── advisorscan.sh         # 健康报告 + 成本优化建议 | 每日
+```
+
+> 每个 Agent 委托对应的底层 Skill 执行。详见 [`references/perceive-design.md`](references/perceive-design.md)。
+
+### Baseline Retention 策略
+
+> ConfigDrift Agent 依赖的 baseline 快照必须保留足够长的时间，才能支持历史回溯。
+
+| 维度 | 策略 | 说明 |
+|------|------|------|
+| **保留时长** | `retention_days=90`（与 `baseline-manager.py` 默认值一致） | 3 个月内任意时间点可回溯拓扑演进 |
+| **采集频率** | 每日 02:00（cron `0 2 * * *`） | 由 toposcan Agent 触发，累积每日 baseline |
+| **清理策略** | 每周日 03:00（cron `0 3 * * 0`） | 跑 `baseline-manager.py --apply-retention --retention-days 90` 清理过期快照 |
+| **对比窗口** | 默认与"最新"对比 | 未来可扩展支持 `--compare-with <date>` 指定历史 baseline |
+| **存储路径** | `${SKILLS_DIR}/infra-baseline/<YYYY-MM-DD>/manifest.json` | 与 `infra-baseline/` 规范一致 |
+
+**为什么是 90 天？**
+- 满足季度审计、季度复盘的常见需求
+- 资源数 < 500 的账号，每份 manifest < 50KB，90 天总量 < 5MB（可忽略）
+- 阿里云 ActionTrail 自身保留 90 天操作事件，与之对齐便于交叉分析
+
+**当前未实现（见 Sprint 16 候选）**:
+- [ ] `--compare-with <date>`：对比指定历史 baseline
+- [ ] Cron 配置示例（toposcan + retention 清理）
+- [ ] 跨账号 baseline 比对
 
 ## Delegation Rules
 
@@ -198,4 +244,10 @@ GCL Prompt 见 `references/prompt-templates.md`。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.3.0 | 2026-06-07 | Sprint 19 完成: 清理所有硬编码 `audit-results` 路径 (gcl-runner-ops 5 文件 + runbooks 7 脚本 + _shared.py CACHE_DIR); 创建 `runtime_cleanup.py` 工具 (dry-run/apply/size limit); Sprint 18 Python 端补修 (`get_runtime_root` 支持 `SKILLS_DIR`); 6 个单测全部通过 |
+| 1.2.0 | 2026-06-07 | Sprint 18 完成: 运行时数据统一根目录 (`.runtime/`, 5 个软链接兼容, .gitignore 增强, 共享 lib `runtime_root.sh`+`runtime_root.py`, `configdrift.sh`/`__init__.sh` 改造, BUF-003 + 路径 bug 修复, Sprint 16 9/9 单测无回归) |
+| 1.1.2 | 2026-06-07 | Sprint 16 完成: `--compare-with <date>` 支持任意历史 baseline 对比 (baseline-manager + configdrift + LocalBackend.get_by_date + 9 个单测全部通过 + cron 模板) |
+| 1.1.3 | 2026-06-07 | Sprint 17 规划: Baseline 重采样能力 (`--resample --from-baseline <DATE> --as-of <DATE>` 复制式; `--fill-gaps` 智能补全; 与 Sprint 16 `--compare-with` 组合) |
+| 1.1.1 | 2026-06-07 | Hotfix: 修复 ConfigDrift Agent BUG-001（路径解析）+ BUG-002（参数接口）；新增 Baseline Retention 策略小节（retention_days=90）；创建 Sprint 16 跟踪 3 月回溯能力 |
+| 1.1.0 | 2026-06-07 | 新增感知 Agent 层 — 7 个 Agent 统一存放在 `scripts/agents/perceive/`，按领域分层（infra/cost/security/advisor）；新增 `references/perceive-design.md` 设计文档 |
 | 1.0.0 | 2026-06-06 | 初始版本 |

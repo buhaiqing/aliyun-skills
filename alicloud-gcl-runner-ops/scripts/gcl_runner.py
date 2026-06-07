@@ -104,7 +104,18 @@ from typing import Any, Dict, List, Optional, Tuple
 # ---------------------------------------------------------------------------
 
 #: Default directory for trace persistence (gitignored per AGENTS.md §12.6).
-DEFAULT_AUDIT_DIR = Path("./audit-results")
+#: Sprint 19: 改用 RUNTIME_ROOT/audit/gcl-runner-ops/
+def _resolve_default_audit_dir() -> Path:
+    """Sprint 19: 从 RUNTIME_ROOT 解析默认 audit 目录, 不可用则 fallback."""
+    env_root = os.environ.get("ALIYUN_SKILLS_RUNTIME_ROOT")
+    if env_root:
+        return Path(env_root) / "audit" / "gcl-runner-ops"
+    # fallback: 推断 aliyun-skills/.runtime/audit/gcl-runner-ops
+    _script = Path(__file__).resolve().parent
+    _skills = _script.parent.parent
+    return _skills / ".runtime" / "audit" / "gcl-runner-ops"
+
+DEFAULT_AUDIT_DIR = _resolve_default_audit_dir()
 
 #: Aliyun product → CLI subcommand mapping.
 #: Used to validate the command's product prefix matches the skill.
