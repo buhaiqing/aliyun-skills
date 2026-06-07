@@ -94,32 +94,11 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 - Task is about **Redis / Tair** → delegate to: `alicloud-redis-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating a MongoDB instance in a VPC, verify VPC and VSwitch exist (via `alicloud-vpc-ops`) before instance creation.
-- If restoring from backup, verify the backup exists via DescribeBackups before initiating RestoreDBInstance.
-- Multi-product requests: handle each product with its skill; do not merge unrelated APIs into one ambiguous flow.
-
-**Cross-Skill Verification Examples:**
-
-```bash
-# Verify VPC exists before creating MongoDB instance (delegate to alicloud-vpc-ops)
-aliyun vpc DescribeVpcs \
-  --RegionId "{{user.region}}" \
-  --VpcId "{{user.vpc_id}}" \
-  --output cols=VpcId,Status,VSwitchIds rows=Vpcs.Vpc[]
-
-# Verify VSwitch exists
-aliyun vpc DescribeVSwitches \
-  --RegionId "{{user.region}}" \
-  --VpcId "{{user.vpc_id}}" \
-  --VSwitchId "{{user.vswitch_id}}" \
-  --output cols=VSwitchId,Status,CidrBlock rows=VSwitches.VSwitch[]
-
-# For cost analysis, delegate to alicloud-billing-ops
-# aliyun bssopenapi QueryAccountBalance
-# aliyun bssopenapi QueryBillOverview --BillingCycle 2026-05
-```
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Key Concepts
 

@@ -93,14 +93,11 @@ fallback), response validation, and failure recovery.
 - User insists on **console-only** flows with no API → state limitation; do not
   invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating a cluster, ensure **VPC** and **VSwitch** exist first (via
-  `alicloud-vpc-ops`); ACK requires `vpc_id` and `vswitch_ids`.
-- If creating a public-facing cluster, **SLB** may be auto-created by ACK; do not
-  manually manage ACK-managed SLBs unless explicitly required.
-- Multi-product requests: handle each product with its skill; do not merge
-  unrelated APIs into one ambiguous flow.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

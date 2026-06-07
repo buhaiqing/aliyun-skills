@@ -97,17 +97,11 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 - User insists on **console-only** flows with no API → state limitation; do not invent
   undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating a trail with OSS delivery, verify OSS bucket exists (via `alicloud-oss-ops`
-  when present) before trail creation.
-- If creating a trail with SLS delivery, verify SLS project exists (via `alicloud-sls-ops`
-  when present) before trail creation.
-- If investigating a specific resource change (e.g., ECS instance deletion), use
-  LookupEvents to find the event, then delegate to the relevant product skill for
-  remediation.
-- Multi-product audit requests: handle ActionTrail event lookup first, then delegate
-  to specific product skills for further investigation.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
 
 ## Variable Convention (Agent-Readable)
 
@@ -860,7 +854,7 @@ required to host its own `references/rubric.md` + `references/prompt-templates.m
 |---|---|
 | Required? | **No** (Phase 3-C, read-only audit) |
 | GCL role | **Cross-checker** — verifies GCL traces against cloud-side ActionTrail events |
-| Companion script | [`scripts/gcl_actiontrail_crosscheck.py`](../../scripts/gcl_actiontrail_crosscheck.py) |
+| Companion script | [`alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`](../../alicloud-gcl-runner-ops/alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py) |
 | Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
 
 ### What the Cross-Check Catches
@@ -878,18 +872,18 @@ required to host its own `references/rubric.md` + `references/prompt-templates.m
 
 ```bash
 # Cross-check a single trace
-python3 scripts/gcl_actiontrail_crosscheck.py \
+python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace audit-results/gcl-trace-20260604-103015-abc123.json
 
 # Cross-check ALL traces (CI mode)
-python3 scripts/gcl_actiontrail_crosscheck.py \
+python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace-dir audit-results/ \
   --report audit-results/crosscheck-$(date +%Y%m%d).json \
   --strict
 ```
 
 ### Changelog
-1.0.0 | 2026-06-04 | Phase 3-C: `## Quality Gate (GCL)` cross-checker role added. Companion script `scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests). ActionTrail remains `optional` per §12.8.
+1.0.0 | 2026-06-04 | Phase 3-C: `## Quality Gate (GCL)` cross-checker role added. Companion script `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests). ActionTrail remains `optional` per §12.8.
 
 ---
 

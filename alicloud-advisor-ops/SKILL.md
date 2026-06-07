@@ -138,17 +138,11 @@ CLI keyword hints: `DescribeAdvices`, `RefreshAdvisorCheck`,
 - User wants **console-only flows with no API** → state the limitation;
   do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-| When | Delegate To |
-|------|-------------|
-| Advisor reports a security risk on an ECS instance | `alicloud-ecs-ops` for remediation (SecurityGroup modify, image replacement) |
-| Advisor reports a cost optimization on RDS | `alicloud-rds-ops` for spec downgrade (ModifyDBInstanceSpec) |
-| Advisor reports a risk on an SLB | `alicloud-slb-ops` for listener/backend adjustment |
-| Advisor reports an idle ACK cluster | `alicloud-ack-ops` for cluster scale-down or node pool resize |
-| Advisor reports overspending on a product | `alicloud-billing-ops` for cost analysis / subscription optimization |
-| User wants the underlying metric that triggered an advice | `alicloud-cms-ops` for raw CMS data, with the metric from `$.Advice.MetricInfo` |
-| User wants the historical events for a resource change | `alicloud-actiontrail-ops` for `LookupEvents` |
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

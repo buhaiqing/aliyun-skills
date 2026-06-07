@@ -106,20 +106,11 @@ primary agent execution path** in `SKILL.md` or [阿里云 OSS 控制台](https:
   analytics skill, not raw OSS
 - User insists on **console-only** flows with no API → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating OSS buckets in a VPC, no VPC dependency exists; OSS is a public
-  service accessed via endpoint URLs. Verify `RegionId` and endpoint reachability
-  before operations.
-- For cross-account OSS access, verify the destination RAM policy via
-  `alicloud-ram-ops` before assuming cross-account is allowed.
-- For CDN integration, the CDN skill should set OSS as the origin; this skill
-  only manages the bucket-side configuration.
-- For data migration into OSS, use the SMS or DTS skill (when present); this
-  skill does not perform migration.
-- If lifecycle rules delete objects needed by another product (e.g., logs for
-  SLS), coordinate with the consuming skill before applying destructive
-  lifecycle policies.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Five Core Standards (Quality Gates)
 

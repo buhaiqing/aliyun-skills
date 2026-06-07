@@ -99,12 +99,11 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 - Task is **API audit / who deleted rule** → delegate to: `alicloud-actiontrail-ops`
 - User insists on **console-only** with no API → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-- **DDoS protection:** WAF handles Layer 7 (application) attacks; for Layer 3/4 DDoS, delegate to `alicloud-ddos-ops`.
-- **Origin server reachability:** If origin ECS has issues, use `alicloud-ecs-ops` for instance status/security groups.
-- **Load balancing integration:** WAF sits in front of SLB/ALB; for SLB configuration, delegate to `alicloud-slb-ops`.
-- Multi-product: complete WAF configuration first, then verify origin server health via relevant skills.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

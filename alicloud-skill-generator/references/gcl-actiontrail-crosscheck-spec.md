@@ -17,8 +17,8 @@ metadata:
   parent: ../../AGENTS.md
   related:
     - gcl-rollout-spec.md
-    - ../../../scripts/gcl_actiontrail_crosscheck.py
-    - ../../../scripts/README.md
+    - ../../../alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py
+    - ../../../alicloud-gcl-runner-ops/scripts/README.md
 ---
 
 # GCL ↔ ActionTrail Cross-Check (Phase 3-C)
@@ -61,7 +61,7 @@ the cross-check:
    `("ecs", "DeleteInstance", "i-bp1...")`.
 2. **Maps the local op to ActionTrail's `EventName`**. Different
    services use different naming conventions; the canonical mapping is
-   in `scripts/gcl_actiontrail_crosscheck.py:PRODUCT_TO_EVENTNAME`. For
+   in `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py:PRODUCT_TO_EVENTNAME`. For
    example, `DeleteInstance` (local) → `DeleteInstances` (ActionTrail,
    note the plural).
 3. **Calls `aliyun actiontrail LookupEvents`** with the trace's
@@ -136,7 +136,7 @@ decouples them so a slow ActionTrail query does not block the runner.
 ### 4.1 Single Trace
 
 ```bash
-python3 scripts/gcl_actiontrail_crosscheck.py \
+python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace audit-results/gcl-trace-20260604-103015-abc123.json
 ```
 
@@ -152,7 +152,7 @@ exit: 1
 ### 4.2 All Traces (CI Mode)
 
 ```bash
-python3 scripts/gcl_actiontrail_crosscheck.py \
+python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace-dir audit-results/ \
   --report audit-results/crosscheck-$(date +%Y%m%d).json \
   --strict
@@ -181,7 +181,7 @@ jobs:
           ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.AKID }}
           ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.AKSK }}
         run: |
-          python3 scripts/gcl_actiontrail_crosscheck.py \
+          python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
             --trace-dir audit-results/ \
             --report audit-results/crosscheck-$(date -u +%Y%m%d-%H%M%S).json \
             --strict
@@ -263,7 +263,7 @@ This schema is the **input contract** for:
 ## 7. Adding a New Service / Op
 
 When a new `alicloud-*-ops` skill is added, extend
-`PRODUCT_TO_EVENTNAME` in `scripts/gcl_actiontrail_crosscheck.py`.
+`PRODUCT_TO_EVENTNAME` in `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`.
 
 Example for a hypothetical `alicloud-fc-ops` (Function Compute):
 
@@ -281,7 +281,7 @@ To discover the actual ActionTrail `EventName` for a new op:
    field in the resulting ActionTrail event.
 2. If the EventName is pluralized differently from the local op (e.g.
    `DeleteInstances` vs `DeleteInstance`), add a regex mapping.
-3. Add a unit test case in `scripts/gcl_actiontrail_crosscheck_test.py`.
+3. Add a unit test case in `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck_test.py`.
 
 ---
 
@@ -332,4 +332,4 @@ To discover the actual ActionTrail `EventName` for a new op:
 ---
 
 ## 10. Changelog
-1.0.0 | 2026-06-04 | Initial cross-check spec. Phase 3-C: `scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests) + `## Quality Gate (GCL)` cross-checker role in `alicloud-actiontrail-ops/SKILL.md` (bumped 1.0.0 → 1.1.0). ActionTrail skill remains `optional` per §12.8.
+1.0.0 | 2026-06-04 | Initial cross-check spec. Phase 3-C: `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests) + `## Quality Gate (GCL)` cross-checker role in `alicloud-actiontrail-ops/SKILL.md` (bumped 1.0.0 → 1.1.0). ActionTrail skill remains `optional` per §12.8.

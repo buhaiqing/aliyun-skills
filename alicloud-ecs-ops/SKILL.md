@@ -91,11 +91,11 @@ Alibaba Cloud ECS (Elastic Compute Service) provides scalable virtual servers in
 - Task is about **RDS / databases** → delegate to: `alicloud-rds-ops` (when present)
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating an ECS instance in a VPC, verify VPC and VSwitch exist (via `alicloud-vpc-ops`) before ECS creation.
-- If attaching a disk, verify the disk and instance are in the same zone and region.
-- Multi-product requests: handle each product with its skill; do not merge unrelated APIs into one ambiguous flow.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

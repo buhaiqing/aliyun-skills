@@ -100,17 +100,11 @@ See [references/architecture-design.md](references/architecture-design.md) for c
 - Task is RAM permission management → delegate to: `alicloud-ram-ops`
 - User needs **operational execution** against Sandbox APIs → this skill is for **development**, not runtime execution
 
-### Delegation Rules
+## Delegation Rules
 
-| Task | Delegate To |
-|------|-------------|
-| Go HTTP server implementation | Use [references/go-implementation.md](references/go-implementation.md) |
-| Python HTTP server implementation | Use [references/python-implementation.md](references/python-implementation.md) |
-| ACS3-HMAC-SHA256 signing algorithm | Use [references/auth-signing.md](references/auth-signing.md) |
-| WebSocket TTY implementation | Use [references/websocket-tty.md](references/websocket-tty.md) |
-| Prometheus metrics setup | Use [references/observability.md](references/observability.md) |
-| K8s deployment configuration | Use [references/deployment-guide.md](references/deployment-guide.md) |
-| Complete API reference | Use [references/api-reference.md](references/api-reference.md) |
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
 
 ## Placeholders
 

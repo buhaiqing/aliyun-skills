@@ -91,6 +91,12 @@ metadata:
 - User 需要配置安全策略 → 引导至安全相关 Skill
 - User 需要通过 `terraform apply` 创建云资源 → 引导至 `alicloud-terraform-ops` (待实现)
 
+## Delegation Rules
+
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
+
 ## Quality Gate (GCL)
 
 本 Skill 遵循 AGENTS.md §12 Generator-Critic-Loop 质量门。

@@ -21,11 +21,12 @@ aliyun-skills/
 ├── alicloud-skill-generator/     # Meta-skill: generate new skills from OpenAPI specs
 │   └── references/
 │       ├── gcl-rollout-spec.md        # §12.11 Phase 2 — how to generate GCL files for a new skill
-│       └── gcl-orchestrator-agent.md  # §12.11 Phase 2 — `pi-subagents` agent definition wrapping gcl_runner.py
-├── scripts/                      # §12.11 Phase 2 — cross-skill GCL runner
-│   ├── gcl_runner.py             # Python 3.10+ standalone CLI; zero external deps
-│   ├── gcl_runner_test.py        # unittest suite (60 tests, pure stdlib)
-│   └── README.md                 # usage guide
+│       └── gcl-orchestrator-agent.md  # §12.11 Phase 2 — pi-subagents agent wrapping gcl_runner.py (legacy; use Delegation Rules instead)
+├── alicloud-gcl-runner-ops/          # §12.11 Phase 2 — cross-skill GCL runner (shared skill)
+│   └── scripts/
+│       ├── gcl_runner.py             # Python 3.10+ standalone CLI; zero external deps
+│       ├── gcl_runner_test.py        # unittest suite (60 tests, pure stdlib)
+│       └── README.md                 # usage guide
 ├── audit-results/                # §12.6 — GCL trace storage (GITIGNORED; ephemeral)
 ├── alicloud-jit-setup.sh         # JIT Go SDK bootstrap (single script)
 ├── REQUIREMENTS.md               # Full requirements, architecture, technical specs
@@ -60,7 +61,7 @@ alicloud-[product]-ops/
 
 **`advanced/` linking rule**: Files in `advanced/` referencing sibling files in `references/` MUST use `../` relative paths (e.g. `[CLI Usage](../cli-usage.md)`).
 
-**Note**: Only `alicloud-redis-ops` and `alicloud-topo-discovery` have `scripts/`. `alicloud-elasticsearch-ops` also has `operations/` and `reports/` dirs. New skills follow the canonical structure above.
+**Note**: Only `alicloud-redis-ops`, `alicloud-topo-discovery`, and `alicloud-gcl-runner-ops` have `scripts/`. `alicloud-elasticsearch-ops` also has `operations/` and `reports/` dirs. New skills follow the canonical structure above.
 
 ---
 
@@ -282,8 +283,12 @@ Any issue found → fix one by one → all must pass before finishing.
 | Role | Responsibility | Banned |
 |------|---------------|--------|
 | **Generator (G)** | Execute the cloud operation | Modify rubric, self-score |
+| **Hallucination Detector (H)** | Pre-execution structural validity check | Execute API calls, mutate G's output |
 | **Critic (C)** | Independently audit G's output | Call `aliyun`/SDK, mutate resources |
 | **Orchestrator (O)** | Loop control, termination decision | Execute or score |
+
+> **H role**: Added in GCL v1.5.0 (Phase 6). Catches LLM hallucinations in generated commands/JSON **before** execution.
+> Full spec at [`docs/gcl-spec.md#14-hallucination-detection-layer-h`](docs/gcl-spec.md#14-hallucination-detection-layer-h).
 
 ### Rubric Dimensions (≥5)
 
@@ -302,6 +307,7 @@ Any issue found → fix one by one → all must pass before finishing.
 | **PASS** | All dimensions pass → return G's result |
 | **MAX_ITER** | Reached max_iter → return best-so-far + unresolved issues |
 | **SAFETY_FAIL** | Safety=0 → **ABORT**, no partial result |
+| **HALLUCINATION_ABORT** | H detected unresolved hallucinations → **ABORT**, return hallucination report (since v1.5.0) |
 
 ### Skill Classification (GCL Level + max_iter)
 

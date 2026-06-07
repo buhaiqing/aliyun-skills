@@ -112,16 +112,11 @@ as the primary agent execution path** in `SKILL.md`.
 - User insists on **console-only** flows with no API → state limitation;
   do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If a task requires **creating the database instance first** (e.g., RDS
-  MySQL), complete or verify that via the engine-specific skill before
-  registering it into DAS with `AddHDMInstance`.
-- Multi-product requests: handle each product with its skill; do not merge
-  unrelated APIs into one ambiguous flow.
-- DAS Pro (enterprise edition) storage and license management may cross
-  into billing; document delegation in the flow if a purchase action is
-  required.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

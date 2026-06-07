@@ -76,12 +76,11 @@ Alibaba Cloud EIP (Elastic IP Address) provides independent public IP addresses 
 - Task is about **SLB / load balancing** → delegate to: `alicloud-slb-ops`
 - Task is about **VPN gateway** → delegate to: `alicloud-vpc-ops` (when present)
 
-### Delegation Rules
+## Delegation Rules
 
-- If binding EIP to ECS for direct internet access, use this skill for EIP operations, but verify ECS instance exists via `alicloud-ecs-ops`.
-- If binding EIP to NAT Gateway, use this skill for EIP operations, but verify NAT Gateway exists via `alicloud-nat-ops`.
-- If binding EIP to SLB, use this skill for EIP operations, but verify SLB exists via `alicloud-slb-ops`.
-- If creating SNAT/DNAT for NAT Gateway, the EIP allocation uses this skill, but SNAT/DNAT entry management uses `alicloud-nat-ops`.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

@@ -14,8 +14,8 @@ metadata:
   parent: ../../AGENTS.md
   related:
     - rubric.md
-    - ../../../scripts/gcl_passrate_reporter.py
-    - ../../../scripts/gcl_cms_alarm_setup.py
+    - ../../alicloud-gcl-runner-ops/scripts/gcl_passrate_reporter.py
+    - ../../alicloud-gcl-runner-ops/scripts/gcl_cms_alarm_setup.py
 ---
 
 # Phase 4: GCL Pass-Rate Metrics Integration (CMS)

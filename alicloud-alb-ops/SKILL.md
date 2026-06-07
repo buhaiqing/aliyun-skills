@@ -98,12 +98,11 @@ ALB is Alibaba Cloud's Layer 7 (HTTP/HTTPS/QUIC) load balancer. This skill is an
 - Task is about **ECS / VPC only** → delegate to respective skills
 - User insists on **console-only** flows
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating ALB in a VPC, verify VPC and VSwitch exist (via `alicloud-vpc-ops`).
-- If associating EIP/bandwidth package, delegate to `alicloud-eip-ops`.
-- If attaching WAF protection, delegate to `alicloud-waf-ops`.
-- Multi-product requests: handle each product with its skill.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

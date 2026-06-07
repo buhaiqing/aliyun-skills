@@ -97,13 +97,11 @@ Alibaba Cloud AgentRun is a serverless sandbox service providing isolated execut
 - Task is billing/account management → delegate to: billing ops skill
 - User wants **console-only** operations → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-| Task | Delegate To | Reason |
-|------|-------------|--------|
-| Build Sidecar proxy for AgentRun | `alicloud-sandbox-dev` | Development skill for middleware |
-| RAM policy for AgentRun permissions | `alicloud-ram-ops` | Permission management |
-| FC function hosting sandbox | `alicloud-fc-ops` | Function Compute operations |
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

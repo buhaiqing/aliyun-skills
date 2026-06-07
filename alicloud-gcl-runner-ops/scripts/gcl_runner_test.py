@@ -22,6 +22,9 @@ Test coverage:
 - T10 run_loop() — full loop integration (dry-run)
 - T11 persist_trace() — JSON schema matches AGENTS.md §12.6
 - T12 CLI integration — main() returns correct exit codes
+- T13 hallucination_detect() — CLI params, JSON structure, WAF compliance
+- T14 run_loop() with H check — HALLUCINATION_ABORT exit path
+- T15 _synthesize_dry_run() — H result passthrough in dry-run mode
 """
 
 from __future__ import annotations
@@ -753,6 +756,179 @@ class CLITests(unittest.TestCase):
                 "--output-dir", str(self.audit_dir),
             ])
         self.assertEqual(code, gcl_runner.EXIT_MAX_ITER)
+
+
+# ---------------------------------------------------------------------------
+# T13 — Hallucination Detection (H) Tests  (gcl_runner.hallucination_detect)
+# ---------------------------------------------------------------------------
+
+
+class HallucinationDetectTests(unittest.TestCase):
+    """Hallucination Detection (H) — pre-execution structural validity check."""
+
+    def test_happy_path_known_params(self):
+        """All CLI flags known to PARAMETER_KNOWLEDGE → PASS."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DescribeInstances --RegionId cn-hangzhou --PageSize 10"
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["checks"]["cli_parameters"]["unrecognized"], [])
+
+    def test_unrecognized_param_detected(self):
+        """A flag not in PARAMETER_KNOWLEDGE → FAIL with unrecognized list."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DeleteInstance --RegionId cn-hangzhou --FakeParam foo"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn("--FakeParam", result["checks"]["cli_parameters"]["unrecognized"])
+
+    def test_unrecognized_param_detected_zone_vs_zoneid(self):
+        """--Zone instead of --ZoneId is caught."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DescribeInstances --Zone cn-hangzhou-f"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn("--Zone", result["checks"]["cli_parameters"]["unrecognized"])
+
+    def test_known_params_with_common_flags(self):
+        """Generic `aliyun` CLI flags (--output, --format) are NOT flagged."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DescribeInstances --RegionId cn-hangzhou --output json --format pretty"
+        )
+        self.assertEqual(result["status"], "PASS")
+
+    def test_non_aliyun_command_passes(self):
+        """Non-aliyun commands (data-plane tools) pass CLI parameter check."""
+        result = gcl_runner.hallucination_detect(
+            "mysql -h localhost -u root -p mydb -e 'SELECT 1'"
+        )
+        self.assertEqual(result["status"], "PASS")
+
+    def test_unknown_product_passes(self):
+        """Unknown product not in PARAMETER_KNOWLEDGE passes conservatively."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun unknown-product DescribeFoo --Bar baz"
+        )
+        self.assertEqual(result["status"], "PASS")
+
+    def test_waf_deletion_protection_disabled(self):
+        """--DeletionProtection false is flagged as WAF Security violation."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun rds CreateDBInstance --Engine MySQL --DeletionProtection false --DBInstanceClass rds.mysql.s2.large"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["checks"]["waf_compliance"]["status"], "FAIL")
+
+    def test_waf_force_flag_on_delete(self):
+        """--Force on a destructive op is flagged as Security concern."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DeleteInstance --InstanceId i-bp1xxx --Force"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertGreater(len(result["checks"]["waf_compliance"]["violations"]), 0)
+
+    def test_waf_backup_retention_zero(self):
+        """--BackupRetentionPeriod 0 is flagged as Stability violation."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun rds CreateDBInstance --Engine MySQL --BackupRetentionPeriod 0"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn("Stability", result["checks"]["waf_compliance"]["violations"][0])
+
+    def test_waf_postpaid_flag(self):
+        """--PayType PostPaid flagged as Cost concern."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs CreateInstance --ImageId xxx --InstanceType ecs.g6.large --PayType PostPaid"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertIn("Cost", result["checks"]["waf_compliance"]["violations"][0])
+
+    def test_json_payload_pass(self):
+        """Valid JSON-like payload passes JSON structure check."""
+        result = gcl_runner.hallucination_detect(
+            'aliyun ecs RunInstances --RegionId cn-hangzhou --Amount 1 --Tag "[{\"Key\":\"env\",\"Value\":\"prod\"}]"'
+        )
+        # CLI params may fail if not in knowledge base, but JSON check passes
+        self.assertEqual(result["checks"]["json_structure"]["status"], "PASS")
+
+    def test_combination_multi_fail(self):
+        """Command with multiple hallucination types fails across categories."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs CreateInstance --ImageId ami-123 --FakeParam x --DeletionProtection false"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["checks"]["cli_parameters"]["status"], "FAIL")
+        self.assertEqual(result["checks"]["waf_compliance"]["status"], "FAIL")
+        self.assertIn("--FakeParam", result["checks"]["cli_parameters"]["unrecognized"])
+
+    def test_no_flag_command(self):
+        """CLI command with no flags passes trivially."""
+        result = gcl_runner.hallucination_detect("aliyun ecs DescribeRegions")
+        self.assertEqual(result["status"], "PASS")
+
+    def test_report_format(self):
+        """FAIL result includes a human-readable report string."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DeleteInstance --FakeFlag value"
+        )
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(len(result["report"]) > 0)
+        self.assertIn("FakeFlag", result["report"])
+
+    def test_cli_params_exact_count(self):
+        """CLI parameter check reports correct total/recognized counts."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DescribeInstances --RegionId cn-hangzhou --PageSize 10 --FakeFlag foo"
+        )
+        cli = result["checks"]["cli_parameters"]
+        self.assertEqual(cli["total"], 3)
+        self.assertEqual(cli["recognized"], 2)
+        self.assertIn("--FakeFlag", cli["unrecognized"])
+
+    def test_force_without_delete_not_extra_flagged(self):
+        """--Force on a non-delete operation does not trigger the extra stability heuristic."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs StopInstance --InstanceId i-bp1 --Force"
+        )
+        # --Force itself is a WAF flag, but the heuristic delete check shouldn't add extra
+        self.assertIn("Security", result["report"])
+
+    def test_dry_run_with_hallucination_passes_via_cli(self):
+        """Dry-run + enable-hallucination-check passes the H result through."""
+        trace = gcl_runner._synthesize_dry_run(
+            skill="alicloud-ecs-ops",
+            op="DescribeInstances",
+            command="aliyun ecs DescribeInstances --RegionId cn-hangzhou",
+            user_request="list instances",
+            rubric={"version": "1.0", "ops": {}, "regexes": [], "max_iter": 2},
+            enable_hallucination_check=True,
+        )
+        self.assertIn("hallucination_detector", trace["iterations"][0])
+        self.assertEqual(
+            trace["iterations"][0]["hallucination_detector"]["status"],
+            "PASS",
+        )
+
+    def test_main_hallucination_abort_exit_5(self):
+        """When H detects an unrecognized param with --enable-hallucination-check, exit code is 5."""
+        trace = gcl_runner.run_loop(
+            skill="alicloud-ecs-ops",
+            op="DeleteInstance",
+            command="aliyun ecs DeleteInstance --FakeParam foo",
+            user_request=None,
+            rubric={"version": "1.0", "ops": {"DeleteInstance": "test"}, "regexes": [], "max_iter": 1},
+            max_iter=1,
+            enable_hallucination_check=True,
+        )
+        self.assertEqual(trace["final"]["status"], "HALLUCINATION_ABORT")
+
+    def test_report_empty_on_pass(self):
+        """PASS result has an empty report."""
+        result = gcl_runner.hallucination_detect(
+            "aliyun ecs DescribeRegions"
+        )
+        self.assertEqual(result["status"], "PASS")
+        self.assertEqual(result["report"], "")
 
 
 if __name__ == "__main__":

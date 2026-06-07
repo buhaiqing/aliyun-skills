@@ -249,6 +249,12 @@ metadata:
 ### SHOULD NOT Use This Skill When
 - [Negative cases → delegate to other skills]
 
+## Delegation Rules
+
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 生成新的 skill 时，对生成的命令执行 GCL 验证 |
+
 ## Variables
 
 | Variable | Source | Description | Example |
@@ -712,6 +718,8 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **[GCL] Quality Gate section in SKILL.md (when `required` or `recommended`):** `## Quality Gate (GCL)` section inserted between `## Operational Best Practices` and `## See Also — Meta-Skill Rules`, with classification table (Required? / `max_iter` / Most-scrutinized ops), `Changelog` line at 1.0.0, and links to both `references/rubric.md` AND `references/prompt-templates.md` per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §6
 - [ ] **[GCL] Cross-skill delegation documented (when skill touches other products):** Generator template hard rules list explicit delegation to other skills' GCL rules (e.g. VPC → `alicloud-eip-ops` for EIP ops; NAT → `alicloud-eip-ops`; PolarDB → `alicloud-rds-ops` for shared SQL WHERE-clause) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §7
 
+- [ ] **[GCL] Hallucination Detection awareness (when `required` or `recommended` per AGENTS.md §14.5):** Generator and prompt templates reference H pre-execution check expectations; `references/rubric.md` includes CLI parameter coverage notes for the skill's primary operations; `references/prompt-templates.md` mentions H gate's pre-execution role per [docs/gcl-spec.md §14](docs/gcl-spec.md#14-hallucination-detection-layer-h)
+
 ### P1 — SHOULD PASS
 
 - [ ] **Chaining:** Stable output fields for downstream skills (via `{{output.*}}` placeholders)
@@ -752,7 +760,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 | [user-experience-spec.md](references/user-experience-spec.md) | Mandatory UX requirements for all generated skills |
 | [aiops-best-practices.md](references/aiops-best-practices.md) | Mandatory AIOps patterns for monitoring/diagnosis skills |
 | [gcl-rollout-spec.md](references/gcl-rollout-spec.md) | **NEW** Generator-Critic-Loop (GCL) rollout playbook — how to generate `references/rubric.md` + `references/prompt-templates.md` + `## Quality Gate (GCL)` section in SKILL.md for a new `alicloud-*-ops` skill; covers `required` / `recommended` / `optional` classification, per-op Safety sub-rule format, regex hot-spot detection, cross-skill delegation, and SLB worked example. Mandatory reference for any new or updated `required` / `recommended` skill per `AGENTS.md` §12. |
-| [gcl-orchestrator-agent.md](references/gcl-orchestrator-agent.md) | **NEW** `pi-subagents` custom agent definition (`gcl-orchestrator`) that wraps `scripts/gcl_runner.py` for the parent pi session. Install by copying the spec to `.pi/agents/gcl-orchestrator.md` (project scope) or `~/.pi/agent/agents/gcl-orchestrator.md` (user scope). `context: fork` future-proofs for Phase 3 LLM-based Critic. |
+| [gcl-orchestrator-agent.md](references/gcl-orchestrator-agent.md) | **NEW** `pi-subagents` custom agent definition (`gcl-orchestrator`) that wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py` for the parent pi session. **Deprecated** — skills should delegate GCL execution directly via `## Delegation Rules` to the `alicloud-gcl-runner-ops` shared skill instead. |
 | [gcl-actiontrail-crosscheck-spec.md](references/gcl-actiontrail-crosscheck-spec.md) | **NEW** GCL ↔ ActionTrail cross-check spec (Phase 3-C). For each `gcl-trace-*.json`, an independent `LookupEvents` call verifies the op actually happened in the cloud; catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY` findings. Companion to `scripts/gcl_actiontrail_crosscheck.py`. |
 | [well-architected-assessment.md](references/well-architected-assessment.md) | **NEW** Alibaba Cloud Well-Architected Framework five-pillar assessment integration |
 | [assets/eval_queries.json](assets/eval_queries.json) | Eval queries for testing the meta-skill's description trigger accuracy |

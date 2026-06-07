@@ -12,6 +12,9 @@
 
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 ## Generator Prompt (Hard-Rules List + Task)
 
 The Generator (the agent) executes Advisor operations under these

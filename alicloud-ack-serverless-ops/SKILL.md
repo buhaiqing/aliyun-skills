@@ -124,19 +124,11 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 - User insists on **console-only** flows with no API → state limitation;
   do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating an ASK cluster, ensure **VPC and VSwitch** exist first
-  (via `alicloud-vpc-ops`); ASK requires `vpc_id` and `vswitch_ids` (for
-  ECI Pod ENIs).
-- For Pod-to-Internet egress, **NAT Gateway** must exist in the same VPC —
-  verify via `alicloud-nat-ops` if `nat_gateway_id` is not auto-discovered.
-- For ECI resource quotas (vCPU / memory / instance count) — query via
-  [`alicloud-eci-ops`](../alicloud-eci-ops/SKILL.md) **before** creating cluster or scheduling
-  large workloads. Quota exceeded after cluster creation will manifest as
-  Pod `Pending` with `FailedScheduling`.
-- For ECI container image registry / ACR issues → `alicloud-acr-ops`
-  (when present).
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

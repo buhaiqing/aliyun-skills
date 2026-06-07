@@ -122,13 +122,11 @@ before and after application.
 - User insists on **console-only** flows with no API → state limitation;
   do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If a RAM role needs to access ECS/RDS/OSS, the role itself is managed here,
-  but resource-level policies on those services are managed in their respective
-  skills.
-- Multi-product requests: handle RAM identity/permission setup first, then
-  delegate resource provisioning to the appropriate product skill.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

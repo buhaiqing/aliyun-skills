@@ -127,12 +127,11 @@ complex request structures, JIT build a Go SDK script.
 - Task requires CloudMonitor 2.0 advanced features not yet covered → note
   limitation; do not invent undocumented APIs
 
-### Delegation Rules
+## Delegation Rules
 
-- If alarm rule depends on a specific resource, verify the resource exists
-  (via the resource's skill) before creating alarm rules.
-- Multi-product monitoring: handle each product's metrics with its skill for
-  resource verification; use this skill for alarm configuration.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

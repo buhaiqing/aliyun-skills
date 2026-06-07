@@ -77,12 +77,11 @@ Alibaba Cloud NAT (Network Address Translation) Gateway enables private instance
 - Task is about **RDS / databases** → delegate to: `alicloud-rds-ops` (when present)
 - Task is about **SLB / load balancing** → delegate to: `alicloud-slb-ops`
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating NAT Gateway, first verify VPC and vSwitch exist via `alicloud-vpc-ops`.
-- If NAT Gateway needs EIPs for SNAT/DNAT source IPs, allocate EIPs via `alicloud-eip-ops` first.
-- After NAT Gateway is created, use this skill for SNAT/DNAT entry management.
-- SNAT/DNAT rules target ECS instances in vSwitches — to verify target resources, use `alicloud-ecs-ops`.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

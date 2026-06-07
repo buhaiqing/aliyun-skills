@@ -17,6 +17,9 @@ metadata:
     - rubric.md
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 # GCL Prompt Templates — DTS (Data Transmission Service)
 
 Inherits structure from `AGENTS.md` §12.7 and prior pilots (alicloud-ecs-ops,

@@ -161,23 +161,11 @@ the web console as the primary agent execution path** in `SKILL.md` or
   control plane only
 - User insists on **console-only** flows with no API → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-- **VPC / vSwitch:** Mount targets must live in a VPC. Before creating a mount
-  target, verify the VPC and vSwitch exist via `alicloud-vpc-ops`.
-- **ECS client attachment:** Once a mount target is created, the actual mount
-  happens on an ECS instance (or container). This skill returns the mount
-  command/address; the **agent should reference `alicloud-ecs-ops`** to confirm
-  the ECS instance / cluster can reach the mount target's VPC.
-- **RAM permissions:** Cross-account read access to NAS data requires RAM
-  policy on the file system; defer to `alicloud-ram-ops` for policy authoring.
-- **Encryption (KMS):** NAS supports server-side encryption with KMS CMK;
-  if the user wants a specific CMK, defer to `alicloud-kms-ops` for key lookup.
-- **DR / cross-region replication:** NAS cross-region replication uses
-  hybrid storage DR; coordinate with `alicloud-hbr-ops` for the data-plane
-  replication tool.
-- **Multi-product requests:** Handle each product with its own skill; do not
-  merge unrelated APIs (e.g., ECS + NAS + RAM) into one flow.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

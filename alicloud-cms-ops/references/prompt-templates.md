@@ -16,7 +16,7 @@ metadata:
   parent: ../../../AGENTS.md
   references:
     - rubric.md
-    - scripts/gcl_actiontrail_crosscheck.py
+    - alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py
 ---
 
 # CMS GCL Prompt Templates (Phase 3-B — Phantom Alarm Integration)
@@ -89,7 +89,7 @@ You are the Critic in a GCL for Alibaba Cloud CMS. Read-only.
 
 ## Cross-Skill Delegation (Phase 3-B)
 
-- Phantom alarm creation depends on `scripts/gcl_actiontrail_crosscheck.py`
+- Phantom alarm creation depends on `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`
   (Phase 3-C) for the `crosscheck-report-*.json` input.
 - `DeleteMetricAlarm` on a `GCL-Phantom-*` alarm is blocked by the
   Critic (SAFETY_FAIL) unless the user explicitly confirms that the

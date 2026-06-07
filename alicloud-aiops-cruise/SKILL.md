@@ -58,6 +58,12 @@ metadata:
 | ECS 详细诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
 | SLB 详细诊断 | `alicloud-slb-ops` | 引用 Describe* 命令模式 |
 
+## Delegation Rules
+
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
+
 ## Variable Convention
 
 | 类型 | 含义 | 来源 | 示例 |

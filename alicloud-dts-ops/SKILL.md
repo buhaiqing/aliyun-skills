@@ -96,13 +96,11 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 - Task is about **MongoDB instance CRUD** → delegate to: `alicloud-mongodb-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- Before creating a DTS migration task, verify source/target database connectivity manually or via DescribeConnectionStatus.
-- If DTS task involves RDS as source/target, the RDS instance must be in Running state (via `alicloud-rds-ops`).
-- If DTS task involves PolarDB as source/target, the cluster must be in Running state (via `alicloud-polar-mysql-ops`).
-- If DTS task involves Redis as source/target, delegate instance check to `alicloud-redis-ops`.
-- If DTS task involves ECS-based self-managed database, ensure ECS security group allows DTS IP CIDR blocks (white list).
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

@@ -97,12 +97,11 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 - Task is **SOAR playbooks only** → product `sophonsoar` (separate skill when present)
 - User insists on **console-only** with no API → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-- **Agent offline on ECS:** use this skill for install/status; use `alicloud-ecs-ops` for instance reachability (security group, Cloud Assistant).
-- **Alert root-cause on ECS:** `DescribeSuspEventDetail` here → remediation commands on `alicloud-ecs-ops` if instance change needed.
-- **Compliance audit trail:** Security Center findings + `alicloud-actiontrail-ops` for API call provenance.
-- Multi-product: complete Security Center query/handle first, then delegate per affected product.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
 
 ## Variable Convention (Agent-Readable)
 

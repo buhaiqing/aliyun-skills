@@ -95,17 +95,11 @@ Alibaba Cloud Function Compute (FC) is a fully managed, event-driven serverless 
 - User wants SLS log analysis → delegate to: `alicloud-sls-ops` (when present)
 - User asks about API Gateway configuration → delegate to: API Gateway skill (when present)
 
-### Delegation Rules
+## Delegation Rules
 
-| Dependency | Delegate To | When |
-|-----------|-------------|------|
-| RAM execution role for FC function | `alicloud-ram-ops` | When troubleshooting permission errors |
-| VPC + vSwitch for FC networking | `alicloud-vpc-ops` (when present) | When VPC binding issues |
-| SLB/ALB health check for FC HTTP trigger | `alicloud-slb-ops` | When backend health issues |
-| SLS log query for FC function logs | `alicloud-sls-ops` (when present) | When deep log analysis needed |
-| CMS alert rule management | `alicloud-cms-ops` | When creating/modifying FC alert rules |
-| DAS for FC-to-RDS connectivity diagnosis | `alicloud-das-ops` | When database connection issues from FC |
-| OSS for FC code package source | `alicloud-oss-ops` (when present) | When troubleshooting code download |
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

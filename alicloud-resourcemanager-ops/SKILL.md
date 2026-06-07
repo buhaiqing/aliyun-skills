@@ -91,12 +91,11 @@ Resource Manager (资源管理) provides enterprise-grade multi-account manageme
 - Task is IAM credential key management → delegate to: `alicloud-ram-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- Resource Directory is a prerequisite for resource groups and control policies — verify directory status first.
-- When creating accounts, RAM user provisioning is handled by `alicloud-ram-ops`.
-- When moving resources between groups, verify resource existence via the respective product skill.
-- Tag-based access control (ABAC) policies are managed by `alicloud-ram-ops`.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

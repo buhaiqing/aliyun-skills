@@ -104,32 +104,11 @@ only when CLI lacks support for a specific edge-case operation.
 - User insists on **console-only** flows with no API → state limitation; do not
   invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- If creating an SLB instance in a VPC, verify VPC and VSwitch exist (via
-  `alicloud-vpc-ops`) before SLB creation.
-- If adding backend servers, verify ECS instances exist (via `alicloud-ecs-ops`)
-  and are in the same region/VPC.
-- If uploading certificates, ensure certificate content and private key are valid
-  PEM format.
-- Multi-product requests: handle each product with its skill; do not merge
-  unrelated APIs into one ambiguous flow.
-
-#### ECS Delegation Rules (后端异常联动)
-
-| Scenario | Condition | Delegate To | Action |
-|----------|-----------|-------------|--------|
-| 后端异常 | Backend server health check failure | `alicloud-ecs-ops` | ECS 实例诊断 |
-| 健康检查失败 | Health check status abnormal | `alicloud-ecs-ops` | ECS 实例网络/端口检查 |
-
-#### Multi-Index Anomaly Patterns (多指标异常模式)
-
-| Pattern ID | Description | Detection Logic | Recommended Action |
-|------------|-------------|-----------------|---------------------|
-| 1 | 连接数-响应延迟瓶颈 | ActiveConnection 持续 > 80% 且 LatencyP50 > 500ms | 检查后端服务器性能 |
-| 2 | 健康检查失败率突增 | HealthCheck failed ratio > 50% in 5min | 检查后端服务可用性 |
-| 3 | 后端服务器不均衡 | Server weight imbalance > 3x | 调整后端权重 |
-| 4 | 流量突增异常 | QPS 突增 > 200% baseline | 排查异常流量/攻击 |
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

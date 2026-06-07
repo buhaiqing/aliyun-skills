@@ -103,12 +103,11 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 - Task is **network / VPC / NAT** → delegate to: `alicloud-nat-ops`, `alicloud-vpc-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- Billing operations are **self-contained** — no dependencies on other cloud resources
-- **From other skills:** When a product skill (ECS, RDS, etc.) needs cost attribution, delegate to this skill's `QueryInstanceBill` with `ProductCode` filter
-- **To other skills:** When billing query reveals a resource issue (e.g., orphaned instance), delegate investigation to the appropriate product skill
-- Multi-product cost analysis: use this skill's product-level billing APIs; do not merge unrelated product APIs
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | N/A | 只读操作，不触发 GCL 质量门禁 |
 
 ## Variable Convention (Agent-Readable)
 

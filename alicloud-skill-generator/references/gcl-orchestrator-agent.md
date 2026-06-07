@@ -2,7 +2,7 @@
 name: gcl-orchestrator-agent
 description: >-
   Specification for a `pi-subagents` custom agent (`gcl-orchestrator`) that
-  wraps `scripts/gcl_runner.py` for the parent pi agent. Use this spec
+  wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py` for the parent pi agent. Use this spec
   to install the agent to `.pi/agents/gcl-orchestrator.md` (project scope)
   or `~/.pi/agent/agents/gcl-orchestrator.md` (user scope). The agent
   enforces the Generator-Critic-Loop (GCL) defined in `AGENTS.md` §12.
@@ -28,8 +28,10 @@ metadata:
 > `.pi/agents/gcl-orchestrator.md` (project scope) or
 > `~/.pi/agent/agents/gcl-orchestrator.md` (user scope).
 >
-> The agent itself wraps `scripts/gcl_runner.py` so the parent pi session
+> The agent itself wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py` so the parent pi session
 > can invoke the GCL via a slash command or a `subagent(...)` tool call.
+>
+> **Deprecation note**: This agent-based integration is being replaced by `## Delegation Rules` in SKILL.md. Skills should delegate GCL to `alicloud-gcl-runner-ops` directly via the shared-skill paradigm.
 
 ---
 
@@ -59,7 +61,7 @@ Copy the following block to `.pi/agents/gcl-orchestrator.md` (or
 ---
 name: gcl-orchestrator
 description: >-
-  Generator-Critic-Loop orchestrator. Wraps `scripts/gcl_runner.py` for the
+  Generator-Critic-Loop orchestrator. Wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py` for the
   parent pi session. Use when the parent needs to execute an `alicloud-*-ops`
   skill command with adversarial review per `AGENTS.md` §12. Invoke via the
   `subagent(...)` tool with `agent: gcl-orchestrator`.
@@ -89,15 +91,15 @@ The parent session invokes you with arguments like:
 # Your job
 1. Sanity-check the inputs. Reject if:
    - `skill` is not in the known `alicloud-*-ops` list (see `PRODUCT_CLI`
-     in `scripts/gcl_runner.py`).
+     in `alicloud-gcl-runner-ops/scripts/gcl_runner.py`).
    - `command` does not target the right Aliyun product (e.g. ECS skill
      + `aliyun rds ...` is a mismatch).
-2. Locate the script. Use the path `${ALIYUN_SKILLS_ROOT}/scripts/gcl_runner.py`
+2. Locate the script. Use the path `${ALIYUN_SKILLS_ROOT}/alicloud-gcl-runner-ops/scripts/gcl_runner.py`
    if `ALIYUN_SKILLS_ROOT` env var is set; else use
-   `$(git rev-parse --show-toplevel)/scripts/gcl_runner.py`.
+   `$(git rev-parse --show-toplevel)/alicloud-gcl-runner-ops/scripts/gcl_runner.py`.
 3. Invoke the script with the parent-provided arguments:
    ```bash
-   python3 ${ALIYUN_SKILLS_ROOT}/scripts/gcl_runner.py \
+   python3 ${ALIYUN_SKILLS_ROOT}/alicloud-gcl-runner-ops/scripts/gcl_runner.py \
      --skill "$skill" \
      --op "$op" \
      --command "$command" \
@@ -221,4 +223,4 @@ Remove the file at `.pi/agents/gcl-orchestrator.md` (or
 ---
 
 ## Changelog
-1.0.0 | 2026-06-04 | Initial GCL orchestrator agent spec. Wraps `scripts/gcl_runner.py`. Phase 2 deliverable. `context: fork` future-proofs for Phase 3 LLM-based Critic.
+1.0.0 | 2026-06-04 | Initial GCL orchestrator agent spec. Wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py`. Phase 2 deliverable. `context: fork` future-proofs for Phase 3 LLM-based Critic.

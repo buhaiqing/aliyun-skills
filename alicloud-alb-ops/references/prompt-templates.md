@@ -16,6 +16,9 @@ metadata:
     - rubric.md
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 # ALB GCL Prompt Templates (Phase 1 — First Rollout)
 
 Inherits structure from `AGENTS.md` §12.7 and prior pilots. ALB-specific additions: **cascading delete** (`DeleteLoadBalancer` removes all listeners, rules, server group associations); **deletion protection check** mandatory before delete; **server group empty check** after removal (no healthy servers → 503).

@@ -14,8 +14,8 @@ metadata:
   parent: ../../AGENTS.md
   related:
     - rubric.md
-    - ../../../scripts/gcl_actiontrail_crosscheck.py
-    - ../../../scripts/gcl_cms_alarm_setup.py
+    - ../../alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py
+    - ../../alicloud-gcl-runner-ops/scripts/gcl_cms_alarm_setup.py
 ---
 
 # Phase 3-B: GCL Phantom Alarm Integration (CMS)

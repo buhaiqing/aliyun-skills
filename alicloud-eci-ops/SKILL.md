@@ -141,18 +141,11 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 - User insists on **console-only** flows with no API → state limitation;
   do not invent undocumented HTTP steps
 
-### Delegation Rules
+## Delegation Rules
 
-- Before `CreateContainerGroup`, ensure **VPC, VSwitch, SecurityGroup**
-  exist (via `alicloud-vpc-ops`) and **ECI quota** is sufficient
-  (via `aliyun eci ListUsage --RegionId <region>` in this skill).
-- For container image from private registry (ACR), pre-configure
-  `ImageRegistryCredential` (`Server` + `UserName` + `Password`) in
-  the request; or delegate to `alicloud-acr-ops`.
-- If a ContainerGroup is failing to schedule, the root cause is often
-  ECI quota exhaustion, VSwitch IP shortage, or security group
-  ingress — diagnose in this order before suspecting the image or
-  command.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

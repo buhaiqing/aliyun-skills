@@ -14,6 +14,9 @@ metadata:
     - rubric.md
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 # NAT GCL Prompt Templates (Phase 1 — Eighth Skill)
 
 Inherits structure from `AGENTS.md` §12.7. NAT-specific additions: 3-step

@@ -16,6 +16,9 @@ metadata:
     - rubric.md
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 # ASK GCL Prompt Templates (Phase 5 — recommended)
 
 ## Generator/ Critic

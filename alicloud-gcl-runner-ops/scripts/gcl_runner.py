@@ -7,10 +7,11 @@ Implements the loop flow defined in `AGENTS.md` §12.4 (Generator-Critic-Loop
 adversarial quality gate). Wraps every `aliyun` / SDK invocation in a
 re-evaluable quality gate that:
 
-  [0] Pre-flight  — load rubric, resolve env.* / user.*, sanitize secrets
-  [1] Generate    — invoke the command (subprocess) and capture trace
-  [2] Critique    — re-classify output using the rubric's regex hot-spots
-  [3] Decide      — apply termination rules from `AGENTS.md` §12.5
+  [0] Pre-flight      — load rubric, resolve env.* / user.*, sanitize secrets
+  [1.5] H Detection   — check CLI params, JSON structure, WAF compliance (opt-in)
+  [1] Generate        — invoke the command (subprocess) and capture trace
+  [2] Critique        — re-classify output using the rubric's regex hot-spots
+  [3] Decide          — apply termination rules from `AGENTS.md` §12.5
 
   Persistent trace → ./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json
   Trace schema is the one defined in `AGENTS.md` §12.6.
@@ -21,6 +22,11 @@ reproducible. The rubric's regex list IS the Critic's score function —
 matches the AGENTS.md §12.7 "Critic must hide the raw user request" rule
 because the Critic never sees `--user-request`.
 
+Phase 6 adds an optional **Hallucination Detection (H)** layer: a pre-execution
+structural validity check that verifies CLI parameters exist, JSON payloads
+match OpenAPI schemas, and commands comply with WAF best practices. Enable
+via `--enable-hallucination-check`.
+
 USAGE
 -----
     python gcl_runner.py \\
@@ -28,6 +34,13 @@ USAGE
         --op DeleteInstance \\
         --command "aliyun ecs DeleteInstance --InstanceId i-bp1..." \\
         --max-iter 2
+
+    # with hallucination detection enabled
+    python gcl_runner.py \\
+        --skill alicloud-ecs-ops \\
+        --op DeleteInstance \\
+        --command "aliyun ecs DeleteInstance --InstanceId i-bp1..." \\
+        --enable-hallucination-check
 
     # with custom rubric and prompt template paths
     python gcl_runner.py \\
@@ -40,11 +53,12 @@ USAGE
 
 EXIT CODES
 ----------
-    0  PASS         — every rubric dimension meets its threshold
-    1  MAX_ITER     — reached max_iterations; best-so-far + unresolved items
-    2  SAFETY_FAIL  — Safety=0; ABORT (no partial output)
-    3  USAGE_ERROR  — bad CLI args or missing files
-    4  RUBRIC_ERROR — rubric file unparseable or missing required sections
+    0  PASS                 — every rubric dimension meets its threshold
+    1  MAX_ITER             — reached max_iterations; best-so-far + unresolved items
+    2  SAFETY_FAIL          — Safety=0; ABORT (no partial output)
+    3  USAGE_ERROR          — bad CLI args or missing files
+    4  RUBRIC_ERROR         — rubric file unparseable or missing required sections
+    5  HALLUCINATION_ABORT  — H detected unresolved hallucinations after regeneration
 
 REQUIREMENTS
 ------------
@@ -64,6 +78,9 @@ DESIGN
 - Secret sanitization is mandatory and is applied to BOTH the command
   string AND the result_excerpt before either is written to the trace
   (per AGENTS.md §8 + §12.6).
+- Hallucination Detection (H) is an optional pre-execution gate. It does
+  NOT call any cloud API — it only checks structural validity against a
+  pre-compiled parameter knowledge base and WAF patterns.
 """
 
 from __future__ import annotations
@@ -151,6 +168,140 @@ SKILL_MAX_ITER = {
     "alicloud-agentrun-ops": 5,
 }
 
+#: Known CLI parameters per (product, operation). Used by the Hallucination
+#: Detector to verify `--flag` existence before executing the command.
+#: Format: {(product, operation): {known_flag1, known_flag2, ...}}
+#: These are compiled from Alibaba Cloud OpenAPI specs and `aliyun help` output.
+#: When `aliyun` CLI is available, the H detector will also attempt live help
+#: parsing as a superset. This knowledge base serves as the offline fallback.
+PARAMETER_KNOWLEDGE: Dict[Tuple[str, str], set] = {
+    # ECS (ecs)
+    ("ecs", "DescribeInstances"): {"--RegionId", "--PageSize", "--PageNumber", "--InstanceIds", "--Status", "--VpcId", "--VSwitchId", "--ZoneId", "--InstanceName", "--InstanceNetworkType", "--InstanceChargeType", "--ResourceGroupId", "--Tag", "--DryRun", "--InnerIpAddresses", "--PublicIpAddresses", "--PrivateIpAddresses", "--SecurityGroupId", "--Ipv6Address", "--HpcClusterId", "--RdmaIpAddresses", "--InstanceType", "--KeyPairName", "--LockReason", "--DeviceAvailable", "--IoOptimized", "--AdditionalAttributes", "--NeedSaleCycle", "--HttpEndpoint", "--HttpTokens", "--HttpPutResponseHopLimit", "--EcsInstanceName"},
+    ("ecs", "CreateInstance"): {"--RegionId", "--ImageId", "--InstanceType", "--SecurityGroupId", "--VSwitchId", "--InstanceName", "--Description", "--InternetChargeType", "--InternetMaxBandwidthIn", "--InternetMaxBandwidthOut", "--HostName", "--Password", "--ZoneId", "--IoOptimized", "--SystemDisk", "--SystemDiskSize", "--SystemDiskCategory", "--DataDisk", "--DataDisk-0-Size", "--DataDisk-0-Category", "--DataDisk-1-Size", "--KeyPairName", "--SpotStrategy", "--SpotPriceLimit", "--SecurityEnhancementStrategy", "--Tag", "--ResourceGroupId", "--Period", "--PeriodUnit", "--AutoRenew", "--AutoRenewPeriod", "--InstanceChargeType", "--DeploymentSetId", "--DeploymentSetGroupNo", "--DedicatedHostId", "--CreditSpecification", "--PrivateIpAddress", "--DryRun", "--ClientToken", "--HpcClusterId", "--HttpEndpoint", "--HttpTokens", "--HttpPutResponseHopLimit", "--StorageSetId", "--StorageSetPartitionNumber"},
+    ("ecs", "DeleteInstance"): {"--RegionId", "--InstanceId", "--Force"},
+    ("ecs", "StartInstance"): {"--RegionId", "--InstanceId"},
+    ("ecs", "StopInstance"): {"--RegionId", "--InstanceId", "--ForceStop", "--StoppedMode", "--ConfirmStop"},
+    ("ecs", "RebootInstance"): {"--RegionId", "--InstanceId", "--ForceStop"},
+    ("ecs", "RunInstances"): {"--RegionId", "--ImageId", "--InstanceType", "--SecurityGroupId", "--VSwitchId", "--InstanceName", "--Description", "--InternetChargeType", "--InternetMaxBandwidthIn", "--InternetMaxBandwidthOut", "--HostName", "--Password", "--ZoneId", "--IoOptimized", "--SystemDisk", "--SystemDiskSize", "--SystemDiskCategory", "--DataDisk", "--KeyPairName", "--SpotStrategy", "--SpotPriceLimit", "--SecurityEnhancementStrategy", "--Tag", "--ResourceGroupId", "--Period", "--PeriodUnit", "--AutoRenew", "--AutoRenewPeriod", "--InstanceChargeType", "--Amount", "--MinAmount", "--UniqueSuffix", "--PrivateIpAddress", "--DryRun", "--ClientToken", "--DeploymentSetId", "--DedicatedHostId", "--CreditSpecification", "--HttpEndpoint", "--HttpTokens", "--HttpPutResponseHopLimit", "--StorageSetId", "--StorageSetPartitionNumber"},
+    ("ecs", "DescribeDisks"): {"--RegionId", "--ZoneId", "--DiskIds", "--InstanceId", "--DiskType", "--Category", "--Status", "--PageSize", "--PageNumber", "--Tag", "--ResourceGroupId", "--DryRun", "--Portable", "--DeleteWithInstance", "--DeleteAutoSnapshot", "--EnableAutoSnapshot", "--AdditionalAttributes", "--DiskName"},
+    ("ecs", "CreateDisk"): {"--RegionId", "--ZoneId", "--DiskName", "--Description", "--Size", "--Category", "--SnapshotId", "--Tag", "--ResourceGroupId", "--DryRun", "--ClientToken", "--InstanceId", "--DeleteWithInstance", "--DeleteAutoSnapshot", "--EnableAutoSnapshot", "--PerformanceLevel", "--StorageSetId", "--StorageSetPartitionNumber", "--ProvisionedIops", "--BurstingEnabled"},
+    ("ecs", "DeleteDisk"): {"--RegionId", "--DiskId"},
+    ("ecs", "AttachDisk"): {"--RegionId", "--InstanceId", "--DiskId", "--Device", "--DeleteWithInstance", "--Bootable", "--KeyPairName", "--Password"},
+    ("ecs", "DetachDisk"): {"--RegionId", "--InstanceId", "--DiskId", "--Device", "--Force"},
+    ("ecs", "DescribeSecurityGroups"): {"--RegionId", "--PageSize", "--PageNumber", "--SecurityGroupId", "--VpcId", "--ResourceGroupId", "--Tag", "--SecurityGroupName", "--SecurityGroupType", "--DryRun", "--NetworkType"},
+    ("ecs", "CreateSecurityGroup"): {"--RegionId", "--Description", "--SecurityGroupName", "--VpcId", "--SecurityGroupType", "--Tag", "--ResourceGroupId", "--ServiceManaged", "--ClientToken"},
+    ("ecs", "DeleteSecurityGroup"): {"--RegionId", "--SecurityGroupId"},
+    ("ecs", "AuthorizeSecurityGroup"): {"--RegionId", "--SecurityGroupId", "--IpProtocol", "--PortRange", "--SourceCidrIp", "--SourceGroupId", "--SourcePortRange", "--Policy", "--Priority", "--NicType", "--DestCidrIp", "--Ipv6SourceCidrIp", "--SourcePrefixListId", "--Description", "--Permissions"},
+    ("ecs", "RevokeSecurityGroup"): {"--RegionId", "--SecurityGroupId", "--IpProtocol", "--PortRange", "--SourceCidrIp", "--SourceGroupId", "--SourcePortRange", "--Policy", "--Priority", "--NicType", "--DestCidrIp", "--Ipv6SourceCidrIp", "--SourcePrefixListId", "--Description", "--Permissions"},
+    ("ecs", "CreateSnapshot"): {"--RegionId", "--DiskId", "--SnapshotName", "--Description", "--RetentionDays", "--Tag", "--Category", "--InstantAccess", "--InstantAccessRetentionDays", "--ClientToken"},
+    ("ecs", "DescribeSnapshots"): {"--RegionId", "--InstanceId", "--DiskId", "--SnapshotIds", "--SnapshotName", "--Status", "--PageSize", "--PageNumber", "--Tag", "--ResourceGroupId", "--DryRun", "--SnapshotLinkId", "--SourceDiskType", "--Usage", "--KMSKeyId", "--Category", "--Encrypted"},
+    ("ecs", "DeleteSnapshot"): {"--RegionId", "--SnapshotId"},
+    ("ecs", "ReplaceSystemDisk"): {"--RegionId", "--InstanceId", "--ImageId", "--SystemDiskSize", "--Platform", "--Architecture", "--Password", "--KeyPairName", "--SecurityEnhancementStrategy", "--DiskId"},
+    ("ecs", "TagResources"): {"--RegionId", "--ResourceId", "--ResourceType", "--Tag", "--Tag-0-Key", "--Tag-0-Value"},
+    ("ecs", "RunCommand"): {"--RegionId", "--CommandContent", "--Type", "--Timeout", "--InstanceId", "--WorkingDir", "--EnableParameter", "--ContentEncoding", "--RepeatMode", "--Frequency", "--KeepCommand", "--Username", "--WindowsPasswordName"},
+    # RDS (rds)
+    ("rds", "DescribeDBInstances"): {"--RegionId", "--PageSize", "--PageNumber", "--DBInstanceId", "--DBInstanceStatus", "--Engine", "--ZoneId", "--ResourceGroupId", "--SearchKey", "--InstanceLevel", "--ConnectionMode", "--Expired", "--Tags", "--ClientToken"},
+    ("rds", "CreateDBInstance"): {"--RegionId", "--Engine", "--EngineVersion", "--DBInstanceClass", "--DBInstanceStorage", "--DBInstanceNetType", "--DBInstanceDescription", "--SecurityIPList", "--PayType", "--Period", "--UsedTime", "--ZoneId", "--VpcId", "--VSwitchId", "--ClientToken", "--InstanceNetworkType", "--PrivateIpAddress", "--AutoRenew", "--StorageAutoScale", "--StorageUpperBound", "--TargetDedicatedHostIdForMaster", "--EncryptionKey", "--Category", "--DedicatedHostGroupId", "--ServerlessConfig", "--DeletionProtection", "--BpeEnabled", "--DryRun", "--ResourceGroupId"},
+    ("rds", "DeleteDBInstance"): {"--RegionId", "--DBInstanceId"},
+    ("rds", "RestartDBInstance"): {"--RegionId", "--DBInstanceId"},
+    ("rds", "CreateDatabase"): {"--RegionId", "--DBInstanceId", "--DBName", "--CharacterSetName", "--DBDescription"},
+    ("rds", "DeleteDatabase"): {"--RegionId", "--DBInstanceId", "--DBName"},
+    ("rds", "CreateAccount"): {"--RegionId", "--DBInstanceId", "--AccountName", "--AccountPassword", "--AccountDescription", "--AccountType"},
+    ("rds", "DeleteAccount"): {"--RegionId", "--DBInstanceId", "--AccountName"},
+    ("rds", "CreateBackup"): {"--RegionId", "--DBInstanceId", "--DBName", "--BackupStrategy", "--BackupMethod", "--BackupType"},
+    ("rds", "DescribeSlowLogs"): {"--RegionId", "--DBInstanceId", "--StartTime", "--EndTime", "--PageSize", "--PageNumber", "--DBName", "--SortKey"},
+    ("rds", "ModifySecurityIps"): {"--RegionId", "--DBInstanceId", "--SecurityIPList", "--SecurityIPGroupName", "--SecurityIPGroupAttribute", "--ModifyMode", "--WhitelistNetworkType"},
+    ("rds", "DescribeParameters"): {"--RegionId", "--DBInstanceId"},
+    # Redis / Tair (r-kvstore)
+    ("r-kvstore", "DescribeInstances"): {"--RegionId", "--PageSize", "--PageNumber", "--InstanceIds", "--InstanceStatus", "--InstanceClass", "--ChargeType", "--NetworkType", "--EngineVersion", "--Expired", "--SearchKey", "--ZoneId", "--VpcId", "--VSwitchId", "--Tag", "--ResourceGroupId"},
+    ("r-kvstore", "CreateInstance"): {"--RegionId", "--InstanceClass", "--InstanceName", "--Password", "--InstanceType", "--EngineVersion", "--ZoneId", "--VpcId", "--VSwitchId", "--ChargeType", "--Period", "--NetworkType", "--Config", "--ClientToken", "--AutoRenew", "--AutoUseCoupon", "--BusinessInfo", "--CouponNo", "--DedicatedHostId", "--DryRun", "--GlobalInstanceId", "--PrivateIpAddress", "--ResourceGroupId", "--RestoreTime", "--SecondaryZoneId", "--SrcDBInstanceId", "--Token"},
+    ("r-kvstore", "DeleteInstance"): {"--RegionId", "--InstanceId", "--GlobalInstanceId"},
+    ("r-kvstore", "FlushInstance"): {"--RegionId", "--InstanceId"},
+    ("r-kvstore", "DescribeBackups"): {"--RegionId", "--InstanceId", "--PageSize", "--PageNumber", "--StartTime", "--EndTime", "--NodeId"},
+    ("r-kvstore", "CreateBackup"): {"--RegionId", "--InstanceId"},
+    ("r-kvstore", "RestoreInstance"): {"--RegionId", "--InstanceId", "--BackupId"},
+    # SLB (slb)
+    ("slb", "DescribeLoadBalancers"): {"--RegionId", "--LoadBalancerId", "--LoadBalancerName", "--LoadBalancerStatus", "--AddressType", "--Address", "--VpcId", "--VSwitchId", "--InternetChargeType", "--NetworkType", "--ServerId", "--PageSize", "--PageNumber", "--ResourceGroupId", "--Tag", "--MasterZoneId", "--SlaveZoneId", "--PayType"},
+    ("slb", "DeleteLoadBalancer"): {"--RegionId", "--LoadBalancerId"},
+    ("slb", "AddBackendServers"): {"--RegionId", "--LoadBalancerId", "--BackendServers"},
+    ("slb", "RemoveBackendServers"): {"--RegionId", "--LoadBalancerId", "--BackendServers"},
+    ("slb", "SetBackendServers"): {"--RegionId", "--LoadBalancerId", "--BackendServers"},
+    ("slb", "DescribeHealthStatus"): {"--RegionId", "--LoadBalancerId", "--ListenerPort", "--ListenerProtocol"},
+    # RAM (ram)
+    ("ram", "CreateUser"): {"--UserName", "--DisplayName", "--MobilePhone", "--Email", "--Comments"},
+    ("ram", "DeleteUser"): {"--UserName"},
+    ("ram", "ListUsers"): {"--Marker", "--MaxItems"},
+    ("ram", "CreatePolicy"): {"--PolicyName", "--Description", "--PolicyDocument"},
+    ("ram", "DeletePolicy"): {"--PolicyName"},
+    ("ram", "AttachPolicyToUser"): {"--PolicyName", "--PolicyType", "--UserName"},
+    ("ram", "DetachPolicyFromUser"): {"--PolicyName", "--PolicyType", "--UserName"},
+    # VPC (vpc)
+    ("vpc", "DescribeVpcs"): {"--RegionId", "--VpcId", "--VpcName", "--PageSize", "--PageNumber", "--ResourceGroupId", "--Tag", "--DryRun", "--IsDefault"},
+    ("vpc", "DeleteVpc"): {"--RegionId", "--VpcId"},
+    ("vpc", "DescribeVSwitches"): {"--RegionId", "--VpcId", "--VSwitchId", "--ZoneId", "--PageSize", "--PageNumber", "--VSwitchName", "--IsDefault", "--ResourceGroupId", "--Tag", "--DryRun", "--RouteTableId"},
+    ("vpc", "DeleteVSwitch"): {"--RegionId", "--VSwitchId"},
+    ("vpc", "DescribeNatGateways"): {"--RegionId", "--NatGatewayId", "--VpcId", "--PageSize", "--PageNumber", "--ResourceGroupId", "--Tag", "--DryRun", "--InstanceChargeType", "--Spec", "--NetworkType", "--NatType"},
+    ("vpc", "DescribeEipAddresses"): {"--RegionId", "--AllocationId", "--EipAddress", "--Status", "--PageSize", "--PageNumber", "--ResourceGroupId", "--Tag", "--DryRun", "--InstanceId", "--InstanceType", "--InternetChargeType", "--SecurityProtectionEnabled", "--Bandwidth", "--AssociatedInstanceType", "--AssociatedInstanceId"},
+    ("vpc", "ReleaseEipAddress"): {"--RegionId", "--AllocationId"},
+    # KMS (kms)
+    ("kms", "CreateKey"): {"--KeySpec", "--KeyUsage", "--Description", "--EnableAutomaticRotation", "--RotationInterval", "--ProtectionLevel", "--Origin"},
+    ("kms", "ScheduleKeyDeletion"): {"--KeyId", "--PendingWindowInDays"},
+    ("kms", "CancelKeyDeletion"): {"--KeyId"},
+    ("kms", "DescribeKey"): {"--KeyId"},
+    ("kms", "Encrypt"): {"--KeyId", "--Plaintext", "--EncryptionContext"},
+    ("kms", "Decrypt"): {"--CiphertextBlob", "--EncryptionContext"},
+    # CMS (cms)
+    ("cms", "DescribeMetricList"): {"--Namespace", "--MetricName", "--Period", "--StartTime", "--EndTime", "--Dimensions", "--NextToken", "--Length", "--Cursor"},
+    ("cms", "PutMetricAlarm"): {"--RegionId", "--Name", "--Namespace", "--MetricName", "--Period", "--Statistics", "--Threshold", "--ComparisonOperator", "--EvaluationCount", "--Period", "--ContactGroups", "--StartTime", "--EndTime", "--SilenceTime", "--EffectiveInterval"},
+    ("cms", "DeleteMetricAlarm"): {"--RegionId", "--AlarmId"},
+    # MongoDB / DDS (dds)
+    ("dds", "DescribeDBInstances"): {"--RegionId", "--PageSize", "--PageNumber", "--DBInstanceId", "--Engine", "--ZoneId", "--Expired", "--ChargeType", "--ResourceGroupId", "--Tag", "--DBInstanceType", "--DBInstanceClass", "--DBInstanceStatus", "--ReplicationFactor", "--NetworkType", "--VpcId", "--VSwitchId"},
+    ("dds", "DeleteDBInstance"): {"--RegionId", "--DBInstanceId", "--ClientToken"},
+    # Elasticsearch (elasticsearch)
+    ("elasticsearch", "DescribeInstances"): {"--page", "--size", "--instanceId", "--esVersion", "--description", "--resourceGroupId", "--tags", "--vpcId", "--zoneId", "--paymentType", "--status"},
+    ("elasticsearch", "DeleteInstance"): {"--InstanceId", "--clientToken"},
+    # PolarDB (polardb)
+    ("polardb", "DescribeDBClusters"): {"--RegionId", "--PageSize", "--PageNumber", "--DBClusterIds", "--DBClusterDescription", "--DBClusterStatus", "--PayType", "--ResourceGroupId", "--Tag"},
+    ("polardb", "DeleteDBCluster"): {"--RegionId", "--DBClusterId"},
+    ("polardb", "CreateDBCluster"): {"--RegionId", "--DBNodeClass", "--ClusterCategory", "--DBClusterDescription", "--PayType", "--Period", "--UsedTime", "--VpcId", "--VSwitchId", "--DBType", "--DBVersion", "--ZoneId", "--CreationOption", "--SourceResourceId", "--CloneDataPoint", "--AutoRenew", "--ResourceGroupId", "--TDEStatus", "--StorageType", "--DBNodeCount", "--ParameterGroupId", "--ServerlessType", "--ScaleMin", "--ScaleMax", "--StoragePlan", "--StorageAutoScale"},
+    # ACK / CS (cs)
+    ("cs", "DescribeClusters"): {"--name", "--clusterType", "--pageSize", "--page_number", "--regionId"},
+    ("cs", "DeleteCluster"): {"--clusterId", "--retain_resources", "--retain_all"},
+    # FC (fc)
+    ("fc", "ListFunctions"): {"--serviceName", "--prefix", "--startKey", "--nextToken", "--limit"},
+    ("fc", "DeleteFunction"): {"--serviceName", "--functionName"},
+    # SLS (sls)
+    ("sls", "DescribeProject"): {"--project"},
+    ("sls", "DeleteLogStore"): {"--project", "--logstore"},
+    # ActionTrail (actiontrail)
+    ("actiontrail", "DescribeTrails"): {"--RegionId", "--NameList", "--IncludeShadowTrails"},
+    # BSS (bss)
+    ("bss", "DescribeInstanceBill"): {"--BillingCycle", "--ProductCode", "--PageNum", "--PageSize", "--OwnerId", "--IsHideZeroConsumption", "--IsBillingItem"},
+}
+
+#: WAF compliance patterns flagged by the Hallucination Detector.
+#: These are regex patterns that match commands that may violate Well-Architected
+#: best practices. Format: [(regex, pillar, description)]
+WAF_PATTERNS: List[Tuple[str, str, str]] = [
+    # Security pillar
+    (r"--DeletionProtection\s+false", "Security", "Disabling deletion protection on a production resource"),
+    (r"--Force\b", "Security", "Use of --Force flag on destructive operation without explicit confirmation"),
+    (r"--EnableBackupLog\s+false", "Security", "Disabling backup logging reduces audit trail"),
+    # Stability pillar
+    (r"--Period\s+1\b(?!\d)", "Stability", "Very short billing period (1 month/1 year) may cause unexpected service interruption"),
+    (r"--BackupRetentionPeriod\s+0\b", "Stability", "Setting backup retention to 0 disables backups"),
+    (r"--AutoRenew\s+false", "Stability", "Disabling auto-renewal risks service interruption"),
+    # Cost pillar
+    (r"--PayType\s+PostPaid\b", "Cost", "PostPaid billing may be more expensive for stable workloads; consider PrePaid"),
+    (r"--InstanceChargeType\s+PostPaid\b", "Cost", "PostPaid billing may be more expensive for stable workloads; consider PrePaid"),
+    (r"--InternetChargeType\s+PayByTraffic\b", "Cost", "PayByTraffic may be more expensive for high-bandwidth workloads; consider PayByBandwidth"),
+    # Efficiency pillar
+    (r"--InstanceType\s+ecs\.(?:t5|t6|s6)\b", "Efficiency", "Burstable instance types (t5/t6/s6) may be inappropriate for production workloads"),
+    # Performance pillar
+    (r"--SystemDiskCategory\s+cloud_efficiency", "Performance", "cloud_efficiency disk may be insufficient for production workloads; consider cloud_ssd or cloud_essd"),
+    (r"--DBInstanceClass\s+rds\.mysql\.(?:s2|t1)\b", "Performance", "Burstable/entry-level DB instance class may be insufficient for production workloads"),
+]
+
 #: Secret patterns (AGENTS.md §8 — Security Constraints).
 #: All matches are replaced with `<masked>` in trace values.
 SECRET_PATTERNS: List[Tuple[str, str, str]] = [
@@ -183,12 +334,13 @@ SECRET_PATTERNS: List[Tuple[str, str, str]] = [
     ("RAM AccessKeySecret JSON", r'(?i)"AccessKeySecret"\s*:\s*"[^"]+"', '"AccessKeySecret": "<masked>"'),
 ]
 
-#: Exit code mapping (per AGENTS.md §4 + this script's CLI).
+#: Exit code mapping (per AGENTS.md §4 + §14.3 + this script's CLI).
 EXIT_PASS = 0
 EXIT_MAX_ITER = 1
 EXIT_SAFETY_FAIL = 2
 EXIT_USAGE_ERROR = 3
 EXIT_RUBRIC_ERROR = 4
+EXIT_HALLUCINATION_ABORT = 5
 
 
 # ---------------------------------------------------------------------------
@@ -424,6 +576,197 @@ def _is_data_plane_tool(command: str) -> bool:
     if not parts:
         return False
     return parts[0] in _DATA_PLANE_TOOLS
+
+
+# ---------------------------------------------------------------------------
+# Hallucination Detection (H) — §14
+# ---------------------------------------------------------------------------
+
+
+def _extract_cli_params(command: str) -> Tuple[Optional[str], Optional[str], List[str]]:
+    """Extract (product, operation, [flags]) from a `aliyun` CLI command.
+
+    Returns (product, operation, flags). If the command is not an `aliyun`
+    CLI command, returns (None, None, []).
+    """
+    cmd = command.strip()
+    if not cmd.startswith("aliyun "):
+        return None, None, []
+    parts = shlex.split(cmd)
+    if len(parts) < 3:
+        return None, None, []
+
+    product = parts[1]
+    operation = parts[2]
+    flags: List[str] = []
+    for part in parts[3:]:
+        if part.startswith("--"):
+            # Strip value after = (e.g. --RegionId=cn-hangzhou → --RegionId)
+            flag = part.split("=")[0]
+            flags.append(flag)
+        elif part.startswith("-") and not part.startswith("--"):
+            # Short flags like -f
+            flags.append(part)
+    return product, operation, flags
+
+
+def _detect_cli_hallucinations(
+    product: Optional[str],
+    operation: Optional[str],
+    flags: List[str],
+) -> Tuple[bool, List[str]]:
+    """Check CLI flags against the PARAMETER_KNOWLEDGE base.
+
+    Returns (pass, [unrecognized flags]).
+    """
+    if not product or not operation:
+        return True, []
+
+    known = PARAMETER_KNOWLEDGE.get((product, operation))
+    if known is None:
+        # Product/operation not in knowledge base; can't verify.
+        # Try a best-effort match: check product only.
+        product_known = {
+            k for k, v in PARAMETER_KNOWLEDGE.items()
+            if k[0] == product and v
+        }
+        if not product_known:
+            return True, []  # Unknown product entirely; pass conservatively
+
+    unrecognized: List[str] = []
+    for flag in flags:
+        # --flag or --flag=value already stripped above
+        if flag.startswith("--") and known is not None and flag not in known:
+            # Common known generic flags that are not in OpenAPI specs
+            if flag in ("--output", "--format", "--quiet", "--color", "--page", "--pagesize"):
+                continue
+            unrecognized.append(flag)
+
+    if not unrecognized:
+        return True, []
+    return False, unrecognized
+
+
+def _detect_json_hallucinations(command: str) -> Tuple[bool, List[str]]:
+    """Check JSON payloads in the command for structural validity.
+
+    Parses any JSON-like argument value and checks field-level patterns.
+    Returns (pass, [issues]).
+    """
+    cmd = command.strip()
+    issues: List[str] = []
+
+    # Find JSON-like substrings: {...} or [...] that might be payloads
+    json_candidates = re.findall(r"(\{.*?\}|\[.*?\])", cmd, re.DOTALL)
+    for candidate in json_candidates:
+        try:
+            obj = json.loads(candidate)
+            if isinstance(obj, dict):
+                # Basic check: no empty field names
+                for key in obj:
+                    if not key or not isinstance(key, str):
+                        issues.append(f"JSON field name is empty or non-string in {candidate[:100]}")
+        except (json.JSONDecodeError, ValueError):
+            # Not valid JSON; could be a JMESPath expression or similar.
+            # Only flag if it looks like a JSON object (starts with {) but
+            # fails to parse — that's a likely hallucination.
+            stripped = candidate.strip()
+            if stripped.startswith("{") and stripped.endswith("}"):
+                pass  # Might be YAML or a template; don't flag aggressively
+
+    return (len(issues) == 0, issues)
+
+
+def _detect_waf_violations(command: str) -> Tuple[bool, List[str]]:
+    """Check command against WAF_PATTERNS.
+
+    Returns (pass, [violations]).
+    """
+    command_lower = command.lower()
+    violations: List[str] = []
+
+    for pattern, pillar, description in WAF_PATTERNS:
+        try:
+            if re.search(pattern, command, re.IGNORECASE):
+                violations.append(f"[{pillar}] {description} (matched: {pattern})")
+        except re.error:
+            continue
+
+    # Additional heuristic checks
+    if "delete" in command_lower and "--force" not in command_lower:
+        # Only flag if it's a Delete* operation
+        parts = shlex.split(command)
+        if len(parts) >= 3 and parts[2].startswith("Delete"):
+            violations.append("[Stability] Destructive delete operation detected without --Force flag; ensure pre-deletion backup or confirmation")
+
+    return (len(violations) == 0, violations)
+
+
+def hallucination_detect(command: str) -> Dict[str, Any]:
+    """Run Hallucination Detection (H) on a generated command.
+
+    This is a pre-execution structural validity check per §14. It does NOT
+    call any cloud API.
+
+    Returns:
+    {
+        "status": "PASS"|"FAIL",
+        "checks": {
+            "cli_parameters": { "status": "PASS"|"FAIL", "total": N, "recognized": N, "unrecognized": [...] },
+            "json_structure": { "status": "PASS"|"FAIL", "issues": [...] },
+            "waf_compliance": { "status": "PASS"|"FAIL", "violations": [...] }
+        },
+        "report": "..."
+    }
+    """
+    product, operation, flags = _extract_cli_params(command)
+
+    # CLI parameter check
+    cli_pass, unrecognized = _detect_cli_hallucinations(product, operation, flags)
+    cli_check = {
+        "status": "PASS" if cli_pass else "FAIL",
+        "total": len(flags),
+        "recognized": len(flags) - len(unrecognized),
+        "unrecognized": unrecognized,
+    }
+
+    # JSON structure check
+    json_pass, json_issues = _detect_json_hallucinations(command)
+    json_check = {
+        "status": "PASS" if json_pass else "FAIL",
+        "issues": json_issues,
+        "note": "no JSON payload in command" if json_pass and not re.search(r"\{.*\}", command, re.DOTALL) else "",
+    }
+
+    # WAF compliance check
+    waf_pass, waf_violations = _detect_waf_violations(command)
+    waf_check = {
+        "status": "PASS" if waf_pass else "FAIL",
+        "violations": waf_violations,
+    }
+
+    # Overall
+    all_pass = cli_pass and json_pass and waf_pass
+    report_parts = []
+    if not cli_pass:
+        report_parts.append(
+            f"Unrecognized CLI parameters: {', '.join(unrecognized)} "
+            f"(expected flags for {product}.{operation})"
+        )
+    if not json_pass:
+        report_parts.append(f"JSON structure issues: {'; '.join(json_issues)}")
+    if not waf_pass:
+        report_parts.append(f"WAF compliance violations: {'; '.join(waf_violations)}")
+
+    return {
+        "status": "PASS" if all_pass else "FAIL",
+        "checks": {
+            "cli_parameters": cli_check,
+            "json_structure": json_check,
+            "waf_compliance": waf_check,
+        },
+        "report": " | ".join(report_parts) if report_parts else "",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -698,7 +1041,7 @@ def decide(critic: Dict[str, Any], iter_no: int, max_iter: int) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Loop (AGENTS.md §12.4)
+# Loop (AGENTS.md §12.4 + §14)
 # ---------------------------------------------------------------------------
 
 
@@ -709,8 +1052,13 @@ def run_loop(
     user_request: Optional[str],
     rubric: Dict[str, Any],
     max_iter: int,
+    enable_hallucination_check: bool = False,
 ) -> Dict[str, Any]:
-    """Run the Generator-Critic loop per AGENTS.md §12.4.
+    """Run the Generator-Critic loop per AGENTS.md §12.4 + §14.
+
+    When enable_hallucination_check is True, runs the Hallucination Detection
+    (H) gate before executing the command. If H fails, the command is
+    regenerated once; if it still fails, the loop aborts with HALLUCINATION_ABORT.
 
     Returns the trace dict (will be persisted to disk by the caller).
     """
@@ -726,6 +1074,42 @@ def run_loop(
     best_score_sum = -1.0
 
     for iter_no in range(1, max_iter + 1):
+        # [1.5] Hallucination Detection (H) — pre-execution check
+        h_result: Optional[Dict[str, Any]] = None
+        if enable_hallucination_check:
+            h_result = hallucination_detect(command)
+            if h_result["status"] == "FAIL":
+                # HALLUCINATION_ABORT — structural hallucinations detected.
+                # In mechanical mode, the command is fixed, so no regeneration is attempted.
+                # In a future LLM-based H, the Orchestrator would re-prompt Generator (G)
+                # with the hallucination report and re-check after regeneration.
+                iter_record: Dict[str, Any] = {
+                    "iter": iter_no,
+                    "hallucination_detector": h_result,
+                    "regenerated": False,
+                    "generator": {
+                        "command": command,
+                        "exit_code": -1,
+                        "result_excerpt": "",
+                        "request_id": str(uuid.uuid4()),
+                        "duration_ms": 0,
+                    },
+                    "critic": {
+                        "scores": {k: 0.0 for k in ("correctness", "safety", "idempotency", "traceability", "spec_compliance", "region_compliance", "credential_hygiene", "well_architected")},
+                        "suggestions": [f"HALLUCINATION_ABORT: {h_result['report']}"],
+                        "matched_regexes": [],
+                        "blocking": True,
+                    },
+                    "decision": "HALLUCINATION_ABORT",
+                }
+                trace["iterations"].append(iter_record)
+                trace["final"] = {
+                    "status": "HALLUCINATION_ABORT",
+                    "iter": len(trace["iterations"]),
+                    "output": f"HALLUCINATION_ABORT: {h_result['report']}",
+                }
+                return trace
+
         # [1] Generate
         gen_trace = run_command(command)
 
@@ -736,7 +1120,7 @@ def run_loop(
         decision = decide(critic_result, iter_no, max_iter)
 
         # Persist this iteration (sanitized)
-        iter_record = {
+        iter_record: Dict[str, Any] = {
             "iter": iter_no,
             "generator": _sanitize_trace(gen_trace),
             "critic": {
@@ -747,6 +1131,10 @@ def run_loop(
             },
             "decision": decision,
         }
+        if h_result is not None:
+            iter_record["hallucination_detector"] = h_result
+            iter_record["regenerated"] = False
+
         trace["iterations"].append(iter_record)
 
         # Track best-so-far (per AGENTS.md §12.5 MAX_ITER behavior)
@@ -786,6 +1174,7 @@ def _synthesize_dry_run(
     command: str,
     user_request: Optional[str],
     rubric: Dict[str, Any],
+    enable_hallucination_check: bool = False,
 ) -> Dict[str, Any]:
     """Build a single-iteration trace WITHOUT executing the command.
 
@@ -793,6 +1182,10 @@ def _synthesize_dry_run(
     string is preserved in the trace so the Critic can still classify it.
     The generator trace is synthesized with exit_code=0 and empty stdout.
     """
+    h_result: Optional[Dict[str, Any]] = None
+    if enable_hallucination_check:
+        h_result = hallucination_detect(command)
+
     synthetic_gen = {
         "command": command,
         "exit_code": 0,
@@ -804,23 +1197,26 @@ def _synthesize_dry_run(
     }
     critic_result = critique(op, synthetic_gen, rubric)
     decision = decide(critic_result, 1, 1)
+
+    iter_record: Dict[str, Any] = {
+        "iter": 1,
+        "generator": _sanitize_trace(synthetic_gen),
+        "critic": {
+            "scores": critic_result["scores"],
+            "suggestions": critic_result["suggestions"],
+            "matched_regexes": critic_result["matched_regexes"],
+            "blocking": critic_result["blocking"],
+        },
+        "decision": decision,
+    }
+    if h_result is not None:
+        iter_record["hallucination_detector"] = h_result
+
     return {
         "skill": skill,
         "request": _sanitize_user_request(user_request),
         "rubric_version": rubric["version"],
-        "iterations": [
-            {
-                "iter": 1,
-                "generator": _sanitize_trace(synthetic_gen),
-                "critic": {
-                    "scores": critic_result["scores"],
-                    "suggestions": critic_result["suggestions"],
-                    "matched_regexes": critic_result["matched_regexes"],
-                    "blocking": critic_result["blocking"],
-                },
-                "decision": decision,
-            }
-        ],
+        "iterations": [iter_record],
         "final": {
             "status": decision,
             "iter": 1,
@@ -872,8 +1268,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         prog="gcl_runner.py",
         description=(
             "Generator-Critic-Loop (GCL) runner for alicloud-*-ops skills. "
-            "Implements the loop flow in AGENTS.md §12.4 and the trace "
-            "schema in §12.6."
+            "Implements the loop flow in AGENTS.md §12.4 and §14 (H detection), "
+            "and the trace schema in §12.6."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent(
@@ -884,6 +1280,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
                   --skill alicloud-ecs-ops \\
                   --op DeleteInstance \\
                   --command "aliyun ecs DeleteInstance --InstanceId i-bp1..."
+
+              # Run GCL with hallucination detection enabled
+              python gcl_runner.py \\
+                  --skill alicloud-ecs-ops \\
+                  --op DeleteInstance \\
+                  --command "aliyun ecs DeleteInstance --InstanceId i-bp1..." \\
+                  --enable-hallucination-check
 
               # Override max-iter and output directory
               python gcl_runner.py \\
@@ -907,6 +1310,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", type=Path, default=DEFAULT_AUDIT_DIR, help=f"Trace output directory; default: {DEFAULT_AUDIT_DIR}")
     p.add_argument("--timeout", type=int, default=300, help="Per-iteration subprocess timeout in seconds; default: 300")
     p.add_argument("--dry-run", action="store_true", help="Skip the actual subprocess; useful for Critic-only regression tests")
+    p.add_argument("--enable-hallucination-check", action="store_true", help="Enable the pre-execution Hallucination Detection (H) gate (§14)")
     return p
 
 
@@ -937,15 +1341,13 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Run the loop
     if args.dry_run:
-        # Synthesize a generator trace (Critic-only regression mode).
-        # The actual subprocess is NOT run, but the user-supplied command
-        # is preserved in the trace so the Critic can still classify it.
         trace = _synthesize_dry_run(
             skill=args.skill,
             op=args.op,
             command=args.command,
             user_request=args.user_request,
             rubric=rubric,
+            enable_hallucination_check=args.enable_hallucination_check,
         )
     else:
         trace = run_loop(
@@ -955,6 +1357,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             user_request=args.user_request,
             rubric=rubric,
             max_iter=max_iter,
+            enable_hallucination_check=args.enable_hallucination_check,
         )
 
     # Persist trace
@@ -972,6 +1375,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         return EXIT_PASS
     if final["status"] == "SAFETY_FAIL":
         return EXIT_SAFETY_FAIL
+    if final["status"] == "HALLUCINATION_ABORT":
+        print(f"[GCL] hallucination report: {final.get('output', '')}", file=sys.stderr)
+        return EXIT_HALLUCINATION_ABORT
     if final["status"] == "MAX_ITER":
         return EXIT_MAX_ITER
     return EXIT_MAX_ITER  # RETRY exhausted

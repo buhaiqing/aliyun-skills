@@ -98,12 +98,11 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 - Task is **SLB access logs** → delegate to: `alicloud-slb-ops`
 - User insists on **console-only** with no API → state limitation
 
-### Delegation Rules
+## Delegation Rules
 
-- **Metrics & monitoring:** For CloudMonitor metrics and alarm rules, delegate to `alicloud-cms-ops`.
-- **Audit logs:** For ActionTrail API audit, delegate to `alicloud-actiontrail-ops`.
-- **Log collection from ECS:** If ECS instance has issues, use `alicloud-ecs-ops` for instance status.
-- Multi-product: complete SLS configuration first, then verify log collection health via relevant skills.
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
 
 ## Variable Convention (Agent-Readable)
 

@@ -18,6 +18,9 @@ metadata:
     - ../../alicloud-polar-postgresql-ops/references/prompt-templates.md
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 # PolarDB PG (2021) GCL Prompt Templates (Phase 1 — Fourteenth Skill)
 
 Inherits from `alicloud-polar-mysql-ops` and `alicloud-polar-postgresql-ops`.

@@ -11,6 +11,9 @@
 
 ---
 
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
 ## 一、按故障类型分类
 
 ### 1.1 连接超时 (connection_timeout)

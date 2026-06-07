@@ -1,3 +1,8 @@
+> **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
+> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+
+---
+
 # GCL Prompt Templates
 
 > 用于 Generator-Critic-Loop 质量门的 prompt 模板。

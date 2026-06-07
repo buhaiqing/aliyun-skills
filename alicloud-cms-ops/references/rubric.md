@@ -17,8 +17,8 @@ metadata:
   references:
     - prompt-templates.md
     - cli-usage.md
-    - ../../../scripts/gcl_actiontrail_crosscheck.py
-    - ../../../scripts/README.md
+    - ../../alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py
+    - ../../alicloud-gcl-runner-ops/scripts/README.md
 ---
 
 # CMS GCL Rubric (Phase 3-B — Phantom Alarm Integration)
