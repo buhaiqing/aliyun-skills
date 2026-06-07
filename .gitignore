@@ -93,3 +93,7 @@ ehthumbs.db
 # GCL trace artifacts (per AGENTS.md §12.6; sanitized traces may still
 # leak operational context, so treat all traces as ephemeral by default)
 audit-results/
+
+# Operational reports (contain instance IDs, business context — do NOT commit)
+report.md
+report-*.md
