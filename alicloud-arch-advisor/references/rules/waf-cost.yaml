@@ -1,0 +1,126 @@
+pillar: Cost
+rules:
+  - id: WAF-COST-001
+    title: ECS 预留实例券覆盖率
+    severity: high
+    check_type: config
+    resource_type: ECS
+    description: 长期运行的 ECS 实例应使用预留实例券(RI)以降低按量付费成本
+    check_logic:
+      field: ReservedInstanceId
+      operator: exists
+    remediation: 对稳定运行的 ECS 实例购买预留实例券，结合弹性伸缩保留少量按量实例
+    data_source: billing-ops
+
+  - id: WAF-COST-002
+    title: 存储包(SP)覆盖率
+    severity: high
+    check_type: config
+    resource_type: RDS
+    description: RDS/Redis 等云服务应使用存储包或资源包以获得折扣
+    check_logic:
+      field: StorageAutoScale
+      operator: matches_budget
+    remediation: 评估存储使用量并购买合适的存储包/资源包
+    data_source: billing-ops
+
+  - id: WAF-COST-003
+    title: 闲置 ECS 实例检测
+    severity: high
+    check_type: count
+    resource_type: ECS
+    description: 检查是否存在长时间低利用率（CPU<5%）的闲置 ECS 实例
+    check_logic:
+      field: CpuUtilization
+      operator: below_threshold
+      value: 5
+    remediation: 释放闲置的 ECS 实例或将其转为抢占式实例
+    data_source: ecs-ops
+
+  - id: WAF-COST-004
+    title: 闲置 RDS 实例检测
+    severity: high
+    check_type: count
+    resource_type: RDS
+    description: 检查是否存在无活跃连接的闲置 RDS 实例
+    check_logic:
+      field: ActiveConnections
+      operator: below_threshold
+      value: 5
+    remediation: 释放或降配闲置 RDS 实例，合并低负载数据库
+    data_source: rds-ops
+
+  - id: WAF-COST-005
+    title: 过度配置的 ECS 实例
+    severity: medium
+    check_type: config
+    resource_type: ECS
+    description: ECS 实例配置（vCPU/内存）远高于实际使用需求，造成资源浪费
+    check_logic:
+      field: MaxUtilization
+      operator: below_threshold
+      value: 20
+    remediation: 根据监控数据降配 ECS 实例规格或更换为更经济的实例类型
+    data_source: ecs-ops
+
+  - id: WAF-COST-006
+    title: 过度配置的 Redis 实例
+    severity: medium
+    check_type: config
+    resource_type: Redis
+    description: Redis 实例规格远高于实际内存使用量，造成资源浪费
+    check_logic:
+      field: MemoryUsedPercent
+      operator: below_threshold
+      value: 30
+    remediation: 根据实际内存使用率降配 Redis 实例规格
+    data_source: redis-ops
+
+  - id: WAF-COST-007
+    title: 存储成本优化
+    severity: medium
+    check_type: config
+    resource_type: OSS
+    description: OSS 应配置生命周期策略将冷数据自动转为低频/归档存储以降低成本
+    check_logic:
+      field: LifecycleRules
+      operator: exists
+    remediation: 配置 OSS 生命周期规则，将超过 30 天未访问的数据转为低频存储，超过 90 天转为归档存储
+    data_source: oss-ops
+
+  - id: WAF-COST-008
+    title: 弹性公网 IP 费用优化
+    severity: medium
+    check_type: count
+    resource_type: EIP
+    description: 未绑定资源的弹性公网 IP 仍会产生费用，应及时释放
+    check_logic:
+      field: Status
+      operator: equals
+      value: "InUse"
+    remediation: 释放未绑定资源的 EIP，使用 NAT 网关代替多个 EIP
+    data_source: vpc-ops
+
+  - id: WAF-COST-009
+    title: 快照管理优化
+    severity: low
+    check_type: config
+    resource_type: ECS
+    description: 云盘快照数量过多或保留时间过长会产生不必要的存储费用
+    check_logic:
+      field: AutoSnapshotPolicyId
+      operator: exists
+    remediation: 配置自动快照策略并设置合理的保留天数（建议 7-30 天），清理过期快照
+    data_source: ecs-ops
+
+  - id: WAF-COST-010
+    title: 预算告警配置
+    severity: high
+    check_type: existence
+    resource_type: BUDGET
+    description: 应配置预算告警以便在费用超出预期时及时通知和采取措施
+    check_logic:
+      field: BudgetAlerts
+      operator: exists
+    remediation: 在费用中心配置预算和告警规则，设置月度/季度预算阈值
+    data_source: billing-ops

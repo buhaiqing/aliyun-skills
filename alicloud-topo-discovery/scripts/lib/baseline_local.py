@@ -85,6 +85,105 @@ class LocalBackend:
             return candidate
         return None
 
+    # ── Sprint 17: 重采样工具 ──────────────────────────────
+
+    def copy_baseline(self, src_date: str, dst_date: str, force: bool = False) -> Optional[Path]:
+        """Copy a baseline directory from src_date to dst_date (resample).
+
+        Copies manifest.json + inventory.json. Rewrites generated_at in
+        manifest.json to match dst_date.
+
+        Args:
+            src_date: Source date string (YYYY-MM-DD).
+            dst_date: Target date string (YYYY-MM-DD).
+            force: Allow overwriting existing dst_date directory.
+
+        Returns:
+            Path to new baseline directory, or None on failure.
+        """
+        src = self.get_by_date(src_date)
+        if src is None:
+            return None
+
+        dst = self.root / dst_date
+        if dst.exists():
+            if not force:
+                return None
+            shutil.rmtree(str(dst))
+
+        # Copy manifest + inventory (the core data files)
+        dst.mkdir(parents=True)
+        for fname in ["manifest.json", "inventory.json"]:
+            src_f = src / fname
+            if src_f.exists():
+                dst_f = dst / fname
+                dst_f.write_text(src_f.read_text(encoding="utf-8"), encoding="utf-8")
+
+        # Rewrite generated_at in manifest to dst date
+        manifest_path = dst / "manifest.json"
+        if manifest_path.exists():
+            import json
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                manifest["generated_at"] = f"{dst_date}T00:00:00Z"
+                manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # Copy summary and TF stubs if present
+        for fname in ["summary.md", "provider.tf", "main.tf", "outputs.tf", "variables.tf"]:
+            src_f = src / fname
+            if src_f.exists():
+                dst_f = dst / fname
+                dst_f.write_text(src_f.read_text(encoding="utf-8"), encoding="utf-8")
+
+        return dst
+
+    def list_gaps(self, start: str, end: str) -> List[str]:
+        """List dates in [start, end] range that have no baseline directory.
+
+        Args:
+            start: Start date (YYYY-MM-DD), inclusive.
+            end: End date (YYYY-MM-DD), inclusive.
+
+        Returns:
+            Sorted list of ISO date strings for missing dates.
+        """
+        try:
+            d_start = date.fromisoformat(start)
+            d_end = date.fromisoformat(end)
+        except (ValueError, TypeError):
+            return []
+
+        existing = {d.isoformat() for d in self.list_baselines()}
+        gaps = []
+        current = d_start
+        while current <= d_end:
+            if current.isoformat() not in existing:
+                gaps.append(current.isoformat())
+            current += timedelta(days=1)
+        return gaps
+
+    def fill_gaps(self, src_date: str, start: str, end: str, force: bool = False) -> List[str]:
+        """Fill all gaps in [start, end] range by copying from src_date.
+
+        Args:
+            src_date: Source baseline date to copy from.
+            start: Start date (inclusive).
+            end: End date (inclusive).
+            force: Overwrite existing baseline directories if True.
+
+        Returns:
+            List of dates that were actually created.
+        """
+        gaps = self.list_gaps(start, end)
+        created = []
+        for gap_date in gaps:
+            result = self.copy_baseline(src_date, gap_date, force=force)
+            if result is not None:
+                created.append(gap_date)
+        return created
+
     def apply_retention(self, retention_days: int, today: Optional[date] = None) -> List[str]:
         """Mark directories older than retention_days with '.expired' suffix.
 

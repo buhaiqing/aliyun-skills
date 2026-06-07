@@ -1,0 +1,124 @@
+pillar: Performance
+rules:
+  - id: WAF-PERF-001
+    title: RDS 实例规格匹配负载
+    severity: high
+    check_type: config
+    resource_type: RDS
+    description: RDS 实例规格应匹配实际负载，避免规格过小导致性能瓶颈
+    check_logic:
+      field: DBInstanceClass
+      operator: matches_workload
+    remediation: 根据监控指标评估是否需要升配 RDS 实例规格
+    data_source: das-ops
+
+  - id: WAF-PERF-002
+    title: 启用 RDS 读写分离
+    severity: medium
+    check_type: config
+    resource_type: RDS
+    description: 读密集型应用应启用 RDS 只读副本和读写分离
+    check_logic:
+      field: ReadOnlyDBInstanceIds
+      operator: exists
+    remediation: 创建 RDS 只读实例并配置读写分离
+    data_source: rds-ops
+
+  - id: WAF-PERF-003
+    title: Redis 缓存热点数据配置
+    severity: high
+    check_type: existence
+    resource_type: Redis
+    description: 热数据应使用 Redis 缓存以减少数据库压力并提升响应速度
+    check_logic:
+      field: cache_config
+      operator: exists
+    remediation: 识别热数据并配置 Redis 缓存层，设置合理的过期策略和淘汰机制
+    data_source: redis-ops
+
+  - id: WAF-PERF-004
+    title: CDN 加速静态资源
+    severity: high
+    check_type: existence
+    resource_type: CDN
+    description: 静态资源（图片、CSS、JS 等）应启用 CDN 加速以降低源站负载和用户访问延迟
+    check_logic:
+      field: DomainList
+      operator: non_empty
+    remediation: 为静态资源域名配置 CDN 加速，设置缓存规则和预热策略
+    data_source: cdn-ops
+
+  - id: WAF-PERF-005
+    title: SLB 连接 draining 配置
+    severity: medium
+    check_type: config
+    resource_type: SLB
+    description: SLB 应配置连接 draining，确保后端 ECS 在滚动更新或下线时不会中断正在处理的请求
+    check_logic:
+      field: ConnectionDrain
+      operator: equals
+      value: "on"
+    remediation: 在 SLB 监听器中启用连接 draining 并设置合适的超时时间
+    data_source: slb-ops
+
+  - id: WAF-PERF-006
+    title: ECS 实例类型匹配负载
+    severity: high
+    check_type: config
+    resource_type: ECS
+    description: ECS 实例规格（vCPU/内存）应与实际工作负载类型和规模匹配
+    check_logic:
+      field: InstanceType
+      operator: matches_workload
+    remediation: 根据实际资源使用率评估是否需要变配 ECS 实例规格
+    data_source: ecs-ops
+
+  - id: WAF-PERF-007
+    title: Elasticsearch 分片数优化
+    severity: medium
+    check_type: config
+    resource_type: Elasticsearch
+    description: Elasticsearch 索引分片数应根据数据量和节点数合理配置，避免分片过多或过少影响性能
+    check_logic:
+      field: NumberOfShards
+      operator: in_range
+      value: "1-50"
+    remediation: 根据数据规模和节点配置调整索引分片数，单分片建议 20-40GB
+    data_source: es-ops
+
+  - id: WAF-PERF-008
+    title: NAT 网关带宽充足
+    severity: high
+    check_type: config
+    resource_type: NAT
+    description: NAT 网关带宽规格应满足业务峰值流量需求，避免因带宽不足导致丢包和延迟
+    check_logic:
+      field: BandwidthPackageId
+      operator: matches_workload
+    remediation: 根据流量监控数据评估并调整 NAT 网关带宽规格
+    data_source: vpc-ops
+
+  - id: WAF-PERF-009
+    title: PTS 压测结果审查
+    severity: low
+    check_type: existence
+    resource_type: PTS
+    description: 关键业务上线前应进行 PTS 压测，确保系统在预期负载下的性能表现达标
+    check_logic:
+      field: TestReports
+      operator: exists_recent
+    remediation: 定期执行 PTS 压测并审查报告，重点关注 TPS、RT 和错误率指标
+    data_source: pts-ops
+
+  - id: WAF-PERF-010
+    title: 数据库慢查询日志开启
+    severity: medium
+    check_type: config
+    resource_type: RDS
+    description: 应开启数据库慢查询日志，便于分析和优化 SQL 性能问题
+    check_logic:
+      field: SlowLogStatus
+      operator: equals
+      value: "Enabled"
+    remediation: 开启 RDS 慢查询日志，设置合理的慢查询阈值（建议 1-2 秒）
+    data_source: rds-ops

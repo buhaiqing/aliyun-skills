@@ -57,6 +57,13 @@ REGION="${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}"
 RESOURCE_GROUP_ID=""
 OUTPUT_FILE=""
 COMPARE_WITH=""
+# Sprint 17 重采样参数
+RESAMPLE=false
+FROM_BASELINE=""
+AS_OF=""
+AS_OF_RANGE=""
+FILL_GAPS=false
+FORCE=false
 
 # ── 参数解析 ──
 while [[ $# -gt 0 ]]; do
@@ -65,6 +72,13 @@ while [[ $# -gt 0 ]]; do
         --region)            REGION="$2"; shift 2 ;;
         --resource-group-id) RESOURCE_GROUP_ID="$2"; shift 2 ;;
         --compare-with)      COMPARE_WITH="$2"; shift 2 ;;
+        # Sprint 17 重采样参数
+        --resample)          RESAMPLE=true; shift ;;
+        --from-baseline)     FROM_BASELINE="$2"; shift 2 ;;
+        --as-of)             AS_OF="$2"; shift 2 ;;
+        --as-of-range)       AS_OF_RANGE="$2"; shift 2 ;;
+        --fill-gaps)         FILL_GAPS=true; shift ;;
+        --force)             FORCE=true; shift ;;
         *) shift ;;
     esac
 done
@@ -78,7 +92,14 @@ echo "[ConfigDrift] 开始配置漂移检测"
 echo "  BASELINE_DIR: ${BASELINE_DIR}"
 echo "  REGION: ${REGION}"
 [[ -n "$RESOURCE_GROUP_ID" ]] && echo "  RESOURCE_GROUP_ID: ${RESOURCE_GROUP_ID}"
-if [[ -n "$COMPARE_WITH" ]]; then
+if $RESAMPLE; then
+    echo "  模式: RESAMPLE (重采样)"
+    [[ -n "$FROM_BASELINE" ]] && echo "  FROM_BASELINE: ${FROM_BASELINE}"
+    [[ -n "$AS_OF" ]] && echo "  AS_OF: ${AS_OF}"
+    [[ -n "$AS_OF_RANGE" ]] && echo "  AS_OF_RANGE: ${AS_OF_RANGE}"
+    $FILL_GAPS && echo "  FILL_GAPS: true"
+    $FORCE && echo "  FORCE: true"
+elif [[ -n "$COMPARE_WITH" ]]; then
     echo "  COMPARE_WITH: ${COMPARE_WITH} (历史 baseline)"
 else
     echo "  COMPARE_WITH: latest (默认)"
@@ -126,41 +147,63 @@ PYEOF
     exit 1
 fi
 
-# ── 调用 baseline-manager.py --diff（修复 BUG-002）────────────
+# ── 调用 baseline-manager.py（Sprint 17: --resample 或 --diff）──────
 LOG_FILE="${OUTPUT_FILE%.json}.log"
 
-DIFF_ARGS=(
-    "--output-dir" "${BASELINE_DIR}"
-    "--region" "${REGION}"
-    "--diff"
-)
-if [[ -n "${RESOURCE_GROUP_ID}" ]]; then
-    DIFF_ARGS+=("--resource-group-id" "${RESOURCE_GROUP_ID}")
-fi
-if [[ -n "${COMPARE_WITH}" ]]; then
-    DIFF_ARGS+=("--compare-with" "${COMPARE_WITH}")
+if $RESAMPLE; then
+    # Sprint 17: 重采样模式
+    BM_ARGS=(
+        "--output-dir" "${BASELINE_DIR}"
+        "--resample"
+    )
+    if [[ -n "${FROM_BASELINE}" ]]; then
+        BM_ARGS+=("--from-baseline" "${FROM_BASELINE}")
+    fi
+    if [[ -n "${AS_OF}" ]]; then
+        BM_ARGS+=("--as-of" "${AS_OF}")
+    fi
+    if [[ -n "${AS_OF_RANGE}" ]]; then
+        BM_ARGS+=("--as-of-range" "${AS_OF_RANGE}")
+    fi
+    $FILL_GAPS && BM_ARGS+=("--fill-gaps")
+    $FORCE && BM_ARGS+=("--force")
+    BM_MODE="resample"
+else
+    # 默认: 漂移检测
+    BM_ARGS=(
+        "--output-dir" "${BASELINE_DIR}"
+        "--region" "${REGION}"
+        "--diff"
+    )
+    if [[ -n "${RESOURCE_GROUP_ID}" ]]; then
+        BM_ARGS+=("--resource-group-id" "${RESOURCE_GROUP_ID}")
+    fi
+    if [[ -n "${COMPARE_WITH}" ]]; then
+        BM_ARGS+=("--compare-with" "${COMPARE_WITH}")
+    fi
+    BM_MODE="diff"
 fi
 
 set +e
-python3 "${TOPO_DIR}/baseline-manager.py" "${DIFF_ARGS[@]}" 2>&1 | tee "${LOG_FILE}" | sed 's/^/  /'
+python3 "${TOPO_DIR}/baseline-manager.py" "${BM_ARGS[@]}" 2>&1 | tee "${LOG_FILE}" | sed 's/^/  /'
 rc=${PIPESTATUS[0]}
 set -e
 
 # ── 解析 log 提取漂移项并写 JSON 报告 ──
-python3 - "${LOG_FILE}" "${OUTPUT_FILE}" "${BASELINE_DIR}" "${REGION}" "${RESOURCE_GROUP_ID}" "${rc}" "${COMPARE_WITH}" <<'PYEOF'
+python3 - "${LOG_FILE}" "${OUTPUT_FILE}" "${BASELINE_DIR}" "${REGION}" "${RESOURCE_GROUP_ID}" "${rc}" "${COMPARE_WITH}" "${BM_MODE}" <<'PYEOF'
 import json
 import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-log_file, output_file, baseline_dir, region, rg_id, rc_str, compare_with = sys.argv[1:8]
+log_file, output_file, baseline_dir, region, rg_id, rc_str, compare_with, mode = sys.argv[1:9]
 rc = int(rc_str)
 
 drift_items = []
 status = "completed"
 note = None
-compared_with = compare_with or "latest"
+compared_with = compare_with or "latest" if mode == "diff" else None
 
 try:
     log_text = Path(log_file).read_text()
@@ -187,16 +230,18 @@ for line in log_text.splitlines():
 
 report = {
     "agent": "configdrift",
+    "mode": mode,
     "status": status,
     "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "region": region,
     "resource_group_id": rg_id or None,
     "baseline_dir": baseline_dir,
-    "compared_with": compared_with,
     "drift_count": len(drift_items),
     "drift_items": drift_items,
     "log_file": log_file,
 }
+if mode == "diff":
+    report["compared_with"] = compared_with
 if note:
     report["note"] = note
 

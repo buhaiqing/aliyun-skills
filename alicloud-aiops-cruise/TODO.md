@@ -71,7 +71,7 @@
 | [**14**](TODO/sprint-14-perf-batch.md) | **性能优化 (batch+缓存+并发)** | **P1** | **总耗时 -50%~85%** | Sprint 1+2+8 | ✅ **5/5** (mock 9x 加速) |
 | [**15**](TODO/sprint-15-batch-by-dim.md) | **CMS 按 dimension 批量拉取** | **P1** | **API 调用 -98%** | Sprint 14 | ✅ **4/4** (mock 50x 加速) |
 | [**16**](TODO/sprint-16-baseline-retention.md) | **Baseline Retention + 3 月回溯** | **P2** | **季度审计可回溯 90 天** | BUG-001/002 修复 | ✅ **4/4** (9 个单测通过) |
-| [**17**](TODO/sprint-17-baseline-resample.md) | **Baseline 重采样能力** | **P2** | **补建/批量补全缺失 baseline** | Sprint 16 | 🚧 **0/4** |
+| [**17**](TODO/sprint-17-baseline-resample.md) | **Baseline 重采样能力** | **P2** | **补建/批量补全缺失 baseline** | Sprint 16 | ✅ **4/4** (10 个单测通过, 端到端验证通过) |
 | [**18**](TODO/sprint-18-runtime-root.md) | **运行时数据统一根目录 (.runtime/)** | **P0** | **集中管理; 软链接兼容; .gitignore 完整** | 无 | ✅ **6/6** (含 5 软链接 + .gitignore 增强 + 共享 lib + 端到端验证) |
 | [**19**](TODO/sprint-19-runtime-cleanup.md) | **Runtime 清理 + 路径迁移收尾** | **P1** | **消除所有硬编码 audit-results; 提供 cleanup 工具; 防止 .runtime/ 膨胀** | Sprint 18 | ✅ **6/6** (6 个单测通过) |
 

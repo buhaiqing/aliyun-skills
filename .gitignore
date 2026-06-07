@@ -90,6 +90,7 @@ ehthumbs.db
 .omp/
 .pi/
 infra-baseline/
+output/
 
 # GCL trace artifacts (per AGENTS.md §12.6; sanitized traces may still
 # leak operational context, so treat all traces as ephemeral by default)

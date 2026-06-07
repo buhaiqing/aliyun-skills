@@ -1,10 +1,11 @@
 # Sprint 17 — Baseline 重采样能力
 
-> **状态**: 🚧 0/4
+> **状态**: ✅ 4/4
 > **优先级**: P2 (运维效率 + 历史回溯补全)
 > **业务价值**: 季度审计前批量补全缺失 baseline; 故障复盘时快速补建"那时的状态"
 > **依赖**: Sprint 16 (--compare-with) + LocalBackend.get_latest/get_by_date
 > **开始日期**: 2026-06-07
+> **完成日期**: 2026-06-07
 > **需求来源**: 2026-06-07 19:44 用户决策 — "提供 baseline 重采样的能力, 允许指定日期生成采样数据"
 > **关联文件**:
 > - `alicloud-topo-discovery/scripts/baseline-manager.py` (新增 --resample 模式)
@@ -95,7 +96,7 @@ python3 baseline-manager.py \
 
 ## 任务清单
 
-### ⬜ T1: baseline_local.py 工具方法
+### ✅ T1: baseline_local.py 工具方法
 
 **目标**: 在 `LocalBackend` 类上增加 3 个工具方法。
 
@@ -118,7 +119,7 @@ class LocalBackend:
 - `list_gaps`: 在 `[start, end]` 区间枚举日期, 过滤 `self.list_baselines()`
 - `fill_gaps`: 复用 `copy_baseline`, 遍历 `list_gaps` 结果
 
-### ⬜ T2: baseline-manager.py 集成 `--resample` 模式
+### ✅ T2: baseline-manager.py 集成 `--resample` 模式
 
 **目标**: 在主 CLI 暴露 `--resample` 子命令。
 
@@ -144,7 +145,7 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 - 输出: 列出创建/跳过的日期
 - `--force` 标志: 允许覆盖已存在目录 (默认保护)
 
-### ⬜ T3: configdrift.sh 透传 `--resample` 链路
+### ✅ T3: configdrift.sh 透传 `--resample` 链路
 
 **目标**: 让 ConfigDrift Agent 支持"重采样 + 对比"一键完成。
 
@@ -164,7 +165,7 @@ bash configdrift.sh --resample --from-baseline latest \
 - 互斥: `--resample` 模式下, `--compare-with` 可选 (默认不对比)
 - JSON 报告 `mode` 字段: `"resample"` 或 `"diff"` (替代隐式推断)
 
-### ⬜ T4: 测试用例
+### ✅ T4: 测试用例
 
 **目标**: 覆盖 4 个模式 + 边界场景。
 

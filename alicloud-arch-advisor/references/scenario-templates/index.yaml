@@ -1,0 +1,40 @@
+scenarios:
+  - id: ecommerce
+    name: 电商平台
+    keywords: [电商, 商城, 购物, 交易, 商品, 订单, 秒杀, ecommerce, shop, mall]
+    tags: [web, high-concurrency, transaction]
+    priority: 1
+    description: 大规模电商平台的架构方案，支持高并发交易、商品搜索、订单处理
+    template: ecommerce.md
+
+  - id: gaming
+    name: 游戏服务
+    keywords: [游戏, 手游, 对战, gaming, game, match]
+    tags: [real-time, stateful, low-latency]
+    priority: 2
+    description: 实时游戏服务架构，低延迟对战、状态同步、分区部署
+    template: gaming.md
+
+  - id: fintech
+    name: 金融科技
+    keywords: [金融, 支付, 银行, 保险, 证券, fintech, payment]
+    tags: [compliance, high-security, audit]
+    priority: 3
+    description: 金融合规场景的高安全、高可用架构方案
+    template: fintech.md
+
+  - id: saas-multi-tenant
+    name: SaaS 多租户
+    keywords: [SaaS, 多租户, multi-tenant, 租户隔离]
+    tags: [isolation, scalability, cost-sharing]
+    priority: 4
+    description: SaaS 多租户平台的资源隔离与共享架构
+    template: saas-multi-tenant.md
+
+  - id: ai-ml
+    name: AI/ML 平台
+    keywords: [AI, 人工智能, 机器学习, 大模型, training, inference, GPU]
+    tags: [gpu, data-intensive, pipeline]
+    priority: 5
+    description: AI/ML 训练和推理平台架构，GPU 集群和数据管线
+    template: ai-ml.md

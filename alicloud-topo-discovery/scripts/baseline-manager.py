@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 # Ensure scripts/ is on sys.path for local imports
@@ -59,6 +59,20 @@ def parse_args(argv=None):
     parser.add_argument("--compare-with", default=None, metavar="YYYY-MM-DD",
                         help="With --diff, compare against this historical baseline "
                              "(default: latest). Format: YYYY-MM-DD")
+    # Sprint 17: baseline 重采样
+    parser.add_argument("--resample", action="store_true",
+                        help="Resample mode: create baseline snapshots for historical dates "
+                             "by copying from an existing baseline (no cloud calls)")
+    parser.add_argument("--from-baseline", default=None, metavar="YYYY-MM-DD|latest",
+                        help="Source baseline date to copy from (default: latest)")
+    parser.add_argument("--as-of", default=None, metavar="YYYY-MM-DD",
+                        help="Single target date for resample (mode 1)")
+    parser.add_argument("--as-of-range", default=None,
+                        help="Date range for batch resample, format: YYYY-MM-DD:YYYY-MM-DD (modes 3/4)")
+    parser.add_argument("--fill-gaps", action="store_true",
+                        help="With --as-of-range, only fill missing dates (mode 4)")
+    parser.add_argument("--force", action="store_true",
+                        help="Overwrite existing baseline directories (default: protect)")
     return parser.parse_args(argv)
 
 
@@ -263,6 +277,80 @@ def main():
     args = parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Sprint 17: --resample mode (no cloud calls, just copy/manipulate baselines)
+    if args.resample:
+        backend = LocalBackend(root_dir=output_dir)
+
+        # Resolve source baseline
+        src = args.from_baseline
+        if not src:
+            print("[ERROR] --resample requires --from-baseline (date or 'latest')")
+            sys.exit(2)
+
+        src_date = src
+        if src == "latest":
+            latest_dir = backend.get_latest()
+            if latest_dir is None:
+                print("[ERROR] No baseline found for --from-baseline=latest (run baseline-manager first)")
+                sys.exit(2)
+            src_date = latest_dir.name
+
+        # Validate source exists
+        if backend.get_by_date(src_date) is None:
+            print(f"[ERROR] Source baseline not found: {src_date}")
+            print(f"[HINT]  Available baselines: {', '.join(d.isoformat() for d in backend.list_baselines()) or '(none)'}")
+            sys.exit(2)
+
+        force = args.force
+
+        if args.as_of:
+            # Mode 1: single date copy
+            dst = args.as_of
+            result = backend.copy_baseline(src_date, dst, force=force)
+            if result is None:
+                print(f"[INFO] Target date already exists: {dst} (use --force to overwrite)")
+            else:
+                print(f"\n=== Resample: copied {src_date} → {dst} ===")
+        elif args.as_of_range:
+            # Modes 3/4: range
+            parts = args.as_of_range.split(":")
+            if len(parts) != 2:
+                print(f"[ERROR] --as-of-range requires format YYYY-MM-DD:YYYY-MM-DD, got: {args.as_of_range}")
+                sys.exit(2)
+            start, end = parts[0], parts[1]
+
+            if args.fill_gaps:
+                # Mode 4: fill-gaps
+                created = backend.fill_gaps(src_date, start, end, force=force)
+                total_expected = len(backend.list_gaps(start, end))
+                print(f"\n=== Resample (fill-gaps): src={src_date}, range={start}..{end} ===")
+                print(f"  Created: {len(created)}")
+                print(f"  Skipped (already exist): {total_expected - len(created)}")
+                if created:
+                    print(f"  Dates: {', '.join(created)}")
+            else:
+                # Mode 3: batch copy all dates in range
+                gaps = backend.list_gaps(start, end)
+                created = 0
+                skipped = 0
+                for d in [date.fromisoformat(start) + timedelta(days=i)
+                          for i in range((date.fromisoformat(end) - date.fromisoformat(start)).days + 1)]:
+                    d_str = d.isoformat()
+                    result = backend.copy_baseline(src_date, d_str, force=force)
+                    if result is not None:
+                        created += 1
+                    else:
+                        skipped += 1
+                print(f"\n=== Resample (batch): src={src_date}, range={start}..{end} ===")
+                print(f"  Created: {created}")
+                print(f"  Skipped (already exist, use --force to overwrite): {skipped}")
+        else:
+            print("[ERROR] --resample requires --as-of <DATE> or --as-of-range <START>:<END>")
+            sys.exit(2)
+
+        print(f"[SUMMARY] Resample done")
+        return
 
     # Step 1: Run topo-scan to collect real data
     inventory = _run_topo_scan(args.region, output_dir)

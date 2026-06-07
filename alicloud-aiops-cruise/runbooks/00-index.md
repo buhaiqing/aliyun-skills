@@ -14,6 +14,11 @@
 | 02 | **故障应急排查** | 告警 / 报障 | 按需 | 故障响应 | 高 | 3-8min |
 | 03 | **容量规划检查** | 定时 | 每周 | 容量管理 | 中 | 5-10min |
 | 04 | **大促前全链路预检** | 人工 | 大促前 3 天 | 变更准备 | 高 | 10-20min |
+| 05 | **慢查询诊断与治理** | 告警 / 人工 | 按需 | 性能诊断 | 中 | 5-15min |
+| 06 | **数据库连接风暴自愈** | 告警（连接数 > 85%） | 按需 | 故障自愈 | 高 | 3-8min |
+| 07 | **全链路性能瓶颈定位** | 用户报障 / 告警 | 按需 | 性能诊断 | 高 | 5-12min |
+| 08 | **Redis/Tair 缓存性能诊断** | 告警（内存 > 80%） | 按需 | 性能诊断 | 中 | 3-8min |
+| 09 | **弹性伸缩性能优化** | 容量预测 / 人工 | 按需 | 容量管理 | 中 | 3-10min |
 
 ## 通用执行约定
 
@@ -98,7 +103,12 @@ alicloud-aiops-cruise/
 │   ├── 01-daily-health-check.md             ← 日常健康巡检
 │   ├── 02-emergency-troubleshoot.md         ← 故障应急排查
 │   ├── 03-capacity-planning.md              ← 容量规划
-│   └── 04-pre-launch-check.md              ← 大促前预检
+│   ├── 04-pre-launch-check.md              ← 大促前预检
+│   ├── 05-slow-query-diagnosis.md          ← 慢查询诊断与治理
+│   ├── 06-connection-storm-selfheal.md    ← 数据库连接风暴自愈
+│   ├── 07-bottleneck-localization.md       ← 全链路性能瓶颈定位
+│   ├── 08-redis-performance-diagnosis.md  ← Redis/Tair 缓存性能诊断
+│   └── 09-auto-scaling-optimization.md    ← 弹性伸缩性能优化
 ├── references/
 │   ├── threshold-definitions.md             ← 阈值 + 规格上限速查
 │   ├── inference-rules.md                   ← 链路推理规则表（20+ pattern）

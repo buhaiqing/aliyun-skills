@@ -177,6 +177,11 @@ scripts/agents/perceive/       # 感知层统一入口
    [2] 故障应急排查
    [3] 容量规划
    [4] 大促前预检
+   [5] 慢查询诊断与治理
+   [6] 数据库连接风暴自愈
+   [7] 全链路性能瓶颈定位
+   [8] Redis/Tair 缓存性能诊断
+   [9] 弹性伸缩性能优化
 
 3. 巡检范围（可选，默认全链路）:
    [a] 全链路
@@ -225,6 +230,11 @@ GCL Prompt 见 `references/prompt-templates.md`。
 | 02 | 故障应急排查 | 高 | 3-8min | 告警触发 / 用户报障 |
 | 03 | 容量规划 | 中 | 5-10min | 每周 |
 | 04 | 大促前预检 | 高 | 10-20min | 大促前 3 天 |
+| 05 | 慢查询诊断与治理 | 中 | 5-15min | 慢查询告警 / 按需 |
+| 06 | 数据库连接风暴自愈 | 高 | 3-8min | 连接数告警 / 连接风暴 |
+| 07 | 全链路性能瓶颈定位 | 高 | 5-12min | 用户报障 / 按需 |
+| 08 | Redis/Tair 缓存性能诊断 | 中 | 3-8min | 内存告警 / 按需 |
+| 09 | 弹性伸缩性能优化 | 中 | 3-10min | 容量预测 / 按需 |
 
 详细执行步骤见对应 runbook。
 
@@ -244,6 +254,7 @@ GCL Prompt 见 `references/prompt-templates.md`。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.4.0 | 2026-06-07 | Sprint 17 完成: Baseline 重采样能力 (`--resample --from-baseline <DATE> --as-of <DATE>` 复制式; `--as-of-range` 区间批量; `--fill-gaps` 智能补全; `--force` 覆盖保护; configdrift.sh 透传; 10 个单测全部通过) |
 | 1.3.0 | 2026-06-07 | Sprint 19 完成: 清理所有硬编码 `audit-results` 路径 (gcl-runner-ops 5 文件 + runbooks 7 脚本 + _shared.py CACHE_DIR); 创建 `runtime_cleanup.py` 工具 (dry-run/apply/size limit); Sprint 18 Python 端补修 (`get_runtime_root` 支持 `SKILLS_DIR`); 6 个单测全部通过 |
 | 1.2.0 | 2026-06-07 | Sprint 18 完成: 运行时数据统一根目录 (`.runtime/`, 5 个软链接兼容, .gitignore 增强, 共享 lib `runtime_root.sh`+`runtime_root.py`, `configdrift.sh`/`__init__.sh` 改造, BUF-003 + 路径 bug 修复, Sprint 16 9/9 单测无回归) |
 | 1.1.2 | 2026-06-07 | Sprint 16 完成: `--compare-with <date>` 支持任意历史 baseline 对比 (baseline-manager + configdrift + LocalBackend.get_by_date + 9 个单测全部通过 + cron 模板) |

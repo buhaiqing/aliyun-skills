@@ -1,0 +1,192 @@
+pillar: Reliability
+rules:
+  - id: WAF-REL-001
+    title: SLB/ALB 多可用区部署
+    severity: critical
+    check_type: config
+    resource_type: SLB
+    description: SLB/ALB 实例应部署在至少两个可用区以实现高可用
+    check_logic:
+      field: ZoneMappings
+      operator: count_gte
+      value: 2
+    remediation: 在 SLB/ALB 配置中添加备用可用区，确保跨可用区高可用
+    data_source: slb-ops
+
+  - id: WAF-REL-002
+    title: RDS 自动备份已启用
+    severity: high
+    check_type: config
+    resource_type: RDS
+    description: RDS 实例应开启自动备份以防止数据丢失
+    check_logic:
+      field: BackupPolicy.PreferredBackupPeriod
+      operator: not_empty
+    remediation: 在 RDS 控制台开启自动备份，设置每日备份窗口和保留天数
+    data_source: rds-ops
+
+  - id: WAF-REL-003
+    title: ECS 加入自动伸缩组
+    severity: high
+    check_type: relation
+    resource_type: ECS
+    description: 承载应用的 ECS 实例应归属于弹性伸缩(Auto Scaling)组
+    check_logic:
+      field: ScalingGroupId
+      operator: not_null
+    remediation: 创建伸缩组并将 ECS 实例加入，设置最小/最大实例数和扩缩容策略
+    data_source: ecs-ops
+
+  - id: WAF-REL-004
+    title: RDS 多可用区部署
+    severity: critical
+    check_type: config
+    resource_type: RDS
+    description: 生产环境 RDS 实例应启用多可用区部署实现跨 AZ 容灾
+    check_logic:
+      field: ZoneId
+      operator: multi_az
+    remediation: 将 RDS 实例迁移到多可用区部署模式，主备在不同可用区
+    data_source: rds-ops
+
+  - id: WAF-REL-005
+    title: 跨区域备份已配置
+    severity: high
+    check_type: existence
+    resource_type: RDS
+    description: 核心业务数据库应配置跨区域备份，防止区域性灾难导致数据丢失
+    check_logic:
+      field: CrossRegionBackupEnabled
+      operator: equals
+      value: "1"
+    remediation: 在 RDS 控制台开启跨地域备份，选择异地备份区域
+    data_source: rds-ops
+
+  - id: WAF-REL-006
+    title: Redis 采用主备/集群架构
+    severity: high
+    check_type: config
+    resource_type: Redis
+    description: 生产环境 Redis 实例应使用主备高可用模式或集群版，避免单点故障
+    check_logic:
+      field: InstanceType
+      operator: in
+      value: ["RedisSharding", "RedisCluster"]
+    remediation: 将 Redis 单机版升级为主备版或集群版
+    data_source: redis-ops
+
+  - id: WAF-REL-007
+    title: SLB 健康检查已配置
+    severity: critical
+    check_type: existence
+    resource_type: SLB
+    description: SLB/ALB 监听器应配置健康检查，自动移除异常后端服务器
+    check_logic:
+      field: HealthCheck.HealthCheckEnabled
+      operator: equals
+      value: true
+    remediation: 为 SLB/ALB 监听器开启健康检查，配置合理的检查间隔和超时阈值
+    data_source: slb-ops
+
+  - id: WAF-REL-008
+    title: EIP 绑定高可用资源
+    severity: medium
+    check_type: relation
+    resource_type: VPC
+    description: 弹性公网 IP(EIP)应绑定到高可用资源，避免单点故障
+    check_logic:
+      field: BindInstanceType
+      operator: in
+      value: ["SLB", "NAT"]
+    remediation: 将 EIP 绑定到 SLB 或 NAT 网关，避免直接绑定单台 ECS
+    data_source: vpc-ops
+
+  - id: WAF-REL-009
+    title: RDS 连接数上限合理配置
+    severity: medium
+    check_type: config
+    resource_type: RDS
+    description: RDS 实例应设置合理的最大连接数，防止连接耗尽导致服务不可用
+    check_logic:
+      field: MaxConnections
+      operator: gte
+      value: 200
+    remediation: 评估业务并发需求，调整 RDS 最大连接数参数
+    data_source: rds-ops
+
+  - id: WAF-REL-010
+    title: OSS Bucket 版本控制已启用
+    severity: high
+    check_type: config
+    resource_type: OSS
+    description: 存储重要数据的 OSS Bucket 应开启版本控制，防止误删或覆盖
+    check_logic:
+      field: Versioning
+      operator: equals
+      value: Enabled
+    remediation: 在 OSS Bucket 设置中开启版本控制，并结合生命周期管理历史版本
+    data_source: oss-ops
+
+  - id: WAF-REL-011
+    title: NAT 网关高可用部署
+    severity: medium
+    check_type: config
+    resource_type: VPC
+    description: 生产环境 NAT 网关应部署高可用模式，避免单点故障影响出网能力
+    check_logic:
+      field: NatGatewayBandwidthPackageCount
+      operator: count_gte
+      value: 2
+    remediation: 创建多个 NAT 网关或使用增强型 NAT 网关实现高可用
+    data_source: vpc-ops
+
+  - id: WAF-REL-012
+    title: ACK 集群多节点部署
+    severity: critical
+    check_type: config
+    resource_type: ACK
+    description: ACK 托管版/Kubernetes 集群应至少包含 3 个工作节点以保证应用高可用
+    check_logic:
+      field: WorkerNodeCount
+      operator: count_gte
+      value: 3
+    remediation: 扩容 ACK 集群工作节点至 3 个以上，分布在不同的可用区
+    data_source: ack-ops
+
+  - id: WAF-REL-013
+    title: Elasticsearch 数据备份
+    severity: high
+    check_type: existence
+    resource_type: Elasticsearch
+    description: Elasticsearch 实例应配置自动快照备份到 OSS，防止数据丢失
+    check_logic:
+      field: SnapshotConfiguration
+      operator: not_null
+    remediation: 在阿里云 Elasticsearch 控制台配置自动快照备份策略
+    data_source: elasticsearch-ops
+
+  - id: WAF-REL-014
+    title: RDS 只读实例应对读负载
+    severity: medium
+    check_type: relation
+    resource_type: RDS
+    description: 高读取负载的 RDS 实例应创建只读实例来分担读压力
+    check_logic:
+      field: ReadOnlyInstanceCount
+      operator: count_gte
+      value: 1
+    remediation: 为 RDS 主实例创建只读实例，应用程序配置读写分离
+    data_source: rds-ops
+
+  - id: WAF-REL-015
+    title: 应用层熔断降级
+    severity: low
+    check_type: existence
+    resource_type: Application
+    description: 应用服务应配置熔断降级机制，防止下游故障级联扩散
+    check_logic:
+      field: CircuitBreakerEnabled
+      operator: equals
+      value: true
+    remediation: 引入 Sentinel 或 Hystrix 等熔断框架，为关键依赖配置熔断规则
+    data_source: ack-ops
