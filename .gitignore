@@ -97,3 +97,5 @@ audit-results/
 # Operational reports (contain instance IDs, business context — do NOT commit)
 report.md
 report-*.md
+rds-waste-report.md
+rds-*-report.md
