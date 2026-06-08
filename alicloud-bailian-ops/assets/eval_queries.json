@@ -1,0 +1,152 @@
+[
+  {
+    "query": "How do I use Bailian to deploy a model?",
+    "should_trigger": true,
+    "category": "model_deployment"
+  },
+  {
+    "query": "Create an AI agent with 百炼",
+    "should_trigger": true,
+    "category": "agent_creation"
+  },
+  {
+    "query": "Set up a knowledge base for RAG",
+    "should_trigger": true,
+    "category": "knowledge_base"
+  },
+  {
+    "query": "Get model info for qwen-turbo including context window and pricing",
+    "should_trigger": true,
+    "category": "model_info"
+  },
+  {
+    "query": "What's the max tokens for qwen-max?",
+    "should_trigger": true,
+    "category": "model_info"
+  },
+  {
+    "query": "How to create a Prompt template in Bailian?",
+    "should_trigger": true,
+    "category": "prompt_engineering"
+  },
+  {
+    "query": "Fine-tune a custom model on my data",
+    "should_trigger": true,
+    "category": "fine_tuning"
+  },
+  {
+    "query": "Invoke qwen-plus API with streaming",
+    "should_trigger": true,
+    "category": "model_inference"
+  },
+  {
+    "query": "Build a chatbot using 百炼大模型",
+    "should_trigger": true,
+    "category": "agent_creation"
+  },
+  {
+    "query": "Upload documents to knowledge base for semantic search",
+    "should_trigger": true,
+    "category": "knowledge_base"
+  },
+  {
+    "query": "Check my Alibaba Cloud bill",
+    "should_trigger": false,
+    "category": "billing"
+  },
+  {
+    "query": "Set up RAM permissions",
+    "should_trigger": false,
+    "category": "iam"
+  },
+  {
+    "query": "Create an ECS instance",
+    "should_trigger": false,
+    "category": "ecs"
+  },
+  {
+    "query": "Deploy a Kubernetes cluster",
+    "should_trigger": false,
+    "category": "ack"
+  },
+  {
+    "query": "How to use PAI platform for machine learning",
+    "should_trigger": false,
+    "category": "pai"
+  },
+  {
+    "query": "Check RDS MySQL performance",
+    "should_trigger": false,
+    "category": "rds"
+  },
+  {
+    "query": "Configure SLB load balancer",
+    "should_trigger": false,
+    "category": "slb"
+  },
+  {
+    "query": "Set up OSS bucket",
+    "should_trigger": false,
+    "category": "oss"
+  },
+  {
+    "query": "Create a VPC network",
+    "should_trigger": false,
+    "category": "vpc"
+  },
+  {
+    "query": "AI model deployment on Alibaba Cloud",
+    "should_trigger": true,
+    "category": "model_deployment"
+  },
+  {
+    "query": "智能客服机器人怎么搭建",
+    "should_trigger": true,
+    "category": "agent_creation"
+  },
+  {
+    "query": "百炼知识库如何上传文档",
+    "should_trigger": true,
+    "category": "knowledge_base"
+  },
+  {
+    "query": "调用大模型API",
+    "should_trigger": true,
+    "category": "model_inference"
+  },
+  {
+    "query": "Prompt engineering best practices",
+    "should_trigger": true,
+    "category": "prompt_engineering"
+  },
+  {
+    "query": "模型版本和定价查询",
+    "should_trigger": true,
+    "category": "model_info"
+  },
+  {
+    "query": "Retrieve context from KB for RAG application",
+    "should_trigger": true,
+    "category": "knowledge_base"
+  },
+  {
+    "query": "多轮对话Agent怎么实现",
+    "should_trigger": true,
+    "category": "agent_creation"
+  },
+  {
+    "query": "List all available models and their specifications",
+    "should_trigger": true,
+    "category": "model_info"
+  },
+  {
+    "query": "What is the context window size of text-embedding-v2?",
+    "should_trigger": true,
+    "category": "model_info"
+  },
+  {
+    "query": "Help me troubleshoot my Redis instance",
+    "should_trigger": false,
+    "category": "redis"
+  }
+]

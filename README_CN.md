@@ -53,6 +53,7 @@ aliyun-skills/
 ├── alicloud-polar-mysql-ops/          # PolarDB MySQL版
 ├── alicloud-polar-pg-ops/             # PolarDB PostgreSQL版
 ├── alicloud-polar-oracle-ops/         # PolarDB Oracle兼容版
+├── alicloud-bailian-ops/              # 百炼 GenAI平台 - 大模型、Agent、RAG、Prompt
 └── alicloud-topo-discovery/          # [发现类 Skill] 网络拓扑与资源清单
 ```
 
