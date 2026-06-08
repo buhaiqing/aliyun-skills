@@ -26,7 +26,7 @@
 # 修复记录:
 #   BUG-001: 路径解析 — SKILLS_DIR/BASELINE_DIR/AUDIT_DIR 多走一层 ../
 #   BUG-002: 参数传递 — 与 baseline-manager.py 接口对齐
-#             (原: --baseline/--current/--output → 现: --output-dir/--region/--diff)
+#             (原: --baseline/--current/--output -> 现: --output-dir/--region/--diff)
 #   Sprint-16 T2: 透传 --compare-with 到 baseline-manager, JSON 增加 compared_with 字段
 
 set -euo pipefail

@@ -9,7 +9,7 @@ status: mandatory
 
 > **目的**：减少 4 个 runbook 间的重复 API 调用，降低 CMS 限速压力，缩短重复巡检耗时。**纯本地文件缓存，零外部依赖**。
 >
-> **实现位置**：[`runbooks/scripts/_shared.py`](../runbooks/scripts/_shared.py) → `q_cached()` 函数
+> **实现位置**：[`runbooks/scripts/_shared.py`](../runbooks/scripts/_shared.py) -> `q_cached()` 函数
 >
 > **调研依据**：[`TODO/sprint-08-result-cache.md`](../TODO/sprint-08-result-cache.md) §二 策略对比
 
@@ -57,7 +57,7 @@ status: mandatory
 | **安全/审计** (LookupEvents) | 30s | 要求近实时 |
 | **未知 API** | 60s (默认) | 保守策略 |
 
-> **完整表**：`_shared.py` → `CACHE_TTL` 字典
+> **完整表**：`_shared.py` -> `CACHE_TTL` 字典
 
 ---
 
@@ -180,7 +180,7 @@ audit-results/cache/
 | #2 | 无 | 56 | 148s | ~70 |
 | #3 | 无 | 56 | 148s | ~70 |
 | **带缓存首次** | 有 | 56 | 152s | ~70 (写) |
-| **带缓存二次** | 有 | 56 | **~50s** | **~24 (66%↓)** |
+| **带缓存二次** | 有 | 56 | **~50s** | **~24 (66%DOWN)** |
 
 ### 7.2 Hit Rate 期望
 

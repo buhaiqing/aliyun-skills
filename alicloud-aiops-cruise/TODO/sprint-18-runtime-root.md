@@ -1,6 +1,6 @@
 # Sprint 18 — 运行时数据统一根目录 (.runtime/)
 
-> **状态**: ✅ 6/6
+> **状态**: PASS 6/6
 > **优先级**: P0 (架构基础)
 > **业务价值**: 集中管理所有运行时数据; 根目录可配置; 完整 Gitignore
 > **依赖**: Sprint 16/17 (baseline 路径使用方)
@@ -54,50 +54,50 @@
 
 ## 任务清单
 
-### ✅ T1: 基础设施 (.gitignore + .runtime/ + 共享 lib)
+### PASS T1: 基础设施 (.gitignore + .runtime/ + 共享 lib)
 
-- ✅ `.gitignore` 增强 (新增 `.runtime/` + 兼容旧路径规则)
-- ✅ 顶层 `.runtime/` 目录结构创建
-- ✅ 共享 lib:
+- PASS `.gitignore` 增强 (新增 `.runtime/` + 兼容旧路径规则)
+- PASS 顶层 `.runtime/` 目录结构创建
+- PASS 共享 lib:
   - `alicloud-aiops-cruise/scripts/lib/runtime_root.sh` (Shell 解析)
   - `alicloud-aiops-cruise/scripts/lib/runtime_root.py` (Python 解析)
-- ✅ 规范文档 `docs/runtime-data-spec.md`
+- PASS 规范文档 `docs/runtime-data-spec.md`
 
-### ✅ T2: 现有运行时数据迁移
+### PASS T2: 现有运行时数据迁移
 
-- ✅ 顶层 `audit-results/` → `.runtime/audit/aiops-cruise/legacy/`
-- ✅ 顶层 `infra-baseline/` → `.runtime/baseline/`
-- ✅ `alicloud-aiops-cruise/audit-results/` → `.runtime/audit/aiops-cruise/perceive/`
-- ✅ `alicloud-aiops-cruise/runbooks/scripts/audit-results/` → `.runtime/audit/aiops-cruise/runbooks/`
-- ✅ `alicloud-topo-discovery/scripts/audit-results/` → `.runtime/audit/topo-discovery/`
-- ✅ 解除 git 跟踪: `git rm -r --cached infra-baseline/`
+- PASS 顶层 `audit-results/` -> `.runtime/audit/aiops-cruise/legacy/`
+- PASS 顶层 `infra-baseline/` -> `.runtime/baseline/`
+- PASS `alicloud-aiops-cruise/audit-results/` -> `.runtime/audit/aiops-cruise/perceive/`
+- PASS `alicloud-aiops-cruise/runbooks/scripts/audit-results/` -> `.runtime/audit/aiops-cruise/runbooks/`
+- PASS `alicloud-topo-discovery/scripts/audit-results/` -> `.runtime/audit/topo-discovery/`
+- PASS 解除 git 跟踪: `git rm -r --cached infra-baseline/`
 
-### ✅ T3: 软链接兼容 (旧路径 → 新路径)
+### PASS T3: 软链接兼容 (旧路径 -> 新路径)
 
-- ✅ `audit-results/` → `.runtime/audit/aiops-cruise/legacy` (顶层)
-- ✅ `infra-baseline/` → `.runtime/baseline`
-- ✅ `alicloud-aiops-cruise/audit-results/` → `.runtime/audit/aiops-cruise/perceive`
-- ✅ `alicloud-aiops-cruise/runbooks/scripts/audit-results/` → `.runtime/audit/aiops-cruise/runbooks`
-- ✅ `alicloud-topo-discovery/scripts/audit-results/` → `.runtime/audit/topo-discovery`
+- PASS `audit-results/` -> `.runtime/audit/aiops-cruise/legacy` (顶层)
+- PASS `infra-baseline/` -> `.runtime/baseline`
+- PASS `alicloud-aiops-cruise/audit-results/` -> `.runtime/audit/aiops-cruise/perceive`
+- PASS `alicloud-aiops-cruise/runbooks/scripts/audit-results/` -> `.runtime/audit/aiops-cruise/runbooks`
+- PASS `alicloud-topo-discovery/scripts/audit-results/` -> `.runtime/audit/topo-discovery`
 
-### ✅ T4: 核心代码改造 (configdrift.sh + baseline-manager.py + LocalBackend)
+### PASS T4: 核心代码改造 (configdrift.sh + baseline-manager.py + LocalBackend)
 
-- ✅ `configdrift.sh`: BASELINE_DIR + AUDIT_DIR 改用 RUNTIME_ROOT
-- ✅ `baseline-manager.py`: --output-dir 默认值改用 RUNTIME_ROOT
-- ✅ `LocalBackend`: 默认 root_dir 支持 RUNTIME_ROOT 环境变量
-- ✅ 共享 lib 提供统一解析入口
+- PASS `configdrift.sh`: BASELINE_DIR + AUDIT_DIR 改用 RUNTIME_ROOT
+- PASS `baseline-manager.py`: --output-dir 默认值改用 RUNTIME_ROOT
+- PASS `LocalBackend`: 默认 root_dir 支持 RUNTIME_ROOT 环境变量
+- PASS 共享 lib 提供统一解析入口
 
-### ✅ T5: __init__.sh + Perceive Agents 改造
+### PASS T5: __init__.sh + Perceive Agents 改造
 
-- ✅ `__init__.sh`: REPORTS_DIR 路径修复 (BUF-003 顺手修复)
-- ✅ 各 perceive agent 透传 RUNTIME_ROOT
-- ✅ 旧路径调用仍通过软链接正常工作
+- PASS `__init__.sh`: REPORTS_DIR 路径修复 (BUF-003 顺手修复)
+- PASS 各 perceive agent 透传 RUNTIME_ROOT
+- PASS 旧路径调用仍通过软链接正常工作
 
-### ✅ T6: 测试 + 端到端验证 + F8 同步
+### PASS T6: 测试 + 端到端验证 + F8 同步
 
-- ✅ 单元测试: `test_sprint18_runtime_root.py` (RUNTIME_ROOT 解析 + 软链接兼容)
-- ✅ 端到端验证: `configdrift.sh` 用新根目录 + 旧路径 (软链) 都能跑
-- ✅ F8 同步: SKILL.md Changelog (v1.2.0) + TODO.md 索引
+- PASS 单元测试: `test_sprint18_runtime_root.py` (RUNTIME_ROOT 解析 + 软链接兼容)
+- PASS 端到端验证: `configdrift.sh` 用新根目录 + 旧路径 (软链) 都能跑
+- PASS F8 同步: SKILL.md Changelog (v1.2.0) + TODO.md 索引
 
 ---
 
@@ -116,7 +116,7 @@ bash alicloud-aiops-cruise/scripts/agents/perceive/infra/configdrift.sh
 
 # 3. 旧路径仍能工作 (软链接兼容)
 ls -la audit-results infra-baseline
-# 预期: 都是软链接 → .runtime/...
+# 预期: 都是软链接 -> .runtime/...
 ```
 
 ---
@@ -130,7 +130,7 @@ ls -la audit-results infra-baseline
 - [x] F5: Link integrity — 共享 lib 路径解析统一
 - [x] F6: Content deduplication — 共享 lib 避免每个脚本重复实现
 - [x] F7: Cross-skill delegation — runtime_root lib 在 aiops-cruise, 其他 skill 可 source 或 import
-- [x] F8: TODO.md 同步 — ✅ (本文件 + 索引 + Changelog)
+- [x] F8: TODO.md 同步 — PASS (本文件 + 索引 + Changelog)
 
 ---
 

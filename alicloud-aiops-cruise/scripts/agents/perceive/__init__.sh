@@ -25,7 +25,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── 加载共享 lib (Sprint 18: 运行时数据根目录) ──
-AIOPS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"  # agents/perceive/ → scripts/agents/perceive/ → scripts/agents/ → scripts/ → alicloud-aiops-cruise
+AIOPS_DIR="$(cd "${SCRIPT_DIR}/../../.." && pwd)"  # agents/perceive/ -> scripts/agents/perceive/ -> scripts/agents/ -> scripts/ -> alicloud-aiops-cruise
 # 显式 export SKILLS_DIR (alibaba-aiops-cruise/.. = aliyun-skills), 避免 lib 内部 BASH_SOURCE 推断歧义
 export SKILLS_DIR="$(cd "${AIOPS_DIR}/.." && pwd)"
 # shellcheck source=../../lib/runtime_root.sh
@@ -56,7 +56,7 @@ Perceive Layer — 感知 Agent (7个)
 位于: scripts/agents/perceive/
 ├── __init__.sh         # 统一入口 (本文件)
 ├── infra/              # 基础设施巡检 (AIOps 核心链路)
-│   ├── healthcruise.sh # 全链路巡检 EIP→SLB→ECS→RDS/Redis→NAT→安全组 | 每6h
+│   ├── healthcruise.sh # 全链路巡检 EIP->SLB->ECS->RDS/Redis->NAT->安全组 | 每6h
 │   ├── toposcan.sh     # 拓扑发现 VPC/ECS/RDS/SLB 资源清单              | 每日/按需
 │   └── configdrift.sh  # 配置漂移检测 对比 Topo baseline               | 按需
 ├── cost/               # 成本监察
@@ -68,10 +68,10 @@ Perceive Layer — 感知 Agent (7个)
     └── advisorscan.sh  # 健康报告 + 成本优化建议                         | 每日
 
 调度周期:
-  infra/*     → 每 6h (高频)
-  cost/*      → 每日
-  security/*  → 每日
-  advisor/*   → 每日
+  infra/*     -> 每 6h (高频)
+  cost/*      -> 每日
+  security/*  -> 每日
+  advisor/*   -> 每日
 STRUCTURE
     exit 0
 fi
@@ -91,7 +91,7 @@ run_agent() {
     echo "[$(date '+%H:%M:%S')] ▶ ${agent_name}..."
 
     if [[ ! -f "$agent_script" ]]; then
-        echo "  ⚠️  脚本不存在: ${agent_script}"
+        echo "  [WARN]  脚本不存在: ${agent_script}"
         echo '{"agent":"'"${agent_name}"'","status":"skipped","reason":"script not found"}' > "$output_file"
         return 0
     fi
@@ -100,9 +100,9 @@ run_agent() {
     local rc=${PIPESTATUS[0]}
 
     if [[ $rc -eq 0 ]]; then
-        echo "  ✅ ${agent_name} 完成"
+        echo "  PASS ${agent_name} 完成"
     else
-        echo "  ❌ ${agent_name} 失败 (exit=$rc)"
+        echo "  FAIL ${agent_name} 失败 (exit=$rc)"
     fi
     return $rc
 }

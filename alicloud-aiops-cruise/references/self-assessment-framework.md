@@ -31,7 +31,7 @@ status: mandatory
 
 | 维度 | 状态 | 判定标准 |
 |------|------|---------|
-| D1 执行 | Agent 读取 MD → LLM 推理 → 生成命令 | 执行路径经过 LLM |
+| D1 执行 | Agent 读取 MD -> LLM 推理 -> 生成命令 | 执行路径经过 LLM |
 | D2 检测 | 固定阈值 (CPU>70%=Warning) | 无动态基线 |
 | D3 自动化 | 纯读，所有写操作建议需人工确认 | 无白名单、无自动执行 |
 | D4 数据 | CloudMonitor + DAS + ActionTrail | 无 SLS/ARMS |
@@ -111,32 +111,29 @@ status: mandatory
 ### 每次迭代结束时的自检
 
 ```bash
-# 运行自评估脚本（TODO: 实现）
-bash scripts/self-assessment.sh
+# 运行 Sprint 状态真值表脚本（P0-3）
+python3 scripts/sprint-status-truth-table.py
+
+# 校验 TODO.md 索引与 Sprint 文件一致性
+python3 scripts/sprint-status-truth-table.py --verify
+
+# 查看指定 Sprint 的 JSON 详情
+python3 scripts/sprint-status-truth-table.py --sprint 20 --json
 
 # 输出示例:
-# ┌──────────────────────────────────────────────┐
-# │  AIOps Cruise 能力自评估报告                  │
-# ├──────────────────────────────────────────────┤
-# │  当前阶段: Stage 1 (v1.0)                    │
-# │  进度: 4/6 验收项完成 (67%)                  │
-# │                                              │
-# │  ✅ D1: Runbook 脚本化       ✅              │
-# │  ✅ D2: 动态基线嵌入         ✅              │
-# │  ⬜ D3: 预授权白名单         未完成           │
-# │  ⬜ D4: 拓扑渲染联动         未完成           │
-# │  ⬜ D5: Incident Schema     未完成           │
-# │  ✅ D6: 交付标准定义          ✅              │
-# │                                              │
-# │  建议下一步: Sprint C (预授权白名单)           │
-# └──────────────────────────────────────────────┘
+# # Sprint 状态真值表
+# | Sprint | 名称 | P | 任务 | 质量门 | 自检 | 文件状态 | 总 verdict |
+# |--------|------|---|------|--------|------|----------|------------|
+# | 1 | 核心脚本化 | P0 | 11/11 ✅ | N/A | N/A | — ✅ | ✅ PASS |
+# ...
+# **汇总**: 9/17 Sprint 全部通过 | 通过率 52.9%
 ```
 
 ### 人工自检流程
 
 1. 打开本文件
 2. 逐项对照当前阶段的"验收标准"清单
-3. 已完成的打 ✅，未完成的打 ⬜
+3. 已完成的打 PASS，未完成的打 [ ]
 4. 统计完成率 = (已完成项 / 总项) × 100%
 5. 根据完成率决定是否进入下一阶段：
    - < 50%: 继续当前阶段

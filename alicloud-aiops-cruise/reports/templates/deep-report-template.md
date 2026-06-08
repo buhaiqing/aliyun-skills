@@ -3,7 +3,7 @@ template_id: "deep-report"
 phase: "Phase 2+3: 深度巡检 + 推理报告"
 ---
 
-# 🔍 全链路深度巡检报告
+# [SCAN] 全链路深度巡检报告
 
 **报告ID:** `{{report_id}}`
 **区域:** {{regions}} | **时间:** {{timestamp}} | **窗口:** {{metric_window}}
@@ -11,7 +11,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ---
 
-## 📊 总体评分
+## [STATS] 总体评分
 
 | 维度 | 评分 | 判定 | 说明 |
 |---|---|---|---|
@@ -21,16 +21,16 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ---
 
-## 🔴 Critical 问题（{{critical_count}} 项）— 需立即处理
+## Critical 问题（{{critical_count}} 项）— 需立即处理
 
 {% for issue in critical_issues %}
 ### #{{loop.index}} {{issue.title}}
 
 ```
 ┌─ 诊断链 ─────────────────────────────────────────────────
-│ Phase1 拓扑发现 → 扫描到 {{issue.scope}} 个资源
-│ Phase2 数据采集 → {{issue.collected_metric}} = {{issue.value}}
-│ Phase3 阈值判定 → {{issue.value}} > {{issue.threshold}} → 🔴 CRITICAL
+│ Phase1 拓扑发现 -> 扫描到 {{issue.scope}} 个资源
+│ Phase2 数据采集 -> {{issue.collected_metric}} = {{issue.value}}
+│ Phase3 阈值判定 -> {{issue.value}} > {{issue.threshold}} -> CRITICAL CRITICAL
 │ 规则匹配: {{issue.rule_id}}
 │ 根因分析: {{issue.root_cause}}
 └───────────────────────────────────────────────────────────
@@ -53,14 +53,14 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ---
 
-## 🟡 Warning 问题（{{warning_count}} 项）— 计划处理
+## Warning 问题（{{warning_count}} 项）— 计划处理
 
-## 📊 异常评分摘要（动态基线）
+## [STATS] 异常评分摘要（动态基线）
 
 | 实例 | 类型 | 指标 | 当前值 | 基线μ | Z-Score | 方法 | 等级 |
 |---|---|---|---|---|---|---|---|
 {% for score in anomaly_scores %}
-| {{score.instance_id[:20]}} | {{score.resource_type}} | {{score.metric}} | {{score.current_value}} | {{score.baseline_mean}} | {{score.z_score}} | {{score.method}} | {% if score.level == 'CRITICAL' %}🔴 CRITICAL{% elif score.level == 'WARNING' %}🟡 WARNING{% else %}🔵 INFO{% endif %} |
+| {{score.instance_id[:20]}} | {{score.resource_type}} | {{score.metric}} | {{score.current_value}} | {{score.baseline_mean}} | {{score.z_score}} | {{score.method}} | {% if score.level == 'CRITICAL' %}CRITICAL CRITICAL{% elif score.level == 'WARNING' %}WARNING WARNING{% else %}INFO INFO{% endif %} |
 {% endfor %}
 
 ---
@@ -72,7 +72,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 ┌─ 诊断链 ─────────────────────────────────────────────────
 │ 实例:  {{issue.instance_id}} ({{issue.instance_name}})
 │ 指标:  {{issue.metric}} = {{issue.value}}（阈值: {{issue.threshold}}）
-│ 级别:  🟡 WARNING → 需计划处理
+│ 级别:  WARNING WARNING -> 需计划处理
 └───────────────────────────────────────────────────────────
 
 ┌─ 建议操作 ───────────────────────────────────────────────
@@ -83,17 +83,17 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ---
 
-## ✅ 正常资源摘要
+## PASS 正常资源摘要
 
 | 类型 | 总量 | 正常 | 异常 |
 |---|---|---|---|
 {% for summary in resource_summary %}
-| {{summary.type}} | {{summary.total}} | ✅ {{summary.healthy}} | {{summary.unhealthy}} |
+| {{summary.type}} | {{summary.total}} | PASS {{summary.healthy}} | {{summary.unhealthy}} |
 {% endfor %}
 
 ---
 
-## 🔗 链路关联推理
+## [LINK] 链路关联推理
 
 {% for inference in chain_inferences %}
 ### {{inference.icon}} {{inference.pattern}}
@@ -108,13 +108,13 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 ---
 
-## 📌 按优先级排序的优化建议
+## [PIN] 按优先级排序的优化建议
 
 {% for rec in top_recommendations %}
-{{loop.index}}. **{{"🔴" if rec.level == "critical" else "🟡" if rec.level == "warning" else "🔵"}} [{{rec.level|upper}}] {{rec.title}}**
+{{loop.index}}. **{{"CRITICAL" if rec.level == "critical" else "WARNING" if rec.level == "warning" else "INFO"}} [{{rec.level|upper}}] {{rec.title}}**
    - 实例: `{{rec.instance_id}}`
    - 详情: {{rec.detail}}
-   ↓ 修复路径:
+   DOWN 修复路径:
 {% for step in rec.repair_steps %}
      {{loop.index}}. {{step}}
 {% endfor %}

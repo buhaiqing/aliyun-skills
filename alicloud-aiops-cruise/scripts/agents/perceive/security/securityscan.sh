@@ -15,11 +15,22 @@
 
 set -euo pipefail
 
+# ── 路径解析 (Sprint 18: 统一运行时数据根目录) ──
+# SCRIPT_DIR: .../alicloud-aiops-cruise/scripts/agents/perceive/security
+# AIOPS_DIR:  .../alicloud-aiops-cruise                   (SCRIPT_DIR 向上 4 层)
+# SKILLS_DIR: .../aliyun-skills                           (AIOPS_DIR/..)
+# AUDIT_DIR:  ${RUNTIME_AUDIT_DIR}/perceive
+# SAS_DIR:    ${SKILLS_DIR}/alicloud-sas-ops
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIOPS_DIR="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-SKILLS_DIR="$(cd "${AIOPS_DIR}/../" && pwd)"
+export SKILLS_DIR="$(cd "${AIOPS_DIR}/.." && pwd)"
+
+# shellcheck source=../../../lib/runtime_root.sh
+source "${AIOPS_DIR}/scripts/lib/runtime_root.sh"
+aiops_runtime_init "alicloud-aiops-cruise"
+
 SAS_DIR="${SKILLS_DIR}/alicloud-sas-ops"
-AUDIT_DIR="${AIOPS_DIR}/audit-results"
+AUDIT_DIR="${RUNTIME_AUDIT_DIR}/perceive"
 OUTPUT_FILE=""
 
 while [[ $# -gt 0 ]]; do
@@ -32,6 +43,7 @@ done
 if [[ -z "$OUTPUT_FILE" ]]; then
     OUTPUT_FILE="${AUDIT_DIR}/securityscan-$(date +%Y%m%dT%H%M%S).json"
 fi
+mkdir -p "$(dirname "${OUTPUT_FILE}")"
 
 echo "[SecurityScan] 开始每日安全扫描"
 
@@ -63,7 +75,7 @@ cat > "${OUTPUT_FILE}" <<JSONEOF
 }
 JSONEOF
 
-echo "[SecurityScan] ✅ 安全扫描完成"
+echo "[SecurityScan] PASS 安全扫描完成"
 echo "[SecurityScan]   漏洞扫描: $(echo "${VULN_RESULT}" | jq -r '.TotalCount // 0') 项"
 echo "[SecurityScan]   AK泄漏: $(echo "${AK_LEAK}" | jq -r '.TotalCount // 0') 项"
 echo "[SecurityScan]   基线检查: $(echo "${BASELINE}" | jq -r '.TotalCount // 0') 项"

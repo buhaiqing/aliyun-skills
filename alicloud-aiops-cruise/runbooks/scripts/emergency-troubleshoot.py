@@ -261,7 +261,7 @@ def _main_locked():
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
     if args.describe:
-        print("S1:ActionTrail → SLB → ECS → RDS → NAT → 根因报告")
+        print("S1:ActionTrail -> SLB -> ECS -> RDS -> NAT -> 根因报告")
         return
     if not gate(args.region):
         sys.exit(1)

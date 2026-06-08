@@ -1,3 +1,13 @@
+# ===== P0-4 Revision Notes (2026-06-08) =====
+# 补漏: *.env / secret.env / credentials.json / *.key / *.pem 等凭证类
+# 补漏: .ruff_cache/ .mypy_cache/ .tox/ .coverage/ htmlcov/ 等 Python 工具链
+# 补漏: node_modules/ package-lock.json
+# 补漏: alicloud-*/reports/* 排除 reports/templates/ (报告模板需保留)
+#
+# 验证命令:
+#   git check-ignore <path>   # 测单个路径
+#   git check-ignore -v <path>  # 显示匹配规则行号
+
 # ===== Go (Primary Runtime) =====
 
 # JIT Go workspace (temporary, generated on-demand)
@@ -32,7 +42,18 @@ go.sum
 # Environment files (NEVER commit secrets)
 .env
 .env.*
+*.env
 !.env.example
+
+# Credential / key files (NEVER commit; catch-all for non-`.env` naming)
+*.key
+*.pem
+*.p12
+*.pfx
+credentials
+credentials.json
+*credentials*
+*secrets*
 
 # ===== Python (Development tools only) =====
 
@@ -43,12 +64,22 @@ env/
 __pycache__/
 *.py[cod]
 *$py.class
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
 
 # Distribution
 dist/
 build/
 *.egg-info/
 *.egg
+
+# Node.js (assets/code-snippets/ may grow to include JS tooling)
+node_modules/
+package-lock.json
 
 # IDE/Editor
 .idea/
@@ -101,6 +132,14 @@ report.md
 report-*.md
 rds-waste-report.md
 rds-*-report.md
+
+# Skill-internal report directories (P0-4 补漏)
+# 忽略 reports/ 下所有非 templates/ 的内容 (reeporets 模板需保留)
+# 例: alicloud-aiops-cruise/reports/perceive-2026.json (忽略)
+#     alicloud-aiops-cruise/reports/templates/deep-report-template.md (保留)
+alicloud-*/reports/*
+!alicloud-*/reports/templates/
+!alicloud-*/reports/templates/**
 
 # ===== Runtime Data Root (Sprint 18) =====
 # 统一运行时数据根目录 (默认 ${SKILLS_DIR}/.runtime, 可通过环境变量 ALIYUN_SKILLS_RUNTIME_ROOT 覆盖)

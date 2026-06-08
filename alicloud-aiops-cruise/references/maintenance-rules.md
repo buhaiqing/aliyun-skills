@@ -11,7 +11,7 @@ parent: alicloud-aiops-cruise
 ## MR-1: TODO.md 同步（MANDATORY）
 
 每次新增功能、修改能力、修复缺陷后，**必须同步更新 `TODO.md`** 中的对应状态：
-- 已完成项: `[ ]` → `[x]`
+- 已完成项: `[ ]` -> `[x]`
 - 新增项: 追加到对应 Sprint 章节
 - 已变更项: 更新描述和验证标准
 
@@ -72,7 +72,7 @@ parent: alicloud-aiops-cruise
 | 维度 | 要求 | 违规示例 | 正确做法 |
 |------|------|---------|---------|
 | **可重用性** | 公共函数提取到共享模块 (`_shared.py`), 4 个脚本零重复 | 每个脚本各自定义 `dig()` | `from _shared import dig` |
-| **可读性** | 魔术数字→具名常量, 函数 ≤30 行, 复杂路径加注释 | `1,0,"w","c"` | `RG_YES, RG_NO, W, C` |
+| **可读性** | 魔术数字->具名常量, 函数 ≤30 行, 复杂路径加注释 | `1,0,"w","c"` | `RG_YES, RG_NO, W, C` |
 | **健壮性** | try 指定异常类型, 不吞噬 `KeyboardInterrupt` | `except: pass` | `except TimeoutExpired:` |
 | **可测试性** | 纯函数与 IO 函数分离 | IO 混在业务逻辑中 | IO 单独封装到 `q()`, 业务用纯函数 |
 | **安全性** | 无硬编码凭证, 无 shell injection | `f"aliyun {user_input}"` | `["aliyun", arg]` |
@@ -85,7 +85,7 @@ parent: alicloud-aiops-cruise
 - P2: **串行阻塞 I/O 未并行化**（API 调用是 I/O 密集型，必须用 `ThreadPoolExecutor` 或 `asyncio` 并行）、缺失参数处理、路径硬编码、文档缺失
 - P3: 风格问题（命名、注释）
 
-**流程**: 修改脚本 → `code-reviewer` 评审 → 修复 P0/P1 → 合并
+**流程**: 修改脚本 -> `code-reviewer` 评审 -> 修复 P0/P1 -> 合并
 
 违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
 
@@ -107,25 +107,25 @@ parent: alicloud-aiops-cruise
 select = ["E", "F", "I", "N", "W", "UP"]
 ```
 
-**流程**：修改脚本 → `ruff check --fix` → `ruff format` → `code-reviewer` 评审 → 合并
+**流程**：修改脚本 -> `ruff check --fix` -> `ruff format` -> `code-reviewer` 评审 -> 合并
 
 违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
 
 ## MR-8: 文案规范 — 避免表情符号，使用纯文本（MANDATORY）
 
-> 表情符号（emoji）在不同终端、Markdown 渲染器、日志系统或 CI 输出中表现不一致（如 ✅/❌ 在某些系统显示为乱码或方框），
+> 表情符号（emoji）在不同终端、Markdown 渲染器、日志系统或 CI 输出中表现不一致（如 PASS/FAIL 在某些系统显示为乱码或方框），
 > 且增加 token 消耗。所有输出和文档统一使用纯文本标识。
 
 | 场景 | 错误示例 | 正确示例 |
 |------|---------|---------|
-| 通过/失败状态 | `✅` / `❌` | `PASS` / `FAIL` |
-| 级别标识 | `🔴` / `🟡` / `🟢` | `CRITICAL` / `WARNING` / `SAFE` |
-| 章节标题图标 | `## 🔙 历史回溯` | `## 历史回溯 (7d)` |
-| 列表图标 | `### 📋 SLS 审计事件` | `### SLS 审计事件` |
-| 状态前缀 | `⚠️ 无法获取数据` | `[WARN] 无法获取数据` |
-| 注释中的级别 | `# 🟢 < 80%` | `# SAFE < 80%` |
+| 通过/失败状态 | `PASS` / `FAIL` | `PASS` / `FAIL` |
+| 级别标识 | `CRITICAL` / `WARNING` / `SAFE` | `CRITICAL` / `WARNING` / `SAFE` |
+| 章节标题图标 | `## [BACK] 历史回溯` | `## 历史回溯 (7d)` |
+| 列表图标 | `### [LIST] SLS 审计事件` | `### SLS 审计事件` |
+| 状态前缀 | `[WARN] 无法获取数据` | `[WARN] 无法获取数据` |
+| 注释中的级别 | `# SAFE < 80%` | `# SAFE < 80%` |
 
-**例外**：在交互式 CLI 的进度提示或用户直接交互的界面中，表情符号可以作为视觉辅助使用（如 `📋` 配置向导），
+**例外**：在交互式 CLI 的进度提示或用户直接交互的界面中，表情符号可以作为视觉辅助使用（如 `[LIST]` 配置向导），
 但所有**输出报告**、**日志**、**文档注释**和**代码注释**必须使用纯文本。
 
 违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交。
@@ -138,11 +138,11 @@ select = ["E", "F", "I", "N", "W", "UP"]
 
 | 操作类型 | 示例 | 处理规则 |
 |---------|------|---------|
-| **巡检采集**（只读） | `DescribeMetricList`, `DescribeInstances`, `kubectl get` | ✅ 自动执行，无需确认 |
-| **组件安装** | `POST /clusters/{id}/components/install` | 🔒 输出安装命令，由用户确认后自行执行 |
-| **资源创建/释放** | `CreateCluster`, `DeleteCluster` | 🔒 输出建议，由用户决定并执行 |
-| **配置变更** | `ModifyDBInstanceSpec`, `RevokeSecurityGroup` | 🔒 输出建议，由用户决定并执行 |
-| **数据操作** | `kubectl delete pod`, `kubectl drain node` | 🔒 输出建议，由用户决定并执行 |
+| **巡检采集**（只读） | `DescribeMetricList`, `DescribeInstances`, `kubectl get` | PASS 自动执行，无需确认 |
+| **组件安装** | `POST /clusters/{id}/components/install` | [LOCK] 输出安装命令，由用户确认后自行执行 |
+| **资源创建/释放** | `CreateCluster`, `DeleteCluster` | [LOCK] 输出建议，由用户决定并执行 |
+| **配置变更** | `ModifyDBInstanceSpec`, `RevokeSecurityGroup` | [LOCK] 输出建议，由用户决定并执行 |
+| **数据操作** | `kubectl delete pod`, `kubectl drain node` | [LOCK] 输出建议，由用户决定并执行 |
 
 **巡检建议中的命令标记**：
 
@@ -163,7 +163,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 | 巡检脚本中不允许出现非只读 API 调用 | Safety = 0，GCL 立即 ABORT |
 | `kubectl delete` / `drain` / `cordon` / `taint` 等不允许在脚本中自动执行 | Safety = 0，GCL 立即 ABORT |
 | 通过 CloudAssistant 执行的命令必须是只读 shell 命令 | Safety = 0，GCL 立即 ABORT |
-| 任何写操作必须先输出建议 → 用户确认 → 用户自行执行 | Safety = 0，GCL 立即 ABORT |
+| 任何写操作必须先输出建议 -> 用户确认 -> 用户自行执行 | Safety = 0，GCL 立即 ABORT |
 
 **例外**：经预授权白名单（[`references/pre-approved-whitelist.md`](pre-approved-whitelist.md)）审核通过的操作，可纳入 `[AUTO-*]` 自动执行名单，
 但白名单必须经安全团队审批、每季度复审、且每次执行落盘审计日志到 `audit-results/audit/whitelist-{YYYY-MM-DD}.jsonl`。

@@ -1,8 +1,8 @@
 # Sprint 11: ML 升级（P3, 调研阶段）
 
+> **状态**: PASS 20/20
 > **业务价值**: 把异常检测从"统计方法"升级到"时序分解 + 节假日感知 + 多指标关联", 精度提升 30%, 误报率 < 5%, 漏报率 < 10%
-> **依赖**: Sprint 3 (动态基线 ✅) + Sprint 7 (Incident Schema ✅) + Sprint 9 (JSON 落地 ✅)
-> **状态**: **调研阶段** — 规范已有 (`dynamic-baseline.md` §方法 3), 但实现未启动
+> **依赖**: Sprint 3 (动态基线 PASS) + Sprint 7 (Incident Schema PASS) + Sprint 9 (JSON 落地 PASS)
 > **关联验收项**: Stage 3 D2 (STL 时序分解 + 分位数 + Z-Score 混合, 按指标自动选择最优方法)
 
 ---
@@ -22,7 +22,7 @@
 
 | 痛点 | 现象 | 业务影响 |
 |------|------|---------|
-| **季节性盲区** | 电商业务"早晚高峰"周期性, Z-Score 算 μ 时被中午峰拉高 | 高峰时段 z<2 不报警 → **漏报** |
+| **季节性盲区** | 电商业务"早晚高峰"周期性, Z-Score 算 μ 时被中午峰拉高 | 高峰时段 z<2 不报警 -> **漏报** |
 | **节假日盲区** | 双11 流量是平时 3-5x, 按 7d 基线被误判为 Critical | **误报** |
 | **趋势性盲区** | 业务周增 5% DAU, Z-Score 阈值需动态调整 | 漏报渐进问题 |
 | **多维关联盲区** | 只看单指标, 看不到"SLB 5xx+ECS CPU+RDS 慢查询"联合异常 | 根因难定位 |
@@ -120,7 +120,7 @@ def compute_anomaly_score_stl(values_30d_1h, current_val):
 ```python
 # METRIC_ANOMALY_METHOD 扩展
 METRIC_ANOMALY_METHOD_V2 = {
-    # 强周期指标 → STL
+    # 强周期指标 -> STL
     "acs_rds_dashboard.SlowQueryCount": ANOMALY_METHOD_STL,
     "acs_slb_dashboard.NewConnection": ANOMALY_METHOD_STL,
     "acs_nat_gateway.SnatConnection": ANOMALY_METHOD_STL,
@@ -173,8 +173,8 @@ METRIC_ANOMALY_METHOD_V2 = {
 |------|------|------------|
 | 误报率 (FP) | ~25% (Z-Score 在低基线时易报) | < 10% |
 | 漏报率 (FN) | ~15% (Z-Score 在季节性高峰时漏) | < 5% |
-| 季节性感知 | ❌ 无 | ✅ 区分 T+S+R |
-| 冷启动 | ❌ 失效 | ⚠️ 部分缓解 (迁移学习留 Sprint 11.7) |
+| 季节性感知 | FAIL 无 | PASS 区分 T+S+R |
+| 冷启动 | FAIL 失效 | [WARN] 部分缓解 (迁移学习留 Sprint 11.7) |
 | 业务价值 | 80% | 95% |
 
 ### 4.3 不实施的理由 (如选)
@@ -189,11 +189,11 @@ METRIC_ANOMALY_METHOD_V2 = {
 **问题**: Sprint 11 是否立即实施?
 
 **建议**: **不立即实施**, 标记为 Stage 3 工作。原因:
-1. 当前 Sprint 8/9 刚闭环, Stage 1 → Stage 2 过渡期
+1. 当前 Sprint 8/9 刚闭环, Stage 1 -> Stage 2 过渡期
 2. Stage 2 验收项 (D2 检测精度) 要求 ≥3 次真实环境巡检, 当前 6 次有, 但**没有季节性案例**触发
 3. 推迟到 Stage 2 准入后, 用真实流量数据训练 STL 模型, 效果更显著
 
-**当前选**: 标记为 ⏸️ 调研完成, 待 Stage 2 准入后启动 Sprint 11.1 (STL MVP)
+**当前选**: 标记为 [PAUSE] 调研完成, 待 Stage 2 准入后启动 Sprint 11.1 (STL MVP)
 
 ---
 
@@ -207,7 +207,7 @@ METRIC_ANOMALY_METHOD_V2 = {
 **选项 B**: **立即实施 STL MVP (3 天)**
 - 引入 statsmodels, 实施 4 指标 STL 分解
 - 风险: 依赖膨胀, 30d 历史采集可能拖慢巡检
-- 收益: 误报率从 25% → 10%, 文档进度加速
+- 收益: 误报率从 25% -> 10%, 文档进度加速
 
 **选项 C**: **只做规范 (规范已写)**
 - 写 `references/stl-implementation-plan.md` 详细实施计划
@@ -224,4 +224,4 @@ METRIC_ANOMALY_METHOD_V2 = {
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 1.0.0-draft | 2026-06-07 | 调研初版, 标记 ⏸️ 调研完成待决策 |
+| 1.0.0-draft | 2026-06-07 | 调研初版, 标记 [PAUSE] 调研完成待决策 |

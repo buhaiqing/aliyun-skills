@@ -16,19 +16,19 @@ execution_time_estimate: "5-15 分钟（10 个 RDS 以内）"
 
 对指定客户（通过资源组/标签识别）的 RDS/PolarDB/MySQL 实例进行慢查询诊断。包含：慢 SQL 检索与根因分析、性能洞察（等待事件/TOP SQL）、会话管理（活跃连接/锁等待）、SQL 限流/并发控制建议、空间分析与自治事件回溯。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **安全组规则增删** | ❌ 不允许自动执行 |
-| **Kill 会话** | 🟡 仅 Kill 空闲/睡眠连接，活跃事务 Kill 需确认 |
-| **SQL 限流** | 🔴 仅出建议，不自动执行 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **安全组规则增删** | FAIL 不允许自动执行 |
+| **Kill 会话** | WARNING 仅 Kill 空闲/睡眠连接，活跃事务 Kill 需确认 |
+| **SQL 限流** | CRITICAL 仅出建议，不自动执行 |
 
-**底线**：本 runbook 是纯读（Read-Only）诊断 + 🟡 白名单内有限操作。SQL 限流和 Kill 活跃事务需用户确认后通过 `alicloud-das-ops` 执行。
+**底线**：本 runbook 是纯读（Read-Only）诊断 + WARNING 白名单内有限操作。SQL 限流和 Kill 活跃事务需用户确认后通过 `alicloud-das-ops` 执行。
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **慢查询诊断的核心思路**：
 >
@@ -39,7 +39,7 @@ execution_time_estimate: "5-15 分钟（10 个 RDS 以内）"
 > 4. **CPU/IO 资源瓶颈** —— 数据库规格不够，请求排队
 > 5. **数据量膨胀** —— 表数据大到索引失效
 >
-> **诊断顺序**：先查 CMS 指标（CPU/连接/IOPS 确定异常窗口）→ 再查 DAS 慢 SQL（定位具体 SQL）→ 分析执行计划 → 出修复建议。
+> **诊断顺序**：先查 CMS 指标（CPU/连接/IOPS 确定异常窗口）-> 再查 DAS 慢 SQL（定位具体 SQL）-> 分析执行计划 -> 出修复建议。
 >
 > **DAS 与 CMS 的关系**：CMS 告诉你"有没有问题"，DAS 告诉你"哪里有问题"。
 
@@ -54,7 +54,7 @@ execution_time_estimate: "5-15 分钟（10 个 RDS 以内）"
 
 - SQL Server / MariaDB 实例（DAS API 不完全兼容）
 - 未开启 SQL 审计日志的实例（无法获取慢 SQL 明细）
-- 需要修改数据库配置 → 通过 `alicloud-das-ops` 执行
+- 需要修改数据库配置 -> 通过 `alicloud-das-ops` 执行
 
 ---
 
@@ -147,7 +147,7 @@ for DB_ID in $(echo "$RDS_INSTANCES" | jq -r '.[].DBInstanceId // empty'); do
   if [ "$(echo "$RDS_CPU > 50" | bc -l 2>/dev/null)" = "1" ] || \
      [ "$(echo "$SLOW_QUERY > 5" | bc -l 2>/dev/null)" = "1" ]; then
     SUSPECT_RDS=$(echo "$SUSPECT_RDS" | jq --arg id "$DB_ID" '. + [$id]')
-    echo "  → 标记为可疑实例"
+    echo "  -> 标记为可疑实例"
   fi
 done
 
@@ -167,7 +167,7 @@ echo "[INFO] 可疑实例: $SUSPECT_COUNT 个"
 
 ```bash
 # DAS 是 SDK-only（CLI 不支持），通过 JIT Go SDK 执行
-# 代码片段: das_slow_query.go → 接受 INSTANCE_ID + StartTime + EndTime → 输出 JSON
+# 代码片段: das_slow_query.go -> 接受 INSTANCE_ID + StartTime + EndTime -> 输出 JSON
 # Go 代码已预生成在: assets/code-snippets/das_slow_query.go
 
 DAS_CODE_SNIPPET="${SKILLS_DIR:-.}/assets/code-snippets/das_slow_query.go"
@@ -213,7 +213,7 @@ for DB_ID in $(echo "$SUSPECT_RDS" | jq -r '.[]'); do
   echo "[DIAG] SQL 洞察统计:"
   echo "$SQL_STATS" | jq -r '
     .items[] | select(.error_count > 0 or .avg_latency_ms > 1000) |
-    "  ⚠️ SQL: \(.sql_text[:60])... | 平均延迟: \(.avg_latency_ms)ms | 错误数: \(.error_count)"'
+    "  [WARN] SQL: \(.sql_text[:60])... | 平均延迟: \(.avg_latency_ms)ms | 错误数: \(.error_count)"'
 done
 ```
 
@@ -250,7 +250,7 @@ done
 #### Step 2.3: 会话分析（活跃连接 / 锁等待）
 
 > 通过 DAS 获取当前会话列表，分析活跃连接、锁等待和空闲连接占比。
-> Kill 空闲连接属于 🟡 白名单 W-01（只读诊断命令）。
+> Kill 空闲连接属于 WARNING 白名单 W-01（只读诊断命令）。
 
 ```bash
 for DB_ID in $(echo "$SUSPECT_RDS" | jq -r '.[]'); do
@@ -270,7 +270,7 @@ for DB_ID in $(echo "$SUSPECT_RDS" | jq -r '.[]'); do
 
   echo "  [会话] 总计: $TOTAL_SESS | 活跃: $ACTIVE_SESS | 空闲: $SLEEP_SESS | 锁等待: $LOCK_WAIT"
 
-  # 锁等待 → 检查死锁
+  # 锁等待 -> 检查死锁
   if [ "$LOCK_WAIT" -gt 0 ]; then
     DEADLOCK=$(go run "$DAS_CODE_SNIPPET" \
       --action get-deadlock \
@@ -278,7 +278,7 @@ for DB_ID in $(echo "$SUSPECT_RDS" | jq -r '.[]'); do
       --region "$REGION" 2>/dev/null)
 
     DEADLOCK_TIME=$(echo "$DEADLOCK" | jq -r '.latest_deadlock_time // "无"')
-    echo "  🔴 检测到锁等待! 最近死锁时间: $DEADLOCK_TIME"
+    echo "  CRITICAL 检测到锁等待! 最近死锁时间: $DEADLOCK_TIME"
     echo "  [AUTO-NOTIFY] 建议 Kill 空闲会话释放连接:"
     echo "    go run $DAS_CODE_SNIPPET --action kill-sleep-sessions --instance $DB_ID"
   fi
@@ -299,7 +299,7 @@ for DB_ID in $(echo "$SUSPECT_RDS" | jq -r '.[]'); do
   echo "[DIAG] DAS 巡检评分: $DB_ID = $SCORE/100"
 
   if [ -n "$SCORE" ] && [ "$(echo "$SCORE < 60" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "  🔴 DAS 评分 < 60 → 建议深度诊断"
+    echo "  CRITICAL DAS 评分 < 60 -> 建议深度诊断"
 
     # 获取自治事件历史
     EVENTS=$(go run "$DAS_CODE_SNIPPET" \
@@ -357,7 +357,7 @@ Agent 对照以下规则做根因推理：
 
 | 现象组合 | 规则 | 推理结论 | 建议 |
 |---|---|---|---|
-| CPU > 75% + 慢查询 > 100/min | RDS-01 | 慢 SQL 导致 CPU 飙升 | 查 DAS 慢 SQL 明细 → 加索引/改 SQL |
+| CPU > 75% + 慢查询 > 100/min | RDS-01 | 慢 SQL 导致 CPU 飙升 | 查 DAS 慢 SQL 明细 -> 加索引/改 SQL |
 | CPU 正常 + 慢查询多 | RDS-03 | 慢 SQL 未直接影响 CPU | 检查索引命中率/表数据量 |
 | 活跃连接 > 80% + 锁等待 > 0 | RDS-02 | 锁竞争导致连接堆积 | Kill 空闲会话/查死锁/优化事务 |
 | 磁盘 > 85% | RDS-04 | 磁盘即将写满 | 扩容/清理 binlog/归档大表 |
@@ -369,11 +369,11 @@ Agent 对照以下规则做根因推理：
 ```bash
 # 对每个慢 SQL 生成优化建议
 # 规则引擎：
-# 1. 全表扫描（扫描行数 >> 返回行数）→ 加索引
-# 2. Using filesort / Using temporary → 优化 ORDER BY / GROUP BY
-# 3. 大表 JOIN（表数据 > 1000 万行）→ 考虑分表/缓存
-# 4. 锁等待严重 → 检查事务隔离级别/索引设计
-# 5. 重复执行相同慢 SQL → 增加缓存层
+# 1. 全表扫描（扫描行数 >> 返回行数）-> 加索引
+# 2. Using filesort / Using temporary -> 优化 ORDER BY / GROUP BY
+# 3. 大表 JOIN（表数据 > 1000 万行）-> 考虑分表/缓存
+# 4. 锁等待严重 -> 检查事务隔离级别/索引设计
+# 5. 重复执行相同慢 SQL -> 增加缓存层
 ```
 
 #### Step 3.3: 双格式报告输出
@@ -382,25 +382,25 @@ Agent 对照以下规则做根因推理：
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  🐌 慢查询诊断报告
+   慢查询诊断报告
 ═══════════════════════════════════════════════════════
   报告ID: slowquery-$CUSTOMER-$(date +%Y%m%dT%H%M%SZ)
   客户: $CUSTOMER | 区域: $REGION | 时间: $(date)
-  诊断窗口: $START_TIME → $END_TIME
+  诊断窗口: $START_TIME -> $END_TIME
 ═══════════════════════════════════════════════════════
 
-## 📊 总览
+## [STATS] 总览
 
 | 维度 | 结果 |
 |------|------|
 | 扫描实例数 | $RDS_COUNT |
 | 可疑实例数 | $SUSPECT_COUNT |
 | 已诊断实例 | $(echo "$SUSPECT_RDS" \| jq 'length') |
-| 🔴 Critical 问题 | ${CRITICAL_COUNT:-0} |
-| 🟡 Warning 问题 | ${WARNING_COUNT:-0} |
+| Critical 问题 | ${CRITICAL_COUNT:-0} |
+| Warning 问题 | ${WARNING_COUNT:-0} |
 
 ═══════════════════════════════════════════════════════
-  🔴 Critical 问题清单
+  Critical 问题清单
 ═══════════════════════════════════════════════════════
 
 #1 RDS CPU 飙升 + 慢查询堆积
@@ -410,7 +410,7 @@ Agent 对照以下规则做根因推理：
   │ CPU: ${RDS_CPU}% (阈值: Warning 75% / Critical 85%)
   │ 慢查询: ${SLOW_QUERY}/min (阈值: Warning 10/min)
   │ DAS 评分: ${DAS_SCORE}/100
-  │ 规则: RDS-01 (CPU + 慢查询 → Critical)
+  │ 规则: RDS-01 (CPU + 慢查询 -> Critical)
   └───────────────────────────────────────────────────────
 
   ┌─ TOP 慢 SQL ─────────────────────────────────────────
@@ -443,7 +443,7 @@ Agent 对照以下规则做根因推理：
   ┌─ 诊断链 ─────────────────────────────────────────────
   │ 实例: ${DB_ID2}
   │ 磁盘使用率: ${DISK_USAGE}% (阈值: Warning 75% / Critical 90%)
-  │ 规则: RDS-04 (磁盘 > 85% → Critical)
+  │ 规则: RDS-04 (磁盘 > 85% -> Critical)
   │ DAS 空间分析:
   │   总空间: 200GB | 已用: 185GB | 数据: 120GB | 日志: 50GB | 临时: 15GB
   └───────────────────────────────────────────────────────
@@ -461,7 +461,7 @@ Agent 对照以下规则做根因推理：
   └───────────────────────────────────────────────────────
 
 ═══════════════════════════════════════════════════════
-  🟡 Warning 问题清单
+  Warning 问题清单
 ═══════════════════════════════════════════════════════
 
 #3 RDS 连接数偏高
@@ -472,17 +472,17 @@ Agent 对照以下规则做根因推理：
   [AUTO-NOTIFY] Kill 空闲连接: go run das_slow_query.go --action kill-sleep-sessions ...
 
 ═══════════════════════════════════════════════════════
-  📌 优化建议（按优先级）
+  [PIN] 优化建议（按优先级）
 ═══════════════════════════════════════════════════════
 
-1. 🔴 [P0] ${DB_ID} — 创建联合索引
+1. CRITICAL [P0] ${DB_ID} — 创建联合索引
    SQL: CREATE INDEX idx_orders_status_created ON orders(status, created_at);
    预估效果: 消除 Using filesort，慢查询减少 80%
 
-2. 🔴 [P0] ${DB_ID2} — 清理 binlog / 扩容
+2. CRITICAL [P0] ${DB_ID2} — 清理 binlog / 扩容
    DAS 建议执行: CALL mysql.rds_cycle_binlog();
 
-3. 🟡 [P1] ${DB_ID} — Kill 空闲连接
+3. WARNING [P1] ${DB_ID} — Kill 空闲连接
    当前 ${SLEEP_SESS} 个空闲连接，建议 Kill 超过 30min 的睡眠连接
 
 ═══════════════════════════════════════════════════════

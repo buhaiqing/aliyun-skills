@@ -56,11 +56,11 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `infra/healthcruise.sh` |
 | **委托 Skill** | `aiops-cruise runbooks/scripts/daily-health-check.py` |
 | **调度** | 每 6h（cron `0 */6 * * *`） |
-| **安全等级** | 🟢 自动（纯读） |
+| **安全等级** | SAFE 自动（纯读） |
 | **输出 Schema** | `{"agent":"healthcruise","findings":[...],"topology":{...}}` |
 | **依赖** | aliyun CLI, Python3, aliyun AK |
 
-**扫描链路**: EIP → SLB → ECS → RDS/Redis → NAT → 安全组
+**扫描链路**: EIP -> SLB -> ECS -> RDS/Redis -> NAT -> 安全组
 
 ### 3.2 TopoScan Agent
 
@@ -69,7 +69,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `infra/toposcan.sh` |
 | **委托 Skill** | `alicloud-topo-discovery/scripts/topo-scan.sh` |
 | **调度** | 每日（cron `0 2 * * *`）|
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **输出** | 资源清单 JSON + 拓扑图 |
 
 ### 3.3 ConfigDrift Agent
@@ -79,7 +79,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `infra/configdrift.sh` |
 | **委托 Skill** | `alicloud-topo-discovery/scripts/baseline-manager.py` |
 | **调度** | 按需（TopoScan 后触发）|
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **输出** | 漂移项列表（新增/删除/变更资源）|
 
 ### 3.4 CostWatch Agent
@@ -89,7 +89,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `cost/costwatch.sh` |
 | **委托 Skill** | `aiops-cruise runbooks/scripts/cost-watch.py` |
 | **调度** | 每日（cron `0 9 * * *`）|
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **检查项** | ① 成本环比异常 ② 资源到期预警 ③ RI/SP 覆盖率 ④ 预算跟踪 ⑤ 账户健康 |
 
 ### 3.5 SecurityScan Agent
@@ -99,7 +99,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `security/securityscan.sh` |
 | **委托 Skill** | `alicloud-sas-ops` |
 | **调度** | 每日（cron `0 8 * * *`）|
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **检查项** | ① 漏洞扫描 ② AK 泄漏检测 ③ 基线合规检查 |
 
 ### 3.6 AuditTrail Agent
@@ -109,7 +109,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `security/audittrail.sh` |
 | **委托 Skill** | `alicloud-actiontrail-ops` |
 | **调度** | 每日 + 实时事件 |
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **检查项** | 异常 API 调用检测（高频失败、异常操作） |
 
 ### 3.7 AdvisorScan Agent
@@ -119,7 +119,7 @@ scripts/agents/perceive/       # 感知层统一入口
 | **路径** | `advisor/advisorscan.sh` |
 | **委托 Skill** | `alicloud-advisor-ops` |
 | **调度** | 每日（cron `0 10 * * *`）|
-| **安全等级** | 🟢 自动（纯读）|
+| **安全等级** | SAFE 自动（纯读）|
 | **检查项** | ① 健康检查建议 ② 成本优化建议 |
 
 ---

@@ -16,17 +16,17 @@ execution_time_estimate: "3-8 分钟"
 
 用户报障（慢/不可用）或收到告警时，从 SLB 入口开始逐层下钻，快速定位根因。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **安全组规则增删** | ❌ 不允许自动执行 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **安全组规则增删** | FAIL 不允许自动执行 |
 
 **底线**：本 skill 是纯读（Read-Only）巡检，不执行任何写操作。所有建议需用户确认后执行。
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **故障排查和日常巡检的本质区别**：
 >
@@ -73,12 +73,12 @@ echo "[INFO] 扫描到 ECS:$(echo "$ECS_IDS" | wc -l) SLB:$(echo "$SLB_IDS" | wc
 
 ```yaml
 步骤:
-  S1: 查告警历史（确定异常窗口） → 如果告警触发，直接取告警时间 ±30min
-  S2: SLB 健康检查 → 异常? → 查网络/ECS
-  S3: ECS CPU/内存 → 异常? → 查进程/DAS
-  S4: RDS/Redis → 异常? → DAS 慢查询
-  S5: NAT → 异常? → SNAT 端口
-  S6: 全链路正常 → 查应用日志/外部依赖
+  S1: 查告警历史（确定异常窗口） -> 如果告警触发，直接取告警时间 ±30min
+  S2: SLB 健康检查 -> 异常? -> 查网络/ECS
+  S3: ECS CPU/内存 -> 异常? -> 查进程/DAS
+  S4: RDS/Redis -> 异常? -> DAS 慢查询
+  S5: NAT -> 异常? -> SNAT 端口
+  S6: 全链路正常 -> 查应用日志/外部依赖
 ```
 
 #### Step S1: 异常窗口确定 + 告警历史
@@ -87,7 +87,7 @@ echo "[INFO] 扫描到 ECS:$(echo "$ECS_IDS" | wc -l) SLB:$(echo "$SLB_IDS" | wc
 # 如有明确告警时间
 ALERT_TIME="{{user.reported_time}}"
 WINDOW_START=$(date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$ALERT_TIME" "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)")
-echo "[DIAG] 异常窗口: $WINDOW_START → 当前"
+echo "[DIAG] 异常窗口: $WINDOW_START -> 当前"
 
 # 查询 ActionTrail 近期操作（看是否有人改过配置）
 aliyun actiontrail LookupEvents \
@@ -114,7 +114,7 @@ for LB_ID in $SLB_IDS; do
   echo "[DIAG] SLB $LB_ID: 异常后端 $UNHEALTHY_PCT / $TOTAL_BACKENDS"
   
   if [ "$UNHEALTHY_PCT" -gt 0 ]; then
-    echo "[WARN] SLB 健康检查异常 → 走 SLB-ECS 推理分支"
+    echo "[WARN] SLB 健康检查异常 -> 走 SLB-ECS 推理分支"
   fi
 done
 ```
@@ -147,7 +147,7 @@ for INST_ID in $ECS_IDS; do
   
   # 如果 CPU 或 IOPS 异常，立即 CloudAssistant 进 VM 排查
   if [ "$(echo "$CPU_PEAK > 70" | bc -l 2>/dev/null)" = "1" ] || [ "$(echo "$IOPS_PEAK > 5000" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "[WARN] ECS $INST_ID 异常 → 进入 CloudAssistant 内检测"
+    echo "[WARN] ECS $INST_ID 异常 -> 进入 CloudAssistant 内检测"
     # ... (内检测脚本见 01-daily-health-check.md Step 2.7)
   fi
 done
@@ -169,10 +169,10 @@ for DB_ID in $RDS_IDS; do
   
   echo "[DIAG] RDS $DB_ID: CPU峰值=${RDS_CPU_PEAK}%"
   
-  # CPU > 70% → 启动 DAS 慢查询诊断
+  # CPU > 70% -> 启动 DAS 慢查询诊断
   if [ "$(echo "$RDS_CPU_PEAK > 70" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "[WARN] RDS $DB_ID CPU高 → 建议启动 DAS 慢查询诊断"
-    # 动态生成 DAS Go snippet → go run（见 assets/code-snippets/das_slow_query.go）
+    echo "[WARN] RDS $DB_ID CPU高 -> 建议启动 DAS 慢查询诊断"
+    # 动态生成 DAS Go snippet -> go run（见 assets/code-snippets/das_slow_query.go）
   fi
 done
 
@@ -228,27 +228,27 @@ done
   报障: "{{user.user_complaint}}"
 ═══════════════════════════════════════
 
-🔍 链路追踪
-  SLB:  ✔ 健康检查正常 (0/5 异常)
-    ↓
-  ECS:  ⚠ CPU峰值 85%（阈值70%）→ 查进程
-    ↓
-  RDS:  ✔ CPU 32% | 连接正常
-    ↓
-  Redis: ✔ 内存 55% | 命中率 95%
-    ↓
-  NAT:  ✔ SNAT 正常
+[SCAN] 链路追踪
+  SLB:  OK 健康检查正常 (0/5 异常)
+    DOWN
+  ECS:   CPU峰值 85%（阈值70%）-> 查进程
+    DOWN
+  RDS:  OK CPU 32% | 连接正常
+    DOWN
+  Redis: OK 内存 55% | 命中率 95%
+    DOWN
+  NAT:  OK SNAT 正常
 
-📌 根因结论
+[PIN] 根因结论
   ECS i-xxx CPU 异常飙高（峰值85%），导致应用响应变慢。
   CPU 飙升与 ActionTrail 发现的数据备份任务时间吻合。
   建议：
   1. 将数据备份任务迁移到业务低峰期
   2. 如持续出现，考虑升配 ECS 或拆分任务
 
-📋 操作事件
+[LIST] 操作事件
   ActionTrail 发现近期配置变更：
-  - 2026-06-06T08:00:00Z CreateSnapshot → 触发数据备份
+  - 2026-06-06T08:00:00Z CreateSnapshot -> 触发数据备份
 ```
 
 ## 3. 决策树
@@ -256,24 +256,24 @@ done
 ```
 用户报障/告警
 ├── ActionTrail 近期有配置变更?
-│   ├── 是 → 变更回滚或修复
-│   └── 否 → 继续排查
+│   ├── 是 -> 变更回滚或修复
+│   └── 否 -> 继续排查
 ├── SLB 健康检查失败 > 0?
-│   ├── 是 → 查安全组规则 + ECS 端口监听 + 网络 ACL
-│   └── 否 → 查 ECS 层
+│   ├── 是 -> 查安全组规则 + ECS 端口监听 + 网络 ACL
+│   └── 否 -> 查 ECS 层
 ├── ECS CPU > 70% 或 IOPS > 规格 70%?
-│   ├── 是 → CloudAssistant 进 VM 查 TOP 进程
-│   └── 否 → 查 RDS/Redis 层
+│   ├── 是 -> CloudAssistant 进 VM 查 TOP 进程
+│   └── 否 -> 查 RDS/Redis 层
 ├── RDS CPU > 70% 或 慢查询 > 100/min?
-│   ├── 是 → DAS 慢 SQL 明细 → 加索引/改SQL
-│   └── 否 → 查 Redis 层
+│   ├── 是 -> DAS 慢 SQL 明细 -> 加索引/改SQL
+│   └── 否 -> 查 Redis 层
 ├── Redis 命中率 < 90%?
-│   ├── 是 → 查热key/大key
-│   └── 否 → 查 NAT 层
+│   ├── 是 -> 查热key/大key
+│   └── 否 -> 查 NAT 层
 ├── NAT SNAT > 80% 规格?
-│   ├── 是 → 端口耗尽 → 升配或加 NAT
-│   └── 否 → 查外部依赖
-└── 全链路正常 → 非阿里云资源问题 → 查应用日志/第三方
+│   ├── 是 -> 端口耗尽 -> 升配或加 NAT
+│   └── 否 -> 查外部依赖
+└── 全链路正常 -> 非阿里云资源问题 -> 查应用日志/第三方
 ```
 
 ## 4. Changelog

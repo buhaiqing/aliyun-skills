@@ -130,7 +130,7 @@ def _trend_one(pname, cli, api, idf, ns, jq_path, mdefs, region, d7, end):
                     "threshold": mt,
                 }
             )
-            log("DIAG", f"{pname}/{rname} {mk}: {first}% → {last}% g={growth:.2f}/d")
+            log("DIAG", f"{pname}/{rname} {mk}: {first}% -> {last}% g={growth:.2f}/d")
     return (pname, pdata)
 
 
@@ -157,8 +157,8 @@ def finops_check(region):
     suggestions = []
     items = dig(q_cached(["ecs", "DescribeInstances", "--RegionId", region]), "Instances.Instance")
     # Sprint 15: 按 dimension 批量拉取 (q_cms_batch_by_dim)
-    # 演化: 串行 (N 次) → Sprint 14 (N 次并发) → Sprint 15 (ceil(N/50) 次)
-    # 100 ECS: 100 jobs → 100 并发调用 → 2 次 API 调用 (-98%)
+    # 演化: 串行 (N 次) -> Sprint 14 (N 次并发) -> Sprint 15 (ceil(N/50) 次)
+    # 100 ECS: 100 jobs -> 100 并发调用 -> 2 次 API 调用 (-98%)
     end = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     d7 = (datetime.now(UTC) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
     valid = []  # (inst, iid, itype)
@@ -272,7 +272,7 @@ def _main_locked():
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
     if args.describe:
-        print("趋势采集 → 线性预测 → FinOps → 报告")
+        print("趋势采集 -> 线性预测 -> FinOps -> 报告")
         return
     if not gate(args.region):
         sys.exit(1)

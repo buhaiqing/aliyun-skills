@@ -15,9 +15,20 @@
 
 set -euo pipefail
 
+# ── 路径解析 (Sprint 18: 统一运行时数据根目录) ──
+# SCRIPT_DIR: .../alicloud-aiops-cruise/scripts/agents/perceive/advisor
+# AIOPS_DIR:  .../alicloud-aiops-cruise                   (SCRIPT_DIR 向上 4 层)
+# SKILLS_DIR: .../aliyun-skills                           (AIOPS_DIR/..)
+# AUDIT_DIR:  ${RUNTIME_AUDIT_DIR}/perceive
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIOPS_DIR="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-AUDIT_DIR="${AIOPS_DIR}/audit-results"
+export SKILLS_DIR="$(cd "${AIOPS_DIR}/.." && pwd)"
+
+# shellcheck source=../../../lib/runtime_root.sh
+source "${AIOPS_DIR}/scripts/lib/runtime_root.sh"
+aiops_runtime_init "alicloud-aiops-cruise"
+
+AUDIT_DIR="${RUNTIME_AUDIT_DIR}/perceive"
 OUTPUT_FILE=""
 
 while [[ $# -gt 0 ]]; do
@@ -30,6 +41,7 @@ done
 if [[ -z "$OUTPUT_FILE" ]]; then
     OUTPUT_FILE="${AUDIT_DIR}/advisorscan-$(date +%Y%m%dT%H%M%S).json"
 fi
+mkdir -p "$(dirname "${OUTPUT_FILE}")"
 
 echo "[AdvisorScan] 开始智能顾问检查"
 
@@ -54,5 +66,5 @@ cat > "${OUTPUT_FILE}" <<JSONEOF
 JSONEOF
 
 HEALTH_COUNT=$(echo "${HEALTH}" | jq -r '.TotalCount // 0')
-echo "[AdvisorScan] ✅ 智能顾问检查完成"
+echo "[AdvisorScan] PASS 智能顾问检查完成"
 echo "[AdvisorScan]   健康检查建议: ${HEALTH_COUNT} 项"

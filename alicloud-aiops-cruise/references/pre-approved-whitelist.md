@@ -7,7 +7,7 @@ status: mandatory
 
 # 预授权白名单 — AIOps Cruise 自动执行操作白名单
 
-> **目的**：在不破坏"安全铁律"前提下，让低风险可逆操作自动执行（如 RDS 清理 binlog、ECS 内只读诊断），将 MTTR 从"发现→等用户→确认→执行"压缩到秒级。Sprint 12 (双引擎) 的"固化工作流引擎"完全依赖本白名单。
+> **目的**：在不破坏"安全铁律"前提下，让低风险可逆操作自动执行（如 RDS 清理 binlog、ECS 内只读诊断），将 MTTR 从"发现->等用户->确认->执行"压缩到秒级。Sprint 12 (双引擎) 的"固化工作流引擎"完全依赖本白名单。
 >
 > **本文件是 MR-9 (写操作确认规范) 的执行细则。** 所有白名单操作仍需满足 §五的审批 + §六的审计要求。
 
@@ -57,7 +57,7 @@ status: mandatory
 ## 四、L0 极低风险命令白名单（嵌套）
 
 > CloudAssistant 在 ECS 内执行的命令必须以前缀匹配以下模式才允许 `[AUTO-QUIET]`。
-> **不匹配 → 自动降级为 `[SUGGESTED]`，等用户确认**
+> **不匹配 -> 自动降级为 `[SUGGESTED]`，等用户确认**
 
 ### 4.1 允许的只读命令前缀
 
@@ -112,8 +112,8 @@ bash -c | sh -c | eval | exec | source | . /
   2. 检查是否在 §4.1 允许清单
   3. 检查是否匹配 §4.2 黑名单（即使白名单里有，黑名单优先）
   4. 检查是否含 `> >> < | tee` 重定向符
-  5. 全部通过 → 标记 [AUTO-QUIET]
-     任一失败 → 降级 [SUGGESTED]，等用户确认
+  5. 全部通过 -> 标记 [AUTO-QUIET]
+     任一失败 -> 降级 [SUGGESTED]，等用户确认
 ```
 
 ---
@@ -138,11 +138,11 @@ bash -c | sh -c | eval | exec | source | . /
 
 | 维度 | 检查项 | 指标来源 | 不通过处理 |
 |------|--------|---------|----------|
-| **执行次数** | 季度内执行 N 次 | 审计日志 | N=0 → 降级为 L1 需确认 |
-| **成功率** | 成功 / 总数 | 审计日志 | < 99% → 临时降级 `[MANUAL]` |
-| **误操作率** | 用户投诉 / 总数 | 投诉单 | > 0.5% → 立刻移出白名单 |
-| **回滚触发率** | 回滚次数 / 总数 | 审计日志 | > 1% → 重新评估前置条件 |
-| **执行耗时** | P95 耗时 | 审计日志 | > 5min → 检查是否需拆步骤 |
+| **执行次数** | 季度内执行 N 次 | 审计日志 | N=0 -> 降级为 L1 需确认 |
+| **成功率** | 成功 / 总数 | 审计日志 | < 99% -> 临时降级 `[MANUAL]` |
+| **误操作率** | 用户投诉 / 总数 | 投诉单 | > 0.5% -> 立刻移出白名单 |
+| **回滚触发率** | 回滚次数 / 总数 | 审计日志 | > 1% -> 重新评估前置条件 |
+| **执行耗时** | P95 耗时 | 审计日志 | > 5min -> 检查是否需拆步骤 |
 
 ### 5.3 紧急下线
 
@@ -213,22 +213,22 @@ bash -c | sh -c | eval | exec | source | . /
 
 | 字段 | 必填 | 说明 |
 |------|------|------|
-| `whitelist_id` | ✓ | 白名单项 ID（W-NN） |
-| `level` | ✓ | L0/L1/L2/L3 |
-| `executed_at` | ✓ | ISO8601，含时区 |
-| `executed_by` | ✓ | `aiops-cruise` / `user` / `agent:xxx` |
-| `customer` | ✓ | 客户标识 |
-| `resource_id` | ✓ | 操作的目标资源 |
-| `command` | ✓ | 完整命令字符串 |
-| `command_label` | ✓ | 命令标签 (`[AUTO-QUIET]` 等) |
-| `pre_condition_check` | ✓ | 前置条件检查结果 |
-| `result` | ✓ | `success` / `failed` / `rolled_back` |
-| `result_message` | ✗ | 人类可读的执行结果 |
-| `trace_id` | ✓ | 关联 runbook run_id |
-| `duration_seconds` | ✓ | 耗时 |
-| `rolled_back` | ✓ | 是否触发回滚 |
-| `rollback_command` | ✗ | 触发的回滚命令 |
-| `notified` | ✗ | 通知渠道列表 |
+| `whitelist_id` | OK | 白名单项 ID（W-NN） |
+| `level` | OK | L0/L1/L2/L3 |
+| `executed_at` | OK | ISO8601，含时区 |
+| `executed_by` | OK | `aiops-cruise` / `user` / `agent:xxx` |
+| `customer` | OK | 客户标识 |
+| `resource_id` | OK | 操作的目标资源 |
+| `command` | OK | 完整命令字符串 |
+| `command_label` | OK | 命令标签 (`[AUTO-QUIET]` 等) |
+| `pre_condition_check` | OK | 前置条件检查结果 |
+| `result` | OK | `success` / `failed` / `rolled_back` |
+| `result_message` | FAIL | 人类可读的执行结果 |
+| `trace_id` | OK | 关联 runbook run_id |
+| `duration_seconds` | OK | 耗时 |
+| `rolled_back` | OK | 是否触发回滚 |
+| `rollback_command` | FAIL | 触发的回滚命令 |
+| `notified` | FAIL | 通知渠道列表 |
 
 ### 6.3 落盘位置
 
@@ -314,4 +314,4 @@ bash -c | sh -c | eval | exec | source | . /
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 1.0.0 | 2026-06-06 | 初始版本（Stage 1 → Sprint 6 闭环 S1-D3） |
+| 1.0.0 | 2026-06-06 | 初始版本（Stage 1 -> Sprint 6 闭环 S1-D3） |

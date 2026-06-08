@@ -1,5 +1,6 @@
 # Sprint 5: ACK 节点 Limits 超分检测（P0）
 
+> **状态**: PASS 12/12
 > **业务价值**: 发现 K8s 集群中最常见也最隐蔽的风险——Pod Limits 总和超过节点 Capacity，高负载下必然触发 CPU Throttling / OOM，且 Developer 通常不知情
 > **交付物**: `runbooks/scripts/_shared.py` (ACK 注册表) + 4 个 runbook 脚本 ACK 模块同步增强
 > **前置条件**: 无（独立推进，不依赖其他 Sprint）
@@ -22,7 +23,7 @@
 - [x] **5.3** `_shared.py` 新增 `_drill_pod_limits()` 函数：对超分节点钻取 Pod 级 limit/usage，排序出 Top 5
 - [x] **5.4** `daily-health-check.py` ACK 全集成：
   - [x] `_collect_ack()` 独立采集器（集群级+节点级+7天回溯+SLS嗅探+Limits超分检测）
-  - [x] `collect_and_score()` 分发 ACK → `_collect_ack()`
+  - [x] `collect_and_score()` 分发 ACK -> `_collect_ack()`
   - [x] `report()` 接受并输出 ACK 报告章节（回溯+SLS状态+Limits超分）
   - [x] `main()` 传递 ack_data
   - [x] Ruff Lint 零错误通过
@@ -35,19 +36,19 @@
 - [x] **5.10** `references/history-backtracking.md` 三层回溯方案文档
 - [x] **5.11** 集成测试：6 个用例全部通过（TC-01~TC-06）
 - [x] **5.12** CloudAssistant + kubectl events POC — **已完成，结论见下方**
-  - [x] 验证 `DescribeClusterUserKubeconfig` 获取 kubeconfig 可行性 — ✅ **可行**，API 成功返回
-  - [x] 验证 CloudAssistant `RunCommand` 执行可行性 — ❌ **被 RAM 拒绝**（缺少 `ecs:RunCommand` 权限）
-  - [x] 验证本地 kubectl + kubeconfig 执行只读命令 — ❌ **被 RBAC 拒绝**（当前子账号在集群内无角色绑定）
+  - [x] 验证 `DescribeClusterUserKubeconfig` 获取 kubeconfig 可行性 — PASS **可行**，API 成功返回
+  - [x] 验证 CloudAssistant `RunCommand` 执行可行性 — FAIL **被 RAM 拒绝**（缺少 `ecs:RunCommand` 权限）
+  - [x] 验证本地 kubectl + kubeconfig 执行只读命令 — FAIL **被 RBAC 拒绝**（当前子账号在集群内无角色绑定）
   - [x] 确认 K8s 事件保留时长 — 取决于 etcd 事件 TTL（默认 1h），不可回溯历史事件
 
 **POC 结论（2026-06-06）**：
 
 | 验证项 | 结果 | 阻塞因素 | 所需权限 |
 |--------|:----:|---------|---------|
-| kubeconfig 获取 | ✅ 可行 | 无 | 无需额外权限（`cs:Get` 已有） |
-| API Server 网络连通 | ✅ 可达 | 无 | 公网 SLB 已开放 |
-| kubectl get 命令执行 | ❌ 被拒 | RBAC 未授权 | 需要在集群中创建 RoleBinding 或 ClusterRoleBinding |
-| CloudAssistant RunCommand | ❌ 被拒 | RAM 无权限 | `ecs:RunCommand` |
+| kubeconfig 获取 | PASS 可行 | 无 | 无需额外权限（`cs:Get` 已有） |
+| API Server 网络连通 | PASS 可达 | 无 | 公网 SLB 已开放 |
+| kubectl get 命令执行 | FAIL 被拒 | RBAC 未授权 | 需要在集群中创建 RoleBinding 或 ClusterRoleBinding |
+| CloudAssistant RunCommand | FAIL 被拒 | RAM 无权限 | `ecs:RunCommand` |
 
 **两个前置条件**才能完整解锁此能力：
 1. **RAM 层面**：授权 `ecs:RunCommand` 或直接使用本地 kubectl（推荐）
@@ -57,27 +58,27 @@
 
 **建议后续路径**：使用本地 kubectl 方式（不依赖 CloudAssistant），需要先完成 K8s RBAC 授权。
 
-  ⚠️ 此任务为技术验证（POC），暂不纳入正式巡检流程
+  [WARN] 此任务为技术验证（POC），暂不纳入正式巡检流程
 
 ### 阈值定义
 
 | 等级 | CPU Limits / capacity | Memory Limits / capacity | 含义 |
 | 条件 | 说明 |
 |:----:|------|
-| 🟢 PASS | < 80% | 有充足余量 |
-| 🟡 WARN | 80% ~ 120% | 正常超分范围，需关注 |
-| 🔴 CRITICAL | 120% ~ 200% | 显著超分，高负载有风险 |
-| 🔴🔴 CRITICAL+ | > 200% | 极端超分，必须治理 |
+| SAFE PASS | < 80% | 有充足余量 |
+| WARNING WARN | 80% ~ 120% | 正常超分范围，需关注 |
+| CRITICAL CRITICAL | 120% ~ 200% | 显著超分，高负载有风险 |
+| CRITICALCRITICAL CRITICAL+ | > 200% | 极端超分，必须治理 |
 
 ### 集成测试验证结果（2026-06-06）
 
 ```
-✅ TC-01: 回溯模式一（days=7）通过
-✅ TC-02: 回溯模式一（days=30）通过
-✅ TC-03: 回溯模式二（指定时段）通过
-✅ TC-04: 空输入容错通过
-✅ TC-05: 回溯报告格式化通过
-✅ TC-06: SLS 嗅探（空集群容错）通过
+PASS TC-01: 回溯模式一（days=7）通过
+PASS TC-02: 回溯模式一（days=30）通过
+PASS TC-03: 回溯模式二（指定时段）通过
+PASS TC-04: 空输入容错通过
+PASS TC-05: 回溯报告格式化通过
+PASS TC-06: SLS 嗅探（空集群容错）通过
 ```
 
 ### 推理规则（新增至 inference-rules.md）
@@ -88,7 +89,7 @@
 |------|------|
 | **现象** | node.cpu.limit / node.cpu.capacity > 120% AND node.cpu.usage_rate / node.cpu.capacity < 60% |
 | **推理** | 超分但实际负载不高、主要是 Pod request/limit 设置虚高 |
-| **级别** | 🟡 Warning |
+| **级别** | Warning |
 | **建议** | 降低虚高 Pod 的 limit/request（给出 Top 5 列表和推荐值） |
 
 #### ACK-LIMITS-02: CPU Limits 超分 + usage 高
@@ -97,7 +98,7 @@
 |------|------|
 | **现象** | node.cpu.limit / node.cpu.capacity > 120% AND node.cpu.usage_rate / node.cpu.capacity > 70% |
 | **推理** | 超分且实际负载高，流量高峰必然触发 CPU Throttling |
-| **级别** | 🔴 Critical |
+| **级别** | Critical |
 | **建议** | 扩容节点或迁移 Pod，同时优化高 limit Pod |
 
 #### ACK-LIMITS-03: Memory Limits 超分
@@ -106,7 +107,7 @@
 |------|------|
 | **现象** | node.memory.limit / node.memory.capacity > 120% |
 | **推理** | 内存超分，OOM 风险高 |
-| **级别** | 🟡 Warning（>120%）/ 🔴 Critical（>180%） |
+| **级别** | Warning（>120%）/ Critical（>180%） |
 | **建议** | 查 OOMKilled Pod 数，查内存实际 usage，降虚高 limit |
 
 ### 质量门
@@ -188,7 +189,7 @@ r = format_backtrack_report({
     "restart_candidates": [],
     "oom_risk": [],
 })
-assert "## 🔙" in r          # 含回溯章节标题
+assert "## [BACK]" in r          # 含回溯章节标题
 assert "趋势异常" in r        # 含趋势小节
 assert "CPU超卖率" in r       # 含具体指标名
 assert "突变事件" in r        # 含突变小节

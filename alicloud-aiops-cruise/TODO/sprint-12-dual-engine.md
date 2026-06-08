@@ -1,8 +1,8 @@
 # Sprint 12: 双引擎架构 (Stage 2 D1 + Stage 3 D1)
 
+> **状态**: PASS 5/5 (Stage 2 D1 幂等加固)
 > **业务价值**: 巡检从"Agent 调 Bash"升级为"固化工作流自触发 + 弹性 Agent 兜底", 解决"凌晨 3 点谁来跑巡检"问题
-> **依赖**: 4 个 runbook Python 脚本 ✅ + 缓存层 ✅ + Incident Schema ✅ + 动态基线 ✅
-> **状态**: ⬜ **实施阶段**
+> **依赖**: 4 个 runbook Python 脚本 PASS + 缓存层 PASS + Incident Schema PASS + 动态基线 PASS
 > **关联验收项**: Stage 2 D1 (幂等加固) + Stage 3 D1 (双引擎调度)
 
 ---
@@ -15,7 +15,7 @@
 
 当前状态:
 - [x] 4 个 runbook 已有 Python 脚本 (daily-health-check / emergency-troubleshoot / capacity-planning / pre-launch-check)
-- [ ] **幂等加固** ⬜ 重点: 重复跑能保证 side-effect = 0
+- [ ] **幂等加固** [ ] 重点: 重复跑能保证 side-effect = 0
 
 #### 幂等性缺口分析
 
@@ -134,13 +134,13 @@
 - 秒级响应
 
 **判定标准**:
-- 触发是**已知 cron** → 固化
-- 触发是**未知 event** (5xx 告警/用户提问) → Agent
-- 巡检发现 **3+ critical** → Agent 升级分析
+- 触发是**已知 cron** -> 固化
+- 触发是**未知 event** (5xx 告警/用户提问) -> Agent
+- 巡检发现 **3+ critical** -> Agent 升级分析
 
 ### D8 (2026-06-07): 幂等性是关键
 
-**没有幂等 → 重复跑 = 数据污染**:
+**没有幂等 -> 重复跑 = 数据污染**:
 - 报告覆盖: 历史不可追溯
 - 写文件覆盖: `.need_escalation` 丢失
 - 重入并发: race condition

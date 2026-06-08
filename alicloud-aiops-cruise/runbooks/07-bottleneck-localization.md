@@ -18,50 +18,50 @@ execution_time_estimate: "5-12 分钟"
 
 与日常巡检的区别：日常巡检问"有什么不正常"，瓶颈定位问**"最慢的那一跳在哪"**。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **安全组规则增删** | ❌ 不允许自动执行 |
-| **CloudAssistant 内检测** | 🟡 自动执行只读命令（白名单 W-01） |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **安全组规则增删** | FAIL 不允许自动执行 |
+| **CloudAssistant 内检测** | WARNING 自动执行只读命令（白名单 W-01） |
 
 **底线**：本 runbook 是纯读（Read-Only）诊断。所有优化建议需用户确认后通过对应 ops skill 执行。
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **性能瓶颈定位的核心方法论：**
 >
 > 用户说"慢"时，99% 的根因在以下几层之一（按概率排序）：
-> 1. **数据库层（~55%）**：慢 SQL → CPU 打满 → 请求排队 → 系统响应慢
-> 2. **计算层（~25%）**：ECS CPU/内存不足 → 应用线程阻塞 → 请求堆积
-> 3. **缓存层（~10%）**：Redis 大 key/命中率低 → 穿透到 DB → DB 压力
-> 4. **网络层（~8%）**：EIP 带宽打满 / NAT SNAT 端口耗尽 → 丢包重传
-> 5. **均衡层（~2%）**：SLB 并发连满 / 健康检查异常 → 请求分配不均
+> 1. **数据库层（~55%）**：慢 SQL -> CPU 打满 -> 请求排队 -> 系统响应慢
+> 2. **计算层（~25%）**：ECS CPU/内存不足 -> 应用线程阻塞 -> 请求堆积
+> 3. **缓存层（~10%）**：Redis 大 key/命中率低 -> 穿透到 DB -> DB 压力
+> 4. **网络层（~8%）**：EIP 带宽打满 / NAT SNAT 端口耗尽 -> 丢包重传
+> 5. **均衡层（~2%）**：SLB 并发连满 / 健康检查异常 -> 请求分配不均
 >
 > **定位策略：对比法**
 > - 比较各层的响应延迟（P50/P95/P99）
-> - 如果 DB 层最慢 → 查 DB；如果 ECS 层最慢 → 查 ECS
+> - 如果 DB 层最慢 -> 查 DB；如果 ECS 层最慢 -> 查 ECS
 > - 不用全量采集，**哪层慢就深入哪层**
 >
 > **三个关键延迟指标：**
-> - **入口（EIP→SLB）**：公网延迟，通常 < 50ms
-> - **应用/计算（SLB→ECS）**：应用处理时间，通常 < 200ms
-> - **数据层（ECS→RDS/Redis）**：SQL 执行时间，通常 < 50ms
+> - **入口（EIP->SLB）**：公网延迟，通常 < 50ms
+> - **应用/计算（SLB->ECS）**：应用处理时间，通常 < 200ms
+> - **数据层（ECS->RDS/Redis）**：SQL 执行时间，通常 < 50ms
 > 如果应用层延迟占 80%+，根因在应用代码；如果数据层延迟占 60%+，根因在数据库。
 
 ### 适用条件
 
 - 有明确的异常时间窗口（告警时间或用户报障时间）
 - 资源已按标签/资源组归类
-- 支持全阿里云产品：EIP → SLB/ALB → ECS/ACK → RDS/Redis/PolarDB → NAT
+- 支持全阿里云产品：EIP -> SLB/ALB -> ECS/ACK -> RDS/Redis/PolarDB -> NAT
 
 ### 不适用条件
 
-- 无明确异常窗口 → 使用 `01-daily-health-check` 做主动扫描
-- 问题在应用代码层（非阿里云基础设施）→ 建议接入 ARMS APM
-- 只排查单个产品（如仅 RDS）→ `05-slow-query-diagnosis` 更合适
+- 无明确异常窗口 -> 使用 `01-daily-health-check` 做主动扫描
+- 问题在应用代码层（非阿里云基础设施）-> 建议接入 ARMS APM
+- 只排查单个产品（如仅 RDS）-> `05-slow-query-diagnosis` 更合适
 
 ---
 
@@ -90,12 +90,12 @@ else
   WINDOW_START=$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)
   WINDOW_END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 fi
-echo "[INFO] 诊断窗口: $WINDOW_START → $WINDOW_END"
+echo "[INFO] 诊断窗口: $WINDOW_START -> $WINDOW_END"
 ```
 
 ### Phase 1: 拓扑发现 + 链路构建
 
-> **核心思路**：快速扫描资源组/标签下的全链路资源，构建 `EIP→SLB/ALB→ECS→RDS/Redis→NAT` 的拓扑映射，输出链路节点清单供 Phase 2 逐层诊断。
+> **核心思路**：快速扫描资源组/标签下的全链路资源，构建 `EIP->SLB/ALB->ECS->RDS/Redis->NAT` 的拓扑映射，输出链路节点清单供 Phase 2 逐层诊断。
 
 ```bash
 # ── 扫描全链路资源 ──
@@ -117,7 +117,7 @@ REDIS_IDS=$(echo "$RC_RESULT" | jq -r 'select(.ResourceType=="ACS::Redis::Instan
 EIP_IDS=$(aliyun vpc DescribeEipAddresses --RegionId "$REGION" | jq -r '.EipAddresses.EipAddress[].AllocationId // empty')
 NAT_IDS=$(echo "$RC_RESULT" | jq -r 'select(.ResourceType=="ACS::VPC::NatGateway") | .ResourceId // empty')
 
-# ── 构建 SLB → ECS 后端映射 ──
+# ── 构建 SLB -> ECS 后端映射 ──
 echo ""
 echo "═══ 链路拓扑 ═══"
 for LB_ID in $SLB_IDS; do
@@ -132,7 +132,7 @@ for LB_ID in $SLB_IDS; do
       --LoadBalancerId "$LB_ID" \
       --VServerGroupId "$VG_ID" 2>/dev/null \
       | jq -r '.BackendServers.BackendServer[].ServerId // empty')
-    echo "  SLB $LB_ID → ECS $(echo "$SERVER_IDS" | tr '\n' ',' | sed 's/,$//')"
+    echo "  SLB $LB_ID -> ECS $(echo "$SERVER_IDS" | tr '\n' ',' | sed 's/,$//')"
   done
 done
 
@@ -182,13 +182,13 @@ for EIP_ID in $EIP_IDS; do
   # 判定
   if [ "$IN_PCT" != "NODATA" ] && [ "$(echo "$IN_PCT > 80" | bc -l 2>/dev/null)" = "1" ]; then
     EIP_BOTTLENECK="YES"
-    echo "  🔴 EIP 入带宽打满 → 入口层瓶颈!"
+    echo "  CRITICAL EIP 入带宽打满 -> 入口层瓶颈!"
   elif [ "$OUT_PCT" != "NODATA" ] && [ "$(echo "$OUT_PCT > 80" | bc -l 2>/dev/null)" = "1" ]; then
     EIP_BOTTLENECK="YES"
-    echo "  🔴 EIP 出带宽打满 → 出口层瓶颈!"
+    echo "  CRITICAL EIP 出带宽打满 -> 出口层瓶颈!"
   else
     EIP_BOTTLENECK="NO"
-    echo "  ✅ EIP 带宽充足"
+    echo "  PASS EIP 带宽充足"
   fi
 done
 ```
@@ -232,13 +232,13 @@ for LB_ID in $SLB_IDS; do
   # 判定：连接数 > 50000 或 不健康 > 0 为异常
   if [ "$UNHEALTHY" != "0" ]; then
     SLB_BOTTLENECK="YES"
-    echo "  🔴 SLB 健康检查异常 → 分发层瓶颈!"
+    echo "  CRITICAL SLB 健康检查异常 -> 分发层瓶颈!"
   elif [ "$(echo "$ACTIVE_CONN > 50000" | bc -l 2>/dev/null)" = "1" ]; then
     SLB_BOTTLENECK="YES"
-    echo "  🔴 SLB 连接数过高 → 分发层瓶颈!"
+    echo "  CRITICAL SLB 连接数过高 -> 分发层瓶颈!"
   else
     SLB_BOTTLENECK="NO"
-    echo "  ✅ SLB 状态正常"
+    echo "  PASS SLB 状态正常"
   fi
 done
 ```
@@ -320,9 +320,9 @@ for INST_ID in $ECS_IDS; do
     ECS_HIGH_IOPS="$ECS_HIGH_IOPS $INST_ID(${TOTAL_IOPS})"
   fi
 
-  # 异常 ECS → 触发 CloudAssistant 内检测
+  # 异常 ECS -> 触发 CloudAssistant 内检测
   if [ "$HAS_CPU_ISSUE" = "true" ] || [ "$HAS_MEM_ISSUE" = "true" ]; then
-    echo "  ⚠️ ECS $INST_ID 异常 → 启动 CloudAssistant 内检测"
+    echo "  [WARN] ECS $INST_ID 异常 -> 启动 CloudAssistant 内检测"
 
     # [AUTO-QUIET] 只读诊断（白名单 W-01）
     DIAG_SCRIPT='#!/bin/bash
@@ -353,7 +353,7 @@ echo "=== DOCKER ==="; docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev
 done
 
 if [ "$ECS_BOTTLENECK" = "NO" ]; then
-  echo "  ✅ ECS 层无瓶颈"
+  echo "  PASS ECS 层无瓶颈"
 fi
 ```
 
@@ -413,15 +413,15 @@ for DB_ID in $RDS_IDS; do
   if [ "$(echo "$RDS_CPU > 85" | bc -l 2>/dev/null)" = "1" ]; then
     RDS_BOTTLENECK="YES"
     RDS_HIGH_CPU="$RDS_HIGH_CPU $DB_ID(${RDS_CPU}%)"
-    echo "  🔴 RDS CPU 打满 → 数据层瓶颈!"
+    echo "  CRITICAL RDS CPU 打满 -> 数据层瓶颈!"
   elif [ "$(echo "$RDS_SLOW > 50" | bc -l 2>/dev/null)" = "1" ]; then
     RDS_BOTTLENECK="YES"
     RDS_SLOW_SQL="$RDS_SLOW_SQL $DB_ID(${RDS_SLOW}/min)"
-    echo "  🔴 RDS 慢查询过多 → 数据层瓶颈!"
+    echo "  CRITICAL RDS 慢查询过多 -> 数据层瓶颈!"
   elif [ "$(echo "$RDS_CPU > 70" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "  🟡 RDS CPU 偏高 → 建议执行 05-slow-query-diagnosis 深度诊断"
+    echo "  WARNING RDS CPU 偏高 -> 建议执行 05-slow-query-diagnosis 深度诊断"
   else
-    echo "  ✅ RDS 状态正常"
+    echo "  PASS RDS 状态正常"
   fi
 done
 ```
@@ -467,11 +467,11 @@ for REDIS_ID in $REDIS_IDS; do
   # 判定
   if [ "$(echo "$REDIS_MEM > 85" | bc -l 2>/dev/null)" = "1" ] || [ "$REDIS_EVICTED" != "0" ]; then
     REDIS_BOTTLENECK="YES"
-    echo "  🔴 Redis 内存不足/逐出 → 缓存层瓶颈! 建议执行 08-redis-performance-diagnosis"
+    echo "  CRITICAL Redis 内存不足/逐出 -> 缓存层瓶颈! 建议执行 08-redis-performance-diagnosis"
   elif [ "$(echo "$REDIS_MEM > 75" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "  🟡 Redis 内存偏高 → 关注大key"
+    echo "  WARNING Redis 内存偏高 -> 关注大key"
   else
-    echo "  ✅ Redis 状态正常"
+    echo "  PASS Redis 状态正常"
   fi
 done
 ```
@@ -507,9 +507,9 @@ for NAT_ID in $NAT_IDS; do
 
   if [ "$NAT_DROP" != "0" ] && [ "$NAT_DROP" != "0.0" ]; then
     NAT_BOTTLENECK="YES"
-    echo "  🔴 NAT 端口分配失败 → 出网层瓶颈（SNAT 端口耗尽）!"
+    echo "  CRITICAL NAT 端口分配失败 -> 出网层瓶颈（SNAT 端口耗尽）!"
   else
-    echo "  ✅ NAT 状态正常"
+    echo "  PASS NAT 状态正常"
   fi
 done
 ```
@@ -522,35 +522,35 @@ done
 用户报障"慢"
 │
 ├── EIP 带宽打满 (>80%)?
-│   └── ✅ → 入口层瓶颈 → 建议升配带宽 / 限流
-│   └── ❌ → 查下一层
+│   └── PASS -> 入口层瓶颈 -> 建议升配带宽 / 限流
+│   └── FAIL -> 查下一层
 │
 ├── SLB 健康检查异常 OR 连接数过高?
-│   └── ✅ → 分发层瓶颈 → 查后端 ECS / 升配 SLB
-│   └── ❌ → 查下一层
+│   └── PASS -> 分发层瓶颈 -> 查后端 ECS / 升配 SLB
+│   └── FAIL -> 查下一层
 │
 ├── ECS CPU > 85% OR 内存 > 90%?
-│   └── ✅ → 计算层瓶颈
+│   └── PASS -> 计算层瓶颈
 │   │   ├── CPU 高 + 内存正常 = CPU 密集型
 │   │   ├── 内存高 + CPU 正常 = 内存泄漏
-│   │   └── 双高 = 规格不够 → 建议升配或拆分
-│   └── ❌ → 查下一层
+│   │   └── 双高 = 规格不够 -> 建议升配或拆分
+│   └── FAIL -> 查下一层
 │
 ├── RDS CPU > 85% OR 慢查询 > 50/min?
-│   └── ✅ → 数据层瓶颈
-│   │   ├── CPU 高 + 慢查询多 = 慢 SQL 导致 (→ runbook 05)
+│   └── PASS -> 数据层瓶颈
+│   │   ├── CPU 高 + 慢查询多 = 慢 SQL 导致 (-> runbook 05)
 │   │   └── CPU 正常 + 慢查询多 = 索引问题
-│   └── ❌ → 查下一层
+│   └── FAIL -> 查下一层
 │
 ├── Redis 内存 > 85% OR 逐出 > 0?
-│   └── ✅ → 缓存层瓶颈 (→ runbook 08)
-│   └── ❌ → 查下一层
+│   └── PASS -> 缓存层瓶颈 (-> runbook 08)
+│   └── FAIL -> 查下一层
 │
 ├── NAT 端口分配失败 > 0?
-│   └── ✅ → 出网层瓶颈 → 建议增加 SNAT IP 或升配
-│   └── ❌ → 查最后一层
+│   └── PASS -> 出网层瓶颈 -> 建议增加 SNAT IP 或升配
+│   └── FAIL -> 查最后一层
 │
-└── 全链路正常 → 非基础设施问题
+└── 全链路正常 -> 非基础设施问题
     ├── 查 ActionTrail 近期配置变更
     ├── 查应用日志/ARMS APM
     └── 结论: "阿里云基础设施正常，建议查应用层"
@@ -591,60 +591,60 @@ fi
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  🔍 全链路性能瓶颈定位报告
+  [SCAN] 全链路性能瓶颈定位报告
 ═══════════════════════════════════════════════════════
   报告ID: bottleneck-$CUSTOMER-$(date +%Y%m%dT%H%M%SZ)
   客户: $CUSTOMER | 区域: $REGION
-  异常窗口: $WINDOW_START → $WINDOW_END
+  异常窗口: $WINDOW_START -> $WINDOW_END
 ═══════════════════════════════════════════════════════
 
-## 📊 瓶颈定位结论
+## [STATS] 瓶颈定位结论
 
 | 诊断维度 | 结果 |
 |----------|------|
-| 🎯 主瓶颈层 | **$BOTTLENECK_LAYER** |
-| 📋 根因描述 | $BOTTLENECK_REASON |
-| 🔴 Critical 节点 | ${CRITICAL_NODES:-0} |
-| 🟡 Warning 节点 | ${WARNING_NODES:-0} |
+| [TARGET] 主瓶颈层 | **$BOTTLENECK_LAYER** |
+| [LIST] 根因描述 | $BOTTLENECK_REASON |
+| Critical 节点 | ${CRITICAL_NODES:-0} |
+| Warning 节点 | ${WARNING_NODES:-0} |
 
 ═══════════════════════════════════════════════════════
-  🌐 链路逐层诊断
+  [NET] 链路逐层诊断
 ═══════════════════════════════════════════════════════
 
-### 入口层 EIP → 分发层 SLB
+### 入口层 EIP -> 分发层 SLB
   EIP:   IN=${EIP_IN_PCT}% OUT=${EIP_OUT_PCT}%  |  状态: ${EIP_STATUS}
-    ↓
+    DOWN
   SLB:   活跃连接=${SLB_ACTIVE_CONN}  新建连接=${SLB_NEW_CONN}/s  |  状态: ${SLB_STATUS}
-    ↓
+    DOWN
 
-### 分发层 SLB → 计算层 ECS
+### 分发层 SLB -> 计算层 ECS
   ECS TOP-5 CPU:
     i-xxx:  CPU=${CPU_PEAK}%  内存=${MEM_PEAK}%  IOPS=${TOTAL_IOPS}
     ...
     状态: ${ECS_STATUS}
 
-    ↓
+    DOWN
 
-### 计算层 ECS → 数据层 RDS
+### 计算层 ECS -> 数据层 RDS
   RDS TOP-3 CPU:
     rm-xxx: CPU=${RDS_CPU}%  连接=${RDS_CONN}%  慢查询=${RDS_SLOW}/min
     ...
     状态: ${RDS_STATUS}
 
-    ↓
+    DOWN
 
 ### 缓存层 Redis
   Redis:  内存=${REDIS_MEM}%  连接=${REDIS_CONN}  逐出=${REDIS_EVICTED}
     状态: ${REDIS_STATUS}
 
-    ↓
+    DOWN
 
 ### 出网层 NAT
   NAT:    SNAT连接=${NAT_SNAT}  端口分配失败=${NAT_DROP}
     状态: ${NAT_STATUS}
 
 ═══════════════════════════════════════════════════════
-  📌 优化建议（按优先级）
+  [PIN] 优化建议（按优先级）
 ═══════════════════════════════════════════════════════
 
 ${OPTIMIZATION_SUGGESTIONS}

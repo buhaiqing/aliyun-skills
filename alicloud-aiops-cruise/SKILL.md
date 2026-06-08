@@ -1,11 +1,11 @@
 ---
 name: alicloud-aiops-cruise
-version: "1.1.0"
+version: "1.5.1"
 metadata:
   description: >-
     阿里云全链路 AIOps 巡检 + 感知 Agent 层 — 内置 7 个感知 Agent（HealthCruise/TopoScan/
-    ConfigDrift/CostWatch/SecurityScan/AuditTrail/AdvisorScan），实现从 EIP→SLB→ECS→
-    RDS/Redis→NAT→安全组的端到端健康巡检、故障排查、容量规划和预检。
+    ConfigDrift/CostWatch/SecurityScan/AuditTrail/AdvisorScan），实现从 EIP->SLB->ECS->
+    RDS/Redis->NAT->安全组的端到端健康巡检、故障排查、容量规划和预检。
     Agent 通过 aliyun CLI 编排阿里云原生服务
     (CloudMonitor / DAS / CloudAssistant / ResourceCenter / ActionTrail / CloudFirewall)
     完成拓扑发现、指标采集、深度诊断和链路关联推理。
@@ -17,7 +17,7 @@ metadata:
 
 # 阿里云全链路 AIOps 巡检 — alicloud-aiops-cruise
 
-> **一句话定位**：跨 EIP → SLB → ECS → RDS/Redis → NAT → 安全组的端到端链路巡检。
+> **一句话定位**：跨 EIP -> SLB -> ECS -> RDS/Redis -> NAT -> 安全组的端到端链路巡检。
 > 不做资源变更，只做发现、诊断、推理和报告。
 
 ## 提示知识力
@@ -28,7 +28,7 @@ metadata:
 | **和 topo-discovery 有什么区别？** | `topo-discovery` 做静态拓扑发现和 HCL 导出；`aiops-cruise` 做动态健康巡检（含监控、诊断、推理）。拓扑发现是链路巡检的"前置步骤"而非终点 |
 | **和 cms-ops 有什么区别？** | `cms-ops` 查单个产品的监控指标；`aiops-cruise` 跨产品组合指标做链路关联推理（例如：SLB 健康检查失败 + ECS 正常 = 查网络连通性） |
 | **巡检为什么是"纯读"？** | 巡检是发现问题的眼睛，不是解决问题的手。发现问题后出"建议"，具体变更通过对应的 ops skill（如 `alicloud-ecs-ops`）由用户确认后执行 — 这是安全边界 |
-| **链路推理的价值** | 全链路巡检的价值不在于采集指标（CLI 都能做），而在于把分散的指标组合成一条"推理链"：A 现象 + B 现象 → 根因概率排序 → 可执行建议 |
+| **链路推理的价值** | 全链路巡检的价值不在于采集指标（CLI 都能做），而在于把分散的指标组合成一条"推理链"：A 现象 + B 现象 -> 根因概率排序 -> 可执行建议 |
 | **标签 vs 资源组，怎么选？** | 标签灵活但依赖维护（可能漏打）；资源组是云资源管理的原生单位，更可靠。推荐优先使用**资源组（ResourceGroupId）**扫描，标签作为回退方案。详见 `references/execution-guide.md` 的资源组章节 |
 
 ## Trigger & Scope
@@ -43,11 +43,11 @@ metadata:
 
 ### SHOULD NOT Use
 
-- 只查单个资源（如单台 ECS）→ 使用 `alicloud-ecs-ops` 或对应产品 ops skill
-- 需要创建/修改/删除资源 → 使用对应产品的 ops skill
-- 只查监控指标（不需要链路推理）→ 使用 `alicloud-cms-ops`
-- 只做拓扑发现（不需要健康诊断）→ 使用 `alicloud-topo-discovery`
-- 不涉及阿里云资源的巡检 → 不使用
+- 只查单个资源（如单台 ECS）-> 使用 `alicloud-ecs-ops` 或对应产品 ops skill
+- 需要创建/修改/删除资源 -> 使用对应产品的 ops skill
+- 只查监控指标（不需要链路推理）-> 使用 `alicloud-cms-ops`
+- 只做拓扑发现（不需要健康诊断）-> 使用 `alicloud-topo-discovery`
+- 不涉及阿里云资源的巡检 -> 不使用
 
 ### Cross-Skill References
 
@@ -68,7 +68,7 @@ metadata:
 scripts/agents/perceive/       # 感知层统一入口
 ├── __init__.sh                # 统一调度入口，支持 --mode 子集选择
 ├── infra/                     # 基础设施巡检（AIOps 核心链路）
-│   ├── healthcruise.sh        # 全链路巡检 EIP→SLB→ECS→RDS/Redis→NAT→安全组 | 每6h
+│   ├── healthcruise.sh        # 全链路巡检 EIP->SLB->ECS->RDS/Redis->NAT->安全组 | 每6h
 │   ├── toposcan.sh            # 拓扑发现 VPC/ECS/RDS/SLB 资源清单 | 每日/按需
 │   └── configdrift.sh         # 配置漂移检测 对比 Topo baseline | 按需
 ├── cost/                      # 成本监察
@@ -167,10 +167,10 @@ scripts/agents/perceive/       # 感知层统一入口
 
 1. 巡检范围（二选一）:
    [T] 按资源组扫描（推荐）— 输入资源组ID
-       → 例: rg-acfmvyfsd4znnoi
-       → 也可输入一个资源ID，自动反查所属资源组后扫描全组
+       -> 例: rg-acfmvyfsd4znnoi
+       -> 也可输入一个资源ID，自动反查所属资源组后扫描全组
    [L] 按标签扫描 — 输入标签键和标签值
-       → 例: customer / 烟台振华
+       -> 例: customer / 烟台振华
 
 2. 巡检场景:
    [1] 日常健康巡检
@@ -254,6 +254,8 @@ GCL Prompt 见 `references/prompt-templates.md`。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.5.0 | 2026-06-08 | P0-2 补漏 Sprint 19: 6 个 perceive shell Agent 路径迁移 (advisorscan / costwatch / healthcruise / toposcan / audittrail / securityscan) 全部从 `${AIOPS_DIR}/audit-results` 改为 `${RUNTIME_AUDIT_DIR}/perceive`; 修复 healthcruise.sh BUF-003 同类 bug (AIOPS_DIR 误指 runbooks/scripts); 6 个脚本均通过 bash 语法检查 + 路径解析验证; F8 同步 (TODO.md 索引 + Sprint 19 状态) |
+| 1.5.1 | 2026-06-08 | P0-4 补齐仓库根 `.gitignore`: 补漏凭证类 (`*.env` `credentials.json` `*.key` `*.pem` `*credentials*` `*secrets*`); 补漏 Python 工具链缓存 (`.ruff_cache/` `.mypy_cache/` `.tox/` `.coverage/` `htmlcov/`); 补漏 Node.js (`node_modules/` `package-lock.json`); 补漏 skill 报告目录 (`alicloud-*/reports/*` 排除 `reports/templates/`); 36 项 `git check-ignore` 跨 skill 验证通过 |
 | 1.4.0 | 2026-06-07 | Sprint 17 完成: Baseline 重采样能力 (`--resample --from-baseline <DATE> --as-of <DATE>` 复制式; `--as-of-range` 区间批量; `--fill-gaps` 智能补全; `--force` 覆盖保护; configdrift.sh 透传; 10 个单测全部通过) |
 | 1.3.0 | 2026-06-07 | Sprint 19 完成: 清理所有硬编码 `audit-results` 路径 (gcl-runner-ops 5 文件 + runbooks 7 脚本 + _shared.py CACHE_DIR); 创建 `runtime_cleanup.py` 工具 (dry-run/apply/size limit); Sprint 18 Python 端补修 (`get_runtime_root` 支持 `SKILLS_DIR`); 6 个单测全部通过 |
 | 1.2.0 | 2026-06-07 | Sprint 18 完成: 运行时数据统一根目录 (`.runtime/`, 5 个软链接兼容, .gitignore 增强, 共享 lib `runtime_root.sh`+`runtime_root.py`, `configdrift.sh`/`__init__.sh` 改造, BUF-003 + 路径 bug 修复, Sprint 16 9/9 单测无回归) |

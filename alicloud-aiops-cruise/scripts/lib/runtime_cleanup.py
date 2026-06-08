@@ -281,9 +281,9 @@ def main():
     print(f"\n[Size Limit] max={args.max_total_size_mb} MB ...")
     result = enforce_size_limit(runtime_root, args.max_total_size_mb, args.apply)
     if result["enforced"]:
-        print(f"  ⚠️  超限 ({result['total_size_mb']} > {result['limit_mb']} MB), 清理 {result['deleted']} 个文件")
+        print(f"  [WARN]  超限 ({result['total_size_mb']} > {result['limit_mb']} MB), 清理 {result['deleted']} 个文件")
     else:
-        print(f"  ✅ 未超限 ({result['total_size_mb']} <= {result['limit_mb']} MB)")
+        print(f"  PASS 未超限 ({result['total_size_mb']} <= {result['limit_mb']} MB)")
     report["actions"]["size_limit"] = result
 
     total_after = get_dir_size_mb(runtime_root)
@@ -291,10 +291,10 @@ def main():
     report["size_freed_mb"] = round(total_before - total_after, 2)
 
     print(f"\n==========================================")
-    print(f"  总大小: {total_before:.2f} MB → {total_after:.2f} MB")
+    print(f"  总大小: {total_before:.2f} MB -> {total_after:.2f} MB")
     print(f"  释放: {total_before - total_after:.2f} MB")
     if not args.apply:
-        print(f"  ⚠️  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
+        print(f"  [WARN]  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
     print(f"==========================================")
 
     if args.report:

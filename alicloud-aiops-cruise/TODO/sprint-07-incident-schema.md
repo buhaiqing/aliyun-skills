@@ -1,5 +1,6 @@
 # Sprint 7: Incident Schema 定义（P1）
 
+> **状态**: PASS 1/1
 > **业务价值**：将分散的巡检发现（critical_findings、warning_findings）统一为标准化的 Incident 数据结构，为 Sprint 9 (Incident 落地/可检索) 奠定数据基础。所有 runbook 输出一致，下游消费方（自动化工单、Post-Mortem 复盘、Sprint 11 ML 升级）有可依赖的契约
 > **交付物**：`references/incident-schema.md`（JSON Schema 规范 + 字段语义 + 集成到 4 个 runbook 输出）
 > **前置条件**：无（独立推进）
@@ -11,7 +12,7 @@
 
 | 原则 | 说明 |
 |------|------|
-| **稳定性** | 字段集变化必须有版本号（v1.0.0 → v1.1.0 不可破坏向后兼容） |
+| **稳定性** | 字段集变化必须有版本号（v1.0.0 -> v1.1.0 不可破坏向后兼容） |
 | **可追溯** | 每个 Incident 必须能从 `trace.commands_executed` 还原产生过程 |
 | **可检索** | 必填字段覆盖 (customer, resource_type, level, rule_id, timestamp) 四维度，便于 O(1) 索引 |
 | **可关联** | 必填字段 `dedup_key` 决定同源 Incident 是否合并 |

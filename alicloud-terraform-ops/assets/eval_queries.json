@@ -1,0 +1,168 @@
+{
+  "version": "1.0.0",
+  "description": "Terraform IaC skill trigger accuracy evaluation queries",
+  "queries": [
+    {
+      "id": "TF-001",
+      "query": "用 Terraform 创建一个 VPC，包含两个可用区的交换机，以及一个 NAT 网关",
+      "intent": "nl2hcl_vpc_with_nat",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_vpc", "alicloud_vswitch", "alicloud_nat_gateway"],
+      "difficulty": "basic"
+    },
+    {
+      "id": "TF-002",
+      "query": "生成 Terraform 配置：3 台 ECS 挂载到 SLB，后端连接 RDS MySQL",
+      "intent": "nl2hcl_web_stack",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_instance", "alicloud_slb", "alicloud_db_instance"],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-003",
+      "query": "帮我导入这个 VPC 的所有资源到 Terraform",
+      "intent": "reverse_engineering_import",
+      "expected_operations": ["reverse_engineering"],
+      "required_resources": ["alicloud_vpc", "alicloud_vswitch", "alicloud_route_table"],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-004",
+      "query": "把这台 RDS 实例转成 HCL 代码",
+      "intent": "reverse_engineering_single_resource",
+      "expected_operations": ["reverse_engineering"],
+      "required_resources": ["alicloud_db_instance"],
+      "difficulty": "basic"
+    },
+    {
+      "id": "TF-005",
+      "query": "terraform plan 一下 dev 环境的变化",
+      "intent": "terraform_plan",
+      "expected_operations": ["plan"],
+      "required_resources": [],
+      "difficulty": "basic"
+    },
+    {
+      "id": "TF-006",
+      "query": "apply 生产环境的变更，要求先 dry-run 验证",
+      "intent": "terraform_apply_with_dryrun",
+      "expected_operations": ["plan", "apply"],
+      "required_resources": [],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "TF-007",
+      "query": "销毁 staging 环境的所有资源",
+      "intent": "terraform_destroy",
+      "expected_operations": ["destroy"],
+      "required_resources": [],
+      "difficulty": "intermediate",
+      "safety_critical": true
+    },
+    {
+      "id": "TF-008",
+      "query": "创建一个新的 workspace 叫 uat",
+      "intent": "workspace_management",
+      "expected_operations": ["workspace_create"],
+      "required_resources": [],
+      "difficulty": "basic"
+    },
+    {
+      "id": "TF-009",
+      "query": "已有资源生成 terraform import 脚本",
+      "intent": "reverse_engineering_import_script",
+      "expected_operations": ["reverse_engineering"],
+      "required_resources": [],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-010",
+      "query": "用 Terraform 搭建一个带有 Redis 缓存的 Web 服务架构",
+      "intent": "nl2hcl_full_stack_with_cache",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_instance", "alicloud_kvstore_instance", "alicloud_slb"],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "TF-011",
+      "query": "执行 terraform destroy，确认 dev 环境可以删除",
+      "intent": "terraform_destroy_with_confirmation",
+      "expected_operations": ["destroy"],
+      "required_resources": [],
+      "difficulty": "intermediate",
+      "safety_critical": true
+    },
+    {
+      "id": "TF-012",
+      "query": "生成一个可复用的 ECS 模块",
+      "intent": "module_creation",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_instance"],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "TF-013",
+      "query": "配置 OSS backend 用于状态远程存储",
+      "intent": "backend_configuration",
+      "expected_operations": ["backend_setup"],
+      "required_resources": [],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-014",
+      "query": "帮我把这段描述转成 terraform：创建一个跨三个可用区的高可用架构",
+      "intent": "nl2hcl_ha_architecture",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_vpc", "alicloud_vswitch", "alicloud_slb"],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "TF-015",
+      "query": "terraform state 锁住了，怎么处理",
+      "intent": "troubleshooting_state_lock",
+      "expected_operations": ["troubleshooting"],
+      "required_resources": [],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-016",
+      "query": "查看 prod 环境的 terraform 输出",
+      "intent": "terraform_output",
+      "expected_operations": ["output"],
+      "required_resources": [],
+      "difficulty": "basic"
+    },
+    {
+      "id": "TF-017",
+      "query": "自然语言生成基础设施，需要一个包含 PolarDB MySQL 的 VPC 架构",
+      "intent": "nl2hcl_polardb_architecture",
+      "expected_operations": ["nl2hcl_generation"],
+      "required_resources": ["alicloud_vpc", "alicloud_polardb_cluster"],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "TF-018",
+      "query": "逆向生成已有 ECS 实例的 Terraform 配置",
+      "intent": "reverse_engineering_ecs",
+      "expected_operations": ["reverse_engineering"],
+      "required_resources": ["alicloud_instance"],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-019",
+      "query": "多环境管理，如何为 staging 和 prod 设置隔离",
+      "intent": "multi_environment_strategy",
+      "expected_operations": ["strategy_consultation"],
+      "required_resources": [],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "TF-020",
+      "query": "dry-run 验证生成的 HCL 配置",
+      "intent": "dry_run_validation",
+      "expected_operations": ["plan"],
+      "required_resources": [],
+      "difficulty": "basic"
+    }
+  ]
+}

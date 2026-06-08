@@ -2,7 +2,7 @@
 
 > **入口索引**。每个 runbook 定义一个巡检场景的完整流程、阈值、报告模板和持续改进机制。
 
-## 🧠 提示知识力
+## [NOTE] 提示知识力
 
 > **Runbook 不是文档，是可执行的知识。** 每个 runbook 包含 Agent 可逐行执行的 CLI 命令、jq 解析逻辑和决策分支。Runbook 是 Agent 和用户之间的"共同语言"——用户选场景，Agent 按 runbook 执行。
 
@@ -26,13 +26,13 @@
 
 | 操作类型 | 安全要求 | 违规后果 |
 |---|---|---|
-| **任何资源的删除/释放**（ECS/SLB/EIP/RDS/Redis/NAT/ACK） | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **任何资源的停止/关机** | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **任何资源的规格变更/降配/升配** | ❌ 不允许自动执行，只出建议 | Safety = 0，GCL 立即 ABORT |
-| **安全组规则增删** | ❌ 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
-| **AK/SK 输出** | ❌ 掩码为 `AKID****SKRET` | 严重违规 |
-| **全账号扫描** | ❌ 必须有客户标签/资源组筛选，自动跳过 default/空资源组 | 违规 |
-| **default资源组** | ❌ 自动禁用资源组模式，改走标签通道；除非用户明确输入 scope=full | Safety = 0 |
+| **任何资源的删除/释放**（ECS/SLB/EIP/RDS/Redis/NAT/ACK） | FAIL 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **任何资源的停止/关机** | FAIL 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **任何资源的规格变更/降配/升配** | FAIL 不允许自动执行，只出建议 | Safety = 0，GCL 立即 ABORT |
+| **安全组规则增删** | FAIL 不允许自动执行 | Safety = 0，GCL 立即 ABORT |
+| **AK/SK 输出** | FAIL 掩码为 `AKID****SKRET` | 严重违规 |
+| **全账号扫描** | FAIL 必须有客户标签/资源组筛选，自动跳过 default/空资源组 | 违规 |
+| **default资源组** | FAIL 自动禁用资源组模式，改走标签通道；除非用户明确输入 scope=full | Safety = 0 |
 
 > **底线**：本 Skill 是纯读（Read-Only）巡检，所有建议需用户确认后通过对应 ops skill 执行。
 
@@ -42,19 +42,19 @@
 
 ```
 Phase 1: 嗅探 + 拓扑发现
-  → 跨产品资源搜索 → 构建拓扑 → 输出初判报告
-  → 置信度 > 0.8 自动继续；≤ 0.8 输出待确认清单
+  -> 跨产品资源搜索 -> 构建拓扑 -> 输出初判报告
+  -> 置信度 > 0.8 自动继续；≤ 0.8 输出待确认清单
 
 Phase 2: 深度采集 + 诊断
-  → CloudMonitor 指标（6h + 环比）
-  → [可选] DAS 数据库深度诊断（JIT Go SDK）
-  → [可选] CloudAssistant 内检测
-  → [可选] ActionTrail 操作审计
+  -> CloudMonitor 指标（6h + 环比）
+  -> [可选] DAS 数据库深度诊断（JIT Go SDK）
+  -> [可选] CloudAssistant 内检测
+  -> [可选] ActionTrail 操作审计
 
 Phase 3: 推理 + 报告
-  → 对照推理规则表做链路关联推理
-  → 容量预判（趋势分析）
-  → 双格式输出（Markdown + JSON）
+  -> 对照推理规则表做链路关联推理
+  -> 容量预判（趋势分析）
+  -> 双格式输出（Markdown + JSON）
 ```
 
 ### 验收标准
@@ -88,34 +88,34 @@ Phase 3: 推理 + 报告
 ```
 
 改进触发条件：
-1. **误报/漏报** — 人工审阅发现评分与实际情况不符 → 调阈值
-2. **新发现** — 巡检中发现未覆盖的链路组件 → 新增 Analyzer + 更新 runbook
-3. **架构变更** — 客户业务架构变化（如从 ECS 迁移至 ACK）→ 更新 runbook 流程
-4. **API 变更** — 阿里云 API 版本更新 → 更新 CLI 参数
+1. **误报/漏报** — 人工审阅发现评分与实际情况不符 -> 调阈值
+2. **新发现** — 巡检中发现未覆盖的链路组件 -> 新增 Analyzer + 更新 runbook
+3. **架构变更** — 客户业务架构变化（如从 ECS 迁移至 ACK）-> 更新 runbook 流程
+4. **API 变更** — 阿里云 API 版本更新 -> 更新 CLI 参数
 
 ## 文件结构
 
 ```
 alicloud-aiops-cruise/
-├── SKILL.md                                 ← 主入口（本文件）
+├── SKILL.md                                 <- 主入口（本文件）
 ├── runbooks/
-│   ├── 00-index.md                          ← 索引（本文档）
-│   ├── 01-daily-health-check.md             ← 日常健康巡检
-│   ├── 02-emergency-troubleshoot.md         ← 故障应急排查
-│   ├── 03-capacity-planning.md              ← 容量规划
-│   ├── 04-pre-launch-check.md              ← 大促前预检
-│   ├── 05-slow-query-diagnosis.md          ← 慢查询诊断与治理
-│   ├── 06-connection-storm-selfheal.md    ← 数据库连接风暴自愈
-│   ├── 07-bottleneck-localization.md       ← 全链路性能瓶颈定位
-│   ├── 08-redis-performance-diagnosis.md  ← Redis/Tair 缓存性能诊断
-│   └── 09-auto-scaling-optimization.md    ← 弹性伸缩性能优化
+│   ├── 00-index.md                          <- 索引（本文档）
+│   ├── 01-daily-health-check.md             <- 日常健康巡检
+│   ├── 02-emergency-troubleshoot.md         <- 故障应急排查
+│   ├── 03-capacity-planning.md              <- 容量规划
+│   ├── 04-pre-launch-check.md              <- 大促前预检
+│   ├── 05-slow-query-diagnosis.md          <- 慢查询诊断与治理
+│   ├── 06-connection-storm-selfheal.md    <- 数据库连接风暴自愈
+│   ├── 07-bottleneck-localization.md       <- 全链路性能瓶颈定位
+│   ├── 08-redis-performance-diagnosis.md  <- Redis/Tair 缓存性能诊断
+│   └── 09-auto-scaling-optimization.md    <- 弹性伸缩性能优化
 ├── references/
-│   ├── threshold-definitions.md             ← 阈值 + 规格上限速查
-│   ├── inference-rules.md                   ← 链路推理规则表（20+ pattern）
-│   ├── prompt-templates.md                  ← GCL prompt 模板
-│   ├── rubric.md                            ← GCL 评分矩阵
-│   └── execution-guide.md                   ← CLI 命令速查
-├── assets/code-snippets/                    ← Go 零件（Agent 动态生成用）
-├── reports/templates/                       ← 报告模板
-└── tests/scenario-check-cases.md            ← 场景验证案例
+│   ├── threshold-definitions.md             <- 阈值 + 规格上限速查
+│   ├── inference-rules.md                   <- 链路推理规则表（20+ pattern）
+│   ├── prompt-templates.md                  <- GCL prompt 模板
+│   ├── rubric.md                            <- GCL 评分矩阵
+│   └── execution-guide.md                   <- CLI 命令速查
+├── assets/code-snippets/                    <- Go 零件（Agent 动态生成用）
+├── reports/templates/                       <- 报告模板
+└── tests/scenario-check-cases.md            <- 场景验证案例
 ```

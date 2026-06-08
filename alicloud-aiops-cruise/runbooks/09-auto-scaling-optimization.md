@@ -16,17 +16,17 @@ execution_time_estimate: "3-10 分钟"
 
 当容量规划预测资源将在 7 天内不足，或 ECS/ACK 节点持续高负载时，采集性能趋势、评估扩容/缩容方案，联动 `auto-scaling-orch` 决策引擎生成扩缩容计划。**本 runbook 是评估决策层，只出建议不自动执行。**
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **扩缩容执行** | 🔴 [SUGGESTED] 所有扩缩容操作需用户确认后执行 |
-| **安全组规则增删** | ❌ 不允许自动执行 |
-| **读取型操作** | 🟢 [AUTO-QUIET] 自动执行 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **扩缩容执行** | CRITICAL [SUGGESTED] 所有扩缩容操作需用户确认后执行 |
+| **安全组规则增删** | FAIL 不允许自动执行 |
+| **读取型操作** | SAFE [AUTO-QUIET] 自动执行 |
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **弹性伸缩的核心原则：**
 >
@@ -51,7 +51,7 @@ execution_time_estimate: "3-10 分钟"
 
 - 无历史数据的新建集群
 - 无需扩容/缩容的正常负载
-- 需要立即执行扩缩容 → 委托 `auto-scaling-orch` 或 `ess-ops`
+- 需要立即执行扩缩容 -> 委托 `auto-scaling-orch` 或 `ess-ops`
 
 ---
 
@@ -177,17 +177,17 @@ for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId // empty'); do
 
   if [ "$(echo "$DAILY_CHANGE > 0" | bc -l 2>/dev/null)" = "1" ]; then
     DAYS_TO_80=$(echo "scale=0; (80 - $LAST) / $DAILY_CHANGE" | bc 2>/dev/null || echo "永不")
-    echo "  ECS $INST_ID: 最近7天 CPU $FIRST% → $LAST%, 日增 ${DAILY_CHANGE}%/天, 预计 ${DAYS_TO_80} 天后达 80%"
+    echo "  ECS $INST_ID: 最近7天 CPU $FIRST% -> $LAST%, 日增 ${DAILY_CHANGE}%/天, 预计 ${DAYS_TO_80} 天后达 80%"
     
     if [ "$(echo "$DAYS_TO_80 < 7" | bc -l 2>/dev/null)" = "1" ]; then
-      echo "  🔴 7 天内达阈值! 建议立即规划扩容"
+      echo "  CRITICAL 7 天内达阈值! 建议立即规划扩容"
     elif [ "$(echo "$DAYS_TO_80 < 30" | bc -l 2>/dev/null)" = "1" ]; then
-      echo "  🟡 30 天内达阈值，建议纳入容量规划"
+      echo "  WARNING 30 天内达阈值，建议纳入容量规划"
     fi
   elif [ "$(echo "$LAST < 20" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$DAILY_CHANGE < 0" | bc -l 2>/dev/null)" = "1" ]; then
     echo "  ℹ️ ECS $INST_ID: 持续低负载 (CPU=${LAST}%), 建议评估缩容"
   else
-    echo "  ✅ ECS $INST_ID: 负载平稳"
+    echo "  PASS ECS $INST_ID: 负载平稳"
   fi
 done
 ```
@@ -215,7 +215,7 @@ for SG_ID in $(echo "$ESS_LIST" | jq -r '.[].ScalingGroupId // empty'); do
   echo "  ESS $SG_NAME: 24h 内伸缩活动 ${SCALING_ACTIVITIES} 次"
 
   if [ "$SCALING_ACTIVITIES" -ge 5 ]; then
-    echo "  🔴 触发熔断! 24h 内扩缩 5+ 次，建议暂停自动伸缩并排查震荡原因"
+    echo "  CRITICAL 触发熔断! 24h 内扩缩 5+ 次，建议暂停自动伸缩并排查震荡原因"
     FUSE_TRIGGERED="YES"
   fi
 
@@ -230,7 +230,7 @@ for SG_ID in $(echo "$ESS_LIST" | jq -r '.[].ScalingGroupId // empty'); do
   echo "  当前: ${CURRENT_CAPACITY} | 最小: ${MIN_SIZE} | 最大: ${MAX_SIZE}"
   
   if [ "$CURRENT_CAPACITY" -ge "$MAX_SIZE" ] && [ "$MAX_SIZE" -gt 0 ]; then
-    echo "  🟡 已达最大实例数 $MAX_SIZE，扩容需先调整伸缩组上限"
+    echo "  WARNING 已达最大实例数 $MAX_SIZE，扩容需先调整伸缩组上限"
     AT_MAX_CAPACITY="YES"
   fi
 done
@@ -285,7 +285,7 @@ for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId // empty'); do
 PLAN_JSON
 )
     SCALE_PLANS=$(echo "$SCALE_PLANS" | jq --argjson plan "$PLAN" '. + [$plan]')
-    echo "  🔴 [SCALE_OUT] $INST_TYPE CPU=$CPU_1H_PEAK% → 建议扩容: ${CURRENT_INSTANCES} → ${TARGET_COUNT} 台"
+    echo "  CRITICAL [SCALE_OUT] $INST_TYPE CPU=$CPU_1H_PEAK% -> 建议扩容: ${CURRENT_INSTANCES} -> ${TARGET_COUNT} 台"
 
   # 缩容条件：CPU < 20% 持续低负载
   elif [ "$(echo "$CPU_1H_PEAK < 20" | bc -l 2>/dev/null)" = "1" ] && [ "$FUSE_TRIGGERED" != "YES" ]; then
@@ -312,10 +312,10 @@ PLAN_JSON
 PLAN_JSON
 )
       SCALE_PLANS=$(echo "$SCALE_PLANS" | jq --argjson plan "$PLAN" '. + [$plan]')
-      echo "  🟢 [SCALE_IN] $INST_TYPE CPU=$CPU_1H_PEAK% → 建议缩容: ${CURRENT_INSTANCES} → ${SAFE_COUNT} 台"
+      echo "  SAFE [SCALE_IN] $INST_TYPE CPU=$CPU_1H_PEAK% -> 建议缩容: ${CURRENT_INSTANCES} -> ${SAFE_COUNT} 台"
     fi
   else
-    echo "  ✅ $INST_TYPE: 负载正常 (CPU=${CPU_1H_PEAK}%)"
+    echo "  PASS $INST_TYPE: 负载正常 (CPU=${CPU_1H_PEAK}%)"
   fi
 done
 
@@ -330,14 +330,14 @@ echo "[INFO] 共生成 $PLAN_COUNT 个扩缩容计划"
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  📈 弹性伸缩性能优化报告
+  [UP] 弹性伸缩性能优化报告
 ═══════════════════════════════════════════════════════
   报告ID: scaling-opt-$CUSTOMER-$(date +%Y%m%dT%H%M%SZ)
   客户: $CUSTOMER | 区域: $REGION | 时间: $(date)
   窗口: 30d 趋势 + 6h 实时
 ═══════════════════════════════════════════════════════
 
-## 📊 总览
+## [STATS] 总览
 
 | 维度 | 结果 |
 |------|------|
@@ -347,21 +347,21 @@ echo "[INFO] 共生成 $PLAN_COUNT 个扩缩容计划"
 | 已到最大容量 | ${AT_MAX_CAPACITY:-否} |
 | 账户余额 | ¥${BALANCE} |
 
-## 📋 扩缩容计划
+## [LIST] 扩缩容计划
 
-| # | 实例 | 当前 CPU | 建议操作 | 当前→目标 | 对应场景 |
+| # | 实例 | 当前 CPU | 建议操作 | 当前->目标 | 对应场景 |
 |:-:|:-----|:--------:|:--------:|:---------:|:--------:|
-| 1 | ${INST_TYPE} | ${CPU_1H_PEAK}% | SCALE_OUT | ${CURRENT}→${TARGET} 台 | S1 CPU指标驱动 |
+| 1 | ${INST_TYPE} | ${CPU_1H_PEAK}% | SCALE_OUT | ${CURRENT}->${TARGET} 台 | S1 CPU指标驱动 |
 
-## 🔴 熔断与风险检查
+## CRITICAL 熔断与风险检查
 
 ${FUSE_CHECK_REPORT}
 
-## 📌 执行建议
+## [PIN] 执行建议
 
 ${EXECUTION_SUGGESTIONS}
 
-## 💰 成本影响
+##  成本影响
 
 - 扩容估算: 请运行 billing-ops 评估新增实例的费用
 - 缩容估算: 请运行 billing-ops 评估释放实例的节省
@@ -414,7 +414,7 @@ ${EXECUTION_SUGGESTIONS}
 | 反馈来源 | 触发条件 | 改进动作 | 责任人 |
 |----------|---------|---------|--------|
 | 误判扩缩 | 扩容后负载未降 / 缩容后负载飙升 | 调整目标利用率 / 增加预热期 | 运维负责人 |
-| 熔断误触 | 正常的业务高峰被熔断 | 提升熔断阈值(5次/24h→8次) | 运维负责人 |
+| 熔断误触 | 正常的业务高峰被熔断 | 提升熔断阈值(5次/24h->8次) | 运维负责人 |
 | 漏判 | 新增 ACK 节点池未纳入评估 | 增加 ACK 节点池扫描 | Agent 维护者 |
 
 ---

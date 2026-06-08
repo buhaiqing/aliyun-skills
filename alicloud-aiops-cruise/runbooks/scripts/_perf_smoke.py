@@ -5,8 +5,8 @@ _perf_smoke.py — Sprint 14/15 性能优化冒烟测试
 目的: 验证 q_cms_batch / q_cms_batch_by_dim / cache TTL / Semaphore 改造不破坏行为, 量化性能收益.
 
 测试项 (Sprint 14):
-  T1: q_cms_batch([]) 边界 → []
-  T2: q_cms_batch 顺序保留 (job[i] → results[i])
+  T1: q_cms_batch([]) 边界 -> []
+  T2: q_cms_batch 顺序保留 (job[i] -> results[i])
   T3: q_cms_batch 并发调用 subprocess.run (实测 <串行耗时)
   T4: 缓存命中 (同一 cmd 第二次 q_cached 不调 subprocess)
   T5: CMS Semaphore 默认 20 (环境变量未设置时)
@@ -14,11 +14,11 @@ _perf_smoke.py — Sprint 14/15 性能优化冒烟测试
 
 测试项 (Sprint 15):
   T7: q_cms_batch_by_dim 基础: 单次 API 返回多 instance 按 dim_key 分组
-  T8: q_cms_batch_by_dim 拆批: 100 instance + batch_size=50 → 2 次 API
-  T9: q_cms_batch_by_dim 缓存隔离: 不同 dim_values 列表 → 不同缓存 key
-  T10: q_cms_batch_by_dim 缓存命中: 同一 dim_values 重复调用 → cache hit
+  T8: q_cms_batch_by_dim 拆批: 100 instance + batch_size=50 -> 2 次 API
+  T9: q_cms_batch_by_dim 缓存隔离: 不同 dim_values 列表 -> 不同缓存 key
+  T10: q_cms_batch_by_dim 缓存命中: 同一 dim_values 重复调用 -> cache hit
   T11: [回归] per-instance 调用 vs q_cms_batch_by_dim 输出 dict 完全一致
-  T12: [性能] 100 ECS × 3 metric × 2 period: 600 次 → ≤12 次 subprocess.run
+  T12: [性能] 100 ECS × 3 metric × 2 period: 600 次 -> ≤12 次 subprocess.run
 
 执行: cd alicloud-aiops-cruise/runbooks/scripts && python3 _perf_smoke.py
 """
@@ -92,7 +92,7 @@ class TestQcmsBatch(unittest.TestCase):
         """T1: 空 jobs 列表直接返回 []"""
         result = _shared.q_cms_batch([])
         self.assertEqual(result, [])
-        print("  [PASS] T1: q_cms_batch([]) → []")
+        print("  [PASS] T1: q_cms_batch([]) -> []")
 
     def test_t2_preserves_order(self):
         """T2: 返回结果与 jobs 等长且顺序对应"""
@@ -105,7 +105,7 @@ class TestQcmsBatch(unittest.TestCase):
                 # q_cached 第一次会 cache miss, 后续 hit. 但每个 job 唯一 key 所以都是 miss.
                 # 验证: 至少结果是 dict 或 None, 不抛异常
                 self.assertTrue(r is None or isinstance(r, dict))
-        print(f"  [PASS] T2: q_cms_batch 5 jobs → 5 results (顺序保留)")
+        print(f"  [PASS] T2: q_cms_batch 5 jobs -> 5 results (顺序保留)")
 
     def test_t3_concurrency_speedup(self):
         """T3: 10 个 job × 50ms 串行需 500ms, 并发应 < 200ms"""
@@ -143,10 +143,10 @@ class TestCacheAndSemaphore(unittest.TestCase):
         stats = _shared.cache_stats()
         self.assertEqual(stats["hit"], 2)
         self.assertEqual(stats["miss"], 1)
-        print(f"  [PASS] T4: 3 次 q_cached 同一 cmd → subprocess 1 次 (hit=2, miss=1)")
+        print(f"  [PASS] T4: 3 次 q_cached 同一 cmd -> subprocess 1 次 (hit=2, miss=1)")
 
     def test_t5_cms_semaphore_default_20(self):
-        """T5: CMS Semaphore 默认 20 并发 (Sprint 14: 5→20)"""
+        """T5: CMS Semaphore 默认 20 并发 (Sprint 14: 5->20)"""
         self.assertEqual(_shared._CMS_SEM._value, 20)
         # 环境变量覆盖路径
         # (子进程验证避免污染当前 Semaphore)
@@ -158,7 +158,7 @@ class TestCacheAndSemaphore(unittest.TestCase):
             capture_output=True, text=True, env=env, timeout=5,
         )
         self.assertIn("30", r.stdout, f"env override should yield 30, got: {r.stdout!r}")
-        print(f"  [PASS] T5: CMS Semaphore 默认 20, 环境变量 AIOPS_CMS_CONCURRENCY 可覆盖 (Sprint 14: 5→20)")
+        print(f"  [PASS] T5: CMS Semaphore 默认 20, 环境变量 AIOPS_CMS_CONCURRENCY 可覆盖 (Sprint 14: 5->20)")
 
     def test_t6_cache_ttl_extended(self):
         """T6: 资源清单类 TTL 已升级到 3600s (Sprint 14)"""
@@ -308,7 +308,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         print(f"  [PASS] T8: 3 instance 单次 API 返回, 按 instanceId 正确分组 (subprocess={counter['n']})")
 
     def test_t9_batching(self):
-        """T9: 100 instance + batch_size=50 → 2 次 API 调用 (拆批)"""
+        """T9: 100 instance + batch_size=50 -> 2 次 API 调用 (拆批)"""
         fake, counter = _make_dim_aware_fake_run(latency_s=0)
         rids = [f"i-{i}" for i in range(100)]
         with patch.object(_shared.subprocess, "run", side_effect=fake):
@@ -324,19 +324,19 @@ class TestQcmsBatchByDim(unittest.TestCase):
         print(f"  [PASS] T9: 100 instance 拆 2 批, subprocess={counter['n']} 次 (vs 100 次 per-instance)")
 
     def test_t10_cache_isolation(self):
-        """T10: 不同 dim_values 列表 → 不同缓存 key, 互不污染"""
+        """T10: 不同 dim_values 列表 -> 不同缓存 key, 互不污染"""
         fake, counter = _make_dim_aware_fake_run(latency_s=0)
         with patch.object(_shared.subprocess, "run", side_effect=fake):
             d1 = _shared.q_cms_batch_by_dim("ns", "m", "instanceId", ["i-1", "i-2"], "300", "s", "e")
             d2 = _shared.q_cms_batch_by_dim("ns", "m", "instanceId", ["i-3", "i-4"], "300", "s", "e")
-        # 2 次不同 dim_values → 2 次 API 调用
+        # 2 次不同 dim_values -> 2 次 API 调用
         self.assertEqual(counter["n"], 2)
         self.assertEqual(set(d1.keys()), {"i-1", "i-2"})
         self.assertEqual(set(d2.keys()), {"i-3", "i-4"})
-        print(f"  [PASS] T10: 不同 dim_values 列表 → 2 个独立 API 调用 (缓存 key 隔离)")
+        print(f"  [PASS] T10: 不同 dim_values 列表 -> 2 个独立 API 调用 (缓存 key 隔离)")
 
     def test_t11_cache_hit(self):
-        """T11: 同一 dim_values 列表重复调用 → 第二次走 cache"""
+        """T11: 同一 dim_values 列表重复调用 -> 第二次走 cache"""
         fake, counter = _make_dim_aware_fake_run(latency_s=0)
         rids = ["i-1", "i-2", "i-3"]
         with patch.object(_shared.subprocess, "run", side_effect=fake):
@@ -348,7 +348,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         # 两次结果应该一致
         self.assertEqual(d1.keys(), d2.keys())
         self.assertEqual(d2.keys(), d3.keys())
-        print(f"  [PASS] T11: 3 次同一 dim_values → subprocess 1 次 (cache hit)")
+        print(f"  [PASS] T11: 3 次同一 dim_values -> subprocess 1 次 (cache hit)")
 
     def test_t12_regression_equivalence(self):
         """T12: [关键回归] per-instance 调用 vs q_cms_batch_by_dim 输出 dict 完全一致
@@ -386,7 +386,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         print(f"  [PASS] T12: per-instance vs by_dim 行为完全一致 (20 instance, 1 次 API vs 20 次)")
 
     def test_t13_perf_100ecs_3metric_2period(self):
-        """T13: [性能目标] 100 ECS × 3 metric × 2 period: 600 次 → ≤12 次 subprocess.run
+        """T13: [性能目标] 100 ECS × 3 metric × 2 period: 600 次 -> ≤12 次 subprocess.run
 
         模拟 daily-health-check._collect_one 的典型负载, 量化 Sprint 15 收益.
         预期: 2 period × 3 metric × ceil(100/50) = 12 次

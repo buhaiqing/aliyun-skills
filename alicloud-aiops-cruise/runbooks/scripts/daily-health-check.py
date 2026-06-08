@@ -279,7 +279,7 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
         for rid in all_rids:
             rk = f"{ns}_{rid}"
 
-            # 3a. 实时数据 → 算 avg → 写 metrics
+            # 3a. 实时数据 -> 算 avg -> 写 metrics
             dps_rt = realtime_data[mk].get(rid, [])
             if dps_rt:
                 vals = [p.get("Average", 0) for p in dps_rt if isinstance(p, dict)]
@@ -289,7 +289,7 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
                         metrics[rk] = {"_type": name, "_id": rid}
                     metrics[rk][mk] = round(avg, 2)
 
-            # 3b. 基线数据 → 异常评分
+            # 3b. 基线数据 -> 异常评分
             dps_bl = baseline_data_raw[mk].get(rid, [])
             if not dps_bl:
                 continue
@@ -319,7 +319,7 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
                     z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
             elif method == ANOMALY_METHOD_PROPHET:  # Sprint 11.5
                 z, level = compute_anomaly_score_prophet(bvals, btimes, bvals[-1])
-                if z is None:  # 数据不足/模型失败 fallback STL → Z-Score
+                if z is None:  # 数据不足/模型失败 fallback STL -> Z-Score
                     z, level = compute_anomaly_score_stl(bvals, bvals[-1])
                     if z is None:
                         z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
@@ -375,7 +375,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
         probe = q_cached(["cs", "GET", "/clusters/" + cid + "/components/ags-metrics-collector", "--region", region], timeout=10)
         has_node_monitoring = probe is not None and isinstance(probe, dict) and probe.get("state") == "running"
         if not has_node_monitoring:
-            log("WARN", "ags-metrics-collector not installed on cluster=%s → skip node-level CMS backtrack (~70s saved)" % cname)
+            log("WARN", "ags-metrics-collector not installed on cluster=%s -> skip node-level CMS backtrack (~70s saved)" % cname)
 
         for metric, mk in [("cluster.cpu.utilization", "cpu_util"), ("cluster.memory.utilization", "mem_util")]:
             data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s", "--MetricName", metric,
@@ -776,7 +776,7 @@ def _main_locked():
     args = ap.parse_args()
     print(f"\n{'=' * 50}\n  {os.path.basename(__file__)} v2.3.0\n{'=' * 50}")
     if args.describe:
-        print("Phase 0: 资源发现 → Phase 0.5: 确认 → Phase 1+2: 采集+评分 → Phase 3: 报告")
+        print("Phase 0: 资源发现 -> Phase 0.5: 确认 -> Phase 1+2: 采集+评分 -> Phase 3: 报告")
         return
     if not gate(region := args.region or os.environ.get("ALIBABA_CLOUD_REGION_ID", "")):
         sys.exit(1)

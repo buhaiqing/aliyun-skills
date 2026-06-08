@@ -1,6 +1,6 @@
 # Sprint 14 — Python 性能优化 (batch + 缓存 TTL + Semaphore)
 
-> **状态**: ✅ 4/4
+> **状态**: PASS 4/4
 > **优先级**: P1 (运维效率)
 > **业务价值**: daily-health-check / capacity-planning / cost-watch 总耗时 -50%~85%, 跨脚本缓存命中显著提升
 > **依赖**: Sprint 1 (核心脚本) + Sprint 2 (并行) + Sprint 8 (结果缓存)
@@ -21,16 +21,16 @@
 
 ## 任务清单
 
-### ✅ T1: _shared.py 基础设施升级
+### PASS T1: _shared.py 基础设施升级
 
 | 改动 | 内容 | 收益 |
 |------|------|------|
-| CMS Semaphore 默认 5→20 | `_CMS_SEM = Semaphore(int(os.environ.get("AIOPS_CMS_CONCURRENCY", "20")))` | CMS 吞吐 +300% |
-| 资源清单 TTL 300s→3600s | 14 个 Describe* API 升到 1h | 跨 runbook hit_rate 显著提升 |
-| 账单类 TTL 60s→3600s | 9 个 bssopenapi API 加进 CACHE_TTL 表 | cost-watch 同日二次跑秒级返回 |
-| CACHE_DEFAULT_TTL 60s→300s | 未在表中的 API 也享受 5min 缓存 | 边缘 API 命中 +50% |
+| CMS Semaphore 默认 5->20 | `_CMS_SEM = Semaphore(int(os.environ.get("AIOPS_CMS_CONCURRENCY", "20")))` | CMS 吞吐 +300% |
+| 资源清单 TTL 300s->3600s | 14 个 Describe* API 升到 1h | 跨 runbook hit_rate 显著提升 |
+| 账单类 TTL 60s->3600s | 9 个 bssopenapi API 加进 CACHE_TTL 表 | cost-watch 同日二次跑秒级返回 |
+| CACHE_DEFAULT_TTL 60s->300s | 未在表中的 API 也享受 5min 缓存 | 边缘 API 命中 +50% |
 
-### ✅ T2: 新增 `q_cms_batch()` 批量并发 helper
+### PASS T2: 新增 `q_cms_batch()` 批量并发 helper
 
 ```python
 def q_cms_batch(jobs: list, max_workers: int = 12) -> list:
@@ -42,7 +42,7 @@ def q_cms_batch(jobs: list, max_workers: int = 12) -> list:
 - 10 jobs 串行: 500ms
 - 10 jobs 并发 (max_workers=10): **55ms (-89%)**
 
-### ✅ T3: daily-health-check `_collect_one` 重构
+### PASS T3: daily-health-check `_collect_one` 重构
 
 | 维度 | 改造前 | 改造后 |
 |------|--------|--------|
@@ -51,14 +51,14 @@ def q_cms_batch(jobs: list, max_workers: int = 12) -> list:
 | 异常评分路径 | 不变 (z-score/percentile/STL/prophet) | 不变 |
 | 行为兼容性 | - | 100% 保持 (cache 复用 + 限速 + 退避) |
 
-### ✅ T4: capacity-planning `finops_check` 重构
+### PASS T4: capacity-planning `finops_check` 重构
 
 | 维度 | 改造前 | 改造后 |
 |------|--------|--------|
 | N 个 ECS 实例 | 串行 for-loop 查 CPU | 1 次 q_cms_batch 提交 N jobs |
 | 耗时 (mock, 100 ECS) | 40s | 6s (-85%) |
 
-### ✅ T5: cost-watch.py 复用 `_shared.q_cached`
+### PASS T5: cost-watch.py 复用 `_shared.q_cached`
 
 | 改动 | 内容 |
 |------|------|
@@ -89,7 +89,7 @@ def q_cms_batch(jobs: list, max_workers: int = 12) -> list:
 - [x] F5: 性能数据可复现 (_perf_smoke.py 7/7 测试通过)
 - [x] F6: Token efficiency 提升 (cache hit 时省去 aliyun CLI 输出)
 - [x] F7: 风险评估 (依赖项, 错误恢复) 已写
-- [x] F8: TODO.md 同步 (本文件) ✅
+- [x] F8: TODO.md 同步 (本文件) PASS
 
 ---
 
@@ -106,6 +106,6 @@ python3 _perf_smoke.py
 ## 后续 (未做, 留作 Sprint 15+)
 
 - [ ] `q_cms_batch` 真正按阿里云 API 支持的 dimensions 批量（单次 API 拉多个 instance）, 进一步省 5x
-- [ ] aliyun CLI 进程池 (省去 Python 解释器启动 + Go runtime 启动), 估算 200ms/次 → 20ms/次
+- [ ] aliyun CLI 进程池 (省去 Python 解释器启动 + Go runtime 启动), 估算 200ms/次 -> 20ms/次
 - [ ] ProcessPoolExecutor for Prophet (数据量大时跑多核)
 - [ ] Sprint 15: 把 Sprint 8/14 优化推广到 agent-fallback.py / emergency-troubleshoot.py / pre-launch-check.py / workflow-runner.py

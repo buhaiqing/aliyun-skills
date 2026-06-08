@@ -27,7 +27,7 @@ Rubric 要求:
 请按以下步骤执行：
 1. 读取 runbook 中的步骤定义
 2. 通过 aliyun CLI 执行巡检步骤（注意：所有操作只读，不执行任何写操作）
-3. 如需 DAS 深度诊断 → 从 assets/code-snippets/ 动态生成 Go 代码 → go run 执行
+3. 如需 DAS 深度诊断 -> 从 assets/code-snippets/ 动态生成 Go 代码 -> go run 执行
 4. 输出结果 + 执行追踪 (trace)
 
 输出格式：JSON + Markdown（根据 runbook 定义）
@@ -72,10 +72,10 @@ Critic 评分: {{output.critic_scores}}
 Critic 反馈: {{output.critic_suggestions}}
 
 决策：
-- 如果所有评分 ≥ 阈值 → PASS，返回 Generator 结果
-- 如果 Safety = 0 → ABORT（纯读巡检不应出现 Safety=0，如出现说明严重违规）
-- 如果 iter < max_iter → 将 Critic 反馈注入 Generator 重试
-- 如果 iter >= max_iter → 返回当前最佳结果 + 未解决的 rubric 项
+- 如果所有评分 ≥ 阈值 -> PASS，返回 Generator 结果
+- 如果 Safety = 0 -> ABORT（纯读巡检不应出现 Safety=0，如出现说明严重违规）
+- 如果 iter < max_iter -> 将 Critic 反馈注入 Generator 重试
+- 如果 iter >= max_iter -> 返回当前最佳结果 + 未解决的 rubric 项
 
 阈值要求：
 - Correctness ≥ 0.5

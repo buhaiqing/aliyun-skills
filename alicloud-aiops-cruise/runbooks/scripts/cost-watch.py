@@ -355,8 +355,8 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     # 1) Cost anomaly
     lines.append("## 1️⃣ 成本异常检测")
     lines.append("")
-    level_emoji = {"P0_CRITICAL": "🔴", "P1_WARNING": "🟡", "OK": "✅"}
-    emoji = level_emoji.get(anomaly.get("level", "OK"), "✅")
+    level_icon = {"P0_CRITICAL": "CRITICAL", "P1_WARNING": "WARNING", "OK": "PASS"}
+    emoji = level_icon.get(anomaly.get("level", "OK"), "PASS")
     lines.append(f"{emoji} **等级**: {anomaly.get('level', 'OK')}")
     lines.append(f"")
     lines.append(f"| 指标 | 金额 (CNY) |")
@@ -378,7 +378,7 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
         sorted_items = sorted(anomaly_items, key=lambda x: abs(x.get('change', 0)), reverse=True)
         for p in sorted_items[:10]:
             chg = p.get('change', 0)
-            sign = "🔴" if chg > 30 else ("🟡" if chg > 10 else ("🟢" if chg < -30 else ""))
+            sign = "CRITICAL" if chg > 30 else ("WARNING" if chg > 10 else ("SAFE" if chg < -30 else ""))
             daily_cur = p.get('daily_current', 0)
             daily_las = p.get('daily_last', 0)
             monthly_est = daily_cur * 30  # projected full-month cost
@@ -388,16 +388,16 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     lines.append("## 2️⃣ 资源到期预警")
     lines.append("")
     if expiry["total_expiring"] > 0:
-        lines.append(f"⚠️ **{expiry['total_expiring']}** 个资源即将到期")
+        lines.append(f"[WARN] **{expiry['total_expiring']}** 个资源即将到期")
         lines.append("")
         for rp in expiry["resource_packages"]:
-            lines.append(f"- 🔴 资源包 `{rp['id']}` ({rp['type']}): 剩余 {rp['remaining']}/{rp['total']}, {rp['days_left']} 天后到期")
+            lines.append(f"- CRITICAL 资源包 `{rp['id']}` ({rp['type']}): 剩余 {rp['remaining']}/{rp['total']}, {rp['days_left']} 天后到期")
         for sp in expiry["savings_plans"]:
-            warn = "🔴" if sp["pool_value"] < 100 else "🟡"
+            warn = "CRITICAL" if sp["pool_value"] < 100 else "WARNING"
             lines.append(f"- {warn} 储蓄计划 `{sp['id']}` ({sp['type']}): 池值 {sp['pool_value']:.0f} CNY, {sp['days_left']} 天后到期")
         lines.append("")
     else:
-        lines.append("✅ 无 30 天内到期的资源。")
+        lines.append("PASS 无 30 天内到期的资源。")
         lines.append("")
 
     lines.append("---")
@@ -407,8 +407,8 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     lines.append("## 3️⃣ RI/SCU 覆盖率")
     lines.append("")
     cov = coverage["coverage_pct"]
-    cov_emoji = "🔴" if cov < 70 else ("🟡" if cov < 80 else "✅")
-    lines.append(f"{cov_emoji} **整体覆盖率**: {cov:.1f}%")
+    cov_icon = "CRITICAL" if cov < 70 else ("WARNING" if cov < 80 else "PASS")
+    lines.append(f"{cov_icon} **整体覆盖率**: {cov:.1f}%")
     lines.append("")
     if coverage["low_coverage"]:
         lines.append("### 低覆盖率产品")
@@ -426,8 +426,8 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     # 4) Budget
     lines.append("## 4️⃣ 预算跟踪")
     lines.append("")
-    budget_emoji = {"P0_CRITICAL": "🔴", "P1_WARNING": "🟡", "OK": "✅"}
-    b_emoji = budget_emoji.get(budget.get("level", "OK"), "✅")
+    budget_icon = {"P0_CRITICAL": "CRITICAL", "P1_WARNING": "WARNING", "OK": "PASS"}
+    b_emoji = budget_icon.get(budget.get("level", "OK"), "PASS")
     lines.append(f"{b_emoji} **预算**: {budget['budget']:.0f} CNY | **已花费**: {budget['spend']:.2f} CNY | **使用率**: {budget['pct']:.1f}%")
     lines.append(f"")
     lines.append(f"| 账户余额 | {budget['balance']} CNY |")
@@ -463,8 +463,8 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     lines.append("*由 alicloud-billing-ops cost-watch.py 自动生成*")
 
     md_path.write_text("\n".join(lines))
-    print(f"✅ Report: {md_path} ({md_path.stat().st_size} bytes)")
-    print(f"✅ JSON:   {js_path} ({js_path.stat().st_size} bytes)")
+    print(f"PASS Report: {md_path} ({md_path.stat().st_size} bytes)")
+    print(f"PASS JSON:   {js_path} ({js_path.stat().st_size} bytes)")
 
     return rid
 

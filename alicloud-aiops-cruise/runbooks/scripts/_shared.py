@@ -56,7 +56,7 @@ ACK_LIMITS_CRIT = 200.0  # CRIT 120%~200%
 # CRITICAL+ > 200%
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 动态基线: 指标→方法映射表
+# 动态基线: 指标->方法映射表
 # ═══════════════════════════════════════════════════════════════════════════════
 
 ANOMALY_METHOD_ZSCORE = "z-score"
@@ -65,7 +65,7 @@ ANOMALY_METHOD_DUAL = "zscore+fixed"  # Z-Score + 固定阈值双重判定
 ANOMALY_METHOD_STL = "stl"  # Sprint 11: 时序分解 (周期 + 趋势 + 残差)
 ANOMALY_METHOD_PROPHET = "prophet"  # Sprint 11.5: Prophet 节假日感知预测
 
-# 指标映射表: (namespace_metric_key) → method
+# 指标映射表: (namespace_metric_key) -> method
 # 方法: z-score, percentile, zscore+fixed
 METRIC_ANOMALY_METHOD = {
     # ECS
@@ -207,12 +207,12 @@ def err(code: str, msg: str, fix: str = ""):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # CMS 调用的并发控制: 动态调整, 默认 20 个同时执行
-# (Sprint 14: 5→20, CMS API 单租户配额 100/s 足够支撑, 实测 daily-health-check 总耗时 -60%)
+# (Sprint 14: 5->20, CMS API 单租户配额 100/s 足够支撑, 实测 daily-health-check 总耗时 -60%)
 # 环境变量 AIOPS_CMS_CONCURRENCY 可覆盖 (例如: AIOPS_CMS_CONCURRENCY=30)
 _CMS_SEM = Semaphore(int(os.environ.get("AIOPS_CMS_CONCURRENCY", "20")))
 
 # CMS 调用的进程池: 复用 aliyun CLI 子进程, 避免每次 Python 解释器启动开销
-# (Sprint 14: 新增, daily-health-check ~200 次 CMS 调用的实测启动开销从 50ms/次 → <5ms/次)
+# (Sprint 14: 新增, daily-health-check ~200 次 CMS 调用的实测启动开销从 50ms/次 -> <5ms/次)
 # 环境变量 AIOPS_CMS_POOL=0 可禁用 (退化为 subprocess.run 每次新建)
 _CMS_POOL_ENABLED = os.environ.get("AIOPS_CMS_POOL", "1") == "1"
 _CMS_POOL_SIZE = int(os.environ.get("AIOPS_CMS_POOL_SIZE", "4"))  # 4 个常驻 CLI 进程
@@ -286,7 +286,7 @@ def _resolve_cache_dir() -> Path:
     # fallback: 推断 aliyun-skills/.runtime/cache
     _script = Path(__file__).resolve()
     # _script = alicloud-aiops-cruise/runbooks/scripts/_shared.py
-    # 上 3 层: scripts/ → runbooks/ → alicloud-aiops-cruise/ → aliyun-skills
+    # 上 3 层: scripts/ -> runbooks/ -> alicloud-aiops-cruise/ -> aliyun-skills
     _skills = _script.parent.parent.parent
     return _skills / ".runtime" / "cache"
 
@@ -299,7 +299,7 @@ def _resolve_runbooks_output_dir() -> str:
     """Sprint 19: runbook 脚本的默认 --output-dir.
 
     优先级:
-      1. ALIYUN_SKILLS_RUNTIME_ROOT 环境变量 → ${RUNTIME_ROOT}/audit/aiops-cruise/runbooks
+      1. ALIYUN_SKILLS_RUNTIME_ROOT 环境变量 -> ${RUNTIME_ROOT}/audit/aiops-cruise/runbooks
       2. 推断 aliyun-skills/.runtime/audit/aiops-cruise/runbooks
       3. Fallback: 旧 audit-results (向后兼容, 通过软链接仍可工作)
     """
@@ -316,7 +316,7 @@ def _resolve_runbooks_output_dir() -> str:
     return str(_skills / ".runtime" / "audit" / "aiops-cruise" / "runbooks")
 
 # API -> TTL(秒) 映射
-# Sprint 14: 资源清单类 300s → 3600s (1h), 跨 runbook 复用 hit_rate 显著提升
+# Sprint 14: 资源清单类 300s -> 3600s (1h), 跨 runbook 复用 hit_rate 显著提升
 #            daily-health-check + cost-watch + capacity-planning 同日多次跑时, 实例列表不再重复拉取
 CACHE_TTL = {
     # 资源清单 (描述型, 1h 内变化可忽略)
@@ -357,7 +357,7 @@ CACHE_TTL = {
     "QueryOrders": 1800,
 }
 
-CACHE_DEFAULT_TTL = 300  # 未在表中的 API 默认 TTL (Sprint 14: 60s → 300s)
+CACHE_DEFAULT_TTL = 300  # 未在表中的 API 默认 TTL (Sprint 14: 60s -> 300s)
 
 # 强制禁用缓存的环境变量
 CACHE_DISABLED = os.environ.get("AIOPS_NO_CACHE", "0") == "1"
@@ -561,7 +561,7 @@ def pool_stats() -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 # 场景: daily-health-check _collect_one 拉 N instance × M metric × 2 period = 2NM 次
 #       优化: 一次 CMS DescribeMetricList API Dimensions 数组包含 N 组, 服务端按 dim_key 区分返回
-#       收益: 100 ECS × 3 metric × 2 period = 600 次 → 6 × ceil(100/50) = 12 次 (-98%)
+#       收益: 100 ECS × 3 metric × 2 period = 600 次 -> 6 × ceil(100/50) = 12 次 (-98%)
 #       风险: 单次 API 响应体 ~6MB 上限, dim_values > 50 时拆批; 缓存 key 含完整 dim_values 列表
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -661,7 +661,7 @@ def normalize_time_to_bucket(dt=None, bucket_minutes: int = 5) -> str:
     """将时间归一化到 N 分钟桶 - 使 CMS 跨调用缓存命中.
 
     业务原理: CMS 采集周期 1min, 5min 粒度业务无感知.
-    实现: 2026-06-06T15:23:41Z → 2026-06-06T15:20:00Z (向上取整到 5min)
+    实现: 2026-06-06T15:23:41Z -> 2026-06-06T15:20:00Z (向上取整到 5min)
 
     Args:
         dt: datetime 对象 (默认 utcnow)
@@ -683,7 +683,7 @@ _cache_cleanup()
 
 
 def dig(data: Any, path: str) -> list:
-    """jq 式路径提取: dig(data, 'Instances.Instance') → [...]"""
+    """jq 式路径提取: dig(data, 'Instances.Instance') -> [...]"""
     for key in str(path).split("."):
         if not isinstance(data, dict):
             return []
@@ -1512,7 +1512,7 @@ def compute_anomaly_score_prophet(values, timestamps, current_val):
         lower = float(last["yhat_lower"])
         upper = float(last["yhat_upper"])
 
-        # 异常判定: 超出 yhat_lower/upper → 异常
+        # 异常判定: 超出 yhat_lower/upper -> 异常
         if current_val > upper:
             excess = (current_val - upper) / max(upper - predicted, 1.0)
             if excess > 1.0:
@@ -1581,7 +1581,7 @@ def _has_consecutive_anomaly(values, method, threshold):
 def format_anomaly_scores_table(anomaly_scores):
     """Format anomaly scores as Markdown table. CRITICAL and WARNING shown; INFO collapsed."""
     if not anomaly_scores:
-        return "\n#### 异常评分摘要\n\n✅ 未检测到显著异常\n\n"
+        return "\n#### 异常评分摘要\n\nPASS 未检测到显著异常\n\n"
     critical = [a for a in anomaly_scores if a.get("level") == "CRITICAL"]
     warning = [a for a in anomaly_scores if a.get("level") == "WARNING"]
     info = [a for a in anomaly_scores if a.get("level") == "INFO"]
@@ -1590,13 +1590,13 @@ def format_anomaly_scores_table(anomaly_scores):
         lines.append("| 实例 | 类型 | 指标 | 当前值 | 基线μ | Z-Score | 方法 | 等级 |\n")
         lines.append("|------|------|------|-------:|------:|-------:|------|:----:|\n")
         for a in critical:
-            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | 🔴 CRITICAL |\n" % (
+            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | CRITICAL CRITICAL |\n" % (
                 a.get("instance_id", "")[:20], a.get("resource_type", ""),
                 a.get("metric", ""), a.get("current_value", 0),
                 a.get("baseline_mean", 0), a.get("z_score", 0),
                 a.get("method", "")))
         for a in warning:
-            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | 🟡 WARNING |\n" % (
+            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | WARNING WARNING |\n" % (
                 a.get("instance_id", "")[:20], a.get("resource_type", ""),
                 a.get("metric", ""), a.get("current_value", 0),
                 a.get("baseline_mean", 0), a.get("z_score", 0),
@@ -1614,7 +1614,7 @@ def format_anomaly_scores_table(anomaly_scores):
 # 规范见 references/incident-schema.md
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# 资源类型 → incident schema enum 映射
+# 资源类型 -> incident schema enum 映射
 RESOURCE_TYPE_MAP = {
     "ECS": "ECS", "SLB": "SLB", "RDS": "RDS", "Redis": "Redis",
     "Redis-Tair": "Redis", "ACK": "ACK", "NAT": "NAT", "EIP": "EIP",
@@ -1623,7 +1623,7 @@ RESOURCE_TYPE_MAP = {
     "OSS": "OSS", "ECI": "OTHER", "ES": "OTHER", "Other": "OTHER",
 }
 
-# metric + resource_type → rule_id 映射
+# metric + resource_type -> rule_id 映射
 RULE_ID_MAP = {
     ("RDS", "DiskUsage"): "RDS-04",
     ("RDS", "CpuUsage"): "RDS-01",
@@ -1654,7 +1654,7 @@ def _gen_dedup_key(customer: str, resource_type: str, resource_id: str, rule_id:
 
 
 def to_incident(finding: dict, *, customer: str, run_id: str, region: str, runbook_id: str, runbook_version: str, scenario: str, report_path: str, level_override: str | None = None) -> dict:
-    """finding (短字段名) → incident schema v1.0.0 转换器.
+    """finding (短字段名) -> incident schema v1.0.0 转换器.
 
     Args:
         finding: 短字段名 finding, 形如 {"r": "rm-xxx", "t": "RDS", "m": "DiskUsage", "v": 97.92, "th": "75/90"}
@@ -1760,7 +1760,7 @@ def to_incident(finding: dict, *, customer: str, run_id: str, region: str, runbo
 
 
 def anomaly_to_incident(a: dict, *, customer: str, run_id: str, region: str, runbook_id: str, runbook_version: str, scenario: str, report_path: str) -> dict:
-    """anomaly_scores 元素 → incident schema v1.0.0 转换器."""
+    """anomaly_scores 元素 -> incident schema v1.0.0 转换器."""
     return to_incident(
         {
             "r": a.get("instance_id", ""),

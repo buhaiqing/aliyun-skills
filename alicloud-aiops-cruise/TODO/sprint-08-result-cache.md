@@ -1,9 +1,9 @@
 # Sprint 8: 结果缓存（P2, Future）
 
+> **状态**: PASS 5/5
 > **业务价值**：4 个 runbook 共享热点数据（资源清单、指标、ACK 节点），重复执行时直接读缓存。目标：API 调用减 60% + 总耗时减 30%+。
-> **依赖**：Sprint 1 (核心脚本化 ✅) + Sprint 2 (并行加速 ✅)
-> **状态**：**调研阶段** — 本文件为可行性调研，不含实施计划
-> **关联验收项**：Stage 2 D2（自动化深度：低风险白名单可自动执行，但当前无 cache → 重复执行浪费 API 配额）
+> **依赖**：Sprint 1 (核心脚本化 PASS) + Sprint 2 (并行加速 PASS)
+> **关联验收项**：Stage 2 D2（自动化深度：低风险白名单可自动执行，但当前无 cache -> 重复执行浪费 API 配额）
 
 ---
 
@@ -43,12 +43,12 @@
 
 | 数据 | daily-health | emergency | capacity | pre-launch | 共享度 |
 |------|--------------|-----------|----------|------------|--------|
-| 资源清单 (RG/Tag) | ✓ | ✓ | ✓ | ✓ | **100%** |
-| 资源指标 (CMS) | ✓ | 部分 | ✓ | 部分 | 70% |
-| ACK 节点 | ✓ | - | - | ✓ | 50% |
-| 7d 趋势数据 | - | - | ✓ | ✓ | 50% |
-| 安全组规则 | ✓ | ✓ | - | - | 50% |
-| ActionTrail | - | ✓ | - | - | 25% |
+| 资源清单 (RG/Tag) | OK | OK | OK | OK | **100%** |
+| 资源指标 (CMS) | OK | 部分 | OK | 部分 | 70% |
+| ACK 节点 | OK | - | - | OK | 50% |
+| 7d 趋势数据 | - | - | OK | OK | 50% |
+| 安全组规则 | OK | OK | - | - | 50% |
+| ActionTrail | - | OK | - | - | 25% |
 
 **结论**：资源清单、ACK 节点、7d 趋势是跨 runbook 共享的"热点数据"。
 
@@ -237,7 +237,7 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
   - TTL 按 API 类型分级（§三）
   - 响应校验（Code 字段检查）
   - 启动时清理过期文件
-- [ ] **8.2** 在 `daily-health-check.py` 中替换 6 处 `q()` → `q_cached()`
+- [ ] **8.2** 在 `daily-health-check.py` 中替换 6 处 `q()` -> `q_cached()`
   - 保持 `--no-cache` 参数可禁用
 - [ ] **8.3** 在 `emergency-troubleshoot.py` 中替换 2 处
 - [ ] **8.4** 在 `capacity-planning.py` 中替换 2 处

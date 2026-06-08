@@ -16,17 +16,17 @@ execution_time_estimate: "3-8 分钟"
 
 当 Redis/Tair 内存使用率过高、出现逐出（eviction）或命中率下降时，通过 DAS 缓存分析检测大 key、诊断缓存模式，输出优化建议。覆盖：热 key、大 key、过期策略、内存碎片四个维度。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **修改 maxmemory-policy** | 🟡 [AUTO-NOTIFY] 白名单 W-03，自动执行后通知 |
-| **Redis 升配** | 🔴 [SUGGESTED] 需用户确认 |
-| **删除大 key** | 🔴 需人工确认，不自动执行 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **修改 maxmemory-policy** | WARNING [AUTO-NOTIFY] 白名单 W-03，自动执行后通知 |
+| **Redis 升配** | CRITICAL [SUGGESTED] 需用户确认 |
+| **删除大 key** | CRITICAL 需人工确认，不自动执行 |
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **Redis 性能问题的四个维度及处理优先级：**
 >
@@ -49,8 +49,8 @@ execution_time_estimate: "3-8 分钟"
 ### 不适用条件
 
 - 自建 Redis（不在阿里云内）
-- 内存使用率正常且无逐出 → 无需诊断
-- 需要删除大 key → 需用户确认后通过 `alicloud-das-ops` 执行
+- 内存使用率正常且无逐出 -> 无需诊断
+- 需要删除大 key -> 需用户确认后通过 `alicloud-das-ops` 执行
 
 ---
 
@@ -140,9 +140,9 @@ for REDIS_ID in $(echo "$REDIS_LIST" | jq -r '.[].InstanceId // empty'); do
     SUSPECT_REDIS=$(echo "$SUSPECT_REDIS" | jq --arg id "$REDIS_ID" \
       --arg mem "$REDIS_MEM" --arg evict "$REDIS_EVICTED" --arg hit "$REDIS_HIT" \
       '. + [{"id": $id, "mem_pct": ($mem | tonumber), "evicted": ($evict | tonumber), "hit_rate": $hit}]')
-    echo "  → 标记为可疑实例"
+    echo "  -> 标记为可疑实例"
   else
-    echo "  ✅ 内存正常"
+    echo "  PASS 内存正常"
   fi
 done
 
@@ -189,12 +189,12 @@ echo "$SUSPECT_REDIS" | jq -c '.[]' | while read -r INST; do
       --job-id "$JOB_ID" 2>/dev/null)
 
     echo ""
-    echo "  ⚠️ 大 key TOP 10:"
+    echo "  [WARN] 大 key TOP 10:"
     echo "$BIG_KEYS" | jq -r '.big_keys[:10][] | "    [\(.key_type)] \(.key_name[:50]) = \(.size_bytes)B / \(.element_count) 个元素"'
 
     # 汇总各类型 key 分布
     echo ""
-    echo "  📊 Key 类型分布:"
+    echo "  [STATS] Key 类型分布:"
     echo "$BIG_KEYS" | jq -r '
       group_by(.key_type) | map({type: .[0].key_type, count: length, total_size: (map(.size_bytes) | add)}) |
       sort_by(-.total_size)[] |
@@ -203,7 +203,7 @@ echo "$SUSPECT_REDIS" | jq -c '.[]' | while read -r INST; do
     # 逐出 key 信息
     if [ "$(echo "$EVICTED > 0" | bc -l 2>/dev/null)" = "1" ]; then
       echo ""
-      echo "  🔴 检测到逐出事件 (evicted=$EVICTED)！"
+      echo "  CRITICAL 检测到逐出事件 (evicted=$EVICTED)！"
     fi
   else
     echo "  [WARN] 缓存分析任务创建失败，可能未开启 DAS Pro"
@@ -224,12 +224,12 @@ for REDIS_ID in $(echo "$SUSPECT_REDIS" | jq -r '.[].id'); do
 
   if [ "$HIT_RATE" != "NODATA" ] && [ "$HIT_RATE" != "NODATA" ]; then
     if [ "$(echo "$HIT_RATE < 80" | bc -l 2>/dev/null)" = "1" ]; then
-      echo "  🔴 命中率 ${HIT_RATE}% < 80% — 大量请求穿透到后端 DB"
+      echo "  CRITICAL 命中率 ${HIT_RATE}% < 80% — 大量请求穿透到后端 DB"
       echo "  建议: 检查缓存命中逻辑 / 增加缓存 TTL / 扩大缓存容量"
     elif [ "$(echo "$HIT_RATE < 90" | bc -l 2>/dev/null)" = "1" ]; then
-      echo "  🟡 命中率 ${HIT_RATE}% < 90% — 偏低，需关注"
+      echo "  WARNING 命中率 ${HIT_RATE}% < 90% — 偏低，需关注"
     else
-      echo "  ✅ 命中率 ${HIT_RATE}% — 正常"
+      echo "  PASS 命中率 ${HIT_RATE}% — 正常"
     fi
   else
     echo "  ℹ️ 命中率指标不可用（部分版本不暴露）"
@@ -255,7 +255,7 @@ for REDIS_ID in $(echo "$SUSPECT_REDIS" | jq -r '.[] | select(.evicted > 0) | .i
 
   # 如果是 noeviction（不逐出），改为 allkeys-lru 是标准的自愈操作
   if [ "$CURRENT_POLICY" = "noeviction" ] || [ -z "$CURRENT_POLICY" ]; then
-    echo "  策略为 noeviction → 内存满时写失败！"
+    echo "  策略为 noeviction -> 内存满时写失败！"
 
     # [AUTO-NOTIFY] 自动修复
     UPDATE_RESULT=$(aliyun r-kvstore ModifyInstanceConfig \
@@ -264,14 +264,14 @@ for REDIS_ID in $(echo "$SUSPECT_REDIS" | jq -r '.[] | select(.evicted > 0) | .i
       --Config '{"maxmemory-policy":"allkeys-lru"}' 2>&1)
 
     if echo "$UPDATE_RESULT" | jq -e '.Success == true' >/dev/null 2>&1; then
-      echo "  ✅ [AUTO-NOTIFY] maxmemory-policy 已修改为 allkeys-lru"
+      echo "  PASS [AUTO-NOTIFY] maxmemory-policy 已修改为 allkeys-lru"
       echo "  [AUDIT] whitelist_id=W-03 level=L1 resource=$REDIS_ID action=modify_maxmemory_policy"
     else
-      echo "  ⚠️ 自动修改失败: $UPDATE_RESULT"
+      echo "  [WARN] 自动修改失败: $UPDATE_RESULT"
       echo "  [SUGGESTED] 请手动修改逐出策略"
     fi
   elif [ "$CURRENT_POLICY" = "volatile-lru" ] || [ "$CURRENT_POLICY" = "allkeys-lru" ]; then
-    echo "  ✅ 逐出策略合理 (${CURRENT_POLICY})，无需变更"
+    echo "  PASS 逐出策略合理 (${CURRENT_POLICY})，无需变更"
   fi
 done
 ```
@@ -288,14 +288,14 @@ for REDIS_ID in $(echo "$SUSPECT_REDIS" | jq -r '.[].id'); do
 
   # 按严重度排序输出建议
   if [ "$(echo "$MEM_PCT > 85" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "  🔴 [P0] 内存使用率 ${MEM_PCT}% > 85% — 建议立即处理:"
+    echo "  CRITICAL [P0] 内存使用率 ${MEM_PCT}% > 85% — 建议立即处理:"
     echo "      方案A: 升配 Redis 规格（最快最安全）"
     echo "        [SUGGESTED] aliyun r-kvstore ModifyInstanceSpec ..."
     echo "      方案B: 清理大 key 释放内存"
     echo "        [SUGGESTED] go run das_slow_query.go --action delete-big-keys ..."
     echo "      方案C: 增加应用层本地缓存（Caffeine/Guava），减少 Redis 压力"
   elif [ "$(echo "$MEM_PCT > 75" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "  🟡 [P1] 内存使用率 ${MEM_PCT}% > 75% — 建议纳入容量规划"
+    echo "  WARNING [P1] 内存使用率 ${MEM_PCT}% > 75% — 建议纳入容量规划"
     echo "      监控内存趋势，如持续增长则升配或优化 key 设计"
   fi
 done
@@ -307,13 +307,13 @@ done
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  📦 Redis/Tair 缓存性能诊断报告
+  [PKG] Redis/Tair 缓存性能诊断报告
 ═══════════════════════════════════════════════════════
   报告ID: redis-perf-$CUSTOMER-$(date +%Y%m%dT%H%M%SZ)
   客户: $CUSTOMER | 区域: $REGION | 时间: $(date)
 ═══════════════════════════════════════════════════════
 
-## 📊 总览
+## [STATS] 总览
 
 | 维度 | 结果 |
 |------|------|
@@ -322,27 +322,27 @@ done
 | DAS 缓存分析 | ${DAS_DONE:-N} 个 |
 | 自动修复 (W-03) | ${W03_TRIGGERED:-0} 次 |
 
-## 🎯 实例诊断详情
+## [TARGET] 实例诊断详情
 
 ### ${REDIS_ID}
 **状态**: 内存=${MEM_PCT}% | 逐出=${EVICTED} | 命中率=${HIT_RATE}%
 
 **大 key TOP 5**:
-1. [hash] order_cache → 1.2GB / 850 万元素
-2. [list] user_session → 856MB / 200 万元素
-3. [string] report_data_202606 → 450MB
+1. [hash] order_cache -> 1.2GB / 850 万元素
+2. [list] user_session -> 856MB / 200 万元素
+3. [string] report_data_202606 -> 450MB
 
 **优化建议**:
-1. 🔴 [P0] order_cache 是 hash 类型大 key，建议按日期分桶
-2. 🟡 [P1] user_session 可设置 TTL=86400 避免无限增长
-3. ℹ️ 当前逐出策略已自动修复: noeviction → allkeys-lru
+1. CRITICAL [P0] order_cache 是 hash 类型大 key，建议按日期分桶
+2. WARNING [P1] user_session 可设置 TTL=86400 避免无限增长
+3. ℹ️ 当前逐出策略已自动修复: noeviction -> allkeys-lru
 
 ═══════════════════════════════════════════════════════
   自动操作记录
 ═══════════════════════════════════════════════════════
 | 时间 | 操作 | 资源 | 白名单 | 结果 |
 |------|------|------|:------:|------|
-| $(date) | 修改 maxmemory-policy | ${REDIS_ID} | W-03 | ✅ allkeys-lru |
+| $(date) | 修改 maxmemory-policy | ${REDIS_ID} | W-03 | PASS allkeys-lru |
 ```
 
 **JSON:**

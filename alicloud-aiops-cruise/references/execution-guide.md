@@ -3,7 +3,7 @@
 > 阿里云全链路巡检涉及的 aliyun CLI 命令速查。
 > 所有命令均为只读（Describe/List/Get），不含任何写操作。
 
-## 🧠 使用说明
+## [NOTE] 使用说明
 
 > 本文件不是 SKILL.md 的替代，而是 Agent 在执行巡检时的 CLI 命令速查表。
 > SKILL.md 描述"做什么"，本文件提供"How to do"——具体的参数和常见踩坑点。
@@ -22,7 +22,7 @@
 > - 标签可能漏打，但资源组一定存在
 > - 推荐优先使用资源组扫描，标签作为回退方案
 >
-> **🚨 铁律：默认资源组自动禁用资源组模式**
+> **[ALERT] 铁律：默认资源组自动禁用资源组模式**
 > 自动跳过 default/空资源组，转为标签通道。除非用户明确输入 `scope=full`，
 > 否则禁止按默认资源组扫描（防止意外全账号扫描，违反 Safety Gate）。
 
@@ -30,15 +30,15 @@
 
 | 产品 | `--ResourceGroupId` 参数 | 响应中包含 `ResourceGroupId` | 推荐方式 |
 |---|---|---|---|
-| ECS | ✅ 原生支持 | ✅ | `aliyun ecs DescribeInstances --ResourceGroupId` |
-| RDS | ✅ 原生支持 | ✅ | `aliyun rds DescribeDBInstances --ResourceGroupId` |
-| NAT | ✅ 原生支持 | ✅ | `aliyun vpc DescribeNatGateways --ResourceGroupId` |
-| SLB | ❌ 不支持 | ✅ | 全量拉取后 `jq --arg rg ... select(.ResourceGroupId == $rg)` |
-| Redis | ❌ 不支持 | ✅ | 全量拉取后 `jq` 筛选 |
-| VPC | ❌ 不支持 | ✅ | 全量拉取后 `jq` 筛选 |
-| 安全组 | ❌ 不支持 | ✅ | 全量拉取后 `jq` 筛选 |
-| EIP | ❌ 不支持 | ✅ | 全量拉取后 `jq` 筛选 |
-| ACK | ❌ 不支持 | ❌ (无此字段) | 按其他维度过滤 |
+| ECS | PASS 原生支持 | PASS | `aliyun ecs DescribeInstances --ResourceGroupId` |
+| RDS | PASS 原生支持 | PASS | `aliyun rds DescribeDBInstances --ResourceGroupId` |
+| NAT | PASS 原生支持 | PASS | `aliyun vpc DescribeNatGateways --ResourceGroupId` |
+| SLB | FAIL 不支持 | PASS | 全量拉取后 `jq --arg rg ... select(.ResourceGroupId == $rg)` |
+| Redis | FAIL 不支持 | PASS | 全量拉取后 `jq` 筛选 |
+| VPC | FAIL 不支持 | PASS | 全量拉取后 `jq` 筛选 |
+| 安全组 | FAIL 不支持 | PASS | 全量拉取后 `jq` 筛选 |
+| EIP | FAIL 不支持 | PASS | 全量拉取后 `jq` 筛选 |
+| ACK | FAIL 不支持 | FAIL (无此字段) | 按其他维度过滤 |
 
 ### 从某个资源ID反查所属资源组
 

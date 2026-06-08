@@ -6,7 +6,7 @@
 执行模式:
 - 同步 (foreground): 等待 runbook 完成
 - 异步 (background): fork 后立即返回
-- 链式 (chain): runbook A → runbook B → runbook C
+- 链式 (chain): runbook A -> runbook B -> runbook C
 """
 
 import argparse
@@ -59,7 +59,7 @@ WORKFLOWS = {
     ),
     "pre_launch_routine": Workflow(
         name="pre_launch_routine",
-        description="大促前: pre_launch → daily → capacity",
+        description="大促前: pre_launch -> daily -> capacity",
         steps=[
             {"runbook": "pre-launch-check.py", "args": {"non_interactive": True, "multiplier": 3.0}},
             {"runbook": "daily-health-check.py", "args": {"non_interactive": True}, "continue_on_error": True},

@@ -1,6 +1,6 @@
 # Sprint 17 — Baseline 重采样能力
 
-> **状态**: ✅ 4/4
+> **状态**: PASS 4/4
 > **优先级**: P2 (运维效率 + 历史回溯补全)
 > **业务价值**: 季度审计前批量补全缺失 baseline; 故障复盘时快速补建"那时的状态"
 > **依赖**: Sprint 16 (--compare-with) + LocalBackend.get_latest/get_by_date
@@ -43,7 +43,7 @@ python3 baseline-manager.py \
 **语义**: 把 `2026-06-07` 的 baseline 复制为 `2026-05-15`, 资源数据完全相同, 仅 `generated_at` 时间戳改为 `2026-05-15T00:00:00Z`。
 
 **适用场景**:
-- 故障复盘: 5/15 出了事故, 但当天没跑 baseline → 用 5/20 (或更近的) 复制补建, 然后 `configdrift --compare-with 2026-05-15` 复现当时差异
+- 故障复盘: 5/15 出了事故, 但当天没跑 baseline -> 用 5/20 (或更近的) 复制补建, 然后 `configdrift --compare-with 2026-05-15` 复现当时差异
 - 季度审计: 补全缺失日期, 让 `--compare-with` 任意日期都能跑
 
 ### 模式 2: 触发式重采样 (可选, V2)
@@ -96,7 +96,7 @@ python3 baseline-manager.py \
 
 ## 任务清单
 
-### ✅ T1: baseline_local.py 工具方法
+### PASS T1: baseline_local.py 工具方法
 
 **目标**: 在 `LocalBackend` 类上增加 3 个工具方法。
 
@@ -119,7 +119,7 @@ class LocalBackend:
 - `list_gaps`: 在 `[start, end]` 区间枚举日期, 过滤 `self.list_baselines()`
 - `fill_gaps`: 复用 `copy_baseline`, 遍历 `list_gaps` 结果
 
-### ✅ T2: baseline-manager.py 集成 `--resample` 模式
+### PASS T2: baseline-manager.py 集成 `--resample` 模式
 
 **目标**: 在主 CLI 暴露 `--resample` 子命令。
 
@@ -145,7 +145,7 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 - 输出: 列出创建/跳过的日期
 - `--force` 标志: 允许覆盖已存在目录 (默认保护)
 
-### ✅ T3: configdrift.sh 透传 `--resample` 链路
+### PASS T3: configdrift.sh 透传 `--resample` 链路
 
 **目标**: 让 ConfigDrift Agent 支持"重采样 + 对比"一键完成。
 
@@ -165,7 +165,7 @@ bash configdrift.sh --resample --from-baseline latest \
 - 互斥: `--resample` 模式下, `--compare-with` 可选 (默认不对比)
 - JSON 报告 `mode` 字段: `"resample"` 或 `"diff"` (替代隐式推断)
 
-### ✅ T4: 测试用例
+### PASS T4: 测试用例
 
 **目标**: 覆盖 4 个模式 + 边界场景。
 
@@ -214,9 +214,9 @@ bash configdrift.sh --resample --from-baseline latest \
 ## 与 Sprint 16 的协同
 
 ```
-Sprint 16: --compare-with <date>    ← 读: 历史 baseline
-Sprint 17: --resample --as-of <date> ← 写: 补建历史 baseline
-组合用法: 重采样补全 → 对比验证
+Sprint 16: --compare-with <date>    <- 读: 历史 baseline
+Sprint 17: --resample --as-of <date> <- 写: 补建历史 baseline
+组合用法: 重采样补全 -> 对比验证
 ```
 
 **典型工作流**:
@@ -241,7 +241,7 @@ bash configdrift.sh --compare-with $(date -v-90d '+%Y-%m-%d')
 - [x] F5: Link integrity — 关联文件清单已列
 - [x] F6: Content deduplication — 复用 `LocalBackend.list_baselines()` 等已有方法
 - [x] F7: Cross-skill delegation — baseline-manager.py 在 topo-discovery, configdrift.sh 在 aiops-cruise, 跨 skill 委托符合规范
-- [x] F8: TODO.md 同步 — ✅ (本文件 + TODO.md 索引)
+- [x] F8: TODO.md 同步 — PASS (本文件 + TODO.md 索引)
 
 ---
 

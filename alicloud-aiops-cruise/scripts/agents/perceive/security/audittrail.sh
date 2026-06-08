@@ -16,9 +16,20 @@
 
 set -euo pipefail
 
+# ── 路径解析 (Sprint 18: 统一运行时数据根目录) ──
+# SCRIPT_DIR: .../alicloud-aiops-cruise/scripts/agents/perceive/security
+# AIOPS_DIR:  .../alicloud-aiops-cruise                   (SCRIPT_DIR 向上 4 层)
+# SKILLS_DIR: .../aliyun-skills                           (AIOPS_DIR/..)
+# AUDIT_DIR:  ${RUNTIME_AUDIT_DIR}/perceive
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AIOPS_DIR="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
-AUDIT_DIR="${AIOPS_DIR}/audit-results"
+export SKILLS_DIR="$(cd "${AIOPS_DIR}/.." && pwd)"
+
+# shellcheck source=../../../lib/runtime_root.sh
+source "${AIOPS_DIR}/scripts/lib/runtime_root.sh"
+aiops_runtime_init "alicloud-aiops-cruise"
+
+AUDIT_DIR="${RUNTIME_AUDIT_DIR}/perceive"
 OUTPUT_FILE=""
 HOURS=24
 
@@ -33,6 +44,7 @@ done
 if [[ -z "$OUTPUT_FILE" ]]; then
     OUTPUT_FILE="${AUDIT_DIR}/audittrail-$(date +%Y%m%dT%H%M%S).json"
 fi
+mkdir -p "$(dirname "${OUTPUT_FILE}")"
 
 # 计算时间窗口
 START_TIME=$(date -u -v-${HOURS}H '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || \
@@ -77,6 +89,6 @@ JSONEOF
 TOTAL=$(echo "${EVENTS}" | jq '.Events | length // 0')
 ANOMALY_COUNT=$(echo "${ANOMALIES}" | jq 'length')
 
-echo "[AuditTrail] ✅ 操作事件采集完成"
+echo "[AuditTrail] PASS 操作事件采集完成"
 echo "[AuditTrail]   事件总数: ${TOTAL}"
 echo "[AuditTrail]   异常操作: ${ANOMALY_COUNT} 类"

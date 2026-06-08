@@ -1,4 +1,4 @@
-# 🔙 历史事件回溯方案 — History Backtracking
+# 历史事件回溯方案 — History Backtracking
 
 > **用途**：补足巡检"时间点快照"的局限性，提供向前回溯 N 天的事件检测能力。
 > 解决"巡检这一刻没问题，但过去几天发生过什么"的问题。
@@ -27,17 +27,17 @@
 ```
 巡检时间点 T
      │
-     ├── Layer 1: CMS 指标回溯 ← 0 额外成本
+     ├── Layer 1: CMS 指标回溯 <- 0 额外成本
      │   ├── 数据源: acs_k8s (保留 30 天)
      │   ├── 回溯窗口: 7 天 / 30 天
      │   └── 能力: 趋势分析、突变检测、基线偏离
      │
-     ├── Layer 2: SLS 审计日志回溯 ← 需开启审计日志
+     ├── Layer 2: SLS 审计日志回溯 <- 需开启审计日志
      │   ├── 数据源: SLS (kube-apiserver 审计日志)
      │   ├── 回溯窗口: 自定义
      │   └── 能力: 精确 K8s 事件定位
      │
-     └── Layer 3: CloudAssistant + kubectl ← 当前快照
+     └── Layer 3: CloudAssistant + kubectl <- 当前快照
          ├── 数据源: kubectl get events (ECS 内执行)
          ├── 回溯窗口: ~1 小时 (K8s 默认事件保留)
          └── 能力: 当前异常事件快照
@@ -55,15 +55,15 @@
 
 | 指标 | 回溯用途 | 检测模式 |
 |------|---------|---------|
-| `node.cpu.limit` | 节点 CPU limits 超分比趋势 | 连续上升 → 需要治理 |
-| `node.cpu.usage_rate` | 节点实际 CPU 使用趋势 | 突增 → 可能有流量尖峰 |
-| `node.memory.limit` | 节点内存 limits 超分比趋势 | 连续上升 → 需要治理 |
-| `node.memory.working_set` | 节点实际内存使用趋势 | 突增接近 capacity → OOM 风险 |
-| `node.cpu.oversale_rate` | CPU 超卖率趋势 | 持续 > 80% 且上升 → 风险 |
-| `node.memory.oversale_rate` | 内存超卖率趋势 | 持续 > 80% 且上升 → 风险 |
-| `pod.cpu.usage_rate` | 逐个 Pod CPU 使用趋势 | 归零 → 可能刚重启过 |
-| `pod.memory.working_set` | 逐个 Pod 内存使用趋势 | 突降归零 → 可能 OOMKill 后重启 |
-| `pod.memory.utilization` | Pod 内存利用率 (working_set/limit) | 接近 100% → 高 OOM 风险 |
+| `node.cpu.limit` | 节点 CPU limits 超分比趋势 | 连续上升 -> 需要治理 |
+| `node.cpu.usage_rate` | 节点实际 CPU 使用趋势 | 突增 -> 可能有流量尖峰 |
+| `node.memory.limit` | 节点内存 limits 超分比趋势 | 连续上升 -> 需要治理 |
+| `node.memory.working_set` | 节点实际内存使用趋势 | 突增接近 capacity -> OOM 风险 |
+| `node.cpu.oversale_rate` | CPU 超卖率趋势 | 持续 > 80% 且上升 -> 风险 |
+| `node.memory.oversale_rate` | 内存超卖率趋势 | 持续 > 80% 且上升 -> 风险 |
+| `pod.cpu.usage_rate` | 逐个 Pod CPU 使用趋势 | 归零 -> 可能刚重启过 |
+| `pod.memory.working_set` | 逐个 Pod 内存使用趋势 | 突降归零 -> 可能 OOMKill 后重启 |
+| `pod.memory.utilization` | Pod 内存利用率 (working_set/limit) | 接近 100% -> 高 OOM 风险 |
 | `cluster.cpu.utilization` | 集群级 CPU 水位趋势 | 整体健康度 |
 | `cluster.memory.utilization` | 集群级内存水位趋势 | 整体健康度 |
 
@@ -122,19 +122,19 @@ def backtrack_7d(cluster_id, region):
 ### 输出示例（巡检报告中的回溯章节）
 
 ```
-## 🔙 历史回溯（过去 7 天）
+## [BACK] 历史回溯（过去 7 天）
 
 ### 节点趋势异常
-- node-i-xxxx: CPU 超卖率连续 5 天上升 (65%→82%→88%→91%→95%) 🔴
-- node-i-yyyy: 内存 usage 在 06-03 14:00 出现尖峰 (12G→23G) 🟡
+- node-i-xxxx: CPU 超卖率连续 5 天上升 (65%->82%->88%->91%->95%) CRITICAL
+- node-i-yyyy: 内存 usage 在 06-03 14:00 出现尖峰 (12G->23G) WARNING
 
 ### Pod 疑似重启
-- default/order-svc-xxx: 06-02 03:15 working_set 突降至 0 (疑似 OOMKill) 🔴
-- kube-system/coredns-xxx: 06-01 22:30 重启 (正常波动) 🟢
+- default/order-svc-xxx: 06-02 03:15 working_set 突降至 0 (疑似 OOMKill) CRITICAL
+- kube-system/coredns-xxx: 06-01 22:30 重启 (正常波动) SAFE
 
 ### OOM 高风险 Pod
-- default/payment-svc (memory.utilization=97.3%) 🔴
-- default/user-svc (memory.utilization=91.8%) 🟡
+- default/payment-svc (memory.utilization=97.3%) CRITICAL
+- default/user-svc (memory.utilization=91.8%) WARNING
 ```
 
 ---
@@ -165,8 +165,8 @@ aliyun cs GET /clusters/{clusterId}/controlplanelog
 ### 当前环境状态
 
 > **当前环境 `海鼎-测试集群  (c3516669...)` 检查结果（2026-06-06）：**
-> - `audit_enabled: false` — ❌ 审计日志未开启
-> - `components: null` — ❌ 控制面日志未开启
+> - `audit_enabled: false` — FAIL 审计日志未开启
+> - `components: null` — FAIL 控制面日志未开启
 >
 > **结论**：SLS 审计回溯路径不可用，降级到 Layer 1 + Layer 3。
 
@@ -234,8 +234,8 @@ aliyun ecs RunCommand \
 
 | 维度 | Layer 1 (CMS) | Layer 2 (SLS) | Layer 3 (kubectl) |
 |------|:------------:|:-------------:|:-----------------:|
-| **是否需要额外配置** | ❌ 不需要 | ✅ 需开启审计日志 | ✅ 需安装 kubectl |
-| **当前环境可用?** | ✅ **可用** | ❌ 未开启 | ⚠️ 需检查 |
+| **是否需要额外配置** | FAIL 不需要 | PASS 需开启审计日志 | PASS 需安装 kubectl |
+| **当前环境可用?** | PASS **可用** | FAIL 未开启 | [WARN] 需检查 |
 | **回溯窗口** | 7~30 天 | 自定义 | ~1 小时 |
 | **精确度** | 推断级（趋势） | 精确级（事件） | 精确级（事件） |
 | **覆盖范围** | 资源水位 + 趋势 | ALL K8s API 操作 | 当前异常事件 |
@@ -245,18 +245,18 @@ aliyun ecs RunCommand \
 
 ```
 Phase 1 (P0): Layer 1 CMS 回溯
-  → 在 daily-health-check 中集成 7 天回溯分析
-  → 检测趋势异常 + 疑似事件推断
-  → 输出到巡检报告的「历史回溯」章节
+  -> 在 daily-health-check 中集成 7 天回溯分析
+  -> 检测趋势异常 + 疑似事件推断
+  -> 输出到巡检报告的「历史回溯」章节
 
 Phase 2 (P1): Layer 3 kubectl 兜底
-  → pre-flight 检查 kubectl 是否可用
-  → 在 emergency-troubleshoot 中获取当前事件
-  → 辅助故障定位
+  -> pre-flight 检查 kubectl 是否可用
+  -> 在 emergency-troubleshoot 中获取当前事件
+  -> 辅助故障定位
 
 Phase 3 (P2): Layer 2 SLS 增强
-  → 如果用户开启了审计日志，自动接入
-  → 精确事件回溯
+  -> 如果用户开启了审计日志，自动接入
+  -> 精确事件回溯
 ```
 
 ---

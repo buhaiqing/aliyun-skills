@@ -22,7 +22,7 @@ status: mandatory
 |------|------|-----------|
 | 报告元信息 | 报告ID、客户名、时间、区域、窗口 | 必选 |
 | 总体评分 | 整体健康度 + 安全/容量/异常 评分 | 必选 |
-| 服务摘要 | 各产品资源数量 + 核心指标状态（✅/🟡/🔴） | 必选 |
+| 服务摘要 | 各产品资源数量 + 核心指标状态（PASS/WARNING/CRITICAL） | 必选 |
 | 拓扑关系图 | ASCII 树形图 + Mermaid 图，叠加健康状态 | 必选 |
 | Critical 问题清单 | 每个问题含：实例ID、指标值、阈值、Z-Score、推理规则、修复步骤 | 必选 |
 | Warning 问题清单 | 同上，级别为 Warning | 必选 |
@@ -34,14 +34,14 @@ status: mandatory
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  🔍 全链路 AIOps 深度巡检报告
+  [SCAN] 全链路 AIOps 深度巡检报告
 ═══════════════════════════════════════════════════════
   报告ID: cruise-{customer}-{timestamp}
-  客户: {customer} | 时间: {datetime} | 窗口: {start} → {end}
+  客户: {customer} | 时间: {datetime} | 窗口: {start} -> {end}
   区域: {region} | 模式: {mode}
 ═══════════════════════════════════════════════════════
 
-📊 总体评分
+[STATS] 总体评分
   整体健康度: {overall_score}/1.0 | {overall_level}
   安全水位:   {safety_score}/1.0 | {safety_level}
   容量水位:   {capacity_score}/1.0 | {capacity_level}
@@ -50,19 +50,19 @@ status: mandatory
 ─────── 服务摘要 ───────
   {service_summary_table}
 
-🎨 拓扑关系图
+[ART] 拓扑关系图
   {topology_ascii_or_mermaid}
 
-🔴 Critical 问题清单
+Critical 问题清单
   {critical_findings_section}
 
-🟡 Warning 问题清单
+Warning 问题清单
   {warning_findings_section}
 
-📊 异常评分摘要（动态基线）
+[STATS] 异常评分摘要（动态基线）
   {anomaly_scores_table}
 
-📌 优化建议（按优先级）
+[PIN] 优化建议（按优先级）
   {optimization_suggestions}
 
 ═══════════════════════════════════════════════════════
@@ -89,7 +89,7 @@ status: mandatory
 | 性能评分 | 性能瓶颈状态 | Critical=0, Warning=50, 正常=100 的加权平均 |
 | 容量评分 | 容量余量状态 | 同上, 按容量阈值判定 |
 | 成本评分 | 资源利用率 | 低利用率资源占比反向评分 |
-| 周趋势 | 相比上周的变化 | 📈 上升 / 📉 下降 / ➡️ 持平 |
+| 周趋势 | 相比上周的变化 | [UP] 上升 / [DOWN] 下降 / -> 持平 |
 | 上月故障数 | 上月 Incident 数量 | 从 Incident DB 读取 |
 | 平均修复时间 | MTTR | 从 Incident DB 计算 |
 
@@ -102,14 +102,14 @@ status: mandatory
   报告期间: {date_range}
 ══════════════════════════════════════
 
-  整体健康度: {score}/100  {trend_emoji}
-    可用性:  {availability}%  {status_emoji}
-    安全:    {security}%    {status_emoji}
-    性能:    {performance}%  {status_emoji}
-    容量:    {capacity}%    {status_emoji}
-    成本:    {cost}%        {status_emoji}
+  整体健康度: {score}/100  {trend_icon}
+    可用性:  {availability}%  {status_icon}
+    安全:    {security}%    {status_icon}
+    性能:    {performance}%  {status_icon}
+    容量:    {capacity}%    {status_icon}
+    成本:    {cost}%        {status_icon}
 
-  本周趋势: {trend_text} (上周 {last_week}→本周 {this_week})
+  本周趋势: {trend_text} (上周 {last_week}->本周 {this_week})
   上月故障: {incident_count} 次，平均修复时间 {mttr}min
   本月预估: {monthly_forecast}
 ```
@@ -251,4 +251,4 @@ status: mandatory
 | 2 | 评分看板 | `audit-results/dashboards/` | `test -s` 且包含"整体健康度"关键字 |
 | 3 | JSON 结构化报告 | `audit-results/json/` | `python3 -c "import json; json.load(open(path))"` 可解析 |
 
-> 缺失任何一项 → 标记为"交付不完整"，GCL 自动 FAIL。
+> 缺失任何一项 -> 标记为"交付不完整"，GCL 自动 FAIL。

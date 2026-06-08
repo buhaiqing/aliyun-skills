@@ -14,30 +14,30 @@ execution_time_estimate: "3-8 分钟"
 
 ## 1. 场景描述
 
-当 RDS/PolarDB 活跃连接数超过 85% 阈值时，自动诊断连接风暴的根因（慢查询堆积 / 僵尸连接 / 连接池泄漏），执行 🟡 白名单内安全操作（Kill 空闲连接），并出具体修复建议。
+当 RDS/PolarDB 活跃连接数超过 85% 阈值时，自动诊断连接风暴的根因（慢查询堆积 / 僵尸连接 / 连接池泄漏），执行 WARNING 白名单内安全操作（Kill 空闲连接），并出具体修复建议。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **Kill 活跃事务连接** | 🔴 需人工确认，不自动执行 |
-| **修改 max_connections** | 🔴 需人工确认，不自动执行 |
-| **Kill 空闲/睡眠连接** | 🟡 [AUTO-NOTIFY] 白名单 W-01，自动执行后通知 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **Kill 活跃事务连接** | CRITICAL 需人工确认，不自动执行 |
+| **修改 max_connections** | CRITICAL 需人工确认，不自动执行 |
+| **Kill 空闲/睡眠连接** | WARNING [AUTO-NOTIFY] 白名单 W-01，自动执行后通知 |
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **连接风暴的三个典型场景：**
 >
-> 1. **慢查询堆积**（~45%）—— 突然的慢 SQL 让每个查询耗时变长，请求排队 → 连接数飙升 → CPU 也高
-> 2. **僵尸连接**（~30%）—— 应用连接池未正确释放连接（CLOSE_WAIT 堆积），连接数缓慢爬升 → CPU 正常 → 持续 24h+ 后打满
-> 3. **突发流量**（~25%）—— 业务高峰/QPS 骤增，连接数跟着涨 → 每个连接都活跃且正常 → 需要扩容
+> 1. **慢查询堆积**（~45%）—— 突然的慢 SQL 让每个查询耗时变长，请求排队 -> 连接数飙升 -> CPU 也高
+> 2. **僵尸连接**（~30%）—— 应用连接池未正确释放连接（CLOSE_WAIT 堆积），连接数缓慢爬升 -> CPU 正常 -> 持续 24h+ 后打满
+> 3. **突发流量**（~25%）—— 业务高峰/QPS 骤增，连接数跟着涨 -> 每个连接都活跃且正常 -> 需要扩容
 >
 > **诊断关键**：看 CPU 和慢查询
-> - CPU 高 + 慢查询多 → 场景 1 → 先 Kill 空闲连接释放资源 → 再查慢 SQL
-> - CPU 正常 + 慢查询少 → 场景 2 → Kill 僵尸连接是唯一手段
-> - CPU 正常 + 连接活跃 → 场景 3 → 评估扩容
+> - CPU 高 + 慢查询多 -> 场景 1 -> 先 Kill 空闲连接释放资源 -> 再查慢 SQL
+> - CPU 正常 + 慢查询少 -> 场景 2 -> Kill 僵尸连接是唯一手段
+> - CPU 正常 + 连接活跃 -> 场景 3 -> 评估扩容
 
 ### 适用条件
 
@@ -49,7 +49,7 @@ execution_time_estimate: "3-8 分钟"
 
 - SQL Server / MariaDB 实例
 - 未开启 DAS Pro 的实例（无法获取会话详情）
-- 需要 Kill 活跃事务 → 引导到 `05-slow-query-diagnosis` 深度诊断
+- 需要 Kill 活跃事务 -> 引导到 `05-slow-query-diagnosis` 深度诊断
 
 ---
 
@@ -70,7 +70,7 @@ echo "[INFO] 客户: $CUSTOMER | 区域: $REGION"
 
 WINDOW_START=$(date -u -v-30M +%Y-%m-%dT%H:%M:%SZ)
 WINDOW_END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-echo "[INFO] 诊断窗口: $WINDOW_START → $WINDOW_END"
+echo "[INFO] 诊断窗口: $WINDOW_START -> $WINDOW_END"
 ```
 
 ### Phase 1: 实例扫描 + 连接指标采集
@@ -121,7 +121,7 @@ for DB_ID in $(echo "$RDS_INSTANCES" | jq -r '.[].DBInstanceId // empty'); do
     SUSPECT_INSTANCES=$(echo "$SUSPECT_INSTANCES" | jq --arg id "$DB_ID" \
       --arg conn "$CONN_PCT" --arg cpu "$CPU_PCT" --arg maxc "$MAX_CONN" \
       '. + [{"id": $id, "conn_pct": ($conn | tonumber), "cpu_pct": ($cpu | tonumber), "max_conn": ($maxc | tonumber)}]')
-    echo "  → 标记为可疑实例"
+    echo "  -> 标记为可疑实例"
   fi
 done
 
@@ -166,17 +166,17 @@ echo "$SUSPECT_INSTANCES" | jq -c '.[]' | while read -r INST; do
   # ── b) 根因分类 ──
   if [ "$(echo "$CPU_PCT > 75" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$TXN_ACTIVE > 10" | bc -l 2>/dev/null)" = "1" ]; then
     STORM_TYPE="slow_query"
-    echo "  🔴 根因: 慢查询堆积 — CPU ${CPU_PCT}%, 活跃事务 ${TXN_ACTIVE}"
+    echo "  CRITICAL 根因: 慢查询堆积 — CPU ${CPU_PCT}%, 活跃事务 ${TXN_ACTIVE}"
     echo "  建议: 执行 05-slow-query-diagnosis 定位慢 SQL"
   elif [ "$(echo "$SLEEP_PCT > 60" | bc -l 2>/dev/null)" = "1" ]; then
     STORM_TYPE="zombie_connection"
-    echo "  🔴 根因: 僵尸连接 — 空闲连接占比 ${SLEEP_PCT}%"
+    echo "  CRITICAL 根因: 僵尸连接 — 空闲连接占比 ${SLEEP_PCT}%"
   elif [ "$(echo "$CPU_PCT < 50" | bc -l 2>/dev/null)" = "1" ] && [ "$(echo "$TXN_ACTIVE > 20" | bc -l 2>/dev/null)" = "1" ]; then
     STORM_TYPE="burst_traffic"
-    echo "  🔴 根因: 突发流量 — CPU ${CPU_PCT}% 正常但活跃查询 ${TXN_ACTIVE}"
+    echo "  CRITICAL 根因: 突发流量 — CPU ${CPU_PCT}% 正常但活跃查询 ${TXN_ACTIVE}"
   else
     STORM_TYPE="unknown"
-    echo "  🟡 混合模式 — 需综合判断"
+    echo "  WARNING 混合模式 — 需综合判断"
   fi
 
   # ── c) [AUTO-NOTIFY] Kill 空闲连接（超过 30min 的睡眠连接）──
@@ -199,7 +199,7 @@ echo "$SUSPECT_INSTANCES" | jq -c '.[]' | while read -r INST; do
       --instance "$DB_ID" \
       --region "$REGION" 2>/dev/null)
     POST_CONN=$(echo "$POST_SESSIONS" | jq '.total // 0')
-    echo "  [VERIFY] Kill 后连接数: $TOTAL_SESS → $POST_CONN (减少 $((TOTAL_SESS - POST_CONN)))"
+    echo "  [VERIFY] Kill 后连接数: $TOTAL_SESS -> $POST_CONN (减少 $((TOTAL_SESS - POST_CONN)))"
 
     # 审计日志
     echo "  [AUDIT] whitelist_id=W-01 level=L1 resource=$DB_ID killed=$KILLED"
@@ -209,9 +209,9 @@ echo "$SUSPECT_INSTANCES" | jq -c '.[]' | while read -r INST; do
   if [ "$(echo "$CONN_PCT > 90" | bc -l 2>/dev/null)" = "1" ] && [ "$STORM_TYPE" != "zombie_connection" ]; then
     echo ""
     NEW_MAX=$(echo "$MAX_CONN * 1.5 / 1" | bc)
-    echo "  [SUGGESTED] 临时提升 max_connections: $MAX_CONN → $NEW_MAX"
+    echo "  [SUGGESTED] 临时提升 max_connections: $MAX_CONN -> $NEW_MAX"
     echo "    aliyun rds ModifyDBInstanceSpec --DBInstanceId $DB_ID --MaxConnections $NEW_MAX"
-    echo "    ⚠️ 需用户确认后执行"
+    echo "    [WARN] 需用户确认后执行"
   fi
 done
 ```
@@ -236,7 +236,7 @@ if [ "$STORM_TYPE" = "slow_query" ]; then
     echo "  [SUGGESTED] 建议对以下 SQL 限流:"
     echo "    $SQL_TEXT"
     echo "    限流关键字: $(echo "$LIMIT_KEYWORDS" | jq -r '.keywords // "N/A"')"
-    echo "    ⚠️ 需用户确认后执行，可能影响业务"
+    echo "    [WARN] 需用户确认后执行，可能影响业务"
   fi
 fi
 ```
@@ -247,23 +247,23 @@ fi
 
 ```markdown
 ═══════════════════════════════════════════════════════
-  🌊 数据库连接风暴诊断报告
+   数据库连接风暴诊断报告
 ═══════════════════════════════════════════════════════
   报告ID: connection-storm-$CUSTOMER-$(date +%Y%m%dT%H%M%SZ)
   客户: $CUSTOMER | 区域: $REGION | 时间: $(date)
 ═══════════════════════════════════════════════════════
 
-## 📊 总览
+## [STATS] 总览
 
 | 维度 | 结果 |
 |------|------|
 | 扫描实例数 | ${RDS_COUNT} |
 | 连接超标实例 | ${SUSPECT_COUNT} |
 | 已执行 Kill | ${KILLED_TOTAL:-0} 个空闲连接 |
-| 🔴 Critical | ${CRITICAL_COUNT:-0} |
-| 🟡 Warning | ${WARNING_COUNT:-0} |
+| Critical | ${CRITICAL_COUNT:-0} |
+| Warning | ${WARNING_COUNT:-0} |
 
-## 🎯 根因诊断
+## [TARGET] 根因诊断
 
 ### 实例: ${DB_ID}
 
@@ -285,18 +285,18 @@ fi
 |------|------|------|------|
 | $(date) | Kill 空闲连接(>30min) | ${DB_ID} | 释放 ${KILLED} 个 |
 
-## 📋 修复建议
+## [LIST] 修复建议
 
 ### 立即执行
-1. [AUTO-NOTIFY] Kill 空闲连接 — ✅ 已自动执行
+1. [AUTO-NOTIFY] Kill 空闲连接 — PASS 已自动执行
 2. [SUGGESTED] Kill 锁等待事务
    命令: go run das_slow_query.go --action kill-session --instance ${DB_ID} --session-id ${SESSION_ID}
    风险: 事务回滚，影响该事务涉及的业务
 
 ### 根因修复
-3. [SUGGESTED] 如为慢查询导致 → 执行 runbook 05 慢查询诊断
-4. [SUGGESTED] 如为连接池泄漏 → 检查应用连接池配置
-5. [SUGGESTED] 如为突发流量 → 评估升配或读写分离
+3. [SUGGESTED] 如为慢查询导致 -> 执行 runbook 05 慢查询诊断
+4. [SUGGESTED] 如为连接池泄漏 -> 检查应用连接池配置
+5. [SUGGESTED] 如为突发流量 -> 评估升配或读写分离
 ```
 
 **JSON:**
@@ -341,7 +341,7 @@ fi
 
 | 反馈来源 | 触发条件 | 改进动作 | 责任人 |
 |----------|---------|---------|--------|
-| 误 Kill | Kill 了不应 Kill 的连接 | 缩短空闲判断时间(>30min→>60min) | 运维负责人 |
+| 误 Kill | Kill 了不应 Kill 的连接 | 缩短空闲判断时间(>30min->>60min) | 运维负责人 |
 | 漏 Kill | Kill 后连接未回落 | 检查是否有遗漏的用户线程 | Agent 维护者 |
 | 阈值不合理 | 连接数<70% 时触发告警 | 上调阈值或增加持续周期判断 | 运维负责人 |
 

@@ -7,12 +7,12 @@
 - 统一输出 audit 格式
 
 触发场景:
-- cron 每日 9:00    → daily-health-check (workflow)
-- cron 每周日 9:00  → capacity-planning (workflow)
-- cron 大促前 7 天  → pre-launch-check (workflow)
-- 5xx 告警 webhook  → emergency-troubleshoot (agent)
-- 巡检 N+ critical  → 升级 agent
-- 用户提问         → agent
+- cron 每日 9:00    -> daily-health-check (workflow)
+- cron 每周日 9:00  -> capacity-planning (workflow)
+- cron 大促前 7 天  -> pre-launch-check (workflow)
+- 5xx 告警 webhook  -> emergency-troubleshoot (agent)
+- 巡检 N+ critical  -> 升级 agent
+- 用户提问         -> agent
 
 双引擎分工:
 - workflow-runner (90%): 已知 runbook, 已知输入, 毫秒级
@@ -77,7 +77,7 @@ def route_dispatch(scenario: str, critical_count: int = 0, source: str = "cron")
     Returns:
         DispatchDecision
     """
-    # 巡检发现 ≥ 3 critical → 升级到 agent 分析
+    # 巡检发现 ≥ 3 critical -> 升级到 agent 分析
     if scenario == "daily_check" and critical_count >= 3:
         return DispatchDecision(
             runbook="daily-health-check.py",
@@ -130,7 +130,7 @@ class Orchestrator:
             dict 含 runbook_path, engine, exit_code, duration, output
         """
         decision = route_dispatch(scenario, critical_count, source)
-        log("DIAG", f"dispatch scenario={scenario} → {decision}")
+        log("DIAG", f"dispatch scenario={scenario} -> {decision}")
 
         t0 = time.time()
         runbook_path = self.scripts_dir / decision.runbook
@@ -269,10 +269,10 @@ def main():
         print()
         print("路由决策:")
         for s, (rb, eng) in SCENARIO_MAP.items():
-            print(f"  {s:<20} → {rb:<35} ({eng})")
+            print(f"  {s:<20} -> {rb:<35} ({eng})")
         print()
         print("升级规则:")
-        print("  - daily_check 发现 ≥ 3 critical → 升级到 agent")
+        print("  - daily_check 发现 ≥ 3 critical -> 升级到 agent")
         return
 
     # 校验必填

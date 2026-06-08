@@ -29,7 +29,7 @@ def get_runtime_root() -> Path:
 
     优先级:
       1. 环境变量 ALIYUN_SKILLS_RUNTIME_ROOT
-      2. 环境变量 SKILLS_DIR → ${SKILLS_DIR}/.runtime
+      2. 环境变量 SKILLS_DIR -> ${SKILLS_DIR}/.runtime
       3. 从本模块路径推断 (skill 内部 .runtime, 仅作 fallback)
 
     Returns:
@@ -54,9 +54,9 @@ def normalize_skill_key(skill: str) -> str:
     """规范化 skill 短名: 去掉 'alicloud-' 前缀.
 
     Examples:
-        'alicloud-aiops-cruise' → 'aiops-cruise'
-        'aiops-cruise'         → 'aiops-cruise'
-        'alicloud-redis-ops'   → 'redis-ops'
+        'alicloud-aiops-cruise' -> 'aiops-cruise'
+        'aiops-cruise'         -> 'aiops-cruise'
+        'alicloud-redis-ops'   -> 'redis-ops'
     """
     if skill.startswith("alicloud-"):
         return skill[len("alicloud-"):]

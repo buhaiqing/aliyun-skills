@@ -78,7 +78,7 @@ if old in content:
     content = content.replace(old, new)
     with open("path/to/file", "w") as f:
         f.write(content)
-    print("✅ 替换成功")
+    print("PASS 替换成功")
 else:
     # 查找相似内容帮助调试
     idx = content.find("关键词")
@@ -101,8 +101,8 @@ PYFIX
 ## 最佳实践总结
 
 ```
-单处精确修改 → edit
-全局关键词替换 → sed + find
-复杂多行替换 → python
-匹配失败时 → grep -n -C3 先看精确原文
+单处精确修改 -> edit
+全局关键词替换 -> sed + find
+复杂多行替换 -> python
+匹配失败时 -> grep -n -C3 先看精确原文
 ```

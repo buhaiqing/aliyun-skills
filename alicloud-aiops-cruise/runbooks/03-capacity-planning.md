@@ -16,17 +16,17 @@ execution_time_estimate: "5-10 分钟"
 
 评估未来 30-90 天的资源是否充足，提前发现扩容需求。关注**趋势**而非瞬时状态。
 
-### 🚨 安全铁律
+### [ALERT] 安全铁律
 
 | 红线 | 要求 |
 |---|---|
-| **任何资源的删除/停止/规格变更** | ❌ 不允许自动执行，报告只出建议 |
-| **输出 AK/SK** | ❌ 必须掩码为 `AKID****SKRET` |
-| **安全组规则增删** | ❌ 不允许自动执行 |
+| **任何资源的删除/停止/规格变更** | FAIL 不允许自动执行，报告只出建议 |
+| **输出 AK/SK** | FAIL 必须掩码为 `AKID****SKRET` |
+| **安全组规则增删** | FAIL 不允许自动执行 |
 
 **底线**：本 skill 是纯读（Read-Only）巡检，不执行任何写操作。所有建议需用户确认后执行。
 
-### 🧠 提示知识力
+### [NOTE] 提示知识力
 
 > **容量规划不是"现在够不够"，而是"什么时候不够"。**
 >
@@ -73,7 +73,7 @@ for INST_ID in $(aliyun ecs DescribeInstances --RegionId "$REGION" --Tag.1.Key "
   LAST_VAL=$(echo "$DISK_7D" | jq '.[-1].value // 0')
   DAILY_GROWTH=$(echo "scale=2; ($LAST_VAL - $FIRST_VAL) / 7" | bc 2>/dev/null || echo "0")
   
-  echo "[DIAG] ECS $INST_ID: 磁盘 7天前=$FIRST_VAL% → 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
+  echo "[DIAG] ECS $INST_ID: 磁盘 7天前=$FIRST_VAL% -> 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
 done
 
 # RDS 磁盘趋势
@@ -90,7 +90,7 @@ for DB_ID in $(aliyun rds DescribeDBInstances --RegionId "$REGION" --Tag.1.Key "
   LAST_VAL=$(echo "$RDS_DISK_7D" | jq '.[-1].value // 0')
   DAILY_GROWTH=$(echo "scale=2; ($LAST_VAL - $FIRST_VAL) / 7" | bc 2>/dev/null || echo "0")
   
-  echo "[DIAG] RDS $DB_ID: 磁盘 7天前=$FIRST_VAL% → 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
+  echo "[DIAG] RDS $DB_ID: 磁盘 7天前=$FIRST_VAL% -> 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
 done
 
 # Redis 内存趋势
@@ -107,7 +107,7 @@ for REDIS_ID in $(aliyun r-kvstore DescribeInstances --RegionId "$REGION" --Tag.
   LAST_VAL=$(echo "$REDIS_MEM_7D" | jq '.[-1].value // 0')
   DAILY_GROWTH=$(echo "scale=2; ($LAST_VAL - $FIRST_VAL) / 7" | bc 2>/dev/null || echo "0")
   
-  echo "[DIAG] Redis $REDIS_ID: 内存 7天前=$FIRST_VAL% → 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
+  echo "[DIAG] Redis $REDIS_ID: 内存 7天前=$FIRST_VAL% -> 现在=$LAST_VAL% 日均增长=$DAILY_GROWTH%/天"
 done
 ```
 
@@ -123,11 +123,11 @@ predict_days() {
   fi
   days_needed=$(echo "scale=0; ($threshold - $current) / $growth" | bc 2>/dev/null)
   if [ "$(echo "$days_needed < 30" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "⚠️ 将在 ${days_needed} 天后达阈值（$threshold%）"
+    echo "[WARN] 将在 ${days_needed} 天后达阈值（$threshold%）"
   elif [ "$(echo "$days_needed < 90" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "📋 ${days_needed} 天后达阈值，建议规划"
+    echo "[LIST] ${days_needed} 天后达阈值，建议规划"
   else
-    echo "✅ 90 天内无风险"
+    echo "PASS 90 天内无风险"
   fi
 }
 
@@ -151,7 +151,7 @@ for INST_ID in $(aliyun ecs DescribeInstances --RegionId "$REGION" --Tag.1.Key "
   INST_TYPE=$(aliyun ecs DescribeInstances --RegionId "$REGION" --InstanceIds "[\"$INST_ID\"]" | jq -r '.Instances.Instance[0].InstanceType')
   
   if [ "$(echo "$CPU_7DAY_AVG < 20" | bc -l 2>/dev/null)" = "1" ]; then
-    echo "[INFO] FinOps: ECS $INST_ID ($INST_TYPE) 7天平均CPU=${CPU_7DAY_AVG}% < 20% → 建议评估降配"
+    echo "[INFO] FinOps: ECS $INST_ID ($INST_TYPE) 7天平均CPU=${CPU_7DAY_AVG}% < 20% -> 建议评估降配"
   fi
 done
 ```
@@ -165,20 +165,20 @@ done
   客户: $CUSTOMER | 时间: $(date) | 周期: 最近 7 天
 ═══════════════════════════════════════
 
-## 📈 趋势预测
+## [UP] 趋势预测
 
 ### 磁盘
 | 资源 | 当前 | 增长率/天 | 预计达90%日 | 建议 |
 |---|---|---|---|---|
 | i-xxx (系统盘) | 65% | +0.5% | 2026-07-16 | 6月前扩容 |
-| rm-xxx (数据盘) | 72% | +0.8% | 2026-07-01 | ⚠️ 4周内需处理 |
+| rm-xxx (数据盘) | 72% | +0.8% | 2026-07-01 | [WARN] 4周内需处理 |
 | r-xxx (Redis) | 55% | 平稳 | 无风险 | — |
 
 ### IOPS
 | 资源 | 当前/规格上限 | 增长率 | 预计达80%日 | 建议 |
 |---|---|---|---|---|
 
-## 💰 FinOps 建议
+##  FinOps 建议
 | 资源 | 规格 | CPU 7天平均 | 建议 |
 |---|---|---|---|
 | i-yyy | ecs.g7.4xlarge | 12% | 降配至 ecs.g7.xlarge |

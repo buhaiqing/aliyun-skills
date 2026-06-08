@@ -9,7 +9,7 @@ status: mandatory
 
 > **目的**：将所有 runbook 输出的"finding / 巡检发现"统一为标准化的 Incident 数据结构。下游消费方（自动化工单、Post-Mortem 复盘、ML 训练、跨客户聚合）有可依赖的契约。
 >
-> **生命周期**：v1.0 草案 → 安全/数据团队评审 → v1.0 正式 → 不可破坏性更新（仅追加可选字段）
+> **生命周期**：v1.0 草案 -> 安全/数据团队评审 -> v1.0 正式 -> 不可破坏性更新（仅追加可选字段）
 
 ---
 
@@ -20,7 +20,7 @@ status: mandatory
 | **稳定性** | 字段集变化必须有版本号；破坏性变更必须 major bump |
 | **可追溯** | 每个 Incident 必须能从 `trace.commands_executed` 还原产生过程 |
 | **可检索** | 必填字段覆盖 (customer, resource_type, level, rule_id, timestamp) 五维度，便于建索引 |
-| **可关联** | 必填字段 `dedup_key` 决定同源 Incident 是否合并（同一资源同一天同一规则 → 1 条） |
+| **可关联** | 必填字段 `dedup_key` 决定同源 Incident 是否合并（同一资源同一天同一规则 -> 1 条） |
 | **可消费** | 字段命名 snake_case；类型严格化（不接受 string 表达数字） |
 | **可扩展** | 所有必填外字段允许 `null` 或缺失；保留 `metadata` 自由扩展位 |
 
@@ -117,7 +117,7 @@ status: mandatory
 
 | 示例 | 含义 |
 |------|------|
-| `SLB-ECS-01` | SLB→ECS 链路第 1 条规则 |
+| `SLB-ECS-01` | SLB->ECS 链路第 1 条规则 |
 | `RDS-04` | RDS 第 4 条规则 |
 | `ACK-LIMITS-02` | ACK Limits 超分第 2 条规则 |
 | `SG-01` | 安全组第 1 条规则 |
@@ -493,4 +493,4 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
-| 1.0.0 | 2026-06-06 | 初始版本（Stage 1 → Sprint 7 闭环 S1-D5） |
+| 1.0.0 | 2026-06-06 | 初始版本（Stage 1 -> Sprint 7 闭环 S1-D5） |

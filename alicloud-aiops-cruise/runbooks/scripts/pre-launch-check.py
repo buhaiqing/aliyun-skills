@@ -222,7 +222,7 @@ def _main_locked():
     ap.add_argument("--describe", action="store_true")
     args = ap.parse_args()
     if args.describe:
-        print(f"30天基线 ×{args.multiplier} → 升配建议(需人工确认)")
+        print(f"30天基线 ×{args.multiplier} -> 升配建议(需人工确认)")
         return
     if not gate(args.region):
         sys.exit(1)
