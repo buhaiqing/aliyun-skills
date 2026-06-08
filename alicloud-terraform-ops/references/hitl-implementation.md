@@ -182,6 +182,12 @@ environments:
 
 ## 3. 模式 A: 交互式 CLI 实现
 
+> **实现状态**: ✅ 已完成
+> 
+> **实现文件**: `scripts/hitl_mode_a.py`
+> 
+> **使用方法**: `python3 scripts/hitl_mode_a.py --type nl2hcl --env dev`
+
 ### 3.1 核心组件
 
 ```
@@ -242,67 +248,92 @@ environments:
 
 ### 3.3 实现代码示例
 
+完整实现见: `scripts/hitl_mode_a.py`
+
 ```python
-# cli_controller.py
+# hitl_mode_a.py - 简化示意
 
 class CLIController:
-    def __init__(self, checkpoint: Checkpoint):
+    def __init__(self, checkpoint: Checkpoint, store: CheckpointStore):
         self.checkpoint = checkpoint
+        self.store = store
         self.ui = CLIRenderer()
         
-    async def run(self):
-        """主循环"""
-        try:
-            for step in self.checkpoint.get_pending_steps():
-                result = await self.execute_step(step)
-                
-                if result.action == Action.PAUSE:
-                    self.checkpoint.pause()
-                    return  # 等待恢复
-                    
-                elif result.action == Action.ABORT:
-                    self.checkpoint.abort(result.reason)
-                    raise UserAbortedError(result.reason)
-                    
-                elif result.action == Action.CONTINUE:
-                    self.checkpoint.complete_step(step, result.data)
-                    
-        except TimeoutError:
-            self.checkpoint.timeout()
-            raise
+        # 设置信号处理 (Ctrl+C 保存检查点)
+        signal.signal(signal.SIGINT, self._signal_handler)
+    
+    def _signal_handler(self, signum, frame):
+        self.checkpoint.pause()
+        self.store.save(self.checkpoint)
+        print(f"检查点已保存: {self.checkpoint.id}")
+        sys.exit(0)
+        
+    def run(self) -> Checkpoint:
+        """主执行循环"""
+        self.checkpoint.status = CheckpointStatus.RUNNING
+        
+        for step in self.checkpoint.get_pending_steps():
+            policy = EnvironmentPolicy.get_policy(
+                self.checkpoint.environment, step.type
+            )
             
-    async def execute_step(self, step: Step) -> Result:
-        # 执行单个检查点步骤 (CP1-CP5)
+            result = self._execute_step(step, policy)
+            
+            if result.action == Action.PAUSE:
+                self.checkpoint.pause()
+                self.store.save(self.checkpoint)
+                return self.checkpoint
+                
+            elif result.action == Action.ABORT:
+                self.checkpoint.abort(result.reason)
+                raise UserAbortedError(result.reason)
+                
+            elif result.action == Action.CONTINUE:
+                self.checkpoint.complete_step(step, result)
+                self.store.save(self.checkpoint)
+        
+        self.checkpoint.status = CheckpointStatus.COMPLETED
+        return self.checkpoint
+        
+    def _execute_step(self, step: Step, policy: PolicyConfig) -> StepResult:
         handlers = {
-            StepType.CONFIRM_INTENT: self.confirm_intent,
-            StepType.REVIEW_CONFIG: self.review_config,
-            StepType.CONFIRM_PLAN: self.confirm_plan,
-            # ... CP4, CP5 handlers
+            StepType.CONFIRM_INTENT: self._confirm_intent,
+            StepType.REVIEW_CONFIG: self._review_config,
+            StepType.CONFIRM_PLAN: self._confirm_plan,
+            StepType.CONFIRM_IMPORT: self._confirm_import,
+            StepType.CONFIRM_DESTROY: self._confirm_destroy,
         }
         handler = handlers.get(step.type)
-        return await handler(step) if handler else Result(Action.UNSUPPORTED)
+        return handler(step, policy)
         
-    async def confirm_intent(self, step: Step) -> Result:
+    def _confirm_intent(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP1: 意图确认"""
-        self.ui.render_header("意图确认 (CP1)")
-        self.ui.render_resources(step.data['resources'])
+        self.ui.render_header("检查点 1/5: 意图确认 (CP1)")
+        self.ui.render_resources(self.checkpoint.resources)
+        
+        # 生产环境特殊要求
+        if self.checkpoint.environment == Environment.PRODUCTION:
+            if policy.require_jira_ticket:
+                jira = self.ui.prompt("请输入 Jira Ticket 编号:")
+                if not jira:
+                    return StepResult(Action.ABORT)
         
         choice = self.ui.prompt(
             "确认生成?",
-            options=["Y", "n", "modify", "save-exit"],
+            options=["Y", "n", "modify", "q"],
             default="Y",
-            timeout=300  # 5分钟超时
+            timeout=policy.timeout
         )
         
-        if choice == "Y":
-            return Result(Action.CONTINUE)
-        elif choice == "n":
-            return Result(Action.ABORT, reason="用户取消")
-        elif choice == "modify":
-            modifications = await self.collect_modifications()
-            return Result(Action.CONTINUE, data=modifications)
-        elif choice == "save-exit":
-            return Result(Action.PAUSE)
+        if choice.lower() in ("y", "yes", ""):
+            return StepResult(Action.CONTINUE)
+        elif choice.lower() == "n":
+            return StepResult(Action.ABORT, reason="用户取消")
+        elif choice.lower() == "modify":
+            modifications = self._collect_modifications()
+            return StepResult(Action.CONTINUE, data={"modifications": modifications})
+        elif choice.lower() == "q":
+            return StepResult(Action.PAUSE)
 ```
 
 ### 3.4 五级环境差异化实现

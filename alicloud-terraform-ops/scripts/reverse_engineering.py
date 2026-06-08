@@ -65,6 +65,15 @@ import textwrap
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+# Import resource registry for PreFlight checks
+from resource_registry import (
+    ResourceRegistry, 
+    CapabilityChecker, 
+    SupportLevel,
+    ResourceCapability,
+    get_registry
+)
+
 
 # Allowed terraform subcommands during dry-run mode. All others are mocked.
 TERRAFORM_DRY_RUN_ALLOWED = frozenset({"init", "validate", "plan"})
@@ -153,6 +162,44 @@ class ResourceMapper:
             "id_param": "SecurityGroupId",
             "tf_type": "alicloud_security_group",
         },
+        "nat_gateway": {
+            "product": "vpc",
+            "describe": "DescribeNatGateways",
+            "id_param": "NatGatewayId",
+            "tf_type": "alicloud_nat_gateway",
+            "list_key": ("NatGateways", "NatGateway"),
+        },
+        "mongodb": {
+            "product": "dds",
+            "describe": "DescribeDBInstanceAttribute",
+            "id_param": "DBInstanceId",
+            "tf_type": "alicloud_mongodb_instance",
+        },
+        "polardb": {
+            "product": "polardb",
+            "describe": "DescribeDBClusterAttribute",
+            "id_param": "DBClusterId",
+            "tf_type": "alicloud_polardb_cluster",
+        },
+        "oss": {
+            "product": "oss",
+            "describe": "GetBucketInfo",
+            "id_param": "Bucket",
+            "tf_type": "alicloud_oss_bucket",
+            "is_bucket": True,
+        },
+        "disk": {
+            "product": "ecs",
+            "describe": "DescribeDisks",
+            "id_param": "DiskIds",
+            "tf_type": "alicloud_disk",
+        },
+        "route_table": {
+            "product": "vpc",
+            "describe": "DescribeRouteTableAttribute",
+            "id_param": "RouteTableId",
+            "tf_type": "alicloud_route_table",
+        },
     }
 
     def __init__(self, region: str = "cn-hangzhou"):
@@ -164,13 +211,16 @@ class ResourceMapper:
         if not mapping:
             return None
 
-        cmd = [
-            "aliyun",
-            mapping["product"],
-            mapping["describe"],
-            "--RegionId", self.region,
-            f"--{mapping['id_param']}", resource_id,
-        ]
+        cmd = ["aliyun", mapping["product"], mapping["describe"]]
+
+        if mapping.get("is_bucket"):
+            cmd.extend([f"--{mapping['id_param']}", resource_id])
+        else:
+            cmd.extend(["--RegionId", self.region])
+            id_val = resource_id
+            if resource_type in ("ecs", "disk"):
+                id_val = json.dumps([resource_id])
+            cmd.extend([f"--{mapping['id_param']}", id_val])
 
         try:
             result = subprocess.run(
@@ -183,22 +233,56 @@ class ResourceMapper:
             if result.returncode != 0:
                 return {"error": result.stderr, "id": resource_id}
 
-            return json.loads(result.stdout)
+            data = json.loads(result.stdout)
+            if resource_type == "nat_gateway" and "NatGateways" in data:
+                gateways = data.get("NatGateways", {}).get("NatGateway", [])
+                if gateways:
+                    data = {"NatGateway": gateways[0]}
+            if resource_type == "oss":
+                data.setdefault("BucketName", resource_id)
+            if resource_type == "disk" and "Disks" in data:
+                disks = data.get("Disks", {}).get("Disk", [])
+                if disks:
+                    data = {"Disk": disks[0]}
+            if resource_type == "route_table" and "RouteTable" not in data:
+                tables = data.get("RouteTables", {}).get("RouteTable", [])
+                if tables:
+                    data = {"RouteTable": tables[0]}
+            return data
         except Exception as e:
             return {"error": str(e), "id": resource_id}
 
     def discover_associated(self, resource_type: str, resource_id: str) -> List[Dict]:
         """Discover associated resources."""
-        associated = []
+        associated: List[Dict] = []
+        seen: set = set()
+
+        def _add(items: List[Dict]) -> None:
+            for item in items:
+                key = (item["type"], item["id"])
+                if key not in seen and item["type"] in self.RESOURCE_APIS:
+                    seen.add(key)
+                    associated.append(item)
 
         if resource_type == "vpc":
-            # Discover vSwitches
-            vswitches = self._query_vswitches(resource_id)
-            associated.extend(vswitches)
+            _add(self._query_vswitches(resource_id))
+            _add(self._query_route_tables(resource_id))
+            _add(self._query_nat_gateways(resource_id))
 
-            # Discover route tables
-            route_tables = self._query_route_tables(resource_id)
-            associated.extend(route_tables)
+        elif resource_type == "ecs":
+            data = self.query_resource("ecs", resource_id)
+            if data and "error" not in data:
+                _add(self._discover_from_ecs(data))
+
+        elif resource_type == "slb":
+            data = self.query_resource("slb", resource_id)
+            if data and "error" not in data:
+                _add(self._discover_from_slb(data))
+
+        elif resource_type == "rds":
+            data = self.query_resource("rds", resource_id)
+            if data and "error" not in data:
+                _add(self._discover_from_rds(data))
 
         return associated
 
@@ -258,6 +342,90 @@ class ResourceMapper:
 
         return []
 
+    def _query_nat_gateways(self, vpc_id: str) -> List[Dict]:
+        """Query NAT gateways in VPC."""
+        cmd = [
+            "aliyun", "vpc", "DescribeNatGateways",
+            "--RegionId", self.region,
+            "--VpcId", vpc_id,
+        ]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                gateways = data.get("NatGateways", {}).get("NatGateway", [])
+                return [
+                    {
+                        "type": "nat_gateway",
+                        "id": g["NatGatewayId"],
+                        "name": g.get("Name", g.get("NatGatewayName", "")),
+                    }
+                    for g in gateways
+                ]
+        except Exception as e:
+            log_dry_run("ERROR", f"查询 NAT Gateway 失败: {e}", is_error=True)
+        return []
+
+    def _discover_from_ecs(self, data: Dict) -> List[Dict]:
+        """Discover resources linked to an ECS instance."""
+        instances = data.get("Instances", {}).get("Instance", [])
+        if not instances:
+            return []
+        instance = instances[0]
+        found: List[Dict] = []
+
+        vswitch_ids = instance.get("VpcAttributes", {}).get("VSwitchId", [])
+        for vsid in vswitch_ids:
+            if vsid:
+                found.append({"type": "vswitch", "id": vsid, "name": ""})
+
+        sg_ids = instance.get("SecurityGroupIds", {}).get("SecurityGroupId", [])
+        for sgid in sg_ids:
+            if sgid:
+                found.append({"type": "security_group", "id": sgid, "name": ""})
+
+        disks = instance.get("Disks", {}).get("Disk", [])
+        for disk in disks:
+            disk_id = disk.get("DiskId")
+            disk_type = (disk.get("Type") or "").lower()
+            # 系统盘由 ECS 资源内联管理，仅发现独立数据盘
+            if disk_id and disk_type != "system":
+                found.append({"type": "disk", "id": disk_id, "name": disk.get("Device", "")})
+
+        return found
+
+    def _discover_from_slb(self, data: Dict) -> List[Dict]:
+        """Discover backend servers and network links for SLB."""
+        lb = data.get("LoadBalancer", {})
+        found: List[Dict] = []
+        vswitch_id = lb.get("VSwitchId")
+        vpc_id = lb.get("VpcId")
+        if vswitch_id:
+            found.append({"type": "vswitch", "id": vswitch_id, "name": ""})
+        if vpc_id:
+            found.append({"type": "vpc", "id": vpc_id, "name": ""})
+
+        backends = data.get("BackendServers", {}).get("BackendServer", [])
+        for b in backends:
+            server_id = b.get("ServerId")
+            if server_id and server_id.startswith("i-"):
+                found.append({"type": "ecs", "id": server_id, "name": b.get("ServerIp", "")})
+        return found
+
+    def _discover_from_rds(self, data: Dict) -> List[Dict]:
+        """Discover network dependencies for RDS."""
+        db = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
+        if not db:
+            db = data.get("DBInstanceAttribute", {})
+        found: List[Dict] = []
+        vswitch_id = db.get("VSwitchId")
+        vpc_id = db.get("VpcId")
+        if vswitch_id:
+            found.append({"type": "vswitch", "id": vswitch_id, "name": ""})
+        if vpc_id:
+            found.append({"type": "vpc", "id": vpc_id, "name": ""})
+        return found
+
     def to_hcl(self, resource_type: str, resource_data: Dict) -> str:
         """Convert API response to HCL."""
         if resource_type == "vpc":
@@ -266,8 +434,30 @@ class ResourceMapper:
             return self._vswitch_to_hcl(resource_data)
         elif resource_type == "ecs":
             return self._ecs_to_hcl(resource_data)
+        elif resource_type == "rds":
+            return self._rds_to_hcl(resource_data)
+        elif resource_type == "redis":
+            return self._redis_to_hcl(resource_data)
+        elif resource_type == "slb":
+            return self._slb_to_hcl(resource_data)
+        elif resource_type == "eip":
+            return self._eip_to_hcl(resource_data)
+        elif resource_type == "security_group":
+            return self._sg_to_hcl(resource_data)
+        elif resource_type == "nat_gateway":
+            return self._nat_to_hcl(resource_data)
+        elif resource_type == "mongodb":
+            return self._mongodb_to_hcl(resource_data)
+        elif resource_type == "polardb":
+            return self._polardb_to_hcl(resource_data)
+        elif resource_type == "oss":
+            return self._oss_to_hcl(resource_data)
+        elif resource_type == "disk":
+            return self._disk_to_hcl(resource_data)
+        elif resource_type == "route_table":
+            return self._route_table_to_hcl(resource_data)
         else:
-            return f"# TODO: Implement HCL generation for {resource_type}\n"
+            return f"# Unsupported resource type for HCL: {resource_type}\n"
 
     def _vpc_to_hcl(self, data: Dict) -> str:
         """Convert VPC API response to HCL."""
@@ -282,19 +472,30 @@ class ResourceMapper:
         if tf_name[0].isdigit():
             tf_name = "vpc_" + tf_name
 
-        hcl = textwrap.dedent(f"""\
-            # Imported VPC: {vpc_id}
-            resource "alicloud_vpc" "{tf_name}" {{
-              vpc_name   = "{vpc_name}"
-              cidr_block = "{cidr}"
-            """).rstrip()
+        hcl_lines = [
+            f'# Imported VPC: {vpc_id}',
+            f'resource "alicloud_vpc" "{tf_name}" {{',
+            f'  vpc_name   = "{vpc_name}"',
+            f'  cidr_block = "{cidr}"',
+        ]
 
         if description:
-            hcl += f'\n  description = "{description}"'
+            hcl_lines.append(f'  description = "{description}"')
 
-        hcl += '\n\n  tags = {\n    ImportedBy = "terraform-reverse-engineering"\n  }\n}'
+        hcl_lines.extend([
+            '',
+            '  # Import only - prevent accidental deletion',
+            '  lifecycle {',
+            '    prevent_destroy = true',
+            '  }',
+            '',
+            '  tags = {',
+            '    ImportedBy = "terraform-reverse-engineering"',
+            '  }',
+            '}',
+        ])
 
-        return hcl
+        return "\n".join(hcl_lines)
 
     def _vswitch_to_hcl(self, data: Dict) -> str:
         """Convert vSwitch API response to HCL."""
@@ -316,6 +517,11 @@ class ResourceMapper:
               vpc_id       = "{vpc_id}"  # TODO: Reference to alicloud_vpc resource
               cidr_block   = "{cidr}"
               zone_id      = "{zone_id}"
+
+              # Import only - prevent accidental deletion
+              lifecycle {{
+                prevent_destroy = true
+              }}
 
               tags = {{
                 ImportedBy = "terraform-reverse-engineering"
@@ -364,6 +570,411 @@ class ResourceMapper:
 
         return hcl
 
+    def _rds_to_hcl(self, data: Dict) -> str:
+        """Convert RDS API response to HCL."""
+        db_instance = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
+        if not db_instance:
+            db_instance = data.get("DBInstanceAttribute", {})
+
+        instance_id = db_instance.get("DBInstanceId", "")
+        instance_name = db_instance.get("DBInstanceDescription", "imported-rds")
+        engine = db_instance.get("Engine", "MySQL")
+        engine_version = db_instance.get("EngineVersion", "8.0")
+        instance_type = db_instance.get("DBInstanceClass", "")
+        vswitch_id = db_instance.get("VSwitchId", "")
+        vpc_id = db_instance.get("VpcId", "")
+        zone_id = db_instance.get("ZoneId", "")
+        storage = db_instance.get("DBInstanceStorage", 20)
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
+        if tf_name[0].isdigit():
+            tf_name = "rds_" + tf_name
+
+        hcl = textwrap.dedent(f"""\
+            # Imported RDS: {instance_id}
+            resource "alicloud_db_instance" "{tf_name}" {{
+              instance_name        = "{instance_name}"
+              engine               = "{engine}"
+              engine_version       = "{engine_version}"
+              instance_type        = "{instance_type}"
+              instance_storage     = {storage}
+              vswitch_id           = "{vswitch_id}"
+              zone_id              = "{zone_id}"
+
+              # Import only - prevent accidental deletion
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+        return hcl
+
+    def _redis_to_hcl(self, data: Dict) -> str:
+        """Convert Redis/Tair API response to HCL."""
+        instance = data.get("Instances", {}).get("KVStoreInstance", [{}])[0]
+        if not instance:
+            instance = data.get("Instance", {})
+
+        instance_id = instance.get("InstanceId", "")
+        instance_name = instance.get("InstanceName", "imported-redis")
+        instance_class = instance.get("InstanceClass", "")
+        engine_version = instance.get("EngineVersion", "")
+        vpc_id = instance.get("VpcId", "")
+        vswitch_id = instance.get("VSwitchId", "")
+        zone_id = instance.get("ZoneId", "")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
+        if tf_name[0].isdigit():
+            tf_name = "redis_" + tf_name
+
+        hcl = textwrap.dedent(f"""\
+            # Imported Redis: {instance_id}
+            resource "alicloud_kvstore_instance" "{tf_name}" {{
+              instance_name  = "{instance_name}"
+              instance_class = "{instance_class}"
+              engine_version = "{engine_version}"
+              vpc_id         = "{vpc_id}"
+              vswitch_id     = "{vswitch_id}"
+              zone_id        = "{zone_id}"
+
+              # Import only - prevent accidental deletion
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+        return hcl
+
+    def _slb_to_hcl(self, data: Dict) -> str:
+        """Convert SLB API response to HCL."""
+        lb = data.get("LoadBalancer", {})
+
+        lb_id = lb.get("LoadBalancerId", "")
+        lb_name = lb.get("LoadBalancerName", "imported-slb")
+        lb_spec = lb.get("LoadBalancerSpec", "slb.s1.small")
+        address_type = lb.get("AddressType", "intranet")
+        vpc_id = lb.get("VpcId", "")
+        vswitch_id = lb.get("VSwitchId", "")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", lb_name)
+        if tf_name[0].isdigit():
+            tf_name = "slb_" + tf_name
+
+        hcl = textwrap.dedent(f"""\
+            # Imported SLB: {lb_id}
+            resource "alicloud_slb_load_balancer" "{tf_name}" {{
+              load_balancer_name = "{lb_name}"
+              load_balancer_spec = "{lb_spec}"
+              address_type       = "{address_type}"
+              vpc_id             = "{vpc_id}"
+              vswitch_id         = "{vswitch_id}"
+
+              # Import only - prevent accidental deletion
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+        return hcl
+
+    def _eip_to_hcl(self, data: Dict) -> str:
+        """Convert EIP API response to HCL."""
+        eips = data.get("EipAddresses", {}).get("EipAddress", [])
+        if not eips:
+            return "# No EIP addresses found\n"
+
+        eip = eips[0]
+        allocation_id = eip.get("AllocationId", "")
+        ip_address = eip.get("IpAddress", "")
+        bandwidth = eip.get("Bandwidth", 5)
+        isp = eip.get("ISP", "BGP")
+        internet_charge_type = eip.get("InternetChargeType", "PayByTraffic")
+
+        tf_name = f"eip_{allocation_id.split('-')[-1][:8]}"
+
+        hcl = textwrap.dedent(f"""\
+            # Imported EIP: {allocation_id} ({ip_address})
+            resource "alicloud_eip_address" "{tf_name}" {{
+              address_name         = "imported-eip-{allocation_id.split('-')[-1][:8]}"
+              bandwidth            = "{bandwidth}"
+              isp                  = "{isp}"
+              internet_charge_type = "{internet_charge_type}"
+
+              # Import only - prevent accidental deletion
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+        return hcl
+
+    def _sg_to_hcl(self, data: Dict) -> str:
+        """Convert Security Group API response to HCL."""
+        sg = data.get("SecurityGroup", {})
+
+        sg_id = sg.get("SecurityGroupId", "")
+        sg_name = sg.get("SecurityGroupName", "imported-sg")
+        description = sg.get("Description", "Imported security group")
+        vpc_id = sg.get("VpcId", "")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", sg_name)
+        if tf_name[0].isdigit():
+            tf_name = "sg_" + tf_name
+
+        hcl_lines = [
+            f'# Imported Security Group: {sg_id}',
+            f'resource "alicloud_security_group" "{tf_name}" {{',
+            f'  name        = "{sg_name}"',
+            f'  description = "{description}"',
+        ]
+
+        if vpc_id:
+            hcl_lines.append(f'  vpc_id      = "{vpc_id}"')
+
+        hcl_lines.extend([
+            '',
+            '  # Import only - prevent accidental deletion',
+            '  lifecycle {',
+            '    prevent_destroy = true',
+            '  }',
+            '',
+            '  tags = {',
+            '    ImportedBy = "terraform-reverse-engineering"',
+            '  }',
+            '}',
+        ])
+
+        return "\n".join(hcl_lines)
+
+    def _nat_to_hcl(self, data: Dict) -> str:
+        """Convert NAT Gateway API response to HCL."""
+        nat = data.get("NatGateway", data)
+        nat_id = nat.get("NatGatewayId", "")
+        nat_name = nat.get("Name", nat.get("NatGatewayName", "imported-nat"))
+        vpc_id = nat.get("VpcId", "")
+        vswitch_id = nat.get("VSwitchId", "")
+        spec = nat.get("Spec", "Small")
+        nat_type = nat.get("NatType", "Enhanced")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", nat_name) or f"nat_{nat_id.split('-')[-1][:8]}"
+        if tf_name[0].isdigit():
+            tf_name = "nat_" + tf_name
+
+        return textwrap.dedent(f"""\
+            # Imported NAT Gateway: {nat_id}
+            resource "alicloud_nat_gateway" "{tf_name}" {{
+              nat_gateway_name = "{nat_name}"
+              vpc_id           = "{vpc_id}"
+              vswitch_id       = "{vswitch_id}"
+              spec             = "{spec}"
+              nat_type         = "{nat_type}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+    def _mongodb_to_hcl(self, data: Dict) -> str:
+        """Convert MongoDB API response to HCL."""
+        instance = data.get("DBInstances", {}).get("DBInstance", [{}])[0]
+        if not instance:
+            instance = data.get("DBInstance", data.get("Items", {}).get("DBInstanceAttribute", [{}])[0])
+
+        instance_id = instance.get("DBInstanceId", "")
+        instance_name = instance.get("DBInstanceDescription", "imported-mongodb")
+        engine_version = instance.get("EngineVersion", "4.2")
+        instance_class = instance.get("DBInstanceClass", "")
+        vpc_id = instance.get("VpcId", "")
+        vswitch_id = instance.get("VSwitchId", "")
+        zone_id = instance.get("ZoneId", "")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
+        if tf_name[0].isdigit():
+            tf_name = "mongodb_" + tf_name
+
+        return textwrap.dedent(f"""\
+            # Imported MongoDB: {instance_id}
+            resource "alicloud_mongodb_instance" "{tf_name}" {{
+              name             = "{instance_name}"
+              engine_version   = "{engine_version}"
+              db_instance_class = "{instance_class}"
+              vpc_id           = "{vpc_id}"
+              vswitch_id       = "{vswitch_id}"
+              zone_id          = "{zone_id}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+    def _polardb_to_hcl(self, data: Dict) -> str:
+        """Convert PolarDB cluster API response to HCL."""
+        cluster = data.get("Items", {}).get("DBCluster", [{}])[0]
+        if not cluster:
+            cluster = data.get("DBCluster", data)
+
+        cluster_id = cluster.get("DBClusterId", "")
+        cluster_name = cluster.get("DBClusterDescription", "imported-polardb")
+        db_type = cluster.get("DBType", "MySQL")
+        db_version = cluster.get("DBVersion", "8.0")
+        vpc_id = cluster.get("VpcId", "")
+        vswitch_id = cluster.get("VSwitchId", "")
+        zone_id = cluster.get("ZoneId", "")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", cluster_name)
+        if tf_name[0].isdigit():
+            tf_name = "polardb_" + tf_name
+
+        return textwrap.dedent(f"""\
+            # Imported PolarDB: {cluster_id}
+            resource "alicloud_polardb_cluster" "{tf_name}" {{
+              description = "{cluster_name}"
+              db_type     = "{db_type}"
+              db_version  = "{db_version}"
+              vpc_id      = "{vpc_id}"
+              vswitch_id  = "{vswitch_id}"
+              zone_id     = "{zone_id}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+    def _disk_to_hcl(self, data: Dict) -> str:
+        """Convert Disk API response to HCL."""
+        disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
+        if isinstance(disk, list):
+            disk = disk[0] if disk else {}
+
+        disk_id = disk.get("DiskId", "")
+        disk_name = disk.get("DiskName", "imported-disk")
+        size = disk.get("Size", 40)
+        category = disk.get("Category", "cloud_essd")
+        zone_id = disk.get("ZoneId", "")
+        disk_type = disk.get("Type", "data")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", disk_name)
+        if not tf_name or tf_name[0].isdigit():
+            tf_name = f"disk_{disk_id.split('-')[-1][:8]}" if disk_id else "imported_disk"
+
+        return textwrap.dedent(f"""\
+            # Imported Disk: {disk_id} (type={disk_type})
+            # NOTE: 已挂载磁盘需额外 import alicloud_disk_attachment
+            resource "alicloud_disk" "{tf_name}" {{
+              disk_name = "{disk_name}"
+              zone_id   = "{zone_id}"
+              size      = {size}
+              category  = "{category}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+    def _route_table_to_hcl(self, data: Dict) -> str:
+        """Convert Route Table API response to HCL."""
+        rt = data.get("RouteTable", data)
+        if isinstance(rt, list):
+            rt = rt[0] if rt else {}
+
+        rt_id = rt.get("RouteTableId", "")
+        rt_name = rt.get("RouteTableName", "imported-rt")
+        vpc_id = rt.get("VpcId", "")
+        description = rt.get("Description", "Imported route table")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", rt_name)
+        if not tf_name or tf_name[0].isdigit():
+            tf_name = f"rt_{rt_id.split('-')[-1][:8]}" if rt_id else "imported_rt"
+
+        return textwrap.dedent(f"""\
+            # Imported Route Table: {rt_id}
+            # NOTE: 路由条目 (alicloud_route_entry) 需单独管理
+            resource "alicloud_route_table" "{tf_name}" {{
+              vpc_id           = "{vpc_id}"
+              route_table_name = "{rt_name}"
+              description      = "{description}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
+    def _oss_to_hcl(self, data: Dict) -> str:
+        """Convert OSS bucket info to HCL."""
+        bucket_name = data.get("BucketName", data.get("Bucket", {}).get("Name", "imported-bucket"))
+        if isinstance(bucket_name, dict):
+            bucket_name = bucket_name.get("Name", "imported-bucket")
+
+        bucket_info = data.get("Bucket", data)
+        acl = bucket_info.get("AccessControlList", {}).get("Grant", "private")
+        storage_class = bucket_info.get("StorageClass", "Standard")
+
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", bucket_name.replace("-", "_"))
+        if tf_name[0].isdigit():
+            tf_name = "oss_" + tf_name
+
+        return textwrap.dedent(f"""\
+            # Imported OSS Bucket: {bucket_name}
+            resource "alicloud_oss_bucket" "{tf_name}" {{
+              bucket          = "{bucket_name}"
+              acl             = "{acl.lower()}"
+              storage_class   = "{storage_class}"
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+
+              tags = {{
+                ImportedBy = "terraform-reverse-engineering"
+              }}
+            }}
+        """)
+
     def generate_import_script(self, resources: List[Dict[str, str]]) -> str:
         """Generate terraform import shell script."""
         lines = [
@@ -396,10 +1007,18 @@ class ResourceMapper:
 class ReverseEngineering:
     """Main reverse engineering orchestrator."""
 
-    def __init__(self, region: str = "cn-hangzhou", output_dir: Path = Path("./generated")):
+    def __init__(
+        self, 
+        region: str = "cn-hangzhou", 
+        output_dir: Path = Path("./generated"),
+        skip_preflight: bool = False
+    ):
         self.region = region
         self.output_dir = output_dir
         self.mapper = ResourceMapper(region)
+        self.registry = get_registry()
+        self.checker = CapabilityChecker(self.registry)
+        self.skip_preflight = skip_preflight
 
     def run(
         self,
@@ -415,24 +1034,88 @@ class ReverseEngineering:
         if dry_run:
             print_dry_run_banner()
 
+        # ==========================================
+        # PreFlight Check - 资源能力预检
+        # ==========================================
+        if not self.skip_preflight:
+            print(f"{Colors.CYAN}[PreFlight]{Colors.END} 检查资源类型支持: {resource_type}")
+            
+            required_caps = {
+                ResourceCapability.DISCOVER,
+                ResourceCapability.HCL_GENERATE
+            }
+            if discover_associated:
+                required_caps.add(ResourceCapability.ASSOCIATED_DISCOVER)
+            
+            preflight_result = self.registry.preflight_check(
+                resource_type, 
+                required_capabilities=required_caps
+            )
+            
+            print(f"  {preflight_result.message}")
+            
+            if preflight_result.warnings:
+                for warning in preflight_result.warnings:
+                    print(f"  {Colors.YELLOW}⚠ {warning}{Colors.END}")
+            
+            if not preflight_result.can_proceed:
+                print(f"\n{Colors.RED}[PreFlight] 检查未通过，无法继续{Colors.END}")
+                if preflight_result.suggestions:
+                    print("\n建议:")
+                    for suggestion in preflight_result.suggestions:
+                        print(f"  • {suggestion}")
+                
+                # 显示支持矩阵
+                print(f"\n{Colors.CYAN}支持的资源类型:{Colors.END}")
+                for name in self.registry.list_supported_names():
+                    print(f"  - {name}")
+                
+                return False, []
+            
+            if preflight_result.fallback_available:
+                print(f"\n{Colors.YELLOW}[PreFlight] 将使用降级模式继续{Colors.END}")
+            
+            print(f"{Colors.GREEN}[PreFlight] 检查通过 ✓{Colors.END}\n")
+
         all_resources = []
+        work_queue: List[Tuple[str, str]] = [(resource_type, rid) for rid in resource_ids]
+        processed: set = set()
 
-        for resource_id in resource_ids:
-            log_dry_run("QUERY", f"查询 {resource_type}: {resource_id}")
+        if discover_associated:
+            for rid in resource_ids:
+                log_dry_run("DISCOVER", f"发现关联资源: {rid}")
+                for assoc in self.mapper.discover_associated(resource_type, rid):
+                    log_dry_run("DISCOVER", f"  发现: {assoc['type']} - {assoc['id']}")
+                    key = (assoc["type"], assoc["id"])
+                    if key not in processed:
+                        work_queue.append(key)
 
-            data = self.mapper.query_resource(resource_type, resource_id)
+        for rtype, resource_id in work_queue:
+            key = (rtype, resource_id)
+            if key in processed:
+                continue
+            processed.add(key)
+
+            if rtype not in self.mapper.RESOURCE_APIS:
+                log_dry_run("WARN", f"跳过不支持的关联类型: {rtype}", is_error=False)
+                continue
+
+            log_dry_run("QUERY", f"查询 {rtype}: {resource_id}")
+
+            data = self.mapper.query_resource(rtype, resource_id)
             if not data or "error" in data:
                 log_dry_run("ERROR", f"查询失败: {data.get('error', 'Unknown error')}", is_error=True)
                 continue
 
             log_dry_run("GENERATE", f"生成 HCL: {resource_id}")
-            hcl = self.mapper.to_hcl(resource_type, data)
+            hcl = self.mapper.to_hcl(rtype, data)
 
-            tf_type = self.mapper.RESOURCE_APIS[resource_type]["tf_type"]
-            tf_name = f"imported_{resource_type}_{resource_id.split('-')[-1][:8]}"
+            tf_type = self.mapper.RESOURCE_APIS[rtype]["tf_type"]
+            id_suffix = resource_id.split("-")[-1][:8] if "-" in resource_id else resource_id[:8]
+            tf_name = f"imported_{rtype}_{id_suffix}"
 
             resource_info = {
-                "type": resource_type,
+                "type": rtype,
                 "id": resource_id,
                 "tf_type": tf_type,
                 "tf_name": tf_name,
@@ -440,13 +1123,6 @@ class ReverseEngineering:
                 "data": data,
             }
             all_resources.append(resource_info)
-
-            # Discover associated resources
-            if discover_associated:
-                log_dry_run("DISCOVER", f"发现关联资源: {resource_id}")
-                associated = self.mapper.discover_associated(resource_type, resource_id)
-                for assoc in associated:
-                    log_dry_run("DISCOVER", f"  发现: {assoc['type']} - {assoc['id']}")
 
         if not all_resources:
             return False, []
@@ -540,7 +1216,7 @@ class ReverseEngineering:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             work_dir = Path(tmpdir)
-            valid_types = ["vpc", "vswitch", "ecs", "rds"]
+            valid_types = list(self.mapper.RESOURCE_APIS.keys())
 
             # Write files to temp directory
             if isinstance(source, dict):
@@ -601,8 +1277,7 @@ def main():
     parser.add_argument(
         "--resource-type", "-t",
         required=True,
-        choices=["vpc", "vswitch", "ecs", "rds", "redis", "slb", "eip", "security_group"],
-        help="Resource type to import"
+        help="Resource type to import (run with --dry-run to check supported types)"
     )
     parser.add_argument(
         "--resource-id", "-i",
@@ -633,6 +1308,11 @@ def main():
         action="store_true",
         help="Auto-discover associated resources"
     )
+    parser.add_argument(
+        "--skip-preflight",
+        action="store_true",
+        help="Skip PreFlight capability check (not recommended)"
+    )
 
     args = parser.parse_args()
 
@@ -648,7 +1328,11 @@ def main():
         sys.exit(1)
 
     # Run reverse engineering
-    engine = ReverseEngineering(region=args.region, output_dir=args.output_dir)
+    engine = ReverseEngineering(
+        region=args.region, 
+        output_dir=args.output_dir,
+        skip_preflight=args.skip_preflight
+    )
     success, resources = engine.run(
         resource_type=args.resource_type,
         resource_ids=resource_ids,

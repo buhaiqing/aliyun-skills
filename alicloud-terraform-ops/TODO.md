@@ -1,53 +1,61 @@
 # alicloud-terraform-ops — 功能点完成跟踪
 
-> 最后更新: 2026-06-08
+> 最后更新: 2026-06-09
 
 ## ✅ 已完成
 
 ### NL2HCL 自然语言生成 Terraform
-- [x] 语义解析（意图识别 + 实体抽取）
-- [x] HCL 生成（VPC, VSwitch, ECS）
-- [x] variables.tf 生成
-- [x] terraform.tfvars 生成
-- [x] Dry-run 模式（terraform init → validate → plan 白名单）
-- [x] GCL 质量门集成
-- [x] 交互式向导模式 (`--wizard`)
-- [x] 资源映射表（VPC/ECS/RDS/SLB/Redis 等）
-- [x] 多环境默认值（dev/staging/prod）
+- [x] Module-first 编排（`module_catalog.py` + `modules/` 可复用模块库）
+- [x] 语义解析（regex 意图识别 + 实体抽取：资源/数量/规格/可用区/数据盘）
+- [x] HCL 生成（VPC, VSwitch, ECS, RDS, Redis, SLB, NAT, EIP, 路由表, 独立云盘）
+- [x] variables.tf / outputs.tf / terraform.tfvars / provider.tf 生成
+- [x] Dry-run 模式默认离线生成 HCL + lint；`--with-validate` / `--with-plan` 显式启用 Terraform 步骤
+- [x] GCL 质量门集成（`--gcl-check` → `gcl_runner.py`）
+- [x] 交互式向导（`wizard_cli.py` / `terraform_ops.py wizard`）
+- [x] 统一 CLI 入口（`terraform_ops.py`）
+- [x] 多环境默认值（dev/staging/prod/int/uat/performance）
+- [x] `intent_to_hitl_resources()` — NL2HCL 意图 → HITL 资源清单
+- [x] `terraform_ops create`（非 dry-run）生成产物并注入 HITL Mode A 检查点
 
 ### Reverse Engineering 逆向导入
-- [x] 资源发现（8 种类型 via aliyun CLI）
-- [x] VPC / VSwitch / ECS HCL 生成
+- [x] 资源发现（8+ 类型 via aliyun CLI）
+- [x] VPC / VSwitch / ECS / RDS / Redis / SLB / EIP / Security Group HCL 生成
 - [x] import.sh 生成
 - [x] 关联资源自动发现（VPC → VSwitch, VPC → RouteTable）
 - [x] Dry-run 模式（terraform init → validate → plan 白名单）
-- [x] Normal 模式自动 validate
+- [x] Resource Registry + PreFlight 渐进式资源支持（`resource_registry.py`）
 - [x] GCL 集成
 
+### HITL 多模式工作流
+- [x] Mode A: 交互式 CLI（CP1–CP5、五级环境策略、检查点持久化）— `hitl_mode_a.py`
+- [x] Mode B: PR 式审核（LocalGitProvider、评论指令、PLAN.md）— `hitl_mode_b.py`
+- [x] Mode C: CheckPoint 暂停（资源分级 PASS/WARN/SKIP、漂移检测、会话恢复）— `hitl_mode_c.py`
+- [x] 共享层：审计/通知/熔断/升级 — `hitl_common.py`（钉钉/飞书/企微）
+
 ### GCL 质量门
-- [x] Generator Prompt 模板（NL2HCL / Reverse Engineering / Terraform Operation）
-- [x] Critic Prompt 模板（通用 / NL2HCL 专用 / Reverse Engineering 专用）
-- [x] Hallucination Detector 模板（CLI 参数 / JSON 结构 / WAF）
-- [x] Orchestrator 决策逻辑
+- [x] Generator / Critic / Hallucination Detector Prompt 模板
 - [x] Rubric 评分维度（Correctness / Safety / Idempotency / Traceability / Spec Compliance）
 - [x] Dry-Run 输出标识规范
+- [x] 执行轨迹持久化（`execution_trace.py` → `audit-results/gcl-trace-*.json`）
 
-### 基础设施
-- [x] Eval Queries（20 条评估用例）
+### 测试与文档
+- [x] 单元/集成测试（141+ cases，`unittest discover -p 'test_*.py'`）
+- [x] Eval Queries（20 条，`assets/eval_queries.json`）
 - [x] SKILL.md 结构合规（前置检查/变量约定/执行后验证/故障恢复/架构评估）
-- [x] 引用链接全部有效
-- [x] 章节编号一致性
+- [x] Terraform 模块库已纳入版本控制（`modules/`）
 
 ## ⚠️ 部分完成
 
-- [ ] `scripts/nl2hcl_generator.py` — outputs.tf 仅覆盖 VPC，建议补充 ECS 等资源的输出
-- [ ] `scripts/reverse_engineering.py` — RDS/Redis/SLB/EIP/SG 的 HCL 生成函数 `to_hcl()` 返回 TODO，需实现
+- [ ] HITL Mode A — CP3 仍基于资源计数摘要，未自动执行 `terraform plan` 并展示真实 plan 输出
+- [ ] HITL Mode B — 仅 `LocalGitProvider`；GitHub/GitLab/Gitee API 未实现
+- [ ] NL2HCL — `parse_intent()` 为规则引擎，复杂/模糊自然语言需 Agent 预处理或 Wizard 补全
+- [ ] Reverse Engineering — 部分 HCL 资源引用仍为硬编码 ID（`# TODO: Reference`），import 后需手工修引用
+- [ ] SKILL §5 `environments/` 目录结构 — 文档有描述，仓库未预置脚手架
+- [ ] `terraform apply` / `destroy` — 安全门与确认流程有 spec/CP5，脚本层未自动调用 terraform binary
 
-## ❌ 未实现（仅文档阶段）
+## ❌ 未实现
 
-- [ ] HITL Mode A: 交互式 CLI — `references/hitl-workflow.md` + `hitl-implementation.md` 有完整 spec，无可执行代码
-- [ ] HITL Mode B: PR 式审核 — Git PR 驱动流程有 spec，无实现
-- [ ] HITL Mode C: CheckPoint 暂停 — 会话恢复有 spec，无实现
-- [ ] Interactive Wizard CLI — `references/interactive-wizard.md` 有完整 spec，`aliyun-terraform wizard` CLI 不存在
-- [ ] Reverse Engineering 资源分级（PASS/WARN/SKIP）— spec 中有文档，脚本中无实现
-- [ ] Reverse Engineering CheckPoint 会话持久化 — spec 中有文档，脚本中无实现
+- [ ] GitHub/GitLab/Gitee Git Provider（`hitl_mode_b.create_git_provider` 非 local 抛 NotImplementedError）
+- [ ] `docs/gcl-spec.md` 技能分类表注册
+- [ ] Canonical skill 可选 references（`well-architected-assessment.md`、`troubleshooting.md` 等独立文件）
+- [ ] OpenAPI 驱动的 HCL 映射自动生成

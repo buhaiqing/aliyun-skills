@@ -360,22 +360,25 @@ Full spec: [references/reverse-engineering.md](references/reverse-engineering.md
 
 人工介入 (Human-in-the-Loop) 工作流程，支持三种协作模式：
 
-**模式 A: 交互式 CLI (默认)**
+**模式 A: 交互式 CLI (默认)** ✅ 已实现
 - 命令行实时问答确认
 - 适用于开发/测试环境快速迭代
 - 支持五级环境差异化确认策略 (int/dev/uat/performance/production)
+- **实现**: `scripts/hitl_mode_a.py`
 
-**模式 B: PR 式审核**
+**模式 B: PR 式审核** ✅ 已实现
 - Git PR 驱动的异步审批流程
 - 自动生成 PLAN.md 变更摘要
 - 评论指令系统 (/approve, /plan, /apply)
 - 适用于生产环境发布、团队协作
+- **实现**: `scripts/hitl_mode_b.py`
 
-**模式 C: CheckPoint 暂停**
+**模式 C: CheckPoint 暂停** ✅ 已实现
 - 会话状态持久化，支持中断恢复
 - 资源分级标记 ([PASS]/[WARN]/[SKIP])
 - 批量选择、分步执行
 - 适用于复杂架构导入、长时间任务
+- **实现**: `scripts/hitl_mode_c.py`
 
 **CheckPoint 机制:**
 | 检查点 | 触发时机 | 人工操作 | 环境要求 |
