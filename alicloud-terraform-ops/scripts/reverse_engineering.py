@@ -109,6 +109,41 @@ def log_dry_run(phase: str, message: str, is_error: bool = False):
     print(f"{prefix} [{phase}] {color}{message}{Colors.END}")
 
 
+def make_tf_name(resource_type: str, resource_id: str) -> str:
+    """与 import.sh 一致的 Terraform resource 块名称。"""
+    id_suffix = resource_id.split("-")[-1][:8] if "-" in resource_id else resource_id[:8]
+    safe_suffix = re.sub(r"[^a-zA-Z0-9_]", "", id_suffix) or "resource"
+    return f"imported_{resource_type}_{safe_suffix}"
+
+
+class ResourceReferenceRegistry:
+    """同一批次导入资源：cloud ID → Terraform 资源引用。"""
+
+    def __init__(self) -> None:
+        self._entries: Dict[str, Tuple[str, str]] = {}
+
+    def register(self, cloud_id: str, tf_type: str, tf_name: str) -> None:
+        if cloud_id:
+            self._entries[cloud_id] = (tf_type, tf_name)
+
+    def reference(self, cloud_id: str, attribute: str = "id") -> Optional[str]:
+        if not cloud_id:
+            return None
+        entry = self._entries.get(cloud_id)
+        if not entry:
+            return None
+        tf_type, tf_name = entry
+        return f"{tf_type}.{tf_name}.{attribute}"
+
+    def hcl_value(self, cloud_id: str, attribute: str = "id") -> str:
+        ref = self.reference(cloud_id, attribute)
+        if ref:
+            return ref
+        if cloud_id:
+            return f'"{cloud_id}"'
+        return '""'
+
+
 class ResourceMapper:
     """Maps Alibaba Cloud API responses to Terraform HCL."""
 
@@ -204,6 +239,73 @@ class ResourceMapper:
 
     def __init__(self, region: str = "cn-hangzhou"):
         self.region = region
+
+    @staticmethod
+    def extract_cloud_id(resource_type: str, data: Dict) -> str:
+        """从 API 响应提取云资源 ID。"""
+        if resource_type == "vpc":
+            return data.get("Vpc", {}).get("VpcId", "")
+        if resource_type == "vswitch":
+            return data.get("VSwitch", {}).get("VSwitchId", "")
+        if resource_type == "ecs":
+            instances = data.get("Instances", {}).get("Instance", [])
+            return instances[0].get("InstanceId", "") if instances else ""
+        if resource_type == "rds":
+            db = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
+            if not db:
+                db = data.get("DBInstanceAttribute", {})
+            return db.get("DBInstanceId", "")
+        if resource_type == "redis":
+            inst = data.get("Instances", {}).get("KVStoreInstance", [{}])[0]
+            if not inst:
+                inst = data.get("Instance", {})
+            return inst.get("InstanceId", "")
+        if resource_type == "slb":
+            return data.get("LoadBalancer", {}).get("LoadBalancerId", "")
+        if resource_type == "eip":
+            eips = data.get("EipAddresses", {}).get("EipAddress", [])
+            return eips[0].get("AllocationId", "") if eips else ""
+        if resource_type == "security_group":
+            return data.get("SecurityGroup", {}).get("SecurityGroupId", "")
+        if resource_type == "nat_gateway":
+            nat = data.get("NatGateway", data)
+            return nat.get("NatGatewayId", "")
+        if resource_type == "mongodb":
+            inst = data.get("DBInstances", {}).get("DBInstance", [{}])[0]
+            if not inst:
+                inst = data.get("DBInstance", data.get("Items", {}).get("DBInstanceAttribute", [{}])[0])
+            return inst.get("DBInstanceId", "")
+        if resource_type == "polardb":
+            cluster = data.get("Items", {}).get("DBCluster", [{}])[0]
+            if not cluster:
+                cluster = data.get("DBCluster", data)
+            return cluster.get("DBClusterId", "")
+        if resource_type == "disk":
+            disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
+            if isinstance(disk, list):
+                disk = disk[0] if disk else {}
+            return disk.get("DiskId", "")
+        if resource_type == "route_table":
+            rt = data.get("RouteTable", data)
+            if isinstance(rt, list):
+                rt = rt[0] if rt else {}
+            return rt.get("RouteTableId", "")
+        if resource_type == "oss":
+            return data.get("BucketName", data.get("Bucket", {}).get("Name", ""))
+        return data.get("id", "")
+
+    def _sanitize_tf_name(self, name: str, prefix: str) -> str:
+        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", name or "")
+        if not tf_name or tf_name[0].isdigit():
+            tf_name = f"{prefix}{tf_name}" if tf_name else prefix.rstrip("_")
+        return tf_name
+
+    def _hcl_ref(self, refs: Optional[ResourceReferenceRegistry], cloud_id: str) -> str:
+        if refs:
+            return refs.hcl_value(cloud_id)
+        if cloud_id:
+            return f'"{cloud_id}"'
+        return '""'
 
     def query_resource(self, resource_type: str, resource_id: str) -> Optional[Dict]:
         """Query resource details via aliyun CLI."""
@@ -426,40 +528,52 @@ class ResourceMapper:
             found.append({"type": "vpc", "id": vpc_id, "name": ""})
         return found
 
-    def to_hcl(self, resource_type: str, resource_data: Dict) -> str:
+    def to_hcl(
+        self,
+        resource_type: str,
+        resource_data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert API response to HCL."""
+        kwargs = {"tf_name": tf_name, "refs": refs}
         if resource_type == "vpc":
-            return self._vpc_to_hcl(resource_data)
+            return self._vpc_to_hcl(resource_data, **kwargs)
         elif resource_type == "vswitch":
-            return self._vswitch_to_hcl(resource_data)
+            return self._vswitch_to_hcl(resource_data, **kwargs)
         elif resource_type == "ecs":
-            return self._ecs_to_hcl(resource_data)
+            return self._ecs_to_hcl(resource_data, **kwargs)
         elif resource_type == "rds":
-            return self._rds_to_hcl(resource_data)
+            return self._rds_to_hcl(resource_data, **kwargs)
         elif resource_type == "redis":
-            return self._redis_to_hcl(resource_data)
+            return self._redis_to_hcl(resource_data, **kwargs)
         elif resource_type == "slb":
-            return self._slb_to_hcl(resource_data)
+            return self._slb_to_hcl(resource_data, **kwargs)
         elif resource_type == "eip":
-            return self._eip_to_hcl(resource_data)
+            return self._eip_to_hcl(resource_data, **kwargs)
         elif resource_type == "security_group":
-            return self._sg_to_hcl(resource_data)
+            return self._sg_to_hcl(resource_data, **kwargs)
         elif resource_type == "nat_gateway":
-            return self._nat_to_hcl(resource_data)
+            return self._nat_to_hcl(resource_data, **kwargs)
         elif resource_type == "mongodb":
-            return self._mongodb_to_hcl(resource_data)
+            return self._mongodb_to_hcl(resource_data, **kwargs)
         elif resource_type == "polardb":
-            return self._polardb_to_hcl(resource_data)
+            return self._polardb_to_hcl(resource_data, **kwargs)
         elif resource_type == "oss":
-            return self._oss_to_hcl(resource_data)
+            return self._oss_to_hcl(resource_data, **kwargs)
         elif resource_type == "disk":
-            return self._disk_to_hcl(resource_data)
+            return self._disk_to_hcl(resource_data, **kwargs)
         elif resource_type == "route_table":
-            return self._route_table_to_hcl(resource_data)
+            return self._route_table_to_hcl(resource_data, **kwargs)
         else:
             return f"# Unsupported resource type for HCL: {resource_type}\n"
 
-    def _vpc_to_hcl(self, data: Dict) -> str:
+    def _vpc_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert VPC API response to HCL."""
         vpc = data.get("Vpc", {})
         vpc_id = vpc.get("VpcId", "")
@@ -468,9 +582,8 @@ class ResourceMapper:
         description = vpc.get("Description", "")
 
         # Sanitize name for terraform
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", vpc_name)
-        if tf_name[0].isdigit():
-            tf_name = "vpc_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(vpc_name, "vpc_")
 
         hcl_lines = [
             f'# Imported VPC: {vpc_id}',
@@ -497,7 +610,12 @@ class ResourceMapper:
 
         return "\n".join(hcl_lines)
 
-    def _vswitch_to_hcl(self, data: Dict) -> str:
+    def _vswitch_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert vSwitch API response to HCL."""
         vswitch = data.get("VSwitch", {})
         vswitch_id = vswitch.get("VSwitchId", "")
@@ -506,15 +624,15 @@ class ResourceMapper:
         vpc_id = vswitch.get("VpcId", "")
         zone_id = vswitch.get("ZoneId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", vswitch_name)
-        if tf_name[0].isdigit():
-            tf_name = "vswitch_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(vswitch_name, "vswitch_")
+        vpc_ref = self._hcl_ref(refs, vpc_id)
 
         hcl = textwrap.dedent(f"""\
             # Imported vSwitch: {vswitch_id}
             resource "alicloud_vswitch" "{tf_name}" {{
               vswitch_name = "{vswitch_name}"
-              vpc_id       = "{vpc_id}"  # TODO: Reference to alicloud_vpc resource
+              vpc_id       = {vpc_ref}
               cidr_block   = "{cidr}"
               zone_id      = "{zone_id}"
 
@@ -531,7 +649,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _ecs_to_hcl(self, data: Dict) -> str:
+    def _ecs_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert ECS API response to HCL."""
         instances = data.get("Instances", {}).get("Instance", [])
         if not instances:
@@ -544,9 +667,9 @@ class ResourceMapper:
         image_id = instance.get("ImageId", "")
         vswitch_id = instance.get("VpcAttributes", {}).get("VSwitchId", [""])[0]
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
-        if tf_name[0].isdigit():
-            tf_name = "ecs_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(instance_name, "ecs_")
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         hcl = textwrap.dedent(f"""\
             # Imported ECS: {instance_id}
@@ -555,7 +678,7 @@ class ResourceMapper:
               instance_name = "{instance_name}"
               instance_type = "{instance_type}"
               image_id      = "{image_id}"
-              vswitch_id    = "{vswitch_id}"
+              vswitch_id    = {vswitch_ref}
 
               # Import only - do not manage lifecycle
               lifecycle {{
@@ -570,7 +693,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _rds_to_hcl(self, data: Dict) -> str:
+    def _rds_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert RDS API response to HCL."""
         db_instance = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
         if not db_instance:
@@ -582,13 +710,12 @@ class ResourceMapper:
         engine_version = db_instance.get("EngineVersion", "8.0")
         instance_type = db_instance.get("DBInstanceClass", "")
         vswitch_id = db_instance.get("VSwitchId", "")
-        vpc_id = db_instance.get("VpcId", "")
         zone_id = db_instance.get("ZoneId", "")
         storage = db_instance.get("DBInstanceStorage", 20)
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
-        if tf_name[0].isdigit():
-            tf_name = "rds_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(instance_name, "rds_")
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         hcl = textwrap.dedent(f"""\
             # Imported RDS: {instance_id}
@@ -598,7 +725,7 @@ class ResourceMapper:
               engine_version       = "{engine_version}"
               instance_type        = "{instance_type}"
               instance_storage     = {storage}
-              vswitch_id           = "{vswitch_id}"
+              vswitch_id           = {vswitch_ref}
               zone_id              = "{zone_id}"
 
               # Import only - prevent accidental deletion
@@ -614,7 +741,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _redis_to_hcl(self, data: Dict) -> str:
+    def _redis_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert Redis/Tair API response to HCL."""
         instance = data.get("Instances", {}).get("KVStoreInstance", [{}])[0]
         if not instance:
@@ -628,9 +760,10 @@ class ResourceMapper:
         vswitch_id = instance.get("VSwitchId", "")
         zone_id = instance.get("ZoneId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
-        if tf_name[0].isdigit():
-            tf_name = "redis_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(instance_name, "redis_")
+        vpc_ref = self._hcl_ref(refs, vpc_id)
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         hcl = textwrap.dedent(f"""\
             # Imported Redis: {instance_id}
@@ -638,8 +771,8 @@ class ResourceMapper:
               instance_name  = "{instance_name}"
               instance_class = "{instance_class}"
               engine_version = "{engine_version}"
-              vpc_id         = "{vpc_id}"
-              vswitch_id     = "{vswitch_id}"
+              vpc_id         = {vpc_ref}
+              vswitch_id     = {vswitch_ref}
               zone_id        = "{zone_id}"
 
               # Import only - prevent accidental deletion
@@ -655,7 +788,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _slb_to_hcl(self, data: Dict) -> str:
+    def _slb_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert SLB API response to HCL."""
         lb = data.get("LoadBalancer", {})
 
@@ -666,9 +804,10 @@ class ResourceMapper:
         vpc_id = lb.get("VpcId", "")
         vswitch_id = lb.get("VSwitchId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", lb_name)
-        if tf_name[0].isdigit():
-            tf_name = "slb_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(lb_name, "slb_")
+        vpc_ref = self._hcl_ref(refs, vpc_id)
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         hcl = textwrap.dedent(f"""\
             # Imported SLB: {lb_id}
@@ -676,8 +815,8 @@ class ResourceMapper:
               load_balancer_name = "{lb_name}"
               load_balancer_spec = "{lb_spec}"
               address_type       = "{address_type}"
-              vpc_id             = "{vpc_id}"
-              vswitch_id         = "{vswitch_id}"
+              vpc_id             = {vpc_ref}
+              vswitch_id         = {vswitch_ref}
 
               # Import only - prevent accidental deletion
               lifecycle {{
@@ -692,7 +831,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _eip_to_hcl(self, data: Dict) -> str:
+    def _eip_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert EIP API response to HCL."""
         eips = data.get("EipAddresses", {}).get("EipAddress", [])
         if not eips:
@@ -705,7 +849,7 @@ class ResourceMapper:
         isp = eip.get("ISP", "BGP")
         internet_charge_type = eip.get("InternetChargeType", "PayByTraffic")
 
-        tf_name = f"eip_{allocation_id.split('-')[-1][:8]}"
+        tf_name = tf_name or f"eip_{allocation_id.split('-')[-1][:8]}"
 
         hcl = textwrap.dedent(f"""\
             # Imported EIP: {allocation_id} ({ip_address})
@@ -728,7 +872,12 @@ class ResourceMapper:
 
         return hcl
 
-    def _sg_to_hcl(self, data: Dict) -> str:
+    def _sg_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert Security Group API response to HCL."""
         sg = data.get("SecurityGroup", {})
 
@@ -737,9 +886,8 @@ class ResourceMapper:
         description = sg.get("Description", "Imported security group")
         vpc_id = sg.get("VpcId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", sg_name)
-        if tf_name[0].isdigit():
-            tf_name = "sg_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(sg_name, "sg_")
 
         hcl_lines = [
             f'# Imported Security Group: {sg_id}',
@@ -749,7 +897,7 @@ class ResourceMapper:
         ]
 
         if vpc_id:
-            hcl_lines.append(f'  vpc_id      = "{vpc_id}"')
+            hcl_lines.append(f'  vpc_id      = {self._hcl_ref(refs, vpc_id)}')
 
         hcl_lines.extend([
             '',
@@ -766,7 +914,12 @@ class ResourceMapper:
 
         return "\n".join(hcl_lines)
 
-    def _nat_to_hcl(self, data: Dict) -> str:
+    def _nat_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert NAT Gateway API response to HCL."""
         nat = data.get("NatGateway", data)
         nat_id = nat.get("NatGatewayId", "")
@@ -776,16 +929,17 @@ class ResourceMapper:
         spec = nat.get("Spec", "Small")
         nat_type = nat.get("NatType", "Enhanced")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", nat_name) or f"nat_{nat_id.split('-')[-1][:8]}"
-        if tf_name[0].isdigit():
-            tf_name = "nat_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(nat_name, "nat_") or f"nat_{nat_id.split('-')[-1][:8]}"
+        vpc_ref = self._hcl_ref(refs, vpc_id)
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         return textwrap.dedent(f"""\
             # Imported NAT Gateway: {nat_id}
             resource "alicloud_nat_gateway" "{tf_name}" {{
               nat_gateway_name = "{nat_name}"
-              vpc_id           = "{vpc_id}"
-              vswitch_id       = "{vswitch_id}"
+              vpc_id           = {vpc_ref}
+              vswitch_id       = {vswitch_ref}
               spec             = "{spec}"
               nat_type         = "{nat_type}"
 
@@ -799,7 +953,12 @@ class ResourceMapper:
             }}
         """)
 
-    def _mongodb_to_hcl(self, data: Dict) -> str:
+    def _mongodb_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert MongoDB API response to HCL."""
         instance = data.get("DBInstances", {}).get("DBInstance", [{}])[0]
         if not instance:
@@ -813,9 +972,10 @@ class ResourceMapper:
         vswitch_id = instance.get("VSwitchId", "")
         zone_id = instance.get("ZoneId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", instance_name)
-        if tf_name[0].isdigit():
-            tf_name = "mongodb_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(instance_name, "mongodb_")
+        vpc_ref = self._hcl_ref(refs, vpc_id)
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         return textwrap.dedent(f"""\
             # Imported MongoDB: {instance_id}
@@ -823,8 +983,8 @@ class ResourceMapper:
               name             = "{instance_name}"
               engine_version   = "{engine_version}"
               db_instance_class = "{instance_class}"
-              vpc_id           = "{vpc_id}"
-              vswitch_id       = "{vswitch_id}"
+              vpc_id           = {vpc_ref}
+              vswitch_id       = {vswitch_ref}
               zone_id          = "{zone_id}"
 
               lifecycle {{
@@ -837,7 +997,12 @@ class ResourceMapper:
             }}
         """)
 
-    def _polardb_to_hcl(self, data: Dict) -> str:
+    def _polardb_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert PolarDB cluster API response to HCL."""
         cluster = data.get("Items", {}).get("DBCluster", [{}])[0]
         if not cluster:
@@ -851,9 +1016,10 @@ class ResourceMapper:
         vswitch_id = cluster.get("VSwitchId", "")
         zone_id = cluster.get("ZoneId", "")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", cluster_name)
-        if tf_name[0].isdigit():
-            tf_name = "polardb_" + tf_name
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(cluster_name, "polardb_")
+        vpc_ref = self._hcl_ref(refs, vpc_id)
+        vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
         return textwrap.dedent(f"""\
             # Imported PolarDB: {cluster_id}
@@ -861,8 +1027,8 @@ class ResourceMapper:
               description = "{cluster_name}"
               db_type     = "{db_type}"
               db_version  = "{db_version}"
-              vpc_id      = "{vpc_id}"
-              vswitch_id  = "{vswitch_id}"
+              vpc_id      = {vpc_ref}
+              vswitch_id  = {vswitch_ref}
               zone_id     = "{zone_id}"
 
               lifecycle {{
@@ -875,7 +1041,12 @@ class ResourceMapper:
             }}
         """)
 
-    def _disk_to_hcl(self, data: Dict) -> str:
+    def _disk_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert Disk API response to HCL."""
         disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
         if isinstance(disk, list):
@@ -888,9 +1059,10 @@ class ResourceMapper:
         zone_id = disk.get("ZoneId", "")
         disk_type = disk.get("Type", "data")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", disk_name)
-        if not tf_name or tf_name[0].isdigit():
-            tf_name = f"disk_{disk_id.split('-')[-1][:8]}" if disk_id else "imported_disk"
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(disk_name, "disk_")
+            if not tf_name or tf_name == "disk_":
+                tf_name = f"disk_{disk_id.split('-')[-1][:8]}" if disk_id else "imported_disk"
 
         return textwrap.dedent(f"""\
             # Imported Disk: {disk_id} (type={disk_type})
@@ -911,7 +1083,12 @@ class ResourceMapper:
             }}
         """)
 
-    def _route_table_to_hcl(self, data: Dict) -> str:
+    def _route_table_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert Route Table API response to HCL."""
         rt = data.get("RouteTable", data)
         if isinstance(rt, list):
@@ -922,15 +1099,17 @@ class ResourceMapper:
         vpc_id = rt.get("VpcId", "")
         description = rt.get("Description", "Imported route table")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", rt_name)
-        if not tf_name or tf_name[0].isdigit():
-            tf_name = f"rt_{rt_id.split('-')[-1][:8]}" if rt_id else "imported_rt"
+        if not tf_name:
+            tf_name = self._sanitize_tf_name(rt_name, "rt_")
+            if not tf_name or tf_name == "rt_":
+                tf_name = f"rt_{rt_id.split('-')[-1][:8]}" if rt_id else "imported_rt"
+        vpc_ref = self._hcl_ref(refs, vpc_id)
 
         return textwrap.dedent(f"""\
             # Imported Route Table: {rt_id}
             # NOTE: 路由条目 (alicloud_route_entry) 需单独管理
             resource "alicloud_route_table" "{tf_name}" {{
-              vpc_id           = "{vpc_id}"
+              vpc_id           = {vpc_ref}
               route_table_name = "{rt_name}"
               description      = "{description}"
 
@@ -944,7 +1123,12 @@ class ResourceMapper:
             }}
         """)
 
-    def _oss_to_hcl(self, data: Dict) -> str:
+    def _oss_to_hcl(
+        self,
+        data: Dict,
+        tf_name: Optional[str] = None,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
         """Convert OSS bucket info to HCL."""
         bucket_name = data.get("BucketName", data.get("Bucket", {}).get("Name", "imported-bucket"))
         if isinstance(bucket_name, dict):
@@ -954,9 +1138,10 @@ class ResourceMapper:
         acl = bucket_info.get("AccessControlList", {}).get("Grant", "private")
         storage_class = bucket_info.get("StorageClass", "Standard")
 
-        tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", bucket_name.replace("-", "_"))
-        if tf_name[0].isdigit():
-            tf_name = "oss_" + tf_name
+        if not tf_name:
+            tf_name = re.sub(r"[^a-zA-Z0-9_]", "_", bucket_name.replace("-", "_"))
+            if tf_name[0].isdigit():
+                tf_name = "oss_" + tf_name
 
         return textwrap.dedent(f"""\
             # Imported OSS Bucket: {bucket_name}
@@ -1078,6 +1263,7 @@ class ReverseEngineering:
             print(f"{Colors.GREEN}[PreFlight] 检查通过 ✓{Colors.END}\n")
 
         all_resources = []
+        pending_resources: List[Dict] = []
         work_queue: List[Tuple[str, str]] = [(resource_type, rid) for rid in resource_ids]
         processed: set = set()
 
@@ -1107,22 +1293,33 @@ class ReverseEngineering:
                 log_dry_run("ERROR", f"查询失败: {data.get('error', 'Unknown error')}", is_error=True)
                 continue
 
-            log_dry_run("GENERATE", f"生成 HCL: {resource_id}")
-            hcl = self.mapper.to_hcl(rtype, data)
-
             tf_type = self.mapper.RESOURCE_APIS[rtype]["tf_type"]
-            id_suffix = resource_id.split("-")[-1][:8] if "-" in resource_id else resource_id[:8]
-            tf_name = f"imported_{rtype}_{id_suffix}"
-
-            resource_info = {
+            tf_name = make_tf_name(rtype, resource_id)
+            pending_resources.append({
                 "type": rtype,
                 "id": resource_id,
                 "tf_type": tf_type,
                 "tf_name": tf_name,
-                "hcl": hcl,
                 "data": data,
-            }
-            all_resources.append(resource_info)
+            })
+
+        if not pending_resources:
+            return False, []
+
+        refs = ResourceReferenceRegistry()
+        for item in pending_resources:
+            refs.register(item["id"], item["tf_type"], item["tf_name"])
+
+        for item in pending_resources:
+            log_dry_run("GENERATE", f"生成 HCL: {item['id']}")
+            hcl = self.mapper.to_hcl(
+                item["type"],
+                item["data"],
+                tf_name=item["tf_name"],
+                refs=refs,
+            )
+            item["hcl"] = hcl
+            all_resources.append(item)
 
         if not all_resources:
             return False, []

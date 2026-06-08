@@ -25,9 +25,13 @@
 - [x] Dry-run 模式（terraform init → validate → plan 白名单）
 - [x] Resource Registry + PreFlight 渐进式资源支持（`resource_registry.py`）
 - [x] GCL 集成
+- [x] 同批次资源引用关联（`ResourceReferenceRegistry`：vpc/vswitch/rds/slb/sg/nat 等自动 `alicloud_*.xxx.id`）
+- [x] HCL resource 块名称与 import.sh 统一（`make_tf_name()`）
 
 ### HITL 多模式工作流
 - [x] Mode A: 交互式 CLI（CP1–CP5、五级环境策略、检查点持久化）— `hitl_mode_a.py`
+- [x] Mode A CP3: 真实 `terraform init/validate/plan`（`terraform_plan_runner.py`）；失败降级为资源估算
+- [x] `test_hitl_mode_a.py` — Mode A 策略/CP3/检查点持久化单测
 - [x] Mode B: PR 式审核（LocalGitProvider、评论指令、PLAN.md）— `hitl_mode_b.py`
 - [x] Mode C: CheckPoint 暂停（资源分级 PASS/WARN/SKIP、漂移检测、会话恢复）— `hitl_mode_c.py`
 - [x] 共享层：审计/通知/熔断/升级 — `hitl_common.py`（钉钉/飞书/企微）
@@ -39,20 +43,20 @@
 - [x] 执行轨迹持久化（`execution_trace.py` → `audit-results/gcl-trace-*.json`）
 
 ### 测试与文档
-- [x] 单元/集成测试（150+ cases，`unittest discover -p 'test_*.py'`）
+- [x] 单元/集成测试（170+ cases，`unittest discover -p 'test_*.py'`）
 - [x] Eval Queries（20 条，`assets/eval_queries.json`）
 - [x] SKILL.md 结构合规（前置检查/变量约定/执行后验证/故障恢复/架构评估）
 - [x] Terraform 模块库已纳入版本控制（`modules/`）
+- [x] `.gitignore` 覆盖 generated/、tfstate、.terraform/ 等 IaC 运行时产物
 
 ## ⚠️ 部分完成
 
-- [x] HITL Mode A — CP3 执行真实 `terraform init/validate/plan` 并解析 Plan 摘要（`terraform_plan_runner.py`）；失败时降级为资源估算
-- [x] `test_hitl_mode_a.py` — Mode A 策略/CP3 plan/检查点持久化单测
 - [ ] HITL Mode B — 仅 `LocalGitProvider`；GitHub/GitLab/Gitee API 未实现
 - [ ] NL2HCL — `parse_intent()` 为规则引擎，复杂/模糊自然语言需 Agent 预处理或 Wizard 补全
-- [ ] Reverse Engineering — 部分 HCL 资源引用仍为硬编码 ID（`# TODO: Reference`），import 后需手工修引用
+- [ ] Reverse Engineering — 批次外依赖仍保留字面量 ID；ECS↔SG、Disk attachment 等待扩展
 - [ ] SKILL §5 `environments/` 目录结构 — 文档有描述，仓库未预置脚手架
 - [ ] `terraform apply` / `destroy` — 安全门与确认流程有 spec/CP5，脚本层未自动调用 terraform binary
+- [ ] `terraform_ops import` — 尚未像 `create` 一样注入 HITL 检查点
 
 ## ❌ 未实现
 
