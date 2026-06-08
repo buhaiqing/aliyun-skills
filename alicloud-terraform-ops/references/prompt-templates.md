@@ -1,3 +1,19 @@
+---
+name: alicloud-terraform-ops-prompt-templates
+description: >-
+  GCL prompt templates for `alicloud-terraform-ops` Generator, Critic, and
+  Hallucination Detector roles. Paired with `rubric.md`.
+license: MIT
+metadata:
+  skill: alicloud-terraform-ops
+  gcl_classification: required
+  max_iter: 2
+  last_updated: "2026-06-09"
+  parent: ../../../AGENTS.md
+  references:
+    - rubric.md
+---
+
 # Terraform IaC Skill — GCL Prompt Templates
 
 > GCL Level: required | max_iter: 2 | Isolated Context: Enabled

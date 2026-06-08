@@ -146,6 +146,85 @@ def _run_nl2hcl(args: argparse.Namespace) -> int:
     return _run_script("nl2hcl_generator.py", cmd)
 
 
+def _parse_import_resource_ids(args: argparse.Namespace) -> list[str]:
+    ids: list[str] = []
+    if args.resource_id:
+        ids.append(args.resource_id)
+    if args.resource_ids:
+        ids.extend(x.strip() for x in args.resource_ids.split(",") if x.strip())
+    return ids
+
+
+def _run_import_with_hitl(args: argparse.Namespace) -> int:
+    """逆向工程生成 HCL 后注入 HITL Mode A IMPORT 检查点（CP1→CP4→CP3）。"""
+    from hitl_mode_a import (
+        CLIController,
+        CheckpointStore,
+        CheckpointType,
+        UserAbortedError,
+        create_checkpoint,
+    )
+    from reverse_engineering import (
+        ReverseEngineering,
+        collect_output_previews,
+        import_resources_for_hitl,
+    )
+
+    resource_ids = _parse_import_resource_ids(args)
+    if not resource_ids:
+        print("错误: 请指定 --resource-id 或 --resource-ids", file=sys.stderr)
+        return 1
+
+    output_dir = args.output_dir.resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    engine = ReverseEngineering(
+        region=args.region,
+        output_dir=output_dir,
+        skip_preflight=args.skip_preflight,
+    )
+    success, all_resources = engine.run(
+        resource_type=args.resource_type,
+        resource_ids=resource_ids,
+        discover_associated=args.discover_associated,
+        dry_run=False,
+    )
+    if not success or not all_resources:
+        print("错误: 逆向工程未生成资源", file=sys.stderr)
+        return 1
+
+    generated_files = collect_output_previews(output_dir)
+    hitl_env = _hitl_environment_name(args.environment)
+    request = f"导入 {args.resource_type}: {', '.join(resource_ids)}"
+
+    checkpoint = create_checkpoint(
+        checkpoint_type=CheckpointType.IMPORT,
+        environment=hitl_env,
+        resources=import_resources_for_hitl(all_resources),
+        generated_files=generated_files,
+        user_inputs={
+            "request": request,
+            "output_dir": str(output_dir),
+            "region": args.region,
+            "environment": args.environment,
+            "resource_type": args.resource_type,
+            "resource_ids": resource_ids,
+        },
+    )
+
+    store = CheckpointStore()
+    store.save(checkpoint)
+    print(f"HITL 检查点已创建: {checkpoint.id}")
+    print(f"生成目录: {output_dir}")
+
+    controller = CLIController(checkpoint, store)
+    try:
+        controller.run()
+    except UserAbortedError:
+        return 1
+    return 0
+
+
 def _run_import(args: argparse.Namespace) -> int:
     cmd = [
         "--resource-type", args.resource_type,
@@ -205,6 +284,7 @@ def build_parser() -> argparse.ArgumentParser:
     imp.add_argument("--resource-type", "-t", required=True)
     imp.add_argument("--resource-id", "-i")
     imp.add_argument("--resource-ids")
+    imp.add_argument("--environment", "-e", default="dev")
     imp.add_argument("--region", "-r", default="cn-hangzhou")
     imp.add_argument("--output-dir", "-o", type=Path, default=Path("./generated"))
     imp.add_argument("--dry-run", "-d", action="store_true")
@@ -261,6 +341,8 @@ def main() -> int:
         return _run_wizard(args)
 
     if cmd == "import":
+        if args.mode == "cli" and not args.dry_run:
+            return _run_import_with_hitl(args)
         return _run_import(args)
 
     if cmd in ("list", "pause", "resume", "cleanup", "delete"):

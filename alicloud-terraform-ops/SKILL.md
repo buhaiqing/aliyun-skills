@@ -45,6 +45,8 @@ should_not:
   - 处理需要即时响应的临时操作
   - 管理 Terraform 不支持的细粒度配置（如参数模板调优）
 delegation_rules:
+  - trigger: "GCL 质量门禁 / apply / destroy / import 执行前评审"
+    delegate_to: "alicloud-gcl-runner-ops"
   - trigger: "执行 SQL 文件/数据库初始化"
     delegate_to: "alicloud-rds-ops"
   - trigger: "Redis 数据操作/内存分析"
@@ -208,6 +210,8 @@ terraform {
 
 ## 7. Failure Recovery
 
+Full diagnostic guide: [references/troubleshooting.md](references/troubleshooting.md)
+
 | Error | Category | Recovery |
 |-------|----------|----------|
 | `Error: Error acquiring the state lock` | Lock contention | `terraform force-unlock <LOCK_ID>` after verification |
@@ -259,13 +263,15 @@ terraform state pull > backup-$(date +%Y%m%d-%H%M%S).tfstate
 
 ## 10. Well-Architected Assessment
 
+Full five-pillar guide: [references/well-architected-assessment.md](references/well-architected-assessment.md)
+
 | Pillar | Assessment | Implementation |
 |--------|-----------|----------------|
-| **Security** | State contains sensitive data | OSS bucket encryption, least privilege access |
-| **Stability** | State corruption risk | Remote backend, locking, versioning |
-| **Cost** | Resource tracking | Terraform state as inventory, tag-based cost allocation |
-| **Efficiency** | Environment consistency | Module reuse, GitOps workflow |
-| **Performance** | Parallel resource creation | Terraform parallel resource graph |
+| **Security** | State contains sensitive data | OSS encryption, least privilege, GCL secret scan |
+| **Stability** | State corruption risk | Remote backend, OTS locking, state backup before destroy |
+| **Cost** | Resource tracking | Module reuse, tags, environment TTL |
+| **Efficiency** | Environment consistency | GitOps + HITL Mode B for uat/prod |
+| **Performance** | Parallel resource creation | Terraform dependency graph; tune parallelism on throttle |
 
 ## 11. Core Features
 
@@ -391,9 +397,52 @@ Full spec: [references/reverse-engineering.md](references/reverse-engineering.md
 
 Full spec: [references/hitl-workflow.md](references/hitl-workflow.md)
 
-## 12. References
+## 12. Quality Gate (GCL)
+
+This skill is registered in [`docs/gcl-spec.md` §8](../../docs/gcl-spec.md#8-per-skill-defaults) as
+**GCL required** (`max_iter=2`). Every runtime execution of `terraform apply`, `terraform destroy`,
+reverse-engineering import, or NL2HCL generation that mutates state MUST pass a GCL loop before
+returning results to the user.
+
+> **GCL contract files:** [`references/rubric.md`](references/rubric.md) and
+> [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|--------|---------|
+| Classification | **required** |
+| Default `max_iter` | **2** |
+| Hallucination check | **MANDATORY** (CLI/HCL parameter + secret patterns) |
+| Most-scrutinized ops | `terraform destroy`, production `apply`, state import, NL2HCL with destroy in plan |
+
+### Per-Op Safety Highlights
+
+| Operation | Hard condition |
+|-----------|----------------|
+| `terraform destroy` | Environment confirmation + state backup + no `auto-approve` in prod (DESTROY-001~005) |
+| `terraform apply` | Plan file exists and reviewed; destructive changes flagged (APPLY-001~004) |
+| Reverse engineering import | User acknowledges state modification (REV-003); HITL CP4 |
+| NL2HCL | No hardcoded secrets; validate before apply (NL2HCL-001~003) |
+
+### GCL Execution
+
+Delegate to `alicloud-gcl-runner-ops`:
+
+```bash
+python alicloud-gcl-runner-ops/scripts/gcl_runner.py \
+  --skill alicloud-terraform-ops \
+  --op Apply \
+  --command "terraform apply tfplan" \
+  --rubric alicloud-terraform-ops/references/rubric.md
+```
+
+Setup and env vars: [references/integration.md](references/integration.md).
+
+## 13. References
 
 - [Core Concepts](references/core-concepts.md) - Terraform fundamentals, backend, workspaces
+- [Integration](references/integration.md) - Toolchain, credentials, backend, GCL runner wiring
+- [Troubleshooting](references/troubleshooting.md) - Error codes, diagnostics, recovery
+- [Well-Architected Assessment](references/well-architected-assessment.md) - Five-pillar assessment
 - [NL2HCL Generator](references/nl2hcl-generator.md) - Natural language to HCL conversion
 - [Reverse Engineering](references/reverse-engineering.md) - Import existing resources
 - [HITL Workflow](references/hitl-workflow.md) - Human-in-the-Loop approval and confirmation flows
@@ -402,7 +451,7 @@ Full spec: [references/hitl-workflow.md](references/hitl-workflow.md)
 - [Prompt Templates](references/prompt-templates.md) - GCL prompt templates for Generator, Critic, H
 - [Rubric](references/rubric.md) - GCL scoring rubric and safety rules
 
-## 13. Token Efficiency Notes
+## 14. Token Efficiency Notes
 
 - Use `terraform plan -out=tfplan` to avoid re-planning
 - Module sources use relative paths: `source = "../../modules/xxx"`

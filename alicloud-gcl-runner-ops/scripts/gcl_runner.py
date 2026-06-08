@@ -164,6 +164,10 @@ SKILL_MAX_ITER = {
     "alicloud-polar-postgresql-ops": 2,
     "alicloud-polar-oracle-ops": 2,
     "alicloud-polar-pg-ops": 2,
+    "alicloud-dts-ops": 2,
+    "alicloud-waf-ops": 2,
+    "alicloud-sls-ops": 2,
+    "alicloud-terraform-ops": 2,
     # recommended (max_iter=3)
     "alicloud-slb-ops": 3,
     "alicloud-ack-ops": 3,

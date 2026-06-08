@@ -26,7 +26,11 @@
 - [x] Resource Registry + PreFlight 渐进式资源支持（`resource_registry.py`）
 - [x] GCL 集成
 - [x] 同批次资源引用关联（`ResourceReferenceRegistry`：vpc/vswitch/rds/slb/sg/nat 等自动 `alicloud_*.xxx.id`）
+- [x] 批次外依赖字面量 ID 标注 `# external: not in import batch`
+- [x] ECS `security_groups` 引用（批次内 SG → `alicloud_security_group.*.id`）
+- [x] 已挂载云盘生成 `alicloud_disk_attachment` + import.sh 条目（`disk_id:instance_id`）
 - [x] HCL resource 块名称与 import.sh 统一（`make_tf_name()`）
+- [x] `terraform_ops import`（非 dry-run）生成产物并注入 HITL Mode A IMPORT 检查点
 
 ### HITL 多模式工作流
 - [x] Mode A: 交互式 CLI（CP1–CP5、五级环境策略、检查点持久化）— `hitl_mode_a.py`
@@ -48,19 +52,17 @@
 - [x] SKILL.md 结构合规（前置检查/变量约定/执行后验证/故障恢复/架构评估）
 - [x] Terraform 模块库已纳入版本控制（`modules/`）
 - [x] `.gitignore` 覆盖 generated/、tfstate、.terraform/ 等 IaC 运行时产物
+- [x] GCL 注册：`docs/gcl-spec.md` §8 + `gcl_runner.py` SKILL_MAX_ITER + SKILL.md `## Quality Gate (GCL)`
+- [x] Canonical references：`well-architected-assessment.md`、`troubleshooting.md`、`integration.md`
 
 ## ⚠️ 部分完成
 
 - [ ] HITL Mode B — 仅 `LocalGitProvider`；GitHub/GitLab/Gitee API 未实现
 - [ ] NL2HCL — `parse_intent()` 为规则引擎，复杂/模糊自然语言需 Agent 预处理或 Wizard 补全
-- [ ] Reverse Engineering — 批次外依赖仍保留字面量 ID；ECS↔SG、Disk attachment 等待扩展
 - [ ] SKILL §5 `environments/` 目录结构 — 文档有描述，仓库未预置脚手架
 - [ ] `terraform apply` / `destroy` — 安全门与确认流程有 spec/CP5，脚本层未自动调用 terraform binary
-- [ ] `terraform_ops import` — 尚未像 `create` 一样注入 HITL 检查点
 
 ## ❌ 未实现
 
 - [ ] GitHub/GitLab/Gitee Git Provider（`hitl_mode_b.create_git_provider` 非 local 抛 NotImplementedError）
-- [ ] `docs/gcl-spec.md` 技能分类表注册
-- [ ] Canonical skill 可选 references（`well-architected-assessment.md`、`troubleshooting.md` 等独立文件）
 - [ ] OpenAPI 驱动的 HCL 映射自动生成

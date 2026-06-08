@@ -135,13 +135,18 @@ class ResourceReferenceRegistry:
         tf_type, tf_name = entry
         return f"{tf_type}.{tf_name}.{attribute}"
 
-    def hcl_value(self, cloud_id: str, attribute: str = "id") -> str:
+    def hcl_value(self, cloud_id: str, attribute: str = "id", mark_external: bool = True) -> str:
         ref = self.reference(cloud_id, attribute)
         if ref:
             return ref
         if cloud_id:
+            if mark_external and self._entries:
+                return f'"{cloud_id}"  # external: not in import batch'
             return f'"{cloud_id}"'
         return '""'
+
+    def is_registered(self, cloud_id: str) -> bool:
+        return bool(cloud_id and cloud_id in self._entries)
 
 
 class ResourceMapper:
@@ -306,6 +311,40 @@ class ResourceMapper:
         if cloud_id:
             return f'"{cloud_id}"'
         return '""'
+
+    @staticmethod
+    def extract_attached_instance_id(data: Dict) -> Optional[str]:
+        disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
+        if isinstance(disk, list):
+            disk = disk[0] if disk else {}
+        instance_id = disk.get("InstanceId")
+        if instance_id:
+            return instance_id
+        attached = disk.get("AttachedTo") or {}
+        if isinstance(attached, dict):
+            return attached.get("InstanceId")
+        return None
+
+    def disk_attachment_to_hcl(
+        self,
+        disk_id: str,
+        instance_id: str,
+        disk_tf_name: str,
+        refs: Optional[ResourceReferenceRegistry] = None,
+    ) -> str:
+        attach_tf_name = f"attach_{disk_tf_name.replace('imported_disk_', '', 1)}"
+        instance_ref = self._hcl_ref(refs, instance_id)
+        return textwrap.dedent(f"""\
+            # Disk attachment: {disk_id} -> {instance_id}
+            resource "alicloud_disk_attachment" "{attach_tf_name}" {{
+              disk_id     = alicloud_disk.{disk_tf_name}.id
+              instance_id = {instance_ref}
+
+              lifecycle {{
+                prevent_destroy = true
+              }}
+            }}
+        """)
 
     def query_resource(self, resource_type: str, resource_id: str) -> Optional[Dict]:
         """Query resource details via aliyun CLI."""
@@ -671,6 +710,17 @@ class ResourceMapper:
             tf_name = self._sanitize_tf_name(instance_name, "ecs_")
         vswitch_ref = self._hcl_ref(refs, vswitch_id)
 
+        sg_ids = instance.get("SecurityGroupIds", {}).get("SecurityGroupId", [])
+        if isinstance(sg_ids, str):
+            sg_ids = [sg_ids] if sg_ids else []
+        sg_block = ""
+        if sg_ids:
+            if refs:
+                sg_values = ", ".join(self._hcl_ref(refs, sgid) for sgid in sg_ids)
+                sg_block = f"  security_groups = [{sg_values}]\n"
+            else:
+                sg_block = f"  security_groups = {json.dumps(sg_ids)}\n"
+
         hcl = textwrap.dedent(f"""\
             # Imported ECS: {instance_id}
             # NOTE: ECS import requires stopping the instance
@@ -679,7 +729,7 @@ class ResourceMapper:
               instance_type = "{instance_type}"
               image_id      = "{image_id}"
               vswitch_id    = {vswitch_ref}
-
+            {sg_block}
               # Import only - do not manage lifecycle
               lifecycle {{
                 prevent_destroy = true
@@ -1174,11 +1224,16 @@ class ResourceMapper:
         ]
 
         for resource in resources:
+            if not resource.get("tf_type"):
+                continue
             tf_type = resource["tf_type"]
             tf_name = resource["tf_name"]
             resource_id = resource["id"]
             lines.append(f'echo "Importing {tf_type}.{tf_name}..."')
-            lines.append(f'terraform import {tf_type}.{tf_name} {resource_id} || echo "Import failed for {tf_name}"')
+            lines.append(
+                f'terraform import {tf_type}.{tf_name} {resource_id} '
+                f'|| echo "Import failed for {tf_name}"'
+            )
             lines.append("")
 
         lines.extend([
@@ -1187,6 +1242,34 @@ class ResourceMapper:
         ])
 
         return "\n".join(lines)
+
+
+def import_resources_for_hitl(resources: List[Dict]) -> List[Dict[str, Any]]:
+    """Reverse Engineering 产物 → HITL ResourceInfo 兼容结构。"""
+    return [
+        {
+            "type": item["type"],
+            "name": item["tf_name"],
+            "id": item["id"],
+            "status": "pending",
+        }
+        for item in resources
+    ]
+
+
+def collect_output_previews(output_dir: Path, max_chars: int = 8000) -> Dict[str, str]:
+    """读取生成目录中的 .tf / .sh 作为 HITL 配置预览。"""
+    previews: Dict[str, str] = {}
+    if not output_dir.is_dir():
+        return previews
+    for path in sorted(output_dir.iterdir()):
+        if not path.is_file() or path.suffix not in (".tf", ".sh"):
+            continue
+        content = path.read_text(encoding="utf-8")
+        if len(content) > max_chars:
+            content = content[:max_chars] + f"\n... [truncated {len(content) - max_chars} chars]"
+        previews[path.name] = content
+    return previews
 
 
 class ReverseEngineering:
@@ -1321,6 +1404,30 @@ class ReverseEngineering:
             item["hcl"] = hcl
             all_resources.append(item)
 
+        for item in pending_resources:
+            if item["type"] != "disk":
+                continue
+            instance_id = self.mapper.extract_attached_instance_id(item["data"])
+            if not instance_id:
+                continue
+            attach_hcl = self.mapper.disk_attachment_to_hcl(
+                item["id"],
+                instance_id,
+                item["tf_name"],
+                refs=refs,
+            )
+            item["hcl"] = item["hcl"].rstrip() + "\n\n" + attach_hcl.strip() + "\n"
+            attach_tf_name = f"attach_{item['tf_name'].replace('imported_disk_', '', 1)}"
+            all_resources.append({
+                "type": "disk_attachment",
+                "id": f"{item['id']}:{instance_id}",
+                "tf_type": "alicloud_disk_attachment",
+                "tf_name": attach_tf_name,
+                "hcl": "",
+                "data": {},
+            })
+            log_dry_run("GENERATE", f"生成 disk_attachment: {item['id']} -> {instance_id}")
+
         if not all_resources:
             return False, []
 
@@ -1342,9 +1449,11 @@ class ReverseEngineering:
         if not dry_run:
             self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Group by resource type
+        # Group by resource type (skip import-script-only entries with empty hcl)
         by_type = {}
         for resource in resources:
+            if not resource.get("hcl"):
+                continue
             rtype = resource["type"]
             if rtype not in by_type:
                 by_type[rtype] = []

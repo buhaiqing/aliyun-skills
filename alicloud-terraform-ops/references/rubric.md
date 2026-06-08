@@ -1,6 +1,24 @@
+---
+name: alicloud-terraform-ops-rubric
+description: >-
+  GCL rubric for `alicloud-terraform-ops` — Terraform apply/destroy/import,
+  NL2HCL generation, and reverse engineering. Paired with `prompt-templates.md`.
+license: MIT
+metadata:
+  skill: alicloud-terraform-ops
+  gcl_classification: required
+  rubric_version: "1.1.0"
+  last_updated: "2026-06-09"
+  parent: ../../../AGENTS.md
+  references:
+    - prompt-templates.md
+    - well-architected-assessment.md
+    - troubleshooting.md
+---
+
 # Terraform IaC Skill — GCL Rubric
 
-> GCL Level: **required** | max_iter: **2** | Skill Version: 1.0.0
+> GCL Level: **required** | max_iter: **2** | Skill Version: 1.1.0
 
 ## 1. Scoring Dimensions
 

@@ -198,6 +198,7 @@ GCL is **only required** on high-side-effect skills. Default `max_iter` is **2**
 | `alicloud-nat-ops` | required | 2 | delete NAT gateway / SNAT / DNAT |
 | `alicloud-waf-ops` | required | 2 | delete domain / access control / defense rule |
 | `alicloud-sls-ops` | required | 2 | delete logstore / index / alert / dashboard |
+| `alicloud-terraform-ops` | required | 2 | `terraform destroy` / `apply` / state import; NL2HCL with destructive plan |
 | `alicloud-slb-ops` | recommended | 3 | listener / backend server delete |
 | `alicloud-ack-ops` | recommended | 3 | delete node / cluster / namespace |
 | `alicloud-ack-serverless-ops` | recommended | 3 | delete cluster / application |
