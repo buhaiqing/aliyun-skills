@@ -39,14 +39,15 @@
 - [x] 执行轨迹持久化（`execution_trace.py` → `audit-results/gcl-trace-*.json`）
 
 ### 测试与文档
-- [x] 单元/集成测试（141+ cases，`unittest discover -p 'test_*.py'`）
+- [x] 单元/集成测试（150+ cases，`unittest discover -p 'test_*.py'`）
 - [x] Eval Queries（20 条，`assets/eval_queries.json`）
 - [x] SKILL.md 结构合规（前置检查/变量约定/执行后验证/故障恢复/架构评估）
 - [x] Terraform 模块库已纳入版本控制（`modules/`）
 
 ## ⚠️ 部分完成
 
-- [ ] HITL Mode A — CP3 仍基于资源计数摘要，未自动执行 `terraform plan` 并展示真实 plan 输出
+- [x] HITL Mode A — CP3 执行真实 `terraform init/validate/plan` 并解析 Plan 摘要（`terraform_plan_runner.py`）；失败时降级为资源估算
+- [x] `test_hitl_mode_a.py` — Mode A 策略/CP3 plan/检查点持久化单测
 - [ ] HITL Mode B — 仅 `LocalGitProvider`；GitHub/GitLab/Gitee API 未实现
 - [ ] NL2HCL — `parse_intent()` 为规则引擎，复杂/模糊自然语言需 Agent 预处理或 Wizard 补全
 - [ ] Reverse Engineering — 部分 HCL 资源引用仍为硬编码 ID（`# TODO: Reference`），import 后需手工修引用

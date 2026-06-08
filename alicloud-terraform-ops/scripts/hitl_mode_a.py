@@ -450,10 +450,29 @@ class CLIRenderer:
             for risk in risks:
                 print(f"    • {risk}")
             print()
-    
+
+        source = plan_data.get("source")
+        if source:
+            print(f"  {self._c(Colors.DIM, f'来源: {source}')}")
+            print()
+
+    def render_plan_excerpt(self, plan_stdout: str, max_lines: int = 40):
+        """渲染 terraform plan 详细输出（截断）。"""
+        if not plan_stdout.strip():
+            print(self._c(Colors.DIM, "  (无 plan 输出)"))
+            return
+        lines = plan_stdout.splitlines()
+        print(f"  {self._c(Colors.BOLD, 'Plan 详细输出:')}")
+        shown = lines[:max_lines]
+        for line in shown:
+            print(f"    {line}")
+        if len(lines) > max_lines:
+            print(f"    {self._c(Colors.DIM, f'... ({len(lines) - max_lines} more lines)')}")
+        print()
+
     def render_selection_list(
-        self, 
-        items: List[Dict[str, Any]], 
+        self,
+        items: List[Dict[str, Any]],
         title: str = "选择资源",
         selected: Optional[set] = None
     ) -> set:
@@ -664,7 +683,8 @@ class CLIController:
         self, 
         checkpoint: Checkpoint,
         store: Optional[CheckpointStore] = None,
-        use_color: bool = True
+        use_color: bool = True,
+        plan_runner: Optional[Any] = None,
     ):
         self.checkpoint = checkpoint
         self.store = store or CheckpointStore()
@@ -672,6 +692,11 @@ class CLIController:
         self.policy = EnvironmentPolicy()
         self._running = False
         self._interrupted = False
+        if plan_runner is None:
+            from terraform_plan_runner import TerraformPlanRunner
+            self.plan_runner = TerraformPlanRunner()
+        else:
+            self.plan_runner = plan_runner
         
         # 设置信号处理
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -907,6 +932,59 @@ class CLIController:
     # ========================================================================
     # CP3: Plan 确认 (Confirm Plan)
     # ========================================================================
+
+    def _resolve_work_dir(self) -> Optional[Path]:
+        raw = self.checkpoint.user_inputs.get("output_dir")
+        if not raw:
+            return None
+        path = Path(str(raw)).expanduser()
+        return path if path.is_dir() else None
+
+    def _fallback_plan_data(self) -> Dict[str, Any]:
+        pending = len([r for r in self.checkpoint.resources if r.status == "pending"])
+        return {
+            "create": pending,
+            "update": 0,
+            "delete": 0,
+            "risks": [],
+            "source": "resource_estimate",
+        }
+
+    def _ensure_plan_data(self, step: Step) -> Dict[str, Any]:
+        """执行 terraform plan（一次）并缓存到 step.data。"""
+        if step.data.get("plan_executed"):
+            return step.data.get("plan", self._fallback_plan_data())
+
+        work_dir = self._resolve_work_dir()
+        if work_dir is None:
+            self.ui.render_warning("未配置 output_dir，使用资源清单估算 Plan 摘要")
+            plan_data = self._fallback_plan_data()
+            step.data["plan"] = plan_data
+            step.data["plan_executed"] = True
+            step.data["plan_source"] = "resource_estimate"
+            return plan_data
+
+        self.ui.render_info(f"正在执行 terraform plan: {work_dir}")
+        result = self.plan_runner.run(work_dir)
+        step.data["plan_stdout"] = result.plan_stdout
+        step.data["plan_stderr"] = result.plan_stderr
+        step.data["plan_commands"] = [c.to_dict() for c in result.commands]
+
+        if result.success:
+            plan_data = dict(result.summary)
+            step.data["plan_source"] = "terraform plan"
+            self.ui.render_success("terraform plan 完成")
+        else:
+            self.ui.render_error(result.error or "terraform plan 失败")
+            plan_data = self._fallback_plan_data()
+            plan_data["plan_error"] = result.error
+            step.data["plan_source"] = "resource_estimate"
+            if result.plan_stdout:
+                step.data["plan_stdout"] = result.plan_stdout
+
+        step.data["plan"] = plan_data
+        step.data["plan_executed"] = True
+        return plan_data
     
     def _confirm_plan(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP3: Plan 确认"""
@@ -919,14 +997,21 @@ class CLIController:
             self.ui.render_info("║    此执行仅用于预览和验证，不会创建或修改任何资源        ║")
             self.ui.render_info("╚════════════════════════════════════════════════════════╝")
             print()
-        
-        # 显示 Plan 摘要
-        plan_data = step.data.get('plan', {
-            'create': len([r for r in self.checkpoint.resources if r.status == 'pending']),
-            'update': 0,
-            'delete': 0
-        })
+
+        if step.data.pop("show_plan_details", False):
+            self.ui.render_plan_excerpt(step.data.get("plan_stdout", ""))
+
+        plan_data = self._ensure_plan_data(step)
         self.ui.render_plan_summary(plan_data)
+
+        resources = plan_data.get("resources_to_create") or []
+        if resources:
+            self.ui.render_info("将创建的资源（节选）:")
+            for addr in resources[:10]:
+                print(f"    • {addr}")
+            if len(resources) > 10:
+                print(f"    ... 另有 {len(resources) - 10} 个")
+            print()
         
         # 冷却期（生产环境）
         if policy.cooldown > 0:
@@ -936,13 +1021,14 @@ class CLIController:
                 time.sleep(1)
             print()
         
-        # 自动批准（int 环境小变更）
-        if policy.auto_approve:
+        # 自动批准（int 环境小变更）— 仅真实 plan 成功时启用
+        plan_from_terraform = step.data.get("plan_source") == "terraform plan"
+        if policy.auto_approve and plan_from_terraform:
             total = plan_data.get('create', 0) + plan_data.get('update', 0) + plan_data.get('delete', 0)
             cost = plan_data.get('cost_hourly', 0)
-            if total <= 5 and cost <= 10:  # 少于5个资源且小时费用低于10元
+            if total <= 5 and cost <= 10 and plan_data.get('delete', 0) == 0:
                 self.ui.render_success("符合自动批准条件，继续执行")
-                return StepResult(Action.CONTINUE, data={"auto_approved": True})
+                return StepResult(Action.CONTINUE, data={"auto_approved": True, "plan": plan_data})
         
         try:
             choice = self.ui.prompt(
@@ -956,12 +1042,14 @@ class CLIController:
         
         if choice.lower() in ("y", "yes"):
             self.ui.render_success("Plan 已确认")
-            return StepResult(Action.CONTINUE)
+            return StepResult(Action.CONTINUE, data={"plan": plan_data})
         elif choice.lower() == "n":
             return StepResult(Action.ABORT, reason="Plan 未确认")
         elif choice.lower() == "details":
-            self.ui.render_info("显示详细 Plan 输出...")
-            return StepResult(Action.RETRY)  # 重新执行以显示详情
+            step.data["show_plan_details"] = True
+            if not step.data.get("plan_stdout"):
+                self.ui.render_warning("无 terraform plan 详细输出可展示")
+            return StepResult(Action.RETRY)
         elif choice.lower() == "q":
             return StepResult(Action.PAUSE)
         

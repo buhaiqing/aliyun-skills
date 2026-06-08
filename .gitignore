@@ -165,3 +165,37 @@ alicloud-*/**/__pycache__/
 
 # Test cache
 .pytest_cache/
+
+# ===== Terraform IaC (alicloud-terraform-ops) =====
+
+# NL2HCL / reverse-engineering output (regenerated locally)
+alicloud-terraform-ops/generated/
+
+# Terraform runtime & state (NEVER commit — may contain secrets + resource IDs)
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
+tfplan
+tfplan.*
+*.tfplan
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# HITL Mode B: local PR simulation (default cwd/.pr-store/)
+.pr-store/
+
+# HITL checkpoint rotation backups (Mode C)
+*.json.bak
+
+# Wizard session dir if copied/synced into repo (~/.aliyun-terraform/sessions/)
+.aliyun-terraform/
+
+# Local NL2HCL dry-run loop configs at repo root (not skill assets)
+/config/
