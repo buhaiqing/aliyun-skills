@@ -59,6 +59,8 @@ delegation_rules:
     delegate_to: "alicloud-polar-mysql-ops"
 ---
 
+> **Agent 开发/扩展本 skill**（改 `modules/`、`scripts/`、新增 NL2HCL 模块）→ 先读 [`AGENTS.md`](AGENTS.md)。
+
 # alicloud-terraform-ops
 
 Terraform IaC skill for Alibaba Cloud infrastructure lifecycle management. Declarative, version-controlled, multi-environment orchestration.
@@ -113,7 +115,7 @@ Use this skill when:
 
 ```bash
 # 1. Initialize with backend
-cd environments/{{user.environment}}
+cd .runtime/terraform-ops/environments/{{user.environment}}
 terraform init
 
 # 2. Plan changes
@@ -144,20 +146,15 @@ terraform apply
 
 **Option B: Directory-based (recommended for significantly different environments)**
 
+预置模板见 [`environments/`](environments/README.md)（`dev` / `staging` / `prod`）。运行时工作目录为 **`.runtime/terraform-ops/environments/<env>/`**（gitignored，首次 apply 自动从模板复制）。
+
 ```
-environments/
-├── dev/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── backend.tf
-├── staging/
-│   ├── main.tf
-│   ├── variables.tf
-│   └── backend.tf
-└── prod/
-    ├── main.tf
-    ├── variables.tf
-    └── backend.tf
+environments/                              # 模板（进 Git）
+.runtime/terraform-ops/
+├── nl2hcl/<env>/                          # NL2HCL 生成物
+├── import/<batch>/                        # 逆向工程 HCL
+├── environments/<env>/                    # apply/destroy 工作区
+└── pr-store/                              # HITL Mode B
 ```
 
 ### 5.3 Module Usage
@@ -191,7 +188,7 @@ Full module design guidelines are covered in the NL2HCL generator spec: [referen
 terraform {
   backend "oss" {
     bucket     = "my-terraform-state"
-    prefix     = "environments/dev"
+    prefix     = "terraform-ops/environments/dev"
     key        = "terraform.tfstate"
     tablestore_endpoint = "https://my-terraform.ots.cn-hangzhou.aliyuncs.com"
     tablestore_table    = "terraform_state_lock"
@@ -331,10 +328,10 @@ Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 - `aliyun` CLI output (JSON)
 - Console screenshot/resource list
 
-**Output:**
-- `generated/` - HCL configuration files
-- `import.sh` - Import script for `terraform import`
-- `import.tf` - Generated resource blocks
+**Output (runtime, gitignored under `.runtime/terraform-ops/`):**
+- `import/<batch>/` — HCL configuration files
+- `import.sh` — Import script for `terraform import`
+- `import.tf` — Generated resource blocks
 
 **Process:**
 1. Query resource details via `aliyun` CLI

@@ -115,7 +115,7 @@ metadata:
   "environment": "dev|staging|prod",
   "generator": {
     "command": "terraform plan -out=tfplan",
-    "working_directory": "environments/dev",
+    "working_directory": "output/environments/dev",
     "exit_code": 0,
     "stdout_excerpt": "...",
     "stderr_excerpt": "...",

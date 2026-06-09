@@ -28,6 +28,8 @@ aliyun-skills/
 │       ├── gcl_runner_test.py        # unittest suite (60 tests, pure stdlib)
 │       └── README.md                 # usage guide
 ├── audit-results/                # §12.6 — GCL trace storage (GITIGNORED; ephemeral)
+├── Makefile                      # §13 — repo-wide runtime cleanup (make runtime-clean)
+├── .runtime/                     # §13 — unified runtime data root (GITIGNORED)
 ├── alicloud-jit-setup.sh         # JIT Go SDK bootstrap (single script)
 ├── REQUIREMENTS.md               # Full requirements, architecture, technical specs
 ├── .env.example                  # Template for ALIBABA_CLOUD_ACCESS_KEY_* vars
@@ -322,3 +324,48 @@ Full 30+ skill table at [docs/gcl-spec.md §8 Per-Skill Defaults](docs/gcl-spec.
 **Anti-Patterns (banned)**: Shared context G+C, subjective scoring, unbounded loop, Critic seeing user request, silently downgrading on Safety fail, trace not persisted, Critic mutating resources, trace leaking secrets.
 
 **Trace audit**: Every GCL run MUST persist a JSON trace to `./audit-results/gcl-trace-*.json` (gitignored).
+
+---
+
+## 13. Runtime Artifacts Policy (MANDATORY)
+
+> Agents and contributors MUST treat **runtime / generated deliverables** as ephemeral unless the user explicitly reviews and approves committing them.
+
+### 13.1 Default: Gitignore
+
+| Rule | Requirement |
+|------|-------------|
+| **R1** | Execution-time outputs (generated HCL, tfstate, traces, checkpoints, caches) MUST live under **`${SKILLS_DIR}/.runtime/`** or another **gitignored** path |
+| **R2** | **Do NOT** `git add` runtime artifacts. If the user asks to commit them, **STOP**, list paths + risks, and wait for explicit confirmation after review |
+| **R3** | Committed content = templates only (e.g. `alicloud-terraform-ops/environments/*.example`). Runtime workspaces are seeded into `.runtime/` |
+
+### 13.2 Shallow Centralized Layout
+
+```
+${SKILLS_DIR}/.runtime/
+├── audit/<skill-key>/     # traces, runbook audits
+├── baseline/ cache/ logs/ tmp/
+└── terraform-ops/         # IaC (≤2 levels)
+    ├── nl2hcl/<env>/      # NL2HCL HCL + modules/
+    ├── import/<batch>/    # reverse-engineering HCL
+    ├── environments/<env>/ # apply/destroy workspaces
+    └── pr-store/          # HITL Mode B
+```
+
+**Banned**: skill-internal `generated/`, `output/`, cwd `.pr-store/`, or deep scattered runtime trees without user approval.
+
+### 13.3 Cleanup: Root `Makefile`
+
+```bash
+make runtime-clean           # dry-run (default)
+make runtime-clean-apply     # actually delete
+make runtime-layout          # show terraform-ops paths
+```
+
+Per-skill `runtime_cleanup.py` scripts are Makefile implementation details — not alternate user entry points.
+
+### 13.4 Agent Checklist (before `git add`)
+
+1. Path under `.runtime/`, `audit-results/`, `*.tfstate`, `.terraform/` → **do not commit**
+2. Only `*.example` templates under committed `environments/` → OK
+3. User requests runtime commit → require explicit written confirmation

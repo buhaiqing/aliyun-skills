@@ -35,7 +35,7 @@ python3 alicloud-terraform-ops/scripts/terraform_ops.py --help
 terraform {
   backend "oss" {
     bucket              = "my-terraform-state"
-    prefix              = "environments/dev"
+    prefix              = "terraform-ops/environments/dev"
     key                 = "terraform.tfstate"
     tablestore_endpoint = "https://my-terraform.ots.cn-hangzhou.aliyuncs.com"
     tablestore_table    = "terraform_state_lock"
@@ -49,9 +49,11 @@ Pre-create bucket and OTS table before first `terraform init` in CI.
 
 | Workflow | Command |
 |----------|---------|
-| NL2HCL + HITL | `python terraform_ops.py create -r "..." -e dev -o ./generated` |
-| Import + HITL | `python terraform_ops.py import -t vpc -i vpc-xxx -e dev` |
-| Dry-run only | append `--dry-run` |
+| NL2HCL + HITL | `python terraform_ops.py create -r "..." -e dev`（默认 `.runtime/terraform-ops/nl2hcl/dev/`） |
+| Import + HITL | `python terraform_ops.py import -t vpc -i vpc-xxx -e dev`（默认 `.runtime/terraform-ops/import/vpc/`） |
+| Apply + HITL | `python terraform_ops.py apply -e dev`（默认 `.runtime/terraform-ops/environments/dev/`，首次从 `environments/dev` 复制） |
+| Destroy + HITL | `python terraform_ops.py destroy -e prod --gcl-check` |
+| Dry-run plan | append `--dry-run` |
 | Wizard | `python terraform_ops.py wizard nl2hcl --quick` |
 
 ## GCL Runner Integration

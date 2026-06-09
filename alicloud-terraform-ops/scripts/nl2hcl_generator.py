@@ -18,7 +18,7 @@ USAGE
     python nl2hcl_generator.py \\
         --request "创建一个VPC，包含两个可用区的交换机" \\
         --environment dev \\
-        --output-dir ./generated
+        --output-dir .runtime/terraform-ops/nl2hcl/dev/
 
     # Dry-run mode (validate without creating resources)
     python nl2hcl_generator.py \\
@@ -38,6 +38,7 @@ EXIT CODES
     3  DRY_RUN_ERROR
     4  GCL_REJECT
     5  USER_CANCEL
+    6  COVERAGE_GAP
 
 REQUIREMENTS
 ------------
@@ -67,6 +68,10 @@ from module_catalog import (
     render_main_tf,
     render_outputs_tf,
 )
+
+
+class CoverageGapError(Exception):
+    """NL2HCL module coverage gate — prevents silent resource omission."""
 
 
 # ANSI color codes for terminal output
@@ -512,6 +517,13 @@ class NL2HCLGenerator:
     def generate(self, request: str, output_dir: Optional[Path] = None) -> Dict[str, str]:
         """Generate module-first root Terraform configuration from request."""
         intent = self.parse_intent(request)
+
+        from module_coverage import check_nl2hcl_coverage, format_coverage_halt
+
+        coverage = check_nl2hcl_coverage(intent, request)
+        if coverage.must_halt:
+            raise CoverageGapError(format_coverage_halt(coverage))
+
         self.resources = []
         self.module_plan = plan_modules(intent, self.defaults)
 
@@ -695,8 +707,8 @@ def main():
     parser.add_argument(
         "--output-dir", "-o",
         type=Path,
-        default=Path("./generated"),
-        help="Output directory for generated files"
+        default=None,
+        help="Output directory (default: .runtime/terraform-ops/nl2hcl/<env>/)",
     )
     parser.add_argument(
         "--dry-run", "-d",
@@ -727,6 +739,13 @@ def main():
 
     args = parser.parse_args()
 
+    from runtime_paths import resolve_output_dir
+
+    if args.output_dir is None:
+        args.output_dir = resolve_output_dir(
+            None, kind="nl2hcl", environment=args.environment
+        )
+
     # Wizard mode
     if args.wizard or not args.request:
         print(f"{Colors.BOLD}🧙 Terraform NL2HCL 交互式向导{Colors.END}")
@@ -748,6 +767,13 @@ def main():
     print(f"{Colors.CYAN}│{Colors.END} 资源: {', '.join(intent['resources']) or '(未识别)'}", flush=True)
     print(f"{Colors.CYAN}│{Colors.END} 数量: {intent['count']}  可用区: {intent['az_count']}", flush=True)
     print(f"{Colors.CYAN}│{Colors.END} 实例规格: {intent.get('instance_type') or '(未识别,见下方候选)'}", flush=True)
+
+    from module_coverage import check_nl2hcl_coverage, format_coverage_halt
+
+    coverage = check_nl2hcl_coverage(intent, args.request)
+    if coverage.must_halt:
+        print(f"\n{Colors.RED}{format_coverage_halt(coverage)}{Colors.END}", file=sys.stderr)
+        sys.exit(6)
 
     # 规格未识别 -> 打印候选提示
     spec_cands = intent.get("spec_candidates") or []

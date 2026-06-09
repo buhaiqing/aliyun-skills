@@ -188,7 +188,7 @@ For destroy: Show what would be destroyed, require explicit confirmation
 ```json
 {
   "command": "terraform plan -out=tfplan",
-  "working_directory": "environments/dev",
+  "working_directory": "output/environments/dev",
   "exit_code": 0,
   "stdout": "...",
   "stderr": "...",

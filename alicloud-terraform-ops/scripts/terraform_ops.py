@@ -7,6 +7,9 @@ terraform_ops.py — alicloud-terraform-ops 统一 CLI 入口
   python terraform_ops.py create --request "创建 VPC" --mode cli
   python terraform_ops.py wizard nl2hcl --quick --template vpc-basic
   python terraform_ops.py import --type vpc --id vpc-xxx --dry-run
+  python terraform_ops.py apply -e dev
+  python terraform_ops.py create -r "..." -e dev   # → .runtime/terraform-ops/nl2hcl/dev/
+  python terraform_ops.py destroy -e dev --dry-run
   python terraform_ops.py pause|resume|list|cleanup
   python terraform_ops.py pr-create|pr-status|pr-apply
 
@@ -17,9 +20,11 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -88,18 +93,27 @@ def _run_create_with_hitl(args: argparse.Namespace) -> int:
         UserAbortedError,
         create_checkpoint,
     )
-    from nl2hcl_generator import NL2HCLGenerator, intent_to_hitl_resources
+    from nl2hcl_generator import NL2HCLGenerator, CoverageGapError, intent_to_hitl_resources
+    from module_coverage import check_nl2hcl_coverage, format_coverage_halt
 
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     generator = NL2HCLGenerator(environment=args.environment, region=args.region)
     intent = generator.parse_intent(args.request)
-    if not intent.get("resources"):
+    coverage = check_nl2hcl_coverage(intent, args.request)
+    if coverage.must_halt:
+        print(format_coverage_halt(coverage), file=sys.stderr)
+        return 6
+    if not intent.get("resources") and not coverage.keyword_hits:
         print("错误: 未能从请求中识别资源，请调整 --request 后重试", file=sys.stderr)
         return 1
 
-    files = generator.generate(args.request, output_dir=output_dir)
+    try:
+        files = generator.generate(args.request, output_dir=output_dir)
+    except CoverageGapError as exc:
+        print(str(exc), file=sys.stderr)
+        return 6
     for filename, content in files.items():
         (output_dir / filename).write_text(content, encoding="utf-8")
 
@@ -225,6 +239,277 @@ def _run_import_with_hitl(args: argparse.Namespace) -> int:
     return 0
 
 
+def _maybe_run_gcl(args: argparse.Namespace, operation: str, command: str) -> bool:
+    if not getattr(args, "gcl_check", False):
+        return True
+    from nl2hcl_generator import run_gcl_check
+
+    rubric_path = SCRIPT_DIR.parent / "references" / "rubric.md"
+    passed, _trace = run_gcl_check(
+        "alicloud-terraform-ops",
+        operation,
+        command,
+        rubric_path,
+        max_iter=2,
+    )
+    if not passed:
+        print("GCL 检查未通过，已中止", file=sys.stderr)
+        return False
+    return True
+
+
+from runtime_paths import (
+    default_env_runtime,
+    resolve_output_dir,
+    template_env_root,
+)
+
+
+def _resolve_output_dir(args: argparse.Namespace, kind: str) -> None:
+    if getattr(args, "output_dir", None) is None:
+        batch = getattr(args, "resource_type", None) if kind == "import" else None
+        args.output_dir = resolve_output_dir(
+            None,
+            kind=kind,
+            environment=getattr(args, "environment", "dev"),
+            batch=batch,
+        )
+
+
+def _ensure_runtime_work_dir(environment: str) -> Path:
+    """从 environments/<env> 模板初始化 .runtime/terraform-ops/environments/<env>。"""
+    work_dir = default_env_runtime(environment)
+    template_dir = template_env_root() / environment
+    if not template_dir.is_dir():
+        raise FileNotFoundError(
+            f"环境模板不存在: {template_dir} "
+            f"(可用: dev/staging/prod)"
+        )
+
+    if not (work_dir / "main.tf").is_file():
+        work_dir.mkdir(parents=True, exist_ok=True)
+        for item in sorted(template_dir.iterdir()):
+            if not item.is_file():
+                continue
+            dest = work_dir / item.name
+            shutil.copy2(item, dest)
+            if item.name == "main.tf":
+                content = dest.read_text(encoding="utf-8")
+                content = content.replace(
+                    'source = "../../modules/',
+                    'source = "../../../modules/',
+                )
+                dest.write_text(content, encoding="utf-8")
+    return work_dir.resolve()
+
+
+def _default_work_dir(environment: str) -> Path:
+    return _ensure_runtime_work_dir(environment)
+
+
+def _resolve_work_dir(args: argparse.Namespace) -> Path:
+    work_dir = getattr(args, "work_dir", None) or getattr(args, "output_dir", None)
+    if work_dir is None:
+        return _default_work_dir(args.environment)
+    return Path(work_dir).resolve()
+
+
+def _validate_work_dir(work_dir: Path) -> Optional[str]:
+    if not work_dir.is_dir():
+        return f"工作目录不存在: {work_dir}"
+    tf_files = list(work_dir.glob("*.tf"))
+    if not tf_files:
+        return f"目录中未找到 *.tf 文件: {work_dir}"
+    return None
+
+
+def _run_apply_with_hitl(args: argparse.Namespace) -> int:
+    from hitl_mode_a import (
+        CLIController,
+        CheckpointStatus,
+        CheckpointStore,
+        CheckpointType,
+        UserAbortedError,
+        create_checkpoint,
+    )
+    from terraform_executor import TerraformExecutor, seed_plan_step_data
+
+    work_dir = _resolve_work_dir(args)
+    err = _validate_work_dir(work_dir)
+    if err:
+        print(f"错误: {err}", file=sys.stderr)
+        return 1
+
+    executor = TerraformExecutor()
+    plan_result = executor.plan_apply(
+        work_dir,
+        use_backend=not args.offline,
+        plan_out=work_dir / "tfplan",
+    )
+    if not plan_result.success:
+        print(f"错误: {plan_result.error}", file=sys.stderr)
+        return 1
+
+    apply_cmd = f"terraform apply {work_dir / 'tfplan'}"
+    if not _maybe_run_gcl(args, "Apply", apply_cmd):
+        return 5
+
+    hitl_env = _hitl_environment_name(args.environment)
+    checkpoint = create_checkpoint(
+        checkpoint_type=CheckpointType.APPLY,
+        environment=hitl_env,
+        resources=[],
+        user_inputs={
+            "request": f"terraform apply @ {work_dir}",
+            "output_dir": str(work_dir),
+            "region": args.region,
+            "environment": args.environment,
+            "plan_file": str(work_dir / "tfplan"),
+        },
+    )
+    if checkpoint.steps:
+        checkpoint.steps[0].data.update(seed_plan_step_data(plan_result))
+
+    store = CheckpointStore()
+    store.save(checkpoint)
+    print(f"HITL 检查点已创建: {checkpoint.id}")
+
+    controller = CLIController(checkpoint, store)
+    try:
+        checkpoint = controller.run()
+    except UserAbortedError:
+        return 1
+
+    if checkpoint.status != CheckpointStatus.COMPLETED:
+        print("HITL 未完成，跳过 terraform apply", file=sys.stderr)
+        return 1
+
+    print("正在执行 terraform apply...")
+    apply_result = executor.apply(work_dir, work_dir / "tfplan")
+    if not apply_result.success:
+        print(f"错误: {apply_result.error}", file=sys.stderr)
+        return 1
+    print(apply_result.stdout)
+    print(f"terraform apply 完成: {work_dir}")
+    return 0
+
+
+def _run_apply(args: argparse.Namespace) -> int:
+    from terraform_executor import TerraformExecutor
+
+    work_dir = _resolve_work_dir(args)
+    err = _validate_work_dir(work_dir)
+    if err:
+        print(f"错误: {err}", file=sys.stderr)
+        return 1
+
+    executor = TerraformExecutor()
+    plan_result = executor.plan_apply(
+        work_dir,
+        use_backend=not args.offline,
+        plan_out=work_dir / "tfplan" if not args.dry_run else None,
+    )
+    if not plan_result.success:
+        print(f"错误: {plan_result.error}", file=sys.stderr)
+        return 1
+    print(plan_result.plan_stdout)
+    if plan_result.plan_stderr:
+        print(plan_result.plan_stderr, file=sys.stderr)
+    return 0
+
+
+def _run_destroy_with_hitl(args: argparse.Namespace) -> int:
+    from hitl_mode_a import (
+        CLIController,
+        CheckpointStatus,
+        CheckpointStore,
+        CheckpointType,
+        UserAbortedError,
+        create_checkpoint,
+    )
+    from terraform_executor import TerraformExecutor, plan_summary_to_resources
+
+    work_dir = _resolve_work_dir(args)
+    err = _validate_work_dir(work_dir)
+    if err:
+        print(f"错误: {err}", file=sys.stderr)
+        return 1
+
+    executor = TerraformExecutor()
+    backup = executor.state_backup(work_dir)
+    if not backup.success:
+        print(f"错误: {backup.error or 'state 备份失败'}", file=sys.stderr)
+        return 1
+    print(f"State 已备份: {backup.state_backup}")
+
+    plan_result = executor.plan_destroy(work_dir, use_backend=not args.offline)
+    if not plan_result.success:
+        print(f"错误: {plan_result.error}", file=sys.stderr)
+        return 1
+
+    destroy_cmd = f"terraform destroy -auto-approve @ {work_dir}"
+    if not _maybe_run_gcl(args, "Destroy", destroy_cmd):
+        return 5
+
+    hitl_env = _hitl_environment_name(args.environment)
+    checkpoint = create_checkpoint(
+        checkpoint_type=CheckpointType.DESTROY,
+        environment=hitl_env,
+        resources=plan_summary_to_resources(plan_result.summary),
+        user_inputs={
+            "request": f"terraform destroy @ {work_dir}",
+            "output_dir": str(work_dir),
+            "region": args.region,
+            "environment": args.environment,
+            "destroy_plan": dict(plan_result.summary),
+            "state_backup": str(backup.state_backup) if backup.state_backup else None,
+        },
+    )
+
+    store = CheckpointStore()
+    store.save(checkpoint)
+    print(f"HITL 检查点已创建: {checkpoint.id}")
+
+    controller = CLIController(checkpoint, store)
+    try:
+        checkpoint = controller.run()
+    except UserAbortedError:
+        return 1
+
+    if checkpoint.status != CheckpointStatus.COMPLETED:
+        print("HITL 未完成，跳过 terraform destroy", file=sys.stderr)
+        return 1
+
+    print("正在执行 terraform destroy...")
+    destroy_result = executor.destroy(work_dir)
+    if not destroy_result.success:
+        print(f"错误: {destroy_result.error}", file=sys.stderr)
+        return 1
+    print(destroy_result.stdout)
+    print(f"terraform destroy 完成: {work_dir}")
+    return 0
+
+
+def _run_destroy(args: argparse.Namespace) -> int:
+    from terraform_executor import TerraformExecutor
+
+    work_dir = _resolve_work_dir(args)
+    err = _validate_work_dir(work_dir)
+    if err:
+        print(f"错误: {err}", file=sys.stderr)
+        return 1
+
+    executor = TerraformExecutor()
+    plan_result = executor.plan_destroy(work_dir, use_backend=not args.offline)
+    if not plan_result.success:
+        print(f"错误: {plan_result.error}", file=sys.stderr)
+        return 1
+    print(plan_result.plan_stdout)
+    if plan_result.plan_stderr:
+        print(plan_result.plan_stderr, file=sys.stderr)
+    return 0
+
+
 def _run_import(args: argparse.Namespace) -> int:
     cmd = [
         "--resource-type", args.resource_type,
@@ -245,7 +530,7 @@ def _run_import(args: argparse.Namespace) -> int:
 
 
 def _run_wizard(args: argparse.Namespace) -> int:
-    from wizard_cli import build_wizard_parser, run_wizard_command
+    from wizard_cli import run_wizard_command
     return run_wizard_command(args)
 
 
@@ -269,7 +554,13 @@ def build_parser() -> argparse.ArgumentParser:
     create.add_argument("--request", "-r", required=True, help="自然语言描述")
     create.add_argument("--environment", "-e", default="dev")
     create.add_argument("--region", "-R", default="cn-hangzhou")
-    create.add_argument("--output-dir", "-o", type=Path, default=Path("./generated"))
+    create.add_argument(
+        "--output-dir",
+        "-o",
+        type=Path,
+        default=None,
+        help="输出目录（默认 .runtime/terraform-ops/nl2hcl/<env>/）",
+    )
     create.add_argument("--dry-run", "-d", action="store_true")
     create.add_argument("--gcl-check", action="store_true")
     create.add_argument("--wizard", "-w", action="store_true")
@@ -286,10 +577,39 @@ def build_parser() -> argparse.ArgumentParser:
     imp.add_argument("--resource-ids")
     imp.add_argument("--environment", "-e", default="dev")
     imp.add_argument("--region", "-r", default="cn-hangzhou")
-    imp.add_argument("--output-dir", "-o", type=Path, default=Path("./generated"))
+    imp.add_argument(
+        "--output-dir",
+        "-o",
+        type=Path,
+        default=None,
+        help="输出目录（默认 .runtime/terraform-ops/import/<resource-type>/）",
+    )
     imp.add_argument("--dry-run", "-d", action="store_true")
     imp.add_argument("--discover-associated", "-D", action="store_true")
     imp.add_argument("--skip-preflight", action="store_true")
+
+    def _add_workflow_parser(name: str, help_text: str):
+        sp = sub.add_parser(name, help=help_text)
+        sp.add_argument(
+            "--work-dir", "-w",
+            type=Path,
+            default=None,
+            help="Terraform 工作目录（默认 .runtime/terraform-ops/environments/<env>/）",
+        )
+        sp.add_argument("--output-dir", "-o", type=Path, default=None, help="同 --work-dir")
+        sp.add_argument("--environment", "-e", default="dev")
+        sp.add_argument("--region", "-r", default="cn-hangzhou")
+        sp.add_argument("--dry-run", "-d", action="store_true", help="仅 plan，不进入 HITL 执行")
+        sp.add_argument("--gcl-check", action="store_true", help="执行前运行 GCL 质量门")
+        sp.add_argument(
+            "--offline",
+            action="store_true",
+            help="plan 时使用 init -backend=false（无远程 state）",
+        )
+        return sp
+
+    _add_workflow_parser("apply", "terraform plan + HITL CP3 + apply")
+    _add_workflow_parser("destroy", "state 备份 + plan -destroy + HITL CP5 + destroy")
 
     # checkpoint commands (Mode C)
     for name, help_text in [
@@ -333,6 +653,7 @@ def main() -> int:
     cmd = args.command
 
     if cmd == "create":
+        _resolve_output_dir(args, "nl2hcl")
         if args.mode == "cli" and not args.wizard and not args.dry_run:
             return _run_create_with_hitl(args)
         return _run_nl2hcl(args)
@@ -341,9 +662,24 @@ def main() -> int:
         return _run_wizard(args)
 
     if cmd == "import":
+        _resolve_output_dir(args, "import")
         if args.mode == "cli" and not args.dry_run:
             return _run_import_with_hitl(args)
         return _run_import(args)
+
+    if cmd == "apply":
+        if getattr(args, "work_dir", None) is None and getattr(args, "output_dir", None) is None:
+            args.work_dir = _default_work_dir(args.environment)
+        if args.mode == "cli" and not args.dry_run:
+            return _run_apply_with_hitl(args)
+        return _run_apply(args)
+
+    if cmd == "destroy":
+        if getattr(args, "work_dir", None) is None and getattr(args, "output_dir", None) is None:
+            args.work_dir = _default_work_dir(args.environment)
+        if args.mode == "cli" and not args.dry_run:
+            return _run_destroy_with_hitl(args)
+        return _run_destroy(args)
 
     if cmd in ("list", "pause", "resume", "cleanup", "delete"):
         return _run_mode_c(args, cmd)

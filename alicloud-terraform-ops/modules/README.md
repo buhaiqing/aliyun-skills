@@ -2,6 +2,8 @@
 
 NL2HCL 生成器在根目录 `main.tf` 中**仅输出 `module` 块**；本目录为可复用、可审查的实现源。
 
+Agent 扩展模块 → [AGENTS.md](../AGENTS.md) §4 + [references/module-coverage.md](../references/module-coverage.md)
+
 ## 模块清单
 
 | 模块 | 职责 |

@@ -168,8 +168,11 @@ alicloud-*/**/__pycache__/
 
 # ===== Terraform IaC (alicloud-terraform-ops) =====
 
-# NL2HCL / reverse-engineering output (regenerated locally)
+# Legacy skill-internal paths (pre .runtime/ migration; cleaned by make runtime-clean)
 alicloud-terraform-ops/generated/
+alicloud-terraform-ops/output/
+alicloud-*/generated/
+alicloud-*/output/
 
 # Terraform runtime & state (NEVER commit — may contain secrets + resource IDs)
 **/.terraform/

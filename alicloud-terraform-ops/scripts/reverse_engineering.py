@@ -1278,10 +1278,13 @@ class ReverseEngineering:
     def __init__(
         self, 
         region: str = "cn-hangzhou", 
-        output_dir: Path = Path("./generated"),
+        output_dir: Path | None = None,
         skip_preflight: bool = False
     ):
         self.region = region
+        if output_dir is None:
+            from runtime_paths import default_import_output
+            output_dir = default_import_output()
         self.output_dir = output_dir
         self.mapper = ResourceMapper(region)
         self.registry = get_registry()
@@ -1601,8 +1604,8 @@ def main():
     parser.add_argument(
         "--output-dir", "-o",
         type=Path,
-        default=Path("./generated"),
-        help="Output directory"
+        default=None,
+        help="Output directory (default: .runtime/terraform-ops/import/<resource-type>/)",
     )
     parser.add_argument(
         "--dry-run", "-d",
@@ -1621,6 +1624,13 @@ def main():
     )
 
     args = parser.parse_args()
+
+    from runtime_paths import resolve_output_dir
+
+    if args.output_dir is None:
+        args.output_dir = resolve_output_dir(
+            None, kind="import", batch=args.resource_type
+        )
 
     # Parse resource IDs
     resource_ids = []

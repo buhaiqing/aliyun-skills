@@ -4,7 +4,7 @@
 execution_trace.py — 统一执行轨迹持久化
 
 符合 references/rubric.md §4.1 与 interactive-wizard.md §6.1。
-输出: audit-results/gcl-trace-{operation}-YYYYMMDD-HHMMSS.json
+输出: .runtime/audit/terraform-ops/gcl-trace-{operation}-YYYYMMDD-HHMMSS.json
 """
 
 from __future__ import annotations
@@ -19,7 +19,11 @@ from typing import Any, Dict, List, Optional
 
 
 TRACE_VERSION = "1.0.0"
-DEFAULT_TRACE_DIR = Path(__file__).resolve().parent.parent.parent / "audit-results"
+
+
+def default_trace_dir() -> Path:
+    from runtime_paths import audit_dir
+    return audit_dir()
 
 
 def now_iso() -> str:
@@ -129,7 +133,7 @@ class ExecutionTraceWriter:
     """写入 audit-results 目录."""
 
     def __init__(self, base_dir: Optional[Path] = None):
-        self.base_dir = base_dir or DEFAULT_TRACE_DIR
+        self.base_dir = base_dir or default_trace_dir()
 
     def write(self, trace: ExecutionTrace) -> Path:
         self.base_dir.mkdir(parents=True, exist_ok=True)

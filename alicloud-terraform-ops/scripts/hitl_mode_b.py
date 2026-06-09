@@ -234,7 +234,7 @@ class GitProvider:
 class LocalGitProvider(GitProvider):
     """本地文件系统 Git Provider (默认/离线/测试)
 
-    将 PR/分支/评论/审批信息持久化到 ./.pr-store/ 目录，
+    将 PR/分支/评论/审批信息持久化到 .runtime/terraform-ops/pr-store/，
     模拟 GitHub/GitLab API 行为，无需真实 Git 仓库。
     """
 
@@ -245,7 +245,10 @@ class LocalGitProvider(GitProvider):
         store_dir: Optional[Path] = None,
     ):
         super().__init__(config, audit)
-        self.store_dir = store_dir or Path.cwd() / ".pr-store"
+        if store_dir is None:
+            from runtime_paths import pr_store_dir
+            store_dir = pr_store_dir()
+        self.store_dir = store_dir
         self.store_dir.mkdir(parents=True, exist_ok=True)
         self.branches_dir = self.store_dir / "branches"
         self.branches_dir.mkdir(exist_ok=True)

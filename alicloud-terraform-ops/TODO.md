@@ -32,6 +32,17 @@
 - [x] HCL resource 块名称与 import.sh 统一（`make_tf_name()`）
 - [x] `terraform_ops import`（非 dry-run）生成产物并注入 HITL Mode A IMPORT 检查点
 
+### Apply / Destroy 生命周期
+- [x] `terraform_ops apply` — plan -out + HITL CP3 + 真实 `terraform apply`
+- [x] `terraform_ops destroy` — state 备份 + plan -destroy + HITL CP5 + 真实 `terraform destroy`
+- [x] `terraform_executor.py` — plan/apply/destroy/state_backup 执行层
+- [x] 可选 `--gcl-check` 接入 `gcl_runner.py`
+
+### 多环境脚手架
+- [x] `environments/` 多环境模板（dev/staging/prod，进 Git）
+- [x] `.runtime/terraform-ops/environments/` 运行时工作区（gitignored，首次 apply 从模板 seed）
+- [x] `.runtime/terraform-ops/nl2hcl/`、`import/` NL2HCL 与逆向工程输出路径
+
 ### HITL 多模式工作流
 - [x] Mode A: 交互式 CLI（CP1–CP5、五级环境策略、检查点持久化）— `hitl_mode_a.py`
 - [x] Mode A CP3: 真实 `terraform init/validate/plan`（`terraform_plan_runner.py`）；失败降级为资源估算
@@ -51,16 +62,18 @@
 - [x] Eval Queries（20 条，`assets/eval_queries.json`）
 - [x] SKILL.md 结构合规（前置检查/变量约定/执行后验证/故障恢复/架构评估）
 - [x] Terraform 模块库已纳入版本控制（`modules/`）
-- [x] `.gitignore` 覆盖 generated/、tfstate、.terraform/ 等 IaC 运行时产物
+- [x] `.gitignore` 覆盖 `.runtime/`、legacy generated/、tfstate、.terraform/ 等 IaC 运行时产物
 - [x] GCL 注册：`docs/gcl-spec.md` §8 + `gcl_runner.py` SKILL_MAX_ITER + SKILL.md `## Quality Gate (GCL)`
 - [x] Canonical references：`well-architected-assessment.md`、`troubleshooting.md`、`integration.md`
+- [x] Skill 级 `AGENTS.md` — 架构、runtime 路径、Module Coverage 四件套
+- [x] `assets/module-coverage.json` + `module_coverage.py` — NL2HCL 防遗漏门禁 + `--verify`
+- [x] `references/module-coverage.md` — manifest 规范与扩展示例
 
 ## ⚠️ 部分完成
 
 - [ ] HITL Mode B — 仅 `LocalGitProvider`；GitHub/GitLab/Gitee API 未实现
 - [ ] NL2HCL — `parse_intent()` 为规则引擎，复杂/模糊自然语言需 Agent 预处理或 Wizard 补全
-- [ ] SKILL §5 `environments/` 目录结构 — 文档有描述，仓库未预置脚手架
-- [ ] `terraform apply` / `destroy` — 安全门与确认流程有 spec/CP5，脚本层未自动调用 terraform binary
+- [ ] NL2HCL module 缺口：MongoDB / OSS / PolarDB / Elasticsearch / ESS（Import 部分可用，NL2HCL 待补 `addon-*`）
 
 ## ❌ 未实现
 

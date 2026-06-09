@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from runtime_paths import default_import_output, default_nl2hcl_output
+
 try:
     from nl2hcl_generator import NL2HCLGenerator, Colors, print_dry_run_banner, log_dry_run
     from reverse_engineering import ReverseEngineering
@@ -209,9 +211,9 @@ def _load_config(path: Path) -> Dict[str, Any]:
 class WizardRunner:
     """向导执行器"""
 
-    def __init__(self, store: Optional[WizardStore] = None, output_dir: Path = Path("./generated")):
+    def __init__(self, store: Optional[WizardStore] = None, output_dir: Optional[Path] = None):
         self.store = store or WizardStore()
-        self.output_dir = output_dir
+        self.output_dir = output_dir or default_nl2hcl_output()
 
     def run_nl2hcl(
         self,
@@ -561,7 +563,7 @@ def add_wizard_commands(subparsers: argparse._SubParsersAction) -> None:
     nl2hcl.add_argument("--environment", "-e")
     nl2hcl.add_argument("--region", "-r")
     nl2hcl.add_argument("--request")
-    nl2hcl.add_argument("--output-dir", "-o", type=Path, default=Path("./generated"))
+    nl2hcl.add_argument("--output-dir", "-o", type=Path, default=None)
     nl2hcl.add_argument("--no-dry-run", action="store_true")
 
     imp = subparsers.add_parser("import", help="逆向工程向导")
@@ -569,7 +571,7 @@ def add_wizard_commands(subparsers: argparse._SubParsersAction) -> None:
     imp.add_argument("--id", "-i", dest="resource_id")
     imp.add_argument("--region", "-r", default="cn-hangzhou")
     imp.add_argument("--no-discover", action="store_true")
-    imp.add_argument("--output-dir", "-o", type=Path, default=Path("./generated"))
+    imp.add_argument("--output-dir", "-o", type=Path, default=None)
 
     resume = subparsers.add_parser("resume", help="恢复会话")
     resume.add_argument("session_id")
@@ -596,7 +598,12 @@ def build_wizard_parser(subparsers: argparse._SubParsersAction) -> None:
 
 
 def run_wizard_command(args: argparse.Namespace) -> int:
-    runner = WizardRunner(output_dir=getattr(args, "output_dir", Path("./generated")))
+    out = getattr(args, "output_dir", None)
+    if args.wizard_cmd == "nl2hcl" and out is None:
+        out = default_nl2hcl_output(args.environment or "dev")
+    if args.wizard_cmd == "import" and out is None:
+        out = default_import_output()
+    runner = WizardRunner(output_dir=out)
 
     if args.wizard_cmd == "nl2hcl":
         runner.run_nl2hcl(

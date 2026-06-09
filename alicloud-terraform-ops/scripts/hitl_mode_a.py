@@ -1134,6 +1134,15 @@ class CLIController:
         if self.checkpoint.resources:
             self.ui.render_info("以下资源将被销毁:")
             self.ui.render_resources(self.checkpoint.resources)
+
+        destroy_plan = self.checkpoint.user_inputs.get("destroy_plan")
+        if destroy_plan:
+            self.ui.render_info("terraform plan -destroy 摘要:")
+            self.ui.render_plan_summary(destroy_plan)
+
+        state_backup = self.checkpoint.user_inputs.get("state_backup")
+        if state_backup:
+            self.ui.render_info(f"State 备份: {state_backup}")
         
         # 环境特定警告
         if self.checkpoint.environment == Environment.PRODUCTION:

@@ -59,7 +59,14 @@ class TerraformPlanRunner:
         self.validate_timeout = validate_timeout
         self.plan_timeout = plan_timeout
 
-    def run(self, work_dir: Path) -> PlanRunResult:
+    def run(
+        self,
+        work_dir: Path,
+        *,
+        use_backend: bool = False,
+        destroy: bool = False,
+        plan_out: Optional[Path] = None,
+    ) -> PlanRunResult:
         work_dir = work_dir.resolve()
         if not work_dir.is_dir():
             return PlanRunResult(
@@ -75,10 +82,20 @@ class TerraformPlanRunner:
             )
 
         commands: List[CommandRecord] = []
+        init_cmd = [terraform, "init", "-input=false"]
+        if not use_backend:
+            init_cmd.insert(2, "-backend=false")
+
+        plan_cmd = [terraform, "plan", "-input=false", "-no-color"]
+        if destroy:
+            plan_cmd.append("-destroy")
+        if plan_out is not None:
+            plan_cmd.extend(["-out", str(plan_out.resolve())])
+
         steps = [
-            ("INIT", [terraform, "init", "-backend=false", "-input=false"], self.init_timeout),
+            ("INIT", init_cmd, self.init_timeout),
             ("VALIDATE", [terraform, "validate"], self.validate_timeout),
-            ("PLAN", [terraform, "plan", "-input=false", "-no-color"], self.plan_timeout),
+            ("PLAN", plan_cmd, self.plan_timeout),
         ]
 
         init_exit = validate_exit = plan_exit = 0
