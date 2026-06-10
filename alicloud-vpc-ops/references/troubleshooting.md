@@ -2,6 +2,25 @@
 
 > **Purpose:** VPC error codes, diagnostic steps, and solutions.
 
+## Quick Diagnostic Commands
+
+```bash
+# Check resource existence and status
+aliyun vpc DescribeVpcs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --VpcId {{user.vpc_id}}
+aliyun vpc DescribeVSwitches --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --VSwitchId {{user.vswitch_id}}
+aliyun vpc DescribeNatGateways --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --NatGatewayId {{user.nat_gateway_id}}
+aliyun vpc DescribeEipAddresses --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --AllocationId {{user.eip_id}}
+aliyun vpc DescribeRouteTables --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --RouteTableId {{user.route_table_id}}
+aliyun vpc DescribeNetworkAcls --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --NetworkAclId {{user.network_acl_id}}
+aliyun vpc DescribeVpnGateways --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --VpnGatewayId {{user.vpn_gateway_id}}
+aliyun vpc DescribeDhcpOptionsSets --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --DhcpOptionsSetId {{user.dhcp_options_set_id}}
+aliyun vpc DescribeHaVips --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --HaVipId {{user.ha_vip_id}}
+aliyun vpc DescribeFlowLogs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --FlowLogId {{user.flow_log_id}}
+aliyun vpc DescribeSnatTableEntries --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --NatGatewayId {{user.nat_gateway_id}}
+aliyun vpc DescribeForwardTableEntries --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --NatGatewayId {{user.nat_gateway_id}}
+aliyun vpc DescribeRegions
+```
+
 ## Common API Error Codes
 
 | Error Code | Agent Action |
@@ -18,8 +37,25 @@
 | `InternalError` (500) | Retry 3x; escalate with RequestId |
 | `InvalidEipStatus` (400) | Check current EIP status |
 | `OperationDenied` (400) | Check resource lock or deletion protection |
-| `VrouterEntryConflictError` | 400 | Route entry conflicts | Remove conflicting route before adding |
-| `RouteTableNotSupport` | 400 | Route table doesn't support operation | Check route table type and associations |
+| `VrouterEntryConflictError` | 400 | Route entry conflicts — remove conflicting route before adding |
+| `RouteTableNotSupport` | 400 | Route table doesn't support operation — check type and associations |
+
+## Dependency Violations
+
+| Resource Being Deleted | Must First Delete/Unbind |
+|------------------------|-------------------------|
+| VPC | vSwitches, NAT Gateways, Network ACLs, HaVips, DHCP Options |
+| vSwitch | Running ECS/instances, HaVips |
+| NAT Gateway | SNAT + DNAT + FULLNAT entries, unbind EIPs |
+| Network ACL | Unassociate from all vSwitches |
+| EIP | Unbind from target resource |
+
+## CIDR Conflicts
+
+```bash
+aliyun vpc DescribeVpcs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
+  --output cols=VpcId,CidrBlock rows=Vpcs.Vpc[].{VpcId:VpcId,CidrBlock:CidrBlock}
+```
 
 ## Diagnostic Order
 

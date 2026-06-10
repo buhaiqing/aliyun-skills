@@ -39,22 +39,18 @@ import (
     "fmt"
     "os"
     "strings"
-    
+
     openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
     "github.com/alibabacloud-go/tea/tea"
     vpc "github.com/alibabacloud-go/vpc-20160428/v3/client"
 )
 
-// sanitizeError masks credential values in error messages before output
 func sanitizeError(err error) error {
     msg := err.Error()
-    secret := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
-    if secret != "" && len(secret) > 4 {
-        msg = strings.ReplaceAll(msg, secret, secret[:4]+"****")
-    }
-    ak := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
-    if ak != "" && len(ak) > 4 {
-        msg = strings.ReplaceAll(msg, ak, ak[:4]+"****")
+    for _, env := range []string{"ALIBABA_CLOUD_ACCESS_KEY_SECRET", "ALIBABA_CLOUD_ACCESS_KEY_ID"} {
+        if v := os.Getenv(env); len(v) > 4 {
+            msg = strings.ReplaceAll(msg, v, v[:4]+"****")
+        }
     }
     return fmt.Errorf("%s", msg)
 }
@@ -65,24 +61,19 @@ func main() {
         AccessKeySecret: tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")),
         RegionId:        tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
     }
-    
     client, err := vpc.NewClient(config)
     if err != nil {
         fmt.Fprintf(os.Stderr, "NewClient error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
-    
-    // Operation-specific call
     request := &vpc.DescribeVpcsRequest{
         RegionId: tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
     }
-    
     resp, err := client.DescribeVpcs(request)
     if err != nil {
         fmt.Fprintf(os.Stderr, "DescribeVpcs error: %v\n", sanitizeError(err))
         os.Exit(1)
     }
-    
     fmt.Println(tea.Prettify(resp))
 }
 ```
@@ -93,26 +84,10 @@ func main() {
 go run ./main.go
 ```
 
-## Credential Handling
-
-```bash
-# Shell environment (highest priority)
-export ALIBABA_CLOUD_ACCESS_KEY_ID="..."
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET="..."
-export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
-
-# .env file (loaded by shell if present)
-# ALIBABA_CLOUD_ACCESS_KEY_ID=...
-# ALIBABA_CLOUD_ACCESS_KEY_SECRET=...
-# ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
-
-**Security:** Never log, print, or echo credential values. Use `test -n "$VAR"` for existence checks.
-
 ## Cross-Skill Delegation Matrix
 
-| Alarm/Error Type | Primary Skill | Delegated Skill | Delegation Trigger |
-|-----------------|--------------|-----------------|--------------------|
+| Alarm/Error Type | Primary Skill | Delegated Skill | Trigger |
+|-----------------|--------------|-----------------|---------|
 | VPC 创建失败（配额） | `alicloud-vpc-ops` | — | 用户手动申请配额 |
 | VPC 关联 ECS 资源失败 | `alicloud-vpc-ops` | `alicloud-ecs-ops` | ECS 不在目标 VPC 中 |
 | NAT Gateway 带宽饱和 | `alicloud-vpc-ops` | `alicloud-eip-ops` | 需要添加更多 EIP 扩容 SNAT |
@@ -121,27 +96,3 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 | FlowLog 数据异常 | `alicloud-vpc-ops` | `alicloud-slb-ops` / `alicloud-ecs-ops` | 根据 FlowLog 源/目标定位资源 |
 | 路由冲突 | `alicloud-vpc-ops` | — | 检查路由表配置，无跨 Skill 委托 |
 | 安全组/EIP 连通性问题 | `alicloud-vpc-ops` | `alicloud-ecs-ops` + `alicloud-eip-ops` | 联合排查网络链路 |
-
-## Delegation Workflow
-
-```
-[VPC 告警触发]
-    │
-    ├── 1. 识别告警类型（VPC/NAT/EIP/FlowLog）
-    ├── 2. 查矩阵确定主诊断 Skill
-    ├── 3. 调用 VPC Skill 检查资源状态
-    ├── 4. 若涉及 ECS/EIP/SLB → 调用对应 Skill
-    ├── 5. 汇总所有输出生成统一报告
-    └── 6. 提供可执行的修复建议
-```
-
-## Environment Variable Loading
-
-```ini
-# Alibaba Cloud credentials (for all VPC-related operations)
-ALIBABA_CLOUD_ACCESS_KEY_ID=<your_ak>
-ALIBABA_CLOUD_ACCESS_KEY_SECRET=<your_secret>
-ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
-
-**Note:** These credentials are used by both the `aliyun` CLI and the JIT Go SDK for VPC API calls.

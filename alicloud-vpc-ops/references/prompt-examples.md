@@ -86,3 +86,35 @@
 | 4 | "创建SLB负载均衡" | `alicloud-slb-ops` |
 | 5 | "创建ACK集群" | `alicloud-ack-ops` |
 | 6 | "查看账单" | `alicloud-billing-ops` |
+
+## Quick Reference (Compact)
+
+| # | Prompt | Action |
+|---|--------|--------|
+| 7 | 创建 VPC，网段 192.168.0.0/16 | CreateVpc --CidrBlock 192.168.0.0/16 |
+| 8 | 查看当前有多少个 VPC | DescribeVpcs |
+| 9 | 删除 VPC vpc-xxx | DeleteVpc (check deps first) |
+| 10 | 列出所有可用区 | DescribeZones |
+| 11 | 在 VPC 里创建交换机 | CreateVSwitch |
+| 12 | 查看 VPC 里有多少个交换机 | DescribeVSwitches |
+| 13 | 删除交换机 vsw-xxx | DeleteVSwitch |
+| 14 | 创建增强型 NAT 网关 | CreateNatGateway --NatType Enhanced |
+| 15 | 查看 NAT 网关详情 | DescribeNatGateways |
+| 16 | 删除 NAT 网关 | DeleteNatGateway (delete entries first) |
+| 17 | 给 NAT 配置 SNAT，让 10.0.1.0/24 能上网 | CreateSnatEntry |
+| 18 | 配置 DNAT，把公网 8080 映射到内网 80 | CreateForwardEntry |
+| 19 | 查看 SNAT 条目 | DescribeSnatTableEntries |
+| 20 | 删除 DNAT 映射 | DeleteForwardEntry |
+| 21 | 申请弹性公网 IP | AllocateEipAddress |
+| 22 | 绑定 EIP 到 ECS | AssociateEipAddress |
+| 23 | 解绑 EIP | UnassociateEipAddress |
+| 24 | 释放 EIP | ReleaseEipAddress |
+| 25 | 修改 EIP 带宽 | ModifyEipAddressAttribute |
+| 26 | 创建 VPN 网关 | CreateVpnGateway |
+| 27 | 查看 VPN 网关状态 | DescribeVpnGateways |
+| 28 | 创建网络 ACL | CreateNetworkAcl |
+| 29 | 关联 ACL 到 vSwitch | AssociateNetworkAcl |
+| 30 | 帮我从零创建一套网络 | VPC → vSwitch → NAT → EIP → SNAT |
+| 31 | 清理整个 VPC 环境 | Delete all: SNAT/DNAT → EIPs → NAT → vSwitches → VPC |
+| 32 | 收到 NAT 带宽告警，帮我诊断 | Check OutRatePercent, FlowLog, EIP usage |
+| 33 | 网络不通了，帮我从 VPC 层面诊断 | Route table → NAT → ACL → FlowLog cascade |
