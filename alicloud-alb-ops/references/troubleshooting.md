@@ -4,26 +4,26 @@
 
 ## Common API Error Codes
 
-| Code / HTTP | Meaning | Agent Action |
-|-------------|---------|--------------|
-| InvalidParameter | Request parameter validation failed | FIX — align parameter values with OpenAPI spec |
-| OperationDenied | Operation not allowed in current state | FIX — verify resource status via Get/List API |
-| QuotaExceeded.LoadBalancer | ALB instance quota exceeded in region | HALT — request quota increase or delete unused instances |
-| QuotaExceeded.Listener | Listener quota exceeded for this ALB | HALT — delete unused listeners or request quota increase |
-| QuotaExceeded.ServerGroup | Server group quota exceeded | HALT — request quota increase |
+| Code | Meaning | Agent Action |
+|------|---------|--------------|
+| InvalidParameter | Parameter validation failed | FIX — align with OpenAPI spec |
+| OperationDenied | Operation not allowed in current state | FIX — verify resource status via Get/List |
+| QuotaExceeded.LoadBalancer | ALB instance quota exceeded | HALT — request increase or delete unused |
+| QuotaExceeded.Listener | Listener quota exceeded | HALT — delete unused or request increase |
+| QuotaExceeded.ServerGroup | Server group quota exceeded | HALT — request increase |
 | InsufficientBalance | Account balance insufficient | HALT — recharge account |
-| Forbidden.ResourceNotFound | Specified resource does not exist | FIX — verify resource ID with List/Get API |
-| Forbidden.ResourceInUse | Resource in use by another operation | RETRY — wait 5s-30s, check via ListAsynJobs |
-| DeleteProtectionEnabled | Deletion protection is enabled | HALT — user must disable deletion protection first |
-| IncorrectStatus.Listener | Listener in wrong state for operation | FIX — verify listener status (active/inactive) |
-| IncorrectStatus.LoadBalancer | ALB in wrong state for operation | FIX — verify ALB status via GetLoadBalancerAttribute |
-| Throttling | API rate limit exceeded | 3× retry with exponential backoff (2s, 4s, 8s) |
-| InternalError | Server-side error | 3× retry with backoff; then HALT with RequestId |
-| Zone.NotEnoughResources | No available resources in the zone | FIX — select different zone |
-| CertNotFound | Specified certificate not found | FIX — verify certificate ID exists |
-| InvalidSecurityPolicy.NotFound | Security policy not found | FIX — use ListSecurityPolicies or ListSystemSecurityPolicies |
-| AclConflict | ACL type conflict on listener | FIX — only one Black + one White ACL per listener |
-| ServerGroup.StillReferenced | Server group still in use by a listener/rule | HALT — remove all references before deletion |
+| Forbidden.ResourceNotFound | Resource does not exist | FIX — verify ID with List/Get |
+| Forbidden.ResourceInUse | Resource in use by another operation | RETRY — wait 5s-30s, check ListAsynJobs |
+| DeleteProtectionEnabled | Deletion protection enabled | HALT — user must disable first |
+| IncorrectStatus.Listener | Listener in wrong state | FIX — verify listener status (active/inactive) |
+| IncorrectStatus.LoadBalancer | ALB in wrong state | FIX — verify ALB status via GetLoadBalancerAttribute |
+| Throttling | API rate limit exceeded | 3× retry exponential backoff (2s,4s,8s) |
+| InternalError | Server-side error | 3× retry; then HALT with RequestId |
+| Zone.NotEnoughResources | No available resources in zone | FIX — select different zone |
+| CertNotFound | Certificate not found | FIX — verify certificate ID exists |
+| InvalidSecurityPolicy.NotFound | Security policy not found | FIX — use ListSecurityPolicies |
+| AclConflict | ACL type conflict on listener | FIX — only one Black + one White per listener |
+| ServerGroup.StillReferenced | Server group still referenced | HALT — remove all references before deletion |
 | Acl.StillReferenced | ACL still associated with listeners | HALT — dissociate from all listeners first |
 
 ## Diagnostic Order

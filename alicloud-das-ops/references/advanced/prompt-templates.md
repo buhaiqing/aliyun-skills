@@ -12,7 +12,7 @@
 ---
 
 > **GCL delegation**: GCL execution is delegated to `alicloud-gcl-runner-ops` (shared skill).
-> See [`gcl-execution.md`](../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
+> See [`gcl-execution.md`](../../../alicloud-gcl-runner-ops/references/gcl-execution.md) for integration details.
 
 ## 一、按故障类型分类
 

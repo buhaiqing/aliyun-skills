@@ -124,20 +124,8 @@ ALB is available in most Alibaba Cloud regions. Use `DescribeRegions` and `Descr
 
 ## Quotas and Limits
 
-| Resource | Default Quota | Can Increase |
-|----------|:-------------:|:------------:|
-| ALB instances per region | 10 | Yes |
-| Listeners per ALB | 50 (Basic) / 100 (Standard+) | Yes |
-| Server groups per ALB | 50 (Basic) / 100 (Standard+) | Yes |
-| Servers per server group | 200 | Yes |
-| Forwarding rules per listener | 100 (Basic) / 200 (Standard+) | Yes |
-| Certificates per listener | 10 | Yes |
-| ACLs per region | 100 | Yes |
-| Entries per ACL | 500 | Yes |
-| Security policies per region | 20 | No |
-| Health check templates per region | 100 | Yes |
-
-> Use `DescribeZones` and `ListLoadBalancers` to check current usage. Quota limits can be raised by submitting a ticket to Alibaba Cloud support.
+> **Query via API:** `aliyun alb DescribeZones` + `ListLoadBalancers` for current usage. Submit ticket to increase quotas.
+> Default quotas per region: ALB instances (10), Listeners/ALB (50 Basic / 100 Standard+), Server groups/ALB (50/100), Servers/group (200), Rules/listener (100/200), Certs/listener (10), ACLs (100), Entries/ACL (500), Security policies (20, non-increasable), Health check templates (100).
 
 ## Billing
 
