@@ -205,6 +205,10 @@ validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.3 | 2026-06-12 | **复盘后 P0/P1 bug 修复**：(1) `use_aliyun_yum_mirror` sed 分隔符冲突修复（实测验证）；(2) 移除 `.sh` 末尾不可靠守卫，改 `REDIS_CLI_INSTALL_AUTORUN=1` 显式开关；(3) `execution.md` Step 2 残留过时文档清理；(4) 合并脚本改用 `printf %q` + `<<'BIZ'` 杜绝 shell 注入；(5) 锚点修复（章节标题去括号化）。所有改动通过 syntax check + functional sed test + source/autorun/silent 三模式验证。 |
+| 1.2.2 | 2026-06-12 | **安装脚本抽取为独立可执行文件 `scripts/redis-cli-install.sh`**（344 行 bash，通过 `bash -n` 语法检查；可被 `cat`/`source`/`bash` 三种方式调用）。`redis-cli-execution.md` 合并脚本改为 `cat scripts/redis-cli-install.sh` 即时拼装，**用户无需手动复制粘贴函数**。`redis-cli-install.md` 删除原 311 行内嵌脚本，保留为「设计规范 + 用户配置指南」（净减 264 行）。 |
+| 1.2.1 | 2026-06-12 | `redis-cli-install.md` 新增「用户配置指南」（30 秒决策树、场景化配置步骤、二进制自编译方法、副作用与还原、6 条 FAQ）；`.env.example` 增加 `REDIS_CLI_BIN_URL` 注释模板；SKILL.md 变量约定区增加"何时需配置"提示。 |
+| 1.2.0 | 2026-06-12 | redis-cli 安装层重构：抽出 `references/redis-cli-install.md` 为唯一权威源；新增 SUSE/zypper 支持；新增阿里云 ECS 镜像源加速（`mirrors.cloud.aliyuncs.com` / `mirrors.aliyun.com`）；新增离线模式 `REDIS_CLI_BIN_URL`；源码兜底自动安装 `gcc make`；统一退出码契约（20/21/22）；删除 exit 10/11（被 `ensure_redis_cli` 的幂等检查替代）。 |
 | 1.0.0 | 2026-05-14 | Initial Redis/Tair skill with dual-path (CLI + SDK) support |
 
 ## Execution Flows (Agent-Readable)
@@ -1253,6 +1257,9 @@ See: [API Usage Metrics](../alicloud-skill-generator/references/api-call-counter
 | `{{user.redis_password}}` | Redis 密码（可选） | 用户提供；无密码时留空 |
 | `{{user.redis_command}}` | 待执行的 Redis 命令 | 用户提供，如 `DEL 8560pfuat:gpas_lsym_funding_token` |
 | `{{user.redis_cli_version}}` | 期望的 redis-cli 最低版本（可选） | 用户提供；不指定则仅检查存在性 |
+| `{{env.REDIS_CLI_BIN_URL}}` | 离线模式自定义二进制 URL（专有云/无外网场景） | 从 `.env` 读取；未设置则走包管理器+源码兜底 |
+
+> **何时需要配置 `REDIS_CLI_BIN_URL`？** 仅在 ECS 跳板机**无公网出口**时（如金融云、政务云、专有云、网闸隔离环境）。阿里云 ECS + 公网通的场景**不需要配**——脚本会自动用阿里云内网镜像源加速。完整决策树、配置步骤、二进制准备、验证方法、FAQ 见 [`references/redis-cli-install.md` 「用户配置指南」](references/redis-cli-install.md#用户配置指南必读)。
 
 #### Execution
 
@@ -1265,21 +1272,20 @@ See: [API Usage Metrics](../alicloud-skill-generator/references/api-call-counter
 | Step | 操作 | 说明 |
 |------|------|------|
 | 1 | `aliyun r-kvstore describe-instance-attribute` | 获取 Redis 连接地址 |
-| 2 | `aliyun ecs RunCommand — which redis-cli` | 幂等检查 redis-cli 环境（exit 10=未安装, 11=损坏） |
-| 3 | `aliyun ecs RunCommand — apt/yum/apk install` | 安装/升级 redis-cli（按 OS 自适应，支持 7 种发行版 + 源码兜底） |
-| 4 | `aliyun ecs RunCommand — REDISCLI_AUTH` | 密码配置检查（可选） |
-| 5 | `aliyun ecs RunCommand — redis-cli DEL/GET/SET` | 执行 Redis 命令（含网络可达性检测 + 错误分类诊断） |
+| 2 | `aliyun ecs RunCommand — ensure_redis_cli` | **幂等** ensure redis-cli（已装+版本符合则跳过；按 OS 自适应安装；阿里云镜像加速；离线模式兜底）。安装策略权威源见 [`references/redis-cli-install.md`](references/redis-cli-install.md) |
+| 3 | `aliyun ecs RunCommand — REDISCLI_AUTH` | 密码即时 export（不持久化写 bashrc） |
+| 4 | `aliyun ecs RunCommand — redis-cli DEL/GET/SET/--bigkeys/--hotkeys` | 执行 Redis 命令（含网络可达性检测 + 错误分类诊断） |
 
 退出码快速参考：
 
 | ExitCode | 阶段 | 含义 | 人工动作 |
 |:--------:|------|------|---------|
-| 0 | 整体 | ✅ 成功 | 检查 `[SUMMARY] Result:` |
-| 10 | env-check | redis-cli 未安装 | 自动触发安装 |
-| 11 | env-check | redis-cli 损坏 | 手动检查 ECS |
-| 20 | install | 安装失败 | 查看 `[DIAG] disk/mem/network` |
-| 30 | network | ECS → Redis 不可达 | 检查 VPC/安全组/白名单 |
-| 40 | exec | Redis 命令失败 | 查看 `[ERROR] TYPE=... FIX=...` |
+| 0  | 整体     | ✅ 成功 | 检查 `[SUMMARY] Result:` |
+| 20 | install  | 安装失败（pkg + 源码兜底都失败） | 查看 `[DIAG] disk/mem/dns_test` |
+| 21 | install  | 源码编译依赖缺失 | 设 `REDIS_CLI_BIN_URL` 走离线模式 |
+| 22 | install  | 离线包下载失败 | 检查 `REDIS_CLI_BIN_URL` URL/网络 |
+| 30 | network  | ECS → Redis 不可达 | 检查 VPC/安全组/白名单 |
+| 40 | exec     | Redis 命令失败 | 查看 `[ERROR] TYPE=... FIX=...` |
 
 所有诊断日志使用结构化前缀 `[HH:MM:SS] [PHASE] key=value`，支持 Agent 自动解析和人工快速定位。
 
@@ -1518,6 +1524,9 @@ fi
 - [Core Concepts](references/core-concepts.md) — Redis/Tair architecture, instance types, Tair data types, networking model
 - [API & SDK Usage](references/api-sdk-usage.md) — Complete API operation mapping with request/response fields and Go SDK patterns
 - [CLI Usage](references/cli-usage.md) — `aliyun r-kvstore` command reference, output formatting, and `--waiter` usage
+- [Redis CLI Execution via Cloud Assistant](references/redis-cli-execution.md) — 数据面命令执行的端到端编排（合并脚本、退出码、Failure Recovery）
+- [redis-cli Install — Design Spec + User Guide](references/redis-cli-install.md) — 设计规范、OS 支持矩阵、用户配置指南（决策树、镜像加速、离线模式、FAQ）
+- [`scripts/redis-cli-install.sh`](scripts/redis-cli-install.sh) — **可执行权威实现**（344 行 bash）：`bash redis-cli-install.sh` 直接跑，或 `source` 后调用 `ensure_redis_cli`，或在云助手脚本里 `cat` 拼装
 - [Troubleshooting Guide](references/troubleshooting.md) — Symptom-based decision tree, diagnostic commands, error code reference, and support escalation
 - [Monitoring & Alerts](references/monitoring.md) — Key metrics, KPI thresholds, automated monitoring flows, and CloudMonitor integration
 - [Prompts Guide](references/prompts.md) — Ready-to-use prompt templates for 40+ operational scenarios (lifecycle, security, diagnostics, batch ops, advanced analytics)
