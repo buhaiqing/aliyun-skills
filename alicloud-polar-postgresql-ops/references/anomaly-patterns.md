@@ -90,7 +90,7 @@
 获取多个性能指标进行交叉分析：
 
 ```bash
-aliyun polardb-pg DescribeDBClusterPerformance \
+aliyun polardb DescribeDBClusterPerformance \
   --DBClusterId "{{user.db_cluster_id}}" \
   --PerformanceKeys "cpuUsage,iopsUsage,connectionUsage,memoryUsage,storageUsage,bufferPoolHitRate"
 ```

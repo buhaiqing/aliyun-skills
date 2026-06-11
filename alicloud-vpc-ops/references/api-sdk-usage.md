@@ -153,51 +153,20 @@ github.com/alibabacloud-go/vpc-20160428/v3/client
 
 ## Pagination
 
-All list/describe operations support:
-
-| Field | Type | Default | Max |
-|-------|------|---------|-----|
-| PageNumber | int | 1 | |
-| PageSize | int | 10 | 50 |
-
-**CLI pagination:**
+All list/describe ops: `PageNumber` (int, default 1), `PageSize` (int, default 10, max 50).
 
 ```bash
-# With pagination
 aliyun vpc DescribeVpcs --RegionId cn-hangzhou --PageSize 50 --PageNumber 1
 ```
 
 ## Response Examples
 
 ### CreateVpc Response
-
 ```json
-{
-  "RequestId": "D3362978-0AED-4E23-8AED-9020F0D9****",
-  "VpcId": "vpc-bp1qpo0eug5el9mrwnbmv****"
-}
+{"RequestId": "D3362978-0AED-4E23-8AED-9020F0D9****", "VpcId": "vpc-bp1qpo0eug5el9mrwnbmv****"}
 ```
 
 ### DescribeVpcs Response
-
 ```json
-{
-  "RequestId": "9D4A5B0E-1A2D-4E5F-8C3B-D1E2F3A4B5C6",
-  "TotalCount": 2,
-  "PageSize": 10,
-  "PageNumber": 1,
-  "Vpcs": {
-    "Vpc": [
-      {
-        "VpcId": "vpc-xxx",
-        "VpcName": "my-vpc",
-        "Status": "Available",
-        "CidrBlock": "172.16.0.0/12",
-        "IsDefault": false,
-        "CreationTime": "2026-05-16T06:00:00Z",
-        "RegionId": "cn-hangzhou"
-      }
-    ]
-  }
-}
+{"RequestId": "9D4A5B0E-1A2D-4E5F-8C3B-D1E2F3A4B5C6", "TotalCount": 2, "PageSize": 10, "PageNumber": 1, "Vpcs": {"Vpc": [{"VpcId": "vpc-xxx", "VpcName": "my-vpc", "Status": "Available", "CidrBlock": "172.16.0.0/12", "IsDefault": false, "CreationTime": "2026-05-16T06:00:00Z", "RegionId": "cn-hangzhou"}]}}
 ```

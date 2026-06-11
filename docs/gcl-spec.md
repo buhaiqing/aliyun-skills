@@ -187,7 +187,6 @@ GCL is **only required** on high-side-effect skills. Default `max_iter` is **2**
 | `alicloud-polar-mysql-ops` | required | 2 | DDL via Data API / cluster delete |
 | `alicloud-polar-postgresql-ops` | required | 2 | DDL / cluster delete |
 | `alicloud-polar-oracle-ops` | required | 2 | DDL / cluster delete |
-| `alicloud-polar-pg-ops` | required | 2 | DDL / cluster delete |
 | `alicloud-mongodb-ops` | required | 2 | dropDatabase / instance delete |
 | `alicloud-elasticsearch-ops` | required | 2 | delete index / cluster / `_delete_by_query` |
 | `alicloud-ram-ops` | required | 2 | detach policy / delete user / rotate AccessKey |

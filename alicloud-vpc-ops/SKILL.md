@@ -58,15 +58,7 @@ metadata:
 
 ## Overview
 
-Alibaba Cloud VPC (Virtual Private Cloud) provides isolated network environments for cloud resources. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **cli-first execution** (official **`aliyun` CLI** as primary path, **JIT Go SDK** as fallback), response validation, and failure recovery.
-
-### CLI applicability (repository policy)
-
-- **`cli_applicability: cli-first`:** Official `aliyun` fully supports VPC. CLI is the **primary** execution path for all operations. JIT Go SDK is the **fallback** only when CLI lacks support for a specific edge-case operation.
-
-### Quick Start
-
-不知道从哪里开始？直接看 [Prompt Examples](references/prompt-examples.md)，里面有 30+ 条自然语言提示词示例，覆盖 VPC 创建、交换机管理、NAT 网关、弹性公网 IP、VPN 配置等场景，复制即用。
+**cli-first** — `aliyun` CLI primary, JIT Go SDK fallback. Official CLI fully supports VPC; SDK only for edge cases.
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -139,25 +131,6 @@ Alibaba Cloud VPC (Virtual Private Cloud) provides isolated network environments
 - **Timestamps:** ISO 8601 with timezone when the API returns strings.
 - **Idempotency:** VPC APIs uses `ClientToken` for idempotent operations.
 
-### Response Field Table
-
-| Operation | JSON Path | Type | Description |
-|-----------|-----------|------|-------------|
-| CreateVpc | `$.VpcId` | string | New VPC ID |
-| DescribeVpcs | `$.Vpcs.Vpc[].VpcId` | array | VPC IDs list |
-| CreateVSwitch | `$.VSwitchId` | string | New VSwitch ID |
-| DescribeVSwitches | `$.VSwitches.VSwitch[].VSwitchId` | array | VSwitch IDs list |
-| CreateNatGateway | `$.NatGatewayId` | string | New NAT Gateway ID |
-| DescribeNatGateways | `$.NatGateways.NatGateway[].NatGatewayId` | array | NAT Gateway IDs |
-| AllocateEipAddress | `$.AllocationId` | string | New EIP Allocation ID |
-| DescribeEipAddresses | `$.EipAddresses.EipAddress[].AllocationId` | array | EIP Allocation IDs |
-| CreateVpnGateway | `$.VpnGatewayId` | string | New VPN Gateway ID |
-| DescribeVpnGateways | `$.VpnGateways.VpnGateway[].VpnGatewayId` | array | VPN Gateway IDs |
-| CreateNetworkAcl | `$.NetworkAclId` | string | New Network ACL ID |
-| DescribeNetworkAcls | `$.NetworkAcls.NetworkAcl[].NetworkAclId` | array | Network ACL IDs |
-| CreateFlowLog | `$.FlowLogId` | string | New FlowLog ID |
-| DescribeFlowLogs | `$.FlowLogs.FlowLog[].FlowLogId` | array | FlowLog IDs |
-
 ### Expected State Transitions
 
 | Operation | Initial State | Target State | Poll Interval | Max Wait |
@@ -170,33 +143,7 @@ Alibaba Cloud VPC (Virtual Private Cloud) provides isolated network environments
 | DeleteVpc | any stable state | absent | 5s | 300s |
 | DeleteNatGateway | any stable state | absent | 5s | 300s |
 
-## Quick Start
-
-### What This Skill Does
-
-This skill enables you to deploy, configure, troubleshoot, and monitor Alibaba Cloud VPC networking resources (VPC, vSwitch, NAT, EIP, RouteTable, VPN, NetworkACL, FlowLog, etc.) using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
-
-### Prerequisites
-
-- [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
-- [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
-- [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
-
-### Verify Setup
-
-```bash
-# Check CLI and credentials
-aliyun vpc DescribeRegions
-```
-
-### Your First Command
-
-```bash
-# Example: List VPCs
-aliyun vpc DescribeVpcs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
-```
-
-### Next Steps
+## Next Steps
 
 - [Core Concepts](references/core-concepts.md) — Understand VPC architecture
 - [Common Operations](#execution-flows) — Create, manage, and delete networking resources
@@ -204,23 +151,11 @@ aliyun vpc DescribeVpcs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 
 ## Capabilities at a Glance
 
-| Operation | Description | Complexity | Risk Level |
-|-----------|-------------|------------|------------|
-| Create VPC | Create a new VPC with CIDR block | Medium | Low |
-| Create VSwitch | Create a vSwitch in a VPC | Medium | Low |
-| Create NAT Gateway | Create enhanced NAT gateway or VPC NAT | Medium | Medium |
-| Allocate EIP | Request elastic IP address | Low | Low |
-| Create RouteTable | Create custom route table | Low | Low |
-| Create VPN Gateway | Create VPN gateway for site-to-site | Medium | Medium |
-| Create NetworkACL | Create network ACL for traffic control | Medium | Low |
-| Describe | View resource details | Low | None |
-| Modify | Change resource configuration | Medium | Medium |
-| Delete | Remove a resource | Low | **High** — irreversible |
-| List | View all resources | Low | None |
-
-
-
-
+| Op | Risk | Notes |
+|----|------|-------|
+| Create VPC/VSwitch/NAT/EIP/RouteTable/VPN/ACL | Low-Medium | CLI-first |
+| Describe/List/Modify | None-Low | Read-only or config change |
+| Delete (any resource) | **High** | Irreversible — GCL required |
 
 ## Execution Flows (Agent-Readable)
 
@@ -230,19 +165,7 @@ Every operation: **Pre-flight → Execute → Validate → Recover**. Do not ski
 
 ### Operation: Create VPC
 
-**When to use:**
-- You need a new isolated network environment for your cloud resources
-- You want to define custom CIDR blocks (e.g., `172.16.0.0/12`, `192.168.0.0/16`, `10.0.0.0/8`)
-
-**What you need:**
-- Region ID
-- VPC name (optional, will be auto-generated)
-- IPv4 CIDR block (optional, defaults to `172.16.0.0/12`)
-
-**What to expect:**
-- A new VPC will be created and enter `Available` state
-- Creation typically takes several seconds
-- You will receive a VPC ID for downstream operations (vSwitch, NAT Gateway, etc.)
+**Needs:** Region, VPC name (opt), CIDR (opt, default 172.16.0.0/12). **Expect:** VPC → `Available` in ~5s.
 
 #### Pre-flight Checks
 
@@ -282,30 +205,11 @@ aliyun vpc DescribeVpcs \
 
 #### Failure Recovery
 
-| Error pattern | Max retries | Backoff | Agent Action | UX Feedback |
-|---------------|-------------|---------|--------------|-------------|
-| `InvalidCidrBlock` | 0 | — | HALT; suggest valid CIDR | `[ERROR] InvalidCidrBlock: The CIDR block is invalid. How to fix: Use one of 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16.` |
-| `ResourceAlreadyExists` | 0 | — | Ask reuse vs new | `[ERROR] ResourceAlreadyExists: A VPC with this configuration already exists.` |
-| `QuotaExceeded.Vpc` | 0 | — | HALT | `[ERROR] QuotaExceeded: VPC quota limit reached. How to fix: Delete unused VPCs or request quota increase.` |
-| `DependencyViolation.HasRouteTable` | 0 | — | HALT | `[ERROR] DependencyViolation: VPC still has associated vSwitches/route tables. Delete them first.` |
-| `Throttling` | 3 | exponential | Back off | `⚠️ Rate limit reached. Retrying in {backoff}s...` |
-| `InternalError` / 5xx | 3 | 2s, 4s, 8s | Retry; then HALT | `[ERROR] InternalError: Server-side error. Retry or escalate with RequestId.` |
+See global [Failure Recovery](#failure-recovery) table. VPC-specific patterns: `InvalidCidrBlock` → HALT, suggest RFC1918; `ResourceAlreadyExists` → ask reuse vs new; `QuotaExceeded.Vpc` → HALT, delete unused or request increase.
 
 ### Operation: Create VSwitch
 
-**When to use:**
-- You need a subnet within a VPC to deploy ECS, RDS, or other resources
-- You need resources in a specific availability zone
-
-**What you need:**
-- VPC ID
-- Zone ID
-- VSwitch name (optional)
-- VSwitch CIDR (must be a subset of the VPC CIDR)
-
-**What to expect:**
-- A new vSwitch will be created within the VPC
-- Creation typically takes several seconds
+**Needs:** VPC ID, Zone ID, CIDR (subset of VPC CIDR), name (opt). **Expect:** vSwitch created in ~5s.
 
 #### Execution
 
@@ -333,19 +237,7 @@ aliyun vpc DescribeVSwitches \
 
 ### Operation: Create NAT Gateway
 
-**When to use:**
-- You need instances without public IPs to access the internet (SNAT)
-- You need to expose private instances to the internet via DNAT
-- Enhanced NAT Gateway (recommended) or VPC NAT Gateway
-
-**What you need:**
-- VPC ID
-- VSwitch ID (must be in the same VPC)
-- NAT type (Enhanced / Normal)
-- Billing method (PayBySpec / PayByActualUsage)
-
-**What to expect:**
-- NAT Gateway enters `Available` state after ~1-2 minutes
+**Needs:** VPC ID, VSwitch ID, NAT type (Enhanced/Normal), billing method. **Expect:** → `Available` in ~1-2min.
 
 #### Execution
 
@@ -375,17 +267,7 @@ aliyun vpc DescribeNatGateways \
 
 ### Operation: Allocate EIP
 
-**When to use:**
-- You need a public IP address to bind to ECS, NAT Gateway, SLB, etc.
-- You want independent IP lifecycle from compute instances
-
-**What you need:**
-- Region ID
-- Bandwidth value (Mbps)
-- ISP type (BGP / China Telecom / etc.)
-
-**What to expect:**
-- EIP allocated and available within seconds
+**Needs:** Region, Bandwidth (Mbps), ISP type, name (opt). **Expect:** allocated in seconds.
 
 #### Execution
 
@@ -479,15 +361,7 @@ aliyun vpc DescribeVpcs \
 
 #### Present to User
 
-| Field | Path | Notes |
-|-------|------|-------|
-| VPC ID | `$.Vpcs.Vpc[].VpcId` | Plain text |
-| VPC Name | `$.Vpcs.Vpc[].VpcName` | Plain text |
-| Status | `$.Vpcs.Vpc[].Status` | Human-readable state |
-| CIDR Block | `$.Vpcs.Vpc[].CidrBlock` | IPv4 CIDR |
-| IPv6 CIDR | `$.Vpcs.Vpc[].Ipv6CidrBlock` | If reserved |
-| Created Time | `$.Vpcs.Vpc[].CreationTime` | ISO 8601 |
-| Is Default | `$.Vpcs.Vpc[].IsDefault` | true/false |
+Fields: `$.Vpcs.Vpc[].{VpcId,VpcName,Status,CidrBlock,Ipv6CidrBlock,CreationTime,IsDefault}`
 
 ### Operation: List Resources
 
@@ -600,10 +474,6 @@ aliyun vpc ReleaseEipAddress \
 | `Throttling` / 429 | 3 | exponential | Back off | `⚠️ Rate limit reached. Retrying in {backoff}s...` |
 | `InternalError` / 5xx | 3 | 2s,4s,8s | Retry; then HALT | `[ERROR] InternalError: Server-side error. Retry or escalate with RequestId.` |
 
-## Prerequisites
-
-见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
-
 ---
 
 ## Well-Architected Assessment (卓越架构)
@@ -660,15 +530,17 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 - [CLI Usage](references/cli-usage.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
+- [Advanced Observability](references/advanced/observability.md)
 - [Integration](references/integration.md)
 - [Prompt Examples](references/prompt-examples.md)
+- [Knowledge Base](references/knowledge-base.md)
 - [User Experience Specification](../alicloud-skill-generator/references/user-experience-spec.md)
 - [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
 - [CLI Behavioral Reference](../alicloud-skill-generator/references/cli-behavior.md)
 - [Enhanced Self-Healing Framework](../alicloud-skill-generator/references/enhanced-self-healing-framework.md)
-- [Batch Operations Template](../alicloud-skill-generator/templates/batch-operations.md) — VPC、交换机、路由表批量查询
-- [Proactive Inspection Template](../alicloud-skill-generator/templates/proactive-inspection.md) — 网络拓扑主动巡检
-- [API Call Counter Template](../alicloud-skill-generator/templates/api-call-counter.md) — API调用计数
+- [Batch Operations Template](../alicloud-skill-generator/templates/batch-operations.md)
+- [Proactive Inspection Template](../alicloud-skill-generator/templates/proactive-inspection.md)
+- [API Call Counter Template](../alicloud-skill-generator/templates/api-call-counter.md)
 
 ## Supported Anomaly Patterns
 

@@ -133,7 +133,6 @@ PRODUCT_CLI = {
     "alicloud-polar-mysql-ops": "polardb",
     "alicloud-polar-postgresql-ops": "polardb",
     "alicloud-polar-oracle-ops": "polardb-io",  # legacy
-    "alicloud-polar-pg-ops": "polardb-pg",  # legacy
     "alicloud-slb-ops": "slb",
     "alicloud-ack-ops": "cs",  # ACK = Container Service
     "alicloud-ack-serverless-ops": "cs",
@@ -163,7 +162,6 @@ SKILL_MAX_ITER = {
     "alicloud-polar-mysql-ops": 2,
     "alicloud-polar-postgresql-ops": 2,
     "alicloud-polar-oracle-ops": 2,
-    "alicloud-polar-pg-ops": 2,
     "alicloud-dts-ops": 2,
     "alicloud-waf-ops": 2,
     "alicloud-sls-ops": 2,

@@ -90,7 +90,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 - Task is RAM / permission model only → delegate to: `alicloud-ram-ops`
 - Task is about **RDS (relational database)** → delegate to: `alicloud-rds-ops`
 - Task is about **PolarDB MySQL** → delegate to: `alicloud-polar-mysql-ops`
-- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-pg-ops`
+- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-postgresql-ops`
 - Task is about **Redis / Tair** → delegate to: `alicloud-redis-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
 

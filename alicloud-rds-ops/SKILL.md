@@ -113,7 +113,7 @@ and failure recovery.
   (when present)
 - Task is RAM / permission model only → delegate to: `alicloud-ram-ops` (when present)
 - Task is about **PolarDB MySQL** → delegate to: `alicloud-polar-mysql-ops`
-- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-pg-ops`
+- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-postgresql-ops`
 - Task is about **PolarDB Oracle-compatible** → delegate to: `alicloud-polar-oracle-ops`
 - Task is about **Redis / NoSQL** → delegate to: `alicloud-redis-ops` (when present)
 - Task is about **MongoDB** → delegate to: `alicloud-mongodb-ops` (when present)

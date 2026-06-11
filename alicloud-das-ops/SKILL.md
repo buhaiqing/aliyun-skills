@@ -19,8 +19,8 @@ compatibility: >-
   access to das.cn-shanghai.aliyuncs.com (DAS is single-region service).
 metadata:
   author: alicloud
-  version: "1.1.0"
-  last_updated: "2026-06-01"
+  version: "1.2.0"
+  last_updated: "2026-06-11"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -105,7 +105,7 @@ as the primary agent execution path** in `SKILL.md`.
   (when present)
 - Task is about **creating or deleting the underlying database engine
   instances** (e.g., creating an RDS MySQL instance) → delegate to:
-  `alicloud-rds-ops`, `alicloud-polar-mysql-ops`, `alicloud-polar-pg-ops`, `alicloud-polar-oracle-ops`, or the engine-specific skill
+  `alicloud-rds-ops`, `alicloud-polar-mysql-ops`, `alicloud-polar-postgresql-ops`, `alicloud-polar-oracle-ops`, or the engine-specific skill
 - Task is about **DAS Agent chat / LLM Q&A** → this skill covers API-level
   DAS Agent operations (e.g., querying usage); conversational LLM features
   are console-only and out of scope for API automation
@@ -189,40 +189,7 @@ Nearly all DAS API responses follow this five-element envelope:
 > Some operations return `Code: 200` with `Success: false` and a descriptive
 > `Message` (e.g., instance already in target state).
 
-### Response Field Table (Verified via OpenAPI)
-
-| Operation | JSON Path | Type | Description |
-|-----------|-----------|------|-------------|
-| AddHDMInstance | `$.Data` | boolean | true if registration succeeded |
-| GetInstanceInspections | `$.Data.score` | integer | Inspection score (0-100) |
-| GetInstanceInspections | `$.Data.instanceId` | string | Instance ID |
-| CreateDiagnosticReport | `$.Data` | string / object | Report ID or task reference |
-| DescribeDiagnosticReportList | `$.Data[].reportId` | array | List of report IDs |
-| CreateCacheAnalysisJob | `$.Data` | boolean | true if job created |
-| DescribeCacheAnalysisJob | `$.Data.status` | string | Job status: `RUNNING`, `SUCCESS`, `FAILED` |
-| CreateLatestDeadLockAnalysis | `$.Data` | boolean | true if analysis task created |
-| GetDeadLockHistory | `$.Data[].deadlockId` | array | Deadlock analysis task list |
-| CreateKillInstanceSessionTask | `$.Data` | boolean | true if kill task submitted |
-| GetSessionList | `$.Data.sessionList[].sessionId` | array | Active sessions |
-| GetSpaceSummary | `$.Data.totalSize` | integer | Total space in bytes |
-| CreateSqlLimitTask | `$.Data` | boolean | true if limit task created |
-| EnableSqlConcurrencyControl | `$.Data` | string | `"Null"` on success |
-| DisableSqlConcurrencyControl | `$.Data` | string | `"Null"` on success |
-| DisableAllSqlConcurrencyControlRules | `$.Data` | string | `"None"` on success |
-| GetRunningSqlConcurrencyControlRules | `$.Data.Total` | integer | Total running rules count |
-| GetRunningSqlConcurrencyControlRules | `$.Data.List.runningRules[]` | array | Running rules list with ItemId, SqlType, SqlKeywords, MaxConcurrency, Status |
-| GetSqlConcurrencyControlRulesHistory | `$.Data.Total` | integer | Total rules history count |
-| GetSqlConcurrencyControlRulesHistory | `$.Data.List.rules[]` | array | Rules history list with ItemId, SqlType, SqlKeywords, MaxConcurrency, Status (Open/Closed) |
-| GetSqlConcurrencyControlKeywordsFromSqlText | `$.Data` | string | Generated SQL throttling keywords (e.g. `SELECT~FROM~test~where~name`) |
-| SetEventSubscription | `$.Data` | boolean | true if settings saved |
-| GetEventSubscription | `$.Data` | object | Subscription configuration |
-| GetAutonomousNotifyEventsInRange | `$.Data[].eventId` | array | Autonomous events list |
-| GetAutonomousNotifyEventContent | `$.Data` | object | Event detail content |
-| DescribeSqlLogStatistic | `$.Data` | object | SQL insight statistics |
-| GetDasProServiceUsage | `$.Data.storageUsed` | integer | Used storage in bytes |
-| GetDasProServiceUsage | `$.Data.storageFreeQuotaInMB` | integer | Free quota in MB |
-| GetQueryOptimizeData | `$.Data` | object | Query governance data |
-| GetPfsSqlSamples | `$.Data` | object | Performance insight SQL samples |
+> **Response fields**: See [api-doc-mapping.md](references/api-doc-mapping.md) for operation-to-SDK-type mapping. Each operation section below documents the specific `$.Data` shape to parse.
 
 ### Expected State Transitions
 
@@ -242,6 +209,7 @@ Nearly all DAS API responses follow this five-element envelope:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.2.0 | 2026-06-11 | Token efficiency optimization: consolidated operation sections to compact table format (TE-3/TE-6), moved prompt-templates.md to advanced/ (TE-7), removed Response Field Table (deduped via api-doc-mapping.md), compacted governance/adversarial-review.md and cross-skill-collaboration.md, removed redundant API doc links, condensed integration.md engine table |
 | 1.1.0 | 2026-06-01 | Added SQL concurrency control operations: EnableSqlConcurrencyControl, DisableSqlConcurrencyControl, DisableAllSqlConcurrencyControlRules, GetRunningSqlConcurrencyControlRules, GetSqlConcurrencyControlRulesHistory, GetSqlConcurrencyControlKeywordsFromSqlText |
 | 1.0.0 | 2026-05-14 | Initial DAS ops skill with SDK-only execution, covering instance registration, inspection, diagnosis, cache analysis, deadlock analysis, session management, space analysis, SQL throttling, event subscription, autonomous events, SQL insight, and query governance |
 
@@ -268,18 +236,12 @@ Generate this once per workspace and reuse across operations:
 ```go
 // /tmp/aliyun-sdk-workspace/das_client.go
 package main
-
 import (
-    "encoding/json"
-    "fmt"
-    "os"
-    "strconv"
-
+    "encoding/json"; "fmt"; "os"; "strconv"
     openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
     das "github.com/alibabacloud-go/das-20200116/v5/client"
     "github.com/alibabacloud-go/tea/tea"
 )
-
 func newDASClient() (*das.Client, error) {
     config := &openapi.Config{
         AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
@@ -291,15 +253,8 @@ func newDASClient() (*das.Client, error) {
     }
     return das.NewClient(config)
 }
-
-func printResponse(body interface{}) {
-    b, _ := json.MarshalIndent(body, "", "  ")
-    fmt.Println(string(b))
-}
-
-func main() {
-    // Operation-specific main logic goes here
-}
+func printResponse(body interface{}) { b, _ := json.MarshalIndent(body, "", "  "); fmt.Println(string(b)) }
+func main() {}
 ```
 
 Execute (once per workspace):
@@ -311,1110 +266,314 @@ go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/das-20200116/v5/client
 ```
 
-> **Note:** Set `DAS_ENDPOINT=das.vpc-proxy.aliyuncs.com` when running inside
-> an Alibaba Cloud VPC. Default is public endpoint.
+> **Note:** Set `DAS_ENDPOINT=das.vpc-proxy.aliyuncs.com` when running inside an Alibaba Cloud VPC.
+
+> **Execution pattern:** Each operation below shows the Go request struct and its `client.{Operation}(request)` call. The `client, err := newDASClient()` and `printResponse(response.Body)` boilerplate is omitted for brevity — use the shared pattern above.
 
 ---
 
 ### Operation: Register Instance (AddHDMInstance)
 
-Register a database instance into DAS for management and monitoring.
+> **Safety Note:** Registering a production instance enables DAS monitoring agents and may introduce minor performance overhead (< 1% CPU). Inform the user when acting on production instances.
 
-> **Safety Note:** Registering a production instance enables DAS monitoring
-> agents and may introduce minor performance overhead (< 1% CPU). Inform the
-> user when acting on production instances.
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance exists (engine Describe API) → HALT if not found. Engine support check. Already registered via `GetInstanceInspections` → skip (idempotent) |
+| **Go** | `request := &das.AddHDMInstanceRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), Engine: tea.String(os.Getenv("ENGINE"))}` → `client.AddHDMInstance(request)` |
+| **Validate** | `$.Data` = `true`. If `false`, inspect `$.Message`. Cross-check via `GetInstanceInspections` |
+| **Recover** | `InvalidDBInstanceId.NotFound` → verify ID; `OperationDenied.InstanceStatus` → wait; `Throttling` → backoff 1s,2s,4s,8s |
 
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance exists | Call engine-specific Describe API (delegate) | Instance found | HALT; user verifies instance ID |
-| Engine support | `{{user.engine}}` in supported list | Supported engine | HALT; list supported engines |
-| Already registered | Call `GetInstanceInspections` with same ID | Returns error or empty | Skip re-registration (idempotent) |
-
-#### Execution — JIT Go SDK
-
-```go
-client, err := newDASClient()
-if err != nil {
-    panic(err)
-}
-
-request := &das.AddHDMInstanceRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    Engine:     tea.String(os.Getenv("ENGINE")),
-    // Optional: VpcId, Ip, Port for non-RDS instances
-}
-
-response, err := client.AddHDMInstance(request)
-if err != nil {
-    panic(err)
-}
-
-printResponse(response.Body)
-```
-
-Execute:
 ```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export ENGINE="{{user.engine}}"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
+export INSTANCE_ID="{{user.instance_id}}" ENGINE="{{user.engine}}" DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace && go run ./main.go
 ```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- If `false`, inspect `$.Message` for failure reason
-- Cross-check: call `GetInstanceInspections` with the same `InstanceId`;
-  expect non-error response confirming registration
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidDBInstanceId.NotFound` | Verify instance ID with engine-specific skill; ensure instance is in `Running` state |
-| `OperationDenied.InstanceStatus` | Wait for instance to reach stable state; retry |
-| `Throttling` | Exponential backoff: 1s, 2s, 4s, 8s |
 
 ---
 
-### Operation: Get Instance Inspection Score (GetInstanceInspections)
+### Operation: Get Inspection Score (GetInstanceInspections)
 
-Retrieve the DAS inspection score and health status for a registered instance.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` trial call | Not `InvalidDBInstanceId.NotFound` | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetInstanceInspectionsRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-response, err := client.GetInstanceInspections(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data.score`: integer 0-100
-- Parse `$.Data.instanceId`: matches `{{user.instance_id}}`
-- If `score < 60`, flag as critical; suggest running `CreateDiagnosticReport`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidDBInstanceId.NotFound` | Run `AddHDMInstance` flow first |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered via trial call → not `NotFound` |
+| **Go** | `request := &das.GetInstanceInspectionsRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetInstanceInspections(request)` |
+| **Validate** | `$.Data.score` (0-100). `score < 60` → flag critical, suggest `CreateDiagnosticReport` |
+| **Recover** | `InvalidDBInstanceId.NotFound` → run `AddHDMInstance` first |
 
 ---
 
 ### Operation: Create Diagnostic Report (CreateDiagnosticReport)
 
-Generate a real-time diagnostic report for a database instance.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.CreateDiagnosticReportRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // Optional: StartTime, EndTime in Unix ms; omit for real-time diagnosis
-}
-response, err := client.CreateDiagnosticReport(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` for report/task identifier
-- Poll `DescribeDiagnosticReportList` until report status is `FINISHED`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `OperationDenied.InstanceStatus` | Wait for instance to stabilize |
-| Report generation timeout (>300s) | Warn user; suggest retry during off-peak |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.CreateDiagnosticReportRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.CreateDiagnosticReport(request)` |
+| **Validate** | Parse `$.Data` for report ID. Poll `DescribeDiagnosticReportList` until `FINISHED` (5s interval, 300s max) |
+| **Recover** | `OperationDenied.InstanceStatus` → wait; timeout >300s → suggest retry off-peak |
 
 ---
 
 ### Operation: Create Cache Analysis Job (CreateCacheAnalysisJob)
 
-Create a cache analysis job for Redis/Tair instances.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Engine type | `{{user.engine}}` | `Redis` or `Tair` | HALT; cache analysis only for Redis/Tair |
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.CreateCacheAnalysisJobRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // Optional: NodeId for cluster instances
-}
-response, err := client.CreateCacheAnalysisJob(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Poll `DescribeCacheAnalysisJob` with returned job ID until `SUCCESS` or `FAILED`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| Job fails | Check `DescribeCacheAnalysisJob` `$.Data.errorMessage`; retry if transient |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Engine = `Redis` or `Tair`. Instance registered |
+| **Go** | `request := &das.CreateCacheAnalysisJobRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.CreateCacheAnalysisJob(request)` |
+| **Validate** | `$.Data` = `true`. Poll `DescribeCacheAnalysisJob` until `SUCCESS` or `FAILED` (10s interval, 600s max) |
+| **Recover** | Job fails → check `$.Data.errorMessage` |
 
 ---
 
-### Operation: Create Latest Deadlock Analysis (CreateLatestDeadLockAnalysis)
+### Operation: Create Deadlock Analysis (CreateLatestDeadLockAnalysis)
 
-Analyze the most recent deadlock for MySQL-compatible engines.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Engine type | `{{user.engine}}` | `MySQL`, `PolarDB`, `PolarDB-X` | HALT; deadlock analysis only for MySQL family |
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.CreateLatestDeadLockAnalysisRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    NodeId:     tea.String(os.Getenv("NODE_ID")), // optional for non-cluster
-}
-response, err := client.CreateLatestDeadLockAnalysis(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Poll `GetDeadLockHistory` to confirm new entry appears
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| No recent deadlock | Inform user; no deadlock detected in InnoDB status |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Engine = `MySQL`, `PolarDB`, `PolarDB-X`. Instance registered |
+| **Go** | `request := &das.CreateLatestDeadLockAnalysisRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), NodeId: tea.String(os.Getenv("NODE_ID"))}` → `client.CreateLatestDeadLockAnalysis(request)` |
+| **Validate** | `$.Data` = `true`. Poll `GetDeadLockHistory` to confirm new entry (5s interval, 120s max) |
+| **Recover** | No recent deadlock → inform user |
 
 ---
 
 ### Operation: Kill Instance Session (CreateKillInstanceSessionTask)
 
-Kill specific or batch database sessions.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| Session identification | User provides session ID(s) or filter criteria | Non-empty criteria | Ask user for session details |
-| Safety gate | Confirm with user before killing production sessions | User confirms | HALT if user declines |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.CreateKillInstanceSessionTaskRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // Session filter parameters per OpenAPI spec
-    // Example: SessionIds, User, Host, Db, Command, Time (seconds)
-}
-response, err := client.CreateKillInstanceSessionTask(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-> **Destructive Action Gate:** Before executing, explicitly present the
-> target sessions (from `GetSessionList`) and require user confirmation.
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Re-query `GetSessionList` to verify target sessions are gone
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| Session already closed | Inform user; no action needed |
-| `OperationDenied.InstanceStatus` | Wait for instance to stabilize |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. User provides session IDs. **Safety gate** — present target sessions, require confirmation |
+| **Go** | `request := &das.CreateKillInstanceSessionTaskRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.CreateKillInstanceSessionTask(request)` |
+| **Validate** | `$.Data` = `true`. Re-query `GetSessionList` to verify target sessions gone |
+| **Recover** | Session already closed → inform; `OperationDenied.InstanceStatus` → wait |
 
 ---
 
 ### Operation: Get Space Summary (GetSpaceSummary)
 
-Retrieve database space usage summary.
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetSpaceSummaryRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-response, err := client.GetSpaceSummary(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data.totalSize`: total space in bytes
-- Parse `$.Data.dataSize`, `$.Data.indexSize`, `$.Data.freeSize` for breakdown
-- Alert if usage > 85% of allocated capacity
+| Step | Detail |
+|------|--------|
+| **Go** | `request := &das.GetSpaceSummaryRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetSpaceSummary(request)` |
+| **Validate** | `$.Data.totalSize` (bytes). Breakdown: `dataSize`, `indexSize`, `freeSize`. Alert if usage >85% |
 
 ---
 
 ### Operation: Create SQL Limit Task (CreateSqlLimitTask)
 
-Create SQL throttling (limit) rules for hot or problematic SQL patterns.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| SQL pattern | User provides SQL keyword / template / ID | Non-empty | Ask user for SQL pattern |
-| Safety gate | Confirm limit parameters (max concurrency, duration) | User confirms | HALT if user declines |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.CreateSqlLimitTaskRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // SqlType, MaxConcurrency, Duration, SqlKeywords, etc.
-}
-response, err := client.CreateSqlLimitTask(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Query `DescribeSqlLimitTasks` to confirm rule is `ACTIVE`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParameter` | Verify SQL pattern and limit parameters against OpenAPI constraints |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. User provides SQL pattern. **Safety gate** — confirm limit params |
+| **Go** | `request := &das.CreateSqlLimitTaskRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.CreateSqlLimitTask(request)` |
+| **Validate** | `$.Data` = `true`. Query `DescribeSqlLimitTasks` to confirm `ACTIVE` status (5s interval, 60s max) |
+| **Recover** | `InvalidParameter` → verify SQL pattern |
 
 ---
 
 ### Operation: Enable SQL Concurrency Control (EnableSqlConcurrencyControl)
 
-Enable SQL concurrency control (throttling) rules for RDS MySQL or PolarDB MySQL
-instances. This is the primary API for SQL throttling.
+> **Engine:** Only `MySQL`, `PolarDB`.
 
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-enablesqlconcurrencycontrol
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. Engine check. SQL keywords from user or `GetSqlConcurrencyControlKeywordsFromSqlText`. **Safety gate** — confirm `MaxConcurrency`, `ConcurrencyControlTime` |
+| **Go** | `maxConcurrency, _ := strconv.ParseInt(os.Getenv("MAX_CONCURRENCY"), 10, 64); controlTime, _ := strconv.ParseInt(os.Getenv("CONTROL_TIME"), 10, 64)` → `request := &das.EnableSqlConcurrencyControlRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), SqlType: tea.String(os.Getenv("SQL_TYPE")), MaxConcurrency: tea.Int64(maxConcurrency), SqlKeywords: tea.String(os.Getenv("SQL_KEYWORDS")), ConcurrencyControlTime: tea.Int64(controlTime)}` → `client.EnableSqlConcurrencyControl(request)` |
+| **Validate** | `$.Code`=200, `$.Success`=true. Confirm rule appears via `GetRunningSqlConcurrencyControlRules` with `Status=="Open"` |
+| **Recover** | `InvalidParams` → verify format; `NoPermission` → check RAM policy |
 
-> **Engine Support:** Only `MySQL` (RDS MySQL) and `PolarDB` (PolarDB MySQL) are
-> supported. Do not use for other engines.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| Engine support | `{{user.engine}}` | `MySQL`, `PolarDB` | HALT; concurrency control limited to MySQL family |
-| SQL keywords | User provides SQL keywords or calls `GetSqlConcurrencyControlKeywordsFromSqlText` | Non-empty | Ask user for SQL text or keywords |
-| Safety gate | Confirm `MaxConcurrency` and `ConcurrencyControlTime` | User confirms | HALT if user declines |
-
-#### Execution — JIT Go SDK
-
-```go
-maxConcurrency, _ := strconv.ParseInt(os.Getenv("MAX_CONCURRENCY"), 10, 64)
-controlTime, _ := strconv.ParseInt(os.Getenv("CONTROL_TIME"), 10, 64)
-request := &das.EnableSqlConcurrencyControlRequest{
-    RegionId:                 tea.String("cn-shanghai"),
-    InstanceId:               tea.String(os.Getenv("INSTANCE_ID")),
-    SqlType:                  tea.String(os.Getenv("SQL_TYPE")),           // SELECT, UPDATE, DELETE
-    MaxConcurrency:           tea.Int64(maxConcurrency),                   // >= 1
-    SqlKeywords:              tea.String(os.Getenv("SQL_KEYWORDS")),       // keywords separated by ~
-    ConcurrencyControlTime:   tea.Int64(controlTime),                      // duration in seconds
-}
-response, err := client.EnableSqlConcurrencyControl(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
 ```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export SQL_TYPE="SELECT"
-export SQL_KEYWORDS="call~open~api~test"
-export MAX_CONCURRENCY=3
-export CONTROL_TIME=300
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
+export INSTANCE_ID="{{user.instance_id}}" SQL_TYPE="SELECT" SQL_KEYWORDS="call~open~api~test" MAX_CONCURRENCY=3 CONTROL_TIME=300 DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace && go run ./main.go
 ```
-
-#### Validate
-
-- Parse `$.Code`: expect `"200"`
-- Parse `$.Success`: expect `"true"`
-- Call `GetRunningSqlConcurrencyControlRules` to confirm the new rule appears with `Status == "Open"`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `SqlKeywords` format (use `~` separator), `MaxConcurrency` >= 1, `SqlType` is valid enum |
-| `NoPermission` | Verify RAM policy includes `hdm:EnableSqlConcurrencyControl` |
 
 ---
 
 ### Operation: Disable SQL Concurrency Control (DisableSqlConcurrencyControl)
 
-Disable (close) a specific SQL concurrency control rule by its `ItemId`.
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Rule exists via `GetRunningSqlConcurrencyControlRules`. **Safety gate** — confirm `ItemId` with user |
+| **Go** | `itemId, _ := strconv.ParseInt(os.Getenv("ITEM_ID"), 10, 64); request := &das.DisableSqlConcurrencyControlRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), ItemId: tea.Int64(itemId)}` → `client.DisableSqlConcurrencyControl(request)` |
+| **Validate** | `$.Code`=200, `$.Success`=true. Confirm rule absent via `GetRunningSqlConcurrencyControlRules` |
+| **Recover** | `InvalidParams` → verify `ItemId`; `NoPermission` → check RAM policy |
 
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-disablesqlconcurrencycontrol
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Rule exists | `GetRunningSqlConcurrencyControlRules` | Rule with target `ItemId` found | Inform user; no action needed |
-| Safety gate | Confirm rule `ItemId` with user | User confirms | HALT if user declines |
-
-#### Execution — JIT Go SDK
-
-```go
-itemId, _ := strconv.ParseInt(os.Getenv("ITEM_ID"), 10, 64)
-request := &das.DisableSqlConcurrencyControlRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    ItemId:     tea.Int64(itemId),
-}
-response, err := client.DisableSqlConcurrencyControl(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
 ```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export ITEM_ID="{{output.item_id}}"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
+export INSTANCE_ID="{{user.instance_id}}" ITEM_ID="{{output.item_id}}" DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace && go run ./main.go
 ```
-
-#### Validate
-
-- Parse `$.Code`: expect `"200"`
-- Parse `$.Success`: expect `"true"`
-- Call `GetRunningSqlConcurrencyControlRules` to confirm the rule no longer appears
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `ItemId` is correct and the rule is still running |
-| `NoPermission` | Verify RAM policy includes `hdm:DisableSqlConcurrencyControl` |
 
 ---
 
 ### Operation: Disable All SQL Concurrency Control Rules (DisableAllSqlConcurrencyControlRules)
 
-Disable all currently running SQL concurrency control rules for an instance.
+> **Safety Gate:** Batch destructive action. Present all running rules from `GetRunningSqlConcurrencyControlRules`, require user confirmation.
 
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-disableallsqlconcurrencycontrolrules
-
-> **Safety Gate:** This is a batch destructive action. Present a summary of all
-> running rules (from `GetRunningSqlConcurrencyControlRules`) and require user
-> confirmation before executing.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Running rules exist | `GetRunningSqlConcurrencyControlRules` | `Total > 0` | Inform user; no rules to disable |
-| Safety gate | Present rule summary and confirm with user | User confirms | HALT if user declines |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.DisableAllSqlConcurrencyControlRulesRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-response, err := client.DisableAllSqlConcurrencyControlRules(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
-```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
-```
-
-#### Validate
-
-- Parse `$.Code`: expect `"200"`
-- Parse `$.Success`: expect `"true"`
-- Call `GetRunningSqlConcurrencyControlRules` to confirm `Total == 0`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `InstanceId` is correct |
-| `NoPermission` | Verify RAM policy includes `hdm:DisableAllSqlConcurrencyControlRules` |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | `GetRunningSqlConcurrencyControlRules` → `Total > 0`. **Safety gate** — present summary, confirm |
+| **Go** | `request := &das.DisableAllSqlConcurrencyControlRulesRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.DisableAllSqlConcurrencyControlRules(request)` |
+| **Validate** | `$.Code`=200, `$.Success`=true. Confirm `Total==0` via `GetRunningSqlConcurrencyControlRules` |
+| **Recover** | `InvalidParams` → verify ID; `NoPermission` → check RAM policy |
 
 ---
 
 ### Operation: Get Running SQL Concurrency Control Rules (GetRunningSqlConcurrencyControlRules)
 
-Retrieve all currently active (running) SQL concurrency control rules for an
-instance.
-
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getrunningsqlconcurrencycontrolrules
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetRunningSqlConcurrencyControlRulesRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    PageNo:     tea.Int32(1),
-    PageSize:   tea.Int32(10),
-}
-response, err := client.GetRunningSqlConcurrencyControlRules(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
-```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
-```
-
-#### Validate
-
-- Parse `$.Data.Total`: integer, total running rules count
-- Parse `$.Data.List.runningRules[]` array; for each rule extract:
-  - `ItemId` — rule ID (used for `DisableSqlConcurrencyControl`)
-  - `SqlType` — `SELECT`, `UPDATE`, or `DELETE`
-  - `SqlKeywords` — throttling keywords
-  - `MaxConcurrency` — max allowed concurrency
-  - `ConcurrencyControlTime` — rule duration in seconds
-  - `StartTime` — Unix timestamp in milliseconds
-  - `Status` — always `"Open"` for running rules
-  - `KeywordsHash` — hash of the keywords
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `InstanceId` and pagination parameters |
-| `NoPermission` | Verify RAM policy includes `hdm:GetRunningSqlConcurrencyControlRules` |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.GetRunningSqlConcurrencyControlRulesRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), PageNo: tea.Int32(1), PageSize: tea.Int32(10)}` → `client.GetRunningSqlConcurrencyControlRules(request)` |
+| **Validate** | `$.Data.Total` (count). `$.Data.List.runningRules[]` — extract `ItemId`, `SqlType`, `SqlKeywords`, `MaxConcurrency`, `ConcurrencyControlTime`, `StartTime`, `Status`, `KeywordsHash` |
+| **Recover** | `InvalidParams` → verify pagination; `NoPermission` → check RAM policy |
 
 ---
 
 ### Operation: Get SQL Concurrency Control Rules History (GetSqlConcurrencyControlRulesHistory)
 
-Retrieve the history of SQL concurrency control rules, including both currently
-running rules and previously triggered (closed) rules.
-
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getsqlconcurrencycontrolruleshistory
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetSqlConcurrencyControlRulesHistoryRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    PageNo:     tea.Int32(1),
-    PageSize:   tea.Int32(10),
-}
-response, err := client.GetSqlConcurrencyControlRulesHistory(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
-```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
-```
-
-#### Validate
-
-- Parse `$.Data.Total`: integer, total history records count
-- Parse `$.Data.List.rules[]` array; for each rule extract:
-  - `ItemId`, `SqlType`, `SqlKeywords`, `MaxConcurrency`, `ConcurrencyControlTime`
-  - `StartTime` — Unix timestamp in milliseconds
-  - `Status` — `"Open"` (running) or `"Closed"` (finished)
-  - `KeywordsHash`, `UserId`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `InstanceId` and pagination parameters |
-| `NoPermission` | Verify RAM policy includes `hdm:GetSqlConcurrencyControlRulesHistory` |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.GetSqlConcurrencyControlRulesHistoryRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), PageNo: tea.Int32(1), PageSize: tea.Int32(10)}` → `client.GetSqlConcurrencyControlRulesHistory(request)` |
+| **Validate** | `$.Data.Total` (count). `$.Data.List.rules[]` — extract `ItemId`, `SqlType`, `SqlKeywords`, `MaxConcurrency`, `ConcurrencyControlTime`, `StartTime`, `Status` (Open/Closed), `KeywordsHash`, `UserId` |
+| **Recover** | `InvalidParams` → verify pagination; `NoPermission` → check RAM policy |
 
 ---
 
-### Operation: Get SQL Concurrency Control Keywords From SQL Text (GetSqlConcurrencyControlKeywordsFromSqlText)
+### Operation: Get Keywords From SQL Text (GetSqlConcurrencyControlKeywordsFromSqlText)
 
-Generate SQL throttling keywords from a raw SQL statement. This is a helper API
-used before calling `EnableSqlConcurrencyControl` to produce the correct
-`SqlKeywords` format.
+> **Note:** Returned keywords are based on normalized SQL. To throttle a specific param value, append it with `~`. E.g., SQL `SELECT * FROM test WHERE name = 'das'` → API returns `SELECT~FROM~test~WHERE~name`; to throttle `name='das'` → `SELECT~FROM~test~WHERE~name~das`.
 
-> **API Documentation:** https://help.aliyun.com/zh/das/developer-reference/api-das-2020-01-16-getsqlconcurrencycontrolkeywordsfromsqltext
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | User provides SQL text. Instance registered |
+| **Go** | `request := &das.GetSqlConcurrencyControlKeywordsFromSqlTextRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), SqlText: tea.String(os.Getenv("SQL_TEXT"))}` → `client.GetSqlConcurrencyControlKeywordsFromSqlText(request)` |
+| **Validate** | `$.Data` = `~`-separated keyword string. Present to user for confirmation before `EnableSqlConcurrencyControl` |
+| **Recover** | `InvalidParams` → verify SQL text; `NoPermission` → check RAM policy |
 
-> **Important:** The returned keywords are based on a templated (normalized)
-> version of the SQL. If you need to throttle a specific parameter value, append
-> it manually to the returned keyword string with `~` as separator.
->
-> Example:
-> - Raw SQL: `SELECT * FROM test WHERE name = 'das'`
-> - API returns: `SELECT~FROM~test~WHERE~name`
-> - To throttle `name = 'das'`, append `das`: `SELECT~FROM~test~WHERE~name~das`
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| SQL text | User provides raw SQL statement | Non-empty | Ask user for SQL text |
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetSqlConcurrencyControlKeywordsFromSqlTextRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    SqlText:    tea.String(os.Getenv("SQL_TEXT")),
-}
-response, err := client.GetSqlConcurrencyControlKeywordsFromSqlText(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-Execute:
 ```bash
-export INSTANCE_ID="{{user.instance_id}}"
-export SQL_TEXT="SELECT * FROM orders WHERE status = 'pending'"
-export DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
-cd /tmp/aliyun-sdk-workspace
-go run ./main.go
+export INSTANCE_ID="{{user.instance_id}}" SQL_TEXT="SELECT * FROM orders WHERE status = 'pending'" DAS_ENDPOINT="das.cn-shanghai.aliyuncs.com"
+cd /tmp/aliyun-sdk-workspace && go run ./main.go
 ```
-
-#### Validate
-
-- Parse `$.Data`: string containing the generated keywords separated by `~`
-- Present the generated keywords to the user and ask for confirmation or manual
-  adjustment before using in `EnableSqlConcurrencyControl`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParams` | Verify `SqlText` is a valid SQL statement; check `InstanceId` |
-| `NoPermission` | Verify RAM policy includes `hdm:GetSqlConcurrencyControlKeywordsFromSqlText` |
 
 ---
 
 ### Operation: Configure Event Subscription (SetEventSubscription)
 
-Configure DAS event notifications (SMS, email, webhook) for an instance.
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.SetEventSubscriptionRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // EventTypes, NotificationMethods, Contacts, etc.
-}
-response, err := client.SetEventSubscription(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Call `GetEventSubscription` to verify settings persisted
+| Step | Detail |
+|------|--------|
+| **Go** | `request := &das.SetEventSubscriptionRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.SetEventSubscription(request)` |
+| **Validate** | `$.Data` = `true`. Verify via `GetEventSubscription` |
 
 ---
 
 ### Operation: Query Autonomous Events (GetAutonomousNotifyEventsInRange)
 
-Retrieve autonomous events within a time range.
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetAutonomousNotifyEventsInRangeRequest{
-    RegionId:    tea.String("cn-shanghai"),
-    InstanceId:  tea.String(os.Getenv("INSTANCE_ID")),
-    StartTime:   tea.Int64(startTimeMs),
-    EndTime:     tea.Int64(endTimeMs),
-    EventTypes:  tea.String("AUTO_SCALING,SQL_THROTTLING,SPACE_OPTIMIZATION"), // example; use OpenAPI enum values
-}
-response, err := client.GetAutonomousNotifyEventsInRange(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data[]` array; expect at least one entry if events occurred
-- For each event, parse `eventId`, `eventType`, `eventStatus`, `startTime`
+| Step | Detail |
+|------|--------|
+| **Go** | `request := &das.GetAutonomousNotifyEventsInRangeRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), StartTime: tea.Int64(startTimeMs), EndTime: tea.Int64(endTimeMs)}` → `client.GetAutonomousNotifyEventsInRange(request)` |
+| **Validate** | `$.Data[]` — parse `eventId`, `eventType`, `eventStatus`, `startTime` |
 
 ---
 
 ### Operation: Get Autonomous Event Content (GetAutonomousNotifyEventContent)
 
-Get detailed content of a specific autonomous event.
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetAutonomousNotifyEventContentRequest{
-    RegionId:  tea.String("cn-shanghai"),
-    EventId:   tea.String(os.Getenv("EVENT_ID")),
-}
-response, err := client.GetAutonomousNotifyEventContent(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` object for event details, root cause, and actions taken
+| Step | Detail |
+|------|--------|
+| **Go** | `request := &das.GetAutonomousNotifyEventContentRequest{RegionId: tea.String("cn-shanghai"), EventId: tea.String(os.Getenv("EVENT_ID"))}` → `client.GetAutonomousNotifyEventContent(request)` |
+| **Validate** | `$.Data` — root cause, actions taken |
 
 ---
 
 ### Operation: Query SQL Insight Statistics (DescribeSqlLogStatistic)
 
-Query SQL insight (audit log) statistics for DAS Pro instances.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| DAS Pro enabled | `GetDasProServiceUsage` | `storageUsed` > 0 or valid license | HALT; SQL insight requires Pro edition |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.DescribeSqlLogStatisticRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    StartTime:  tea.String("2026-05-01T00:00:00Z"),
-    EndTime:    tea.String("2026-05-14T23:59:59Z"),
-}
-response, err := client.DescribeSqlLogStatistic(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` for SQL execution statistics, slow query trends, error rates
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | DAS Pro enabled via `GetDasProServiceUsage` |
+| **Go** | `request := &das.DescribeSqlLogStatisticRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.DescribeSqlLogStatistic(request)` |
+| **Validate** | `$.Data` — SQL execution stats, slow query trends, error rates |
 
 ---
 
 ### Operation: Query DAS Pro Usage (GetDasProServiceUsage)
 
-Check DAS Pro (enterprise edition) storage and license usage.
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetDasProServiceUsageRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-response, err := client.GetDasProServiceUsage(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data.storageUsed` (bytes) and `$.Data.storageFreeQuotaInMB` (MB)
-- Alert if `storageUsed` approaches or exceeds quota
-- Parse `$.Data.expireTime` (Unix ms); warn if near expiration
+| Step | Detail |
+|------|--------|
+| **Go** | `request := &das.GetDasProServiceUsageRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetDasProServiceUsage(request)` |
+| **Validate** | `$.Data.storageUsed` (bytes), `$.Data.storageFreeQuotaInMB` (MB). Alert if quota near limit. Parse `$.Data.expireTime` (Unix ms) |
 
 ---
 
 ### Operation: List Instance Sessions (GetSessionList)
 
-Retrieve the list of active database sessions for an instance. Used as a
-prerequisite for `CreateKillInstanceSessionTask` to identify target sessions.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetSessionListRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // Optional: DbName, User, Host, Command, TimeMin (seconds) to filter
-}
-response, err := client.GetSessionList(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data.sessionList[]` array
-- For each session, extract `sessionId`, `user`, `host`, `db`, `command`, `time`, `state`, `info`
-- Present summary to user before any kill operation
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidDBInstanceId.NotFound` | Run `AddHDMInstance` flow first |
-| Empty session list | Inform user; no active sessions matching criteria |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.GetSessionListRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetSessionList(request)` |
+| **Validate** | `$.Data.sessionList[]` — `sessionId`, `user`, `host`, `db`, `command`, `time`, `state`, `info`. Present summary before kill |
+| **Recover** | `InvalidDBInstanceId.NotFound` → register first; empty list → no active sessions |
 
 ---
 
 ### Operation: List SQL Limit Tasks (DescribeSqlLimitTasks)
 
-List existing SQL throttling (limit) rules for an instance. Used to validate
-`CreateSqlLimitTask` results or audit active rules.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.DescribeSqlLimitTasksRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // Optional: SqlType, Status (ACTIVE, EXPIRED)
-}
-response, err := client.DescribeSqlLimitTasks(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data[]` array of limit tasks
-- For each task, verify `taskId`, `sqlKeywords`, `maxConcurrency`, `status`, `createTime`
-- Confirm newly created task appears with `status == "ACTIVE"` after `CreateSqlLimitTask`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidDBInstanceId.NotFound` | Run `AddHDMInstance` flow first |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.DescribeSqlLimitTasksRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.DescribeSqlLimitTasks(request)` |
+| **Validate** | `$.Data[]` — `taskId`, `sqlKeywords`, `maxConcurrency`, `status` (ACTIVE/EXPIRED), `createTime` |
+| **Recover** | `InvalidDBInstanceId.NotFound` → register first |
 
 ---
 
 ### Operation: Get Auto-Scaling Config (GetAutoScalingConfig)
 
-Retrieve the current auto-scaling configuration for an instance. Used to
-validate `SetAutoScalingConfig` results.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetAutoScalingConfigRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-}
-response, err := client.GetAutoScalingConfig(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` object for `enableAutoScaling`, `maxStorage`, `maxSpecification`, `scalingPolicies`
-- Cross-check values against user intent after `SetAutoScalingConfig`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidDBInstanceId.NotFound` | Run `AddHDMInstance` flow first |
-| Config not found | Inform user; auto-scaling may not be enabled for this instance |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered |
+| **Go** | `request := &das.GetAutoScalingConfigRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetAutoScalingConfig(request)` |
+| **Validate** | `$.Data` — `enableAutoScaling`, `maxStorage`, `maxSpecification`, `scalingPolicies` |
+| **Recover** | Config not found → auto-scaling may not be enabled |
 
 ---
 
 ### Operation: Configure Auto-Scaling (SetAutoScalingConfig)
 
-Configure automatic storage or specification scaling for supported instances.
+> **Safety Gate:** May trigger instance restart/connection flash. Confirm on production instances.
 
-> **Safety Gate:** Auto-scaling may trigger instance restart or connection
-> flash. Confirm with user before enabling on production instances.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| Engine support | `{{user.engine}}` | `MySQL`, `PostgreSQL`, `PolarDB` | HALT; auto-scaling not supported for this engine |
-| DAS Pro enabled | `GetDasProServiceUsage` | Valid license | HALT; auto-scaling requires Pro |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.SetAutoScalingConfigRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    // EnableAutoScaling: tea.Bool(true),
-    // MaxStorage: tea.Int64(1000), // GB
-    // MaxSpecification: tea.String("8C32G"),
-    // ScalingPolicies: tea.String("STORAGE,SPEC"),
-}
-response, err := client.SetAutoScalingConfig(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` (boolean): expect `true`
-- Call `GetAutoScalingConfig` (if available) or check autonomous events to
-  confirm scaling policy is active
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `OperationDenied.InstanceStatus` | Wait for instance to stabilize |
-| `InvalidParameter` | Verify scaling limits are within engine-specific bounds |
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. Engine support (`MySQL`, `PostgreSQL`, `PolarDB`). DAS Pro enabled |
+| **Go** | `request := &das.SetAutoScalingConfigRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.SetAutoScalingConfig(request)` |
+| **Validate** | `$.Data` = `true`. Verify via `GetAutoScalingConfig` or autonomous events |
+| **Recover** | `OperationDenied.InstanceStatus` → wait; `InvalidParameter` → verify limits |
 
 ---
 
-### Operation: Query Query Governance Data (GetQueryOptimizeData)
+### Operation: Query Governance Data (GetQueryOptimizeData)
 
-Retrieve query governance statistics and slow query analysis.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| Engine support | `{{user.engine}}` | `MySQL`, `PostgreSQL`, `PolarDB` | HALT; query governance limited to OLTP engines |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetQueryOptimizeDataRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    StartTime:  tea.String("2026-05-01T00:00:00Z"),
-    EndTime:    tea.String("2026-05-14T23:59:59Z"),
-    // Optional: DbName, SqlType, PageSize, PageNumber
-}
-response, err := client.GetQueryOptimizeData(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` object for query statistics, slow query list, execution plans
-- Verify `$.Data.sqlList` or equivalent array contains expected query entries
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. Engine support (`MySQL`, `PostgreSQL`, `PolarDB`) |
+| **Go** | `request := &das.GetQueryOptimizeDataRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID"))}` → `client.GetQueryOptimizeData(request)` |
+| **Validate** | `$.Data` — query stats, slow query list, execution plans |
 
 ---
 
-### Operation: Query Performance Insight SQL Samples (GetPfsSqlSamples)
+### Operation: Query Performance Insight (GetPfsSqlSamples)
 
-Retrieve Performance Insight (PFS) SQL execution samples for deep performance
-analysis.
-
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| DAS Pro enabled | `GetDasProServiceUsage` | Valid license | HALT; Performance Insight requires Pro |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetPfsSqlSamplesRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    StartTime:  tea.Int64(startTimeMs),
-    EndTime:    tea.Int64(endTimeMs),
-    // Optional: SqlId, DbName, UserName, MinExecTime
-}
-response, err := client.GetPfsSqlSamples(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-#### Validate
-
-- Parse `$.Data` object for SQL samples, wait events, execution timelines
-- Cross-reference with `GetQueryOptimizeData` for consistent query identification
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. DAS Pro enabled |
+| **Go** | `request := &das.GetPfsSqlSamplesRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), StartTime: tea.Int64(startTimeMs), EndTime: tea.Int64(endTimeMs)}` → `client.GetPfsSqlSamples(request)` |
+| **Validate** | `$.Data` — SQL samples, wait events, execution timelines |
 
 ---
 
 ### Operation: Network Connectivity Diagnosis (GetDBInstanceConnectivityDiagnosis)
 
-Diagnose network connectivity from a given IP to a database instance.
+> **Security:** If `DbPassword` is required, use a temp test account. NEVER use production admin credentials.
 
-#### Pre-flight Checks
-
-| Check | Method | Expected | On Failure |
-|-------|--------|----------|------------|
-| Instance registered | `GetInstanceInspections` | Success | Run `AddHDMInstance` first |
-| Source IP | User provides source IP address | Valid IPv4/IPv6 | Ask user for source IP |
-
-#### Execution — JIT Go SDK
-
-```go
-request := &das.GetDBInstanceConnectivityDiagnosisRequest{
-    RegionId:   tea.String("cn-shanghai"),
-    InstanceId: tea.String(os.Getenv("INSTANCE_ID")),
-    SrcIp:      tea.String(os.Getenv("SRC_IP")),
-    // Optional: SrcPort, DbUser, DbPassword (use with caution)
-}
-response, err := client.GetDBInstanceConnectivityDiagnosis(request)
-if err != nil {
-    panic(err)
-}
-printResponse(response.Body)
-```
-
-> **Security Warning:** If `DbPassword` is required, use a temporary test
-> account. NEVER use production admin credentials in diagnostic calls.
-
-#### Validate
-
-- Parse `$.Data.connectivityResult`: expect `REACHABLE` or `UNREACHABLE`
-- If `UNREACHABLE`, parse `$.Data.failureReason` and `$.Data.suggestedActions`
-
-#### Recover
-
-| Error | Recovery |
-|-------|----------|
-| `InvalidParameter.SrcIp` | Verify IP format and ensure it is a valid Alibaba Cloud ECS or user-provided IP |
-| `OperationDenied.InstanceStatus` | Wait for instance to stabilize |
-
----
+| Step | Detail |
+|------|--------|
+| **Pre-flight** | Instance registered. User provides source IP |
+| **Go** | `request := &das.GetDBInstanceConnectivityDiagnosisRequest{RegionId: tea.String("cn-shanghai"), InstanceId: tea.String(os.Getenv("INSTANCE_ID")), SrcIp: tea.String(os.Getenv("SRC_IP"))}` → `client.GetDBInstanceConnectivityDiagnosis(request)` |
+| **Validate** | `$.Data.connectivityResult` = `REACHABLE` or `UNREACHABLE`. If `UNREACHABLE` → parse `failureReason`, `suggestedActions` |
+| **Recover** | `InvalidParameter.SrcIp` → verify IP; `OperationDenied.InstanceStatus` → wait |
 
 ---
 
@@ -1422,7 +581,7 @@ printResponse(response.Body)
 
 一键执行数据库实例的DAS全面健康检查。Full Go SDK script at [references/intelligent-inspection.md](references/intelligent-inspection.md).
 
-**6-step workflow:** GetInstanceInspections (DAS native score) → CreateDiagnosticReport if < 60 → CMS metrics (CPU/conn/IOPS) via cms-ops → Autonomous events via GetAutonomousNotifyEventsInRange → DAS Pro status check → Scoring report.
+**6-step workflow:** GetInstanceInspections → CreateDiagnosticReport if < 60 → CMS metrics (CPU/conn/IOPS) via cms-ops → GetAutonomousNotifyEventsInRange → GetDasProServiceUsage → Scoring report.
 
 **Scoring criteria:**
 
@@ -1457,8 +616,8 @@ This skill includes a comprehensive troubleshooting enhancement framework:
 - [Troubleshooting Capability Assessment](references/troubleshooting.md) — Root cause identification efficiency analysis, optimization proposals, and standardized evaluation metrics
 - [Cross-Skill Collaboration Protocol](references/cross-skill-collaboration.md) — Trigger conditions, context passing format, and best practices for multi-skill diagnosis
 
-### Prompt Templates
-- [Troubleshooting Prompt Templates](references/prompt-templates.md) — Structured prompt templates categorized by fault type (connection_timeout, performance_degradation, data_anomaly) and diagnosis phase (symptom_collection, log_analysis, root_cause_identification, resolution)
+### Prompt Templates (Advanced — Lazy-Loaded)
+- [Troubleshooting Prompt Templates](references/advanced/prompt-templates.md) — Structured prompt templates categorized by fault type (connection_timeout, performance_degradation, data_anomaly) and diagnosis phase (symptom_collection, log_analysis, root_cause_identification, resolution)
 
 ### Configuration Assets
 - [Fault Pattern Library](assets/das-fault-pattern-library.yaml) — 12 standardized fault patterns with symptoms, root causes, diagnostic APIs, and resolution APIs
@@ -1476,12 +635,4 @@ This skill includes a comprehensive troubleshooting enhancement framework:
 - [API Documentation Mapping](references/api-doc-mapping.md) — Canonical mapping of all skill operations to official API doc URLs and SDK types
 
 
-## See Also — Meta-Skill Rules
 
-This skill is subject to cross-cutting rules defined by the
-[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
-
-- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
-  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
-  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
-  **APPLIES** — 本 skill 必须有 `assets/code-snippets/` 目录.

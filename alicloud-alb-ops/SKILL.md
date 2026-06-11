@@ -216,24 +216,13 @@ aliyun alb CreateLoadBalancer \
   --LoadBalancerName "{{user.lb_name}}" \
   --AddressType Intranet \
   --VpcId "{{user.vpc_id}}" \
-  --ZoneMappings "[{\\"VSwitchId\\":\\"{{user.vswitch_id}}\\"}]" \
+  --ZoneMappings "[{\"VSwitchId\":\"{{user.vswitch_id}}\"}]" \
   --LoadBalancerEdition "{{user.lb_edition|Basic}}" \
-  --ClientToken "{{output.client_token}}"
-
-# Create public ALB (internet) with shared bandwidth
-aliyun alb CreateLoadBalancer \
-  --RegionId "{{user.region}}" \
-  --LoadBalancerName "{{user.lb_name}}" \
-  --AddressType Internet \
-  --VpcId "{{user.vpc_id}}" \
-  --ZoneMappings "[{\\"VSwitchId\\":\\"{{user.vswitch_id}}\\"}]" \
-  --LoadBalancerEdition "{{user.lb_edition|Basic}}" \
-  --BandwidthPackageId "{{user.bandwidth_package_id}}" \
   --ClientToken "{{output.client_token}}"
 ```
 
 > **Output:** Parse `LoadBalancerId` from JSON response. LB creation is async — poll with ListAsynJobs.
-> **Editions:** `Basic`, `Standard`, `StandardWithWaf`.
+> Full command variants (public ALB, bandwidth package) at [references/cli-usage.md](references/cli-usage.md).
 
 #### Execution — JIT Go SDK (Fallback Path)
 
@@ -244,7 +233,7 @@ See [`references/api-sdk-usage.md`](references/api-sdk-usage.md) for full SDK op
 request := &alb.CreateLoadBalancerRequest{
     RegionId:          tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
     LoadBalancerName:  tea.String(os.Getenv("LB_NAME")),
-    AddressType:       tea.String("Intranet"), // or "Internet"
+    AddressType:       tea.String("Intranet"),
     VpcId:             tea.String(os.Getenv("VPC_ID")),
     ZoneMappings: []*alb.CreateLoadBalancerRequestZoneMappings{
         {VSwitchId: tea.String(os.Getenv("VSWITCH_ID"))},
@@ -286,30 +275,11 @@ response, err := client.CreateLoadBalancer(request)
 # Get ALB instance details
 aliyun alb GetLoadBalancerAttribute --LoadBalancerId "{{user.lb_id}}"
 
-# List all ALB instances in region (with optional filters)
+# List all ALB instances in region
 aliyun alb ListLoadBalancers --RegionId "{{user.region}}"
-
-# Extract specific fields with JMESPath
-aliyun alb ListLoadBalancers --RegionId "{{user.region}}" \
-  --output cols=LoadBalancerId,LoadBalancerStatus,Address,AddressType,DNSName \
-  rows=LoadBalancers[].{LoadBalancerId,LoadBalancerStatus,Address,AddressType,DNSName}
 ```
 
-#### Present to User
-
-| Field | Path | Notes |
-|-------|------|-------|
-| Load Balancer ID | `$.LoadBalancer.Id` or `$.LoadBalancers[].LoadBalancerId` | Primary key |
-| Name | `$.LoadBalancer.LoadBalancerName` | User-assigned name |
-| Status | `$.LoadBalancer.LoadBalancerStatus` | Active / Inactive / Provisioning |
-| Address | `$.LoadBalancer.Address` | IP address |
-| Address Type | `$.LoadBalancer.AddressType` | Internet / Intranet |
-| DNS Name | `$.LoadBalancer.DNSName` | DNS entry |
-| Edition | `$.LoadBalancer.LoadBalancerEdition` | Basic / Standard / StandardWithWaf |
-| VPC ID | `$.LoadBalancer.VpcId` | VPC identifier |
-| Zones | `$.LoadBalancer.ZoneMappings[]` | Zone-VSwitch mappings |
-| Deletion Protection | `$.LoadBalancer.DeletionProtectionEnabled` | true / false |
-| Create Time | `$.LoadBalancer.CreateTime` | ISO 8601 |
+> Full field extraction examples at [references/cli-usage.md](references/cli-usage.md).
 
 ---
 
@@ -326,28 +296,12 @@ aliyun alb UpdateLoadBalancerAttribute \
   --LoadBalancerId "{{user.lb_id}}" \
   --LoadBalancerName "{{user.new_lb_name}}"
 
-# Update IP address type (e.g., Intranet → Internet)
-aliyun alb UpdateLoadBalancerAddressTypeConfig \
-  --LoadBalancerId "{{user.lb_id}}" \
-  --AddressType "{{user.new_address_type}}"
-
-# Update zones
-aliyun alb UpdateLoadBalancerZones \
-  --LoadBalancerId "{{user.lb_id}}" \
-  --ZoneMappings "[{\\"VSwitchId\\":\\"{{user.vswitch_id}}\\"}]"
-
-# Enable deletion protection
+# Enable/disable deletion protection
 aliyun alb EnableDeletionProtection --ResourceId "{{user.lb_id}}" --RegionId "{{user.region}}"
-
-# Disable deletion protection
 aliyun alb DisableDeletionProtection --ResourceId "{{user.lb_id}}" --RegionId "{{user.region}}"
 ```
 
-#### Post-execution Validation
-```bash
-aliyun alb GetLoadBalancerAttribute --LoadBalancerId "{{user.lb_id}}" \
-  --output cols=LoadBalancerName rows=LoadBalancer.LoadBalancerName
-```
+> Full update operations (address type, zones, edition) at [references/cli-usage.md](references/cli-usage.md).
 
 ---
 
@@ -359,7 +313,6 @@ aliyun alb GetLoadBalancerAttribute --LoadBalancerId "{{user.lb_id}}" \
 |-------|--------|----------|------------|
 | ALB exists | `GetLoadBalancerAttribute` | Active | HALT |
 | Port available | `ListListeners` | Port not used | Suggest different port |
-| Protocol support | `DescribeZones` | Protocol supported | Suggest valid protocol |
 | Certificate | (for HTTPS) Verify cert exists | Uploaded | Delegate to certificate mgmt |
 
 #### Execution — CLI
@@ -370,18 +323,10 @@ aliyun alb CreateListener \
   --ListenerProtocol HTTP \
   --ListenerPort "{{user.listener_port|80}}" \
   --LoadBalancerId "{{user.lb_id}}" \
-  --DefaultActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]}}]" \
-  --ListenerDescription "{{user.listener_name}}"
-
-# Create HTTPS listener with default certificate
-aliyun alb CreateListener \
-  --ListenerProtocol HTTPS \
-  --ListenerPort "{{user.listener_port|443}}" \
-  --LoadBalancerId "{{user.lb_id}}" \
-  --DefaultActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]}}]" \
-  --Certificates "[{\\"CertificateId\\":\\"{{user.certificate_id}}\\"}]" \
-  --ListenerDescription "{{user.listener_name}}"
+  --DefaultActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]}}]"
 ```
+
+> Full examples (HTTPS with certs, QUIC) at [references/cli-usage.md](references/cli-usage.md).
 
 #### Post-execution Validation
 
@@ -409,18 +354,9 @@ aliyun alb AddServersToServerGroup \
   --ServerGroupId "{{user.server_group_id}}" \
   --Servers "[{\\"ServerId\\":\\"{{user.server_id}}\\",\\"ServerIp\\":\\"{{user.server_ip}}\\",\\"ServerType\\":\\"Ecs\\",\\"Port\\":{{user.server_port}},\\"Weight\\":{{user.server_weight|100}}}]" \
   --RegionId "{{user.region}}"
-
-# Remove backend servers
-aliyun alb RemoveServersFromServerGroup \
-  --ServerGroupId "{{user.server_group_id}}" \
-  --Servers "[{\\"ServerId\\":\\"{{user.server_id}}\\",\\"ServerIp\\":\\"{{user.server_ip}}\\",\\"ServerType\\":\\"Ecs\\"}]" \
-  --RegionId "{{user.region}}"
-
-# List servers in group
-aliyun alb ListServerGroupServers --ServerGroupId "{{user.server_group_id}}"
 ```
 
-> **Note:** `AddServersToServerGroup` is asynchronous — poll `ListAsynJobs` for completion.
+> Full operations (remove servers, list servers, delete SG) at [references/cli-usage.md](references/cli-usage.md). Note: `AddServersToServerGroup` is async — poll `ListAsynJobs`.
 
 ---
 
@@ -439,14 +375,10 @@ aliyun alb CreateRule \
   --ListenerId "{{user.listener_id}}" \
   --Priority "{{user.rule_priority|10}}" \
   --RuleConditions "[{\\"Type\\":\\"Host\\",\\"HostConfig\\":{\\"Values\\":[\\"{{user.host_name}}\\"]}}]" \
-  --RuleActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]},\\"Order\\":1}]" \
-  --RuleName "{{user.rule_name}}"
-
-# Create multiple forwarding rules at once
-aliyun alb CreateRules \
-  --ListenerId "{{user.listener_id}}" \
-  --Rules "[{\\"Priority\\":10,\\"RuleActions\\":[...],\\"RuleConditions\\":[...]}]"
+  --RuleActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]},\\"Order\\":1}]"
 ```
+
+> Batch create (CreateRules) at [references/cli-usage.md](references/cli-usage.md).
 
 ---
 
@@ -466,14 +398,11 @@ aliyun alb AddEntriesToAcl \
 # Associate ACL with listener
 aliyun alb AssociateAclsWithListener \
   --ListenerId "{{user.listener_id}}" \
-  --AclIds "[\"{{user.acl_id}}\"]" \
-  --AclType "Black"  # or "White"
-
-# Dissociate ACL from listener
-aliyun alb DissociateAclsFromListener \
-  --ListenerId "{{user.listener_id}}" \
-  --AclIds "[\"{{user.acl_id}}\"]"
+  --AclIds "[\\"{{user.acl_id}}\\"]" \
+  --AclType "Black"
 ```
+
+> Full operations (dissociate, delete ACL) at [references/cli-usage.md](references/cli-usage.md).
 
 ---
 
@@ -483,8 +412,7 @@ aliyun alb DissociateAclsFromListener \
 
 - **MUST** obtain explicit confirmation with `{{user.lb_id}}` and `{{user.lb_name}}`.
 - **MUST** verify deletion protection is disabled (`DeletionProtectionEnabled == false`). If enabled, HALT and instruct user to disable first.
-- **MUST** verify no active listeners serving production traffic; warn user.
-- **Recommendation:** Check associated resources (server groups, ACLs, rules) — deletion cascades.
+- **MUST** warn user that all listeners, rules, and server groups will be cascaded.
 
 #### Execution — CLI
 
@@ -496,7 +424,7 @@ aliyun alb DeleteLoadBalancer \
 
 #### Post-execution Validation
 
-Poll `ListLoadBalancers` until the instance ID is absent or its status is no longer active. Max wait: 300s. Report deletion confirmation or any residual errors.
+Poll `ListLoadBalancers` until the instance ID is absent. Max wait: 300s.
 
 ---
 
@@ -516,7 +444,7 @@ aliyun alb CreateHealthCheckTemplate \
   --UnhealthyThreshold "{{user.hc_unhealthy_threshold|3}}" \
   --HealthCheckHttpCode "{{user.hc_http_code|http_2xx}}"
 
-# Apply health check template to server group
+# Apply to server group
 aliyun alb ApplyHealthCheckTemplateToServerGroup \
   --ServerGroupId "{{user.server_group_id}}" \
   --HealthCheckTemplateId "{{user.health_check_template_id}}"
@@ -536,13 +464,10 @@ aliyun alb ListSystemSecurityPolicies
 aliyun alb CreateSecurityPolicy \
   --SecurityPolicyName "{{user.sp_name}}" \
   --TLSVersion "TLSv1.2" \
-  --Ciphers "[\"ECDHE-RSA-AES128-GCM-SHA256\",\"ECDHE-RSA-AES256-GCM-SHA384\"]"
-
-# Associate security policy with HTTPS listener
-aliyun alb UpdateListenerAttribute \
-  --ListenerId "{{user.listener_id}}" \
-  --SecurityPolicyId "{{user.security_policy_id}}"
+  --Ciphers "[\\"ECDHE-RSA-AES128-GCM-SHA256\\",\\"ECDHE-RSA-AES256-GCM-SHA384\\"]"
 ```
+
+> Associate with HTTPS listener at [references/cli-usage.md](references/cli-usage.md).
 
 ---
 
@@ -567,13 +492,13 @@ aliyun alb CreateAScripts \
 # Tag resources
 aliyun alb TagResources \
   --ResourceType "loadbalancer" \
-  --ResourceIds "[\"{{user.lb_id}}\"]" \
+  --ResourceIds "[\\"{{user.lb_id}}\\"]" \
   --Tag "[{\\"Key\\":\\"{{user.tag_key}}\\",\\"Value\\":\\"{{user.tag_value}}\\"}]"
 
 # Remove tags
 aliyun alb UnTagResources \
   --ResourceType "loadbalancer" \
-  --ResourceIds "[\"{{user.lb_id}}\"]" \
+  --ResourceIds "[\\"{{user.lb_id}}\\"]" \
   --Tag "[{\\"Key\\":\\"{{user.tag_key}}\\"}]"
 ```
 
