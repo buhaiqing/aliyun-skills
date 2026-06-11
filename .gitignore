@@ -87,6 +87,7 @@ package-lock.json
 *.swp
 *.swo
 *~
+.codebuddy/
 
 # ===== OS Generated =====
 

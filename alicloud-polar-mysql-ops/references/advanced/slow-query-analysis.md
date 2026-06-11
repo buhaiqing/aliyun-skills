@@ -1,6 +1,6 @@
 # Slow Query Analysis Workflow — PolarDB MySQL
 
-> Version: 1.0.0 | Last Updated: 2026-05-26
+> Version: 1.1.0 | Last Updated: 2026-06-11
 
 ## Overview
 
@@ -129,6 +129,65 @@ jq '
   }
 ]
 ```
+
+### 2.3 Scripted Aggregation Tool (Recommended)
+
+For production-grade analysis with multi-dimensional reporting, use the bundled
+`slow-sql-aggregator.py` script at `assets/scripts/slow-sql-aggregator.py`.
+
+**Features:**
+
+- Automatic full pagination (fetches all pages until exhausted)
+- SQLHash-based dedup with count/total/max/avg time + rows scanned
+- Multi-dimension reporting: by count, by total time, by node, by database, by minute
+- Zero external dependencies (Python 3.7+ stdlib only)
+- Structured diagnostic logging
+  (`[DIAG]`/`[RESULT]`/`[WARN]`/`[ERROR]` phases)
+
+**Usage:**
+
+```bash
+export ALIBABA_CLOUD_ACCESS_KEY_ID="..."
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"
+export ALIBABA_CLOUD_REGION_ID="cn-qingdao"
+
+python3 assets/scripts/slow-sql-aggregator.py \
+  --cluster-id "pc-m5euynyck962mwbqg" \
+  --start-time "2026-06-10T08:28Z" \
+  --end-time "2026-06-10T09:28Z" \
+  --top-n 15 \
+  --output slow_sql_report.txt
+```
+
+**Output sections:**
+
+| Section | Description |
+|---------|-------------|
+| Top N by count | Most frequent slow SQL patterns |
+| Top N by total time | Highest cumulative impact SQL |
+| Node distribution | Per-DBNodeId breakdown |
+| Database distribution | Per-DBName breakdown |
+| Time distribution | Per-minute bucket breakdown |
+
+**Integration in agent workflow:**
+
+When the agent needs to analyze slow SQL, prefer calling this script over inline
+jq/shell aggregation. The script handles edge cases (empty pages, API errors,
+large datasets) consistently.
+
+```bash
+# Agent calls the script directly
+python3 assets/scripts/slow-sql-aggregator.py \
+  --cluster-id "{{output.db_cluster_id}}" \
+  --start-time "{{user.start_time}}" \
+  --end-time "{{user.end_time}}"
+```
+
+**Security note:** The script only reads credentials from environment variables
+(`ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`). It never
+reads from config files, command-line flags, or hardcoded defaults.
+
+---
 
 ## Stage 3: Execution Plan Analysis
 
