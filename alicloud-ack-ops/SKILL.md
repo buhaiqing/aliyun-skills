@@ -17,8 +17,8 @@ compatibility: >-
   Alibaba Cloud CS endpoints.
 metadata:
   author: alicloud
-  version: "2.1.0"
-  last_updated: "2026-06-04"
+  version: "2.1.1"
+  last_updated: "2026-06-11"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -77,6 +77,9 @@ fallback), response validation, and failure recovery.
   无服务器 K8s / ECI Pod; those belong to `alicloud-ack-serverless-ops`
 - User asks to deploy, configure, troubleshoot, or monitor ACK **via API, SDK,
   CLI, or automation**
+- **集群巡检场景:** "检查K8s集群", "巡检ACK", "集群健康检查", "查看命名空间/Pod/Service",
+  "kubectl无法连接", "集群访问不了", "没有权限访问集群", "403 Forbidden" — 触发后先执行
+  [前置检查](references/inspection-access-patterns.md)确定访问方式，再选择标准巡检或降级方案
 
 ### SHOULD NOT Use This Skill When
 
@@ -159,6 +162,7 @@ fallback), response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.1 | 2026-06-11 | 新增巡检前置检查机制: ① 添加 inspection-access-patterns.md 文档 ② 更新 intelligent-inspection.md 增加前置检查脚本 ③ SKILL.md 增加巡检触发规则和前置检查操作章节 |
 | 1.0.0 | 2026-05-14 | Initial ACK skill with cluster and node pool operations |
 
 ## Execution Flows (Agent-Readable)
@@ -948,6 +952,95 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 
 ---
 
+### Operation: Inspection Pre-flight Check（巡检前置检查）
+
+在执行任何需要 kubectl 访问的巡检或诊断操作前，**必须**先执行前置检查，确认集群访问方式和权限。
+
+> **为什么需要前置检查？**
+> - 企业 ACK 集群默认只有内网端点（安全最佳实践）
+> - 子账号默认没有集群 RBAC 权限（最小权限原则）
+> - 避免因网络/权限问题导致巡检中断
+
+#### Pre-flight Checks
+
+| 检查项 | 方法 | 预期结果 | 失败处理 |
+|--------|------|---------|---------|
+| 集群状态 | `aliyun cs DescribeClusterDetail --ClusterId {{user.cluster_id}}` | `state == "running"` | HALT，提示集群非运行状态 |
+| API 端点 | 检查 `master_url.api_server_endpoint` | 有公网端点或确认内网环境 | 降级至 Cloud Assistant 方案 |
+| RBAC 权限 | `aliyun cs DescribeUserClusterNamespaces --ClusterId {{user.cluster_id}}` | HTTP 200 | 提示授权命令 |
+
+#### Execution — CLI
+
+```bash
+#!/bin/bash
+# ack-inspection-preflight.sh
+# Usage: ./ack-inspection-preflight.sh <ClusterId>
+
+CLUSTER_ID="$1"
+REGION="${2:-${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}}"
+
+echo "=== ACK 巡检前置检查 ==="
+echo ""
+
+# 1. 集群状态检查
+CLUSTER_DETAIL=$(aliyun cs DescribeClusterDetail --ClusterId $CLUSTER_ID 2>&1)
+if [ $? -ne 0 ]; then
+    echo "✗ 集群不存在或查询失败"
+    echo "错误: $CLUSTER_DETAIL"
+    exit 1
+fi
+
+CLUSTER_STATE=$(echo "$CLUSTER_DETAIL" | jq -r '.state')
+if [ "$CLUSTER_STATE" != "running" ]; then
+    echo "✗ 集群状态异常: $CLUSTER_STATE"
+    echo "请等待集群运行后再巡检"
+    exit 1
+fi
+echo "✓ 集群状态正常: $CLUSTER_STATE"
+
+# 2. 检查 API 端点
+MASTER_URL=$(echo "$CLUSTER_DETAIL" | jq -r '.master_url')
+PUBLIC_ENDPOINT=$(echo "$MASTER_URL" | jq -r '.api_server_endpoint // empty')
+
+if [ -n "$PUBLIC_ENDPOINT" ]; then
+    echo "✓ 发现公网端点，将使用标准 kubeconfig 方案"
+    export ACCESS_METHOD="public_api"
+else
+    echo "⚠ 无公网端点，将使用 Cloud Assistant 降级方案"
+    export ACCESS_METHOD="cloud_assistant"
+fi
+
+# 3. 检查 RBAC 权限
+RBAC_CHECK=$(aliyun cs DescribeUserClusterNamespaces --ClusterId $CLUSTER_ID 2>&1)
+if echo "$RBAC_CHECK" | grep -q "Forbidden"; then
+    echo "✗ RBAC 权限不足"
+    echo "授权命令: aliyun cs GrantPermissions --ClusterId $CLUSTER_ID"
+    exit 1
+fi
+echo "✓ RBAC 权限正常"
+exit 0
+```
+
+#### 降级方案决策
+
+根据前置检查结果，自动选择执行方案：
+
+| 检查结果 | 执行方案 | 参考文档 |
+|---------|---------|---------|
+| 有公网端点 + RBAC 正常 | 标准 kubectl 方案 | [intelligent-inspection.md](references/intelligent-inspection.md) |
+| 仅内网端点 | Cloud Assistant 方案 | [inspection-access-patterns.md](references/inspection-access-patterns.md) |
+| 权限不足 | 提示授权后 HALT | 本章节 |
+
+#### Failure Recovery
+
+| 错误模式 | 用户提示 |
+|---------|---------|
+| `i/o timeout` (连接内网端点) | "该集群未开启公网API访问。可选方案：① 连接VPN后重试 ② 使用 Cloud Assistant 在节点上执行" |
+| `ForbiddenQueryClusterNamespace` | "当前账号缺少集群 RBAC 权限。授权命令：aliyun cs GrantPermissions --ClusterId xxx" |
+| `ErrorClusterNotFound` | "集群不存在或已被删除。请确认 cluster_id 正确。" |
+
+---
+
 ### Operation: Intelligent Inspection（智能巡检）
 
 一键执行ACK集群的全面健康检查。整合集群状态 + 节点状态 + CMS 指标 + 综合评分。Full CLI script at [references/intelligent-inspection.md](references/intelligent-inspection.md).
@@ -1049,6 +1142,8 @@ Cost optimization workflows for ACK clusters. **Only load the specific reference
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
 - [Integration](references/integration.md)
+- [Inspection Access Patterns](references/inspection-access-patterns.md) — 巡检前置检查、访问模式与降级策略
+- [Intelligent Inspection](references/intelligent-inspection.md) — 集群智能巡检脚本与评分标准
 
 ## Operational Best Practices
 

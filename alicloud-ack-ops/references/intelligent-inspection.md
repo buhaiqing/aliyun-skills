@@ -2,7 +2,130 @@
 
 Execute a comprehensive health check for an ACK cluster. Combines cluster state, node health, CMS metrics, and addon status into a scored report.
 
+> **重要提示:** 执行巡检前请先完成 [前置检查](inspection-access-patterns.md)，确认集群访问方式和权限。
+
+## 前置检查 (Pre-flight Checks)
+
+### 快速检查清单
+
+| 检查项 | 命令 | 通过标准 | 失败处理 |
+|--------|------|---------|---------|
+| 集群状态 | `aliyun cs DescribeClusterDetail --ClusterId {{user.cluster_id}}` | `state == "running"` | HALT，提示集群非运行状态 |
+| 网络可达 | 检查 `master_url.api_server_endpoint` | 有公网端点或确认内网环境 | 切换 Cloud Assistant 方案 |
+| RBAC 权限 | `aliyun cs DescribeUserClusterNamespaces --ClusterId {{user.cluster_id}}` | HTTP 200 | 提示授权命令 |
+
+### 前置检查脚本
+
+```bash
+#!/bin/bash
+# ack-inspection-preflight.sh
+# Usage: ./ack-inspection-preflight.sh <ClusterId> [RegionId]
+
+CLUSTER_ID="$1"
+REGION="${2:-${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}}"
+
+echo "=== ACK 巡检前置检查 ==="
+echo "ClusterId: $CLUSTER_ID"
+echo "Region: $REGION"
+echo ""
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# 1. 检查集群状态
+echo "[1/3] 检查集群状态..."
+CLUSTER_DETAIL=$(aliyun cs DescribeClusterDetail --ClusterId $CLUSTER_ID 2>&1)
+if [ $? -ne 0 ]; then
+    echo -e "${RED}✗ 集群不存在或查询失败${NC}"
+    echo "错误: $CLUSTER_DETAIL"
+    exit 1
+fi
+
+CLUSTER_STATE=$(echo "$CLUSTER_DETAIL" | jq -r '.state')
+CLUSTER_NAME=$(echo "$CLUSTER_DETAIL" | jq -r '.name')
+if [ "$CLUSTER_STATE" != "running" ]; then
+    echo -e "${RED}✗ 集群状态异常: $CLUSTER_STATE${NC}"
+    echo "集群名称: $CLUSTER_NAME"
+    echo "请等待集群运行后再巡检"
+    exit 1
+fi
+echo -e "${GREEN}✓ 集群状态正常: $CLUSTER_STATE${NC}"
+echo "  集群名称: $CLUSTER_NAME"
+
+# 2. 检查 API 端点
+echo ""
+echo "[2/3] 检查 API 端点..."
+MASTER_URL=$(echo "$CLUSTER_DETAIL" | jq -r '.master_url')
+PUBLIC_ENDPOINT=$(echo "$MASTER_URL" | jq -r '.api_server_endpoint // empty')
+PRIVATE_ENDPOINT=$(echo "$MASTER_URL" | jq -r '.intranet_api_server_endpoint // empty')
+
+if [ -n "$PUBLIC_ENDPOINT" ]; then
+    echo -e "${GREEN}✓ 发现公网端点${NC}"
+    echo "  公网地址: $PUBLIC_ENDPOINT"
+    echo "  建议方案: 使用标准 kubeconfig"
+else
+    echo -e "${YELLOW}⚠ 无公网端点${NC}"
+    echo "  内网地址: $PRIVATE_ENDPOINT"
+    echo "  建议方案: 使用 Cloud Assistant 在节点上执行 kubectl"
+fi
+
+# 3. 检查 RBAC 权限
+echo ""
+echo "[3/3] 检查 RBAC 权限..."
+RBAC_CHECK=$(aliyun cs DescribeUserClusterNamespaces --ClusterId $CLUSTER_ID 2>&1)
+if echo "$RBAC_CHECK" | grep -q "Forbidden"; then
+    echo -e "${RED}✗ RBAC 权限不足${NC}"
+    echo "错误: $RBAC_CHECK"
+    echo ""
+    echo "授权命令:"
+    echo "  aliyun cs GrantPermissions --ClusterId $CLUSTER_ID"
+    exit 1
+fi
+echo -e "${GREEN}✓ RBAC 权限正常${NC}"
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "前置检查通过，可以继续执行巡检"
+echo "═══════════════════════════════════════════════════════════"
+exit 0
+```
+
+### 网络不可达时的降级方案
+
+当集群仅有内网端点且当前环境无法访问时，使用 Cloud Assistant 方案：
+
+```bash
+#!/bin/bash
+# ack-inspection-cloud-assistant.sh
+# 通过 Cloud Assistant 在节点上执行巡检命令
+
+CLUSTER_ID="$1"
+REGION="${2:-${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}}"
+
+# 获取第一个 Worker 节点
+NODE_ID=$(aliyun cs GET /clusters/$CLUSTER_ID/nodes | jq -r '.nodes[0].instance_id')
+
+if [ -z "$NODE_ID" ]; then
+    echo "错误: 无法获取节点信息"
+    exit 1
+fi
+
+echo "使用节点 $NODE_ID 执行巡检..."
+
+# 在节点上执行 kubectl 命令
+aliyun ecs RunCommand \
+  --RegionId $REGION \
+  --InstanceId $NODE_ID \
+  --CommandContent 'kubectl get pods --all-namespaces -o wide' \
+  --Type RunShellScript \
+  --Timeout 60
+```
+
 ## CLI Script
+
+### 标准巡检脚本（公网/内网可达环境）
 
 ```bash
 #!/bin/bash
