@@ -24,7 +24,49 @@ aliyun polardb DescribeAccounts \
 aliyun polardb DescribeDBClusterEndpoints \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+# 4. 检查 psql 客户端（本地连接需要）
+# 见下一节安装流程
 ```
+
+## Prerequisite: psql 客户端安装
+
+> 通过 `psql` 本地连接数据库需要 PostgreSQL 客户端。以下脚本自动检测并安装，**幂等**（已安装则跳过）。
+
+```bash
+#!/bin/bash
+# install-psql.sh — Idempotent psql 客户端安装
+
+[HH:MM:SS] [DIAG] probe=psql
+
+if command -v psql &>/dev/null; then
+  PSQL_VER=$(psql --version 2>&1)
+  [HH:MM:SS] [RESULT] status=already-installed version="$PSQL_VER"
+else
+  [HH:MM:SS] [INSTALL] action=install-psql-client
+
+  if command -v apt-get &>/dev/null; then
+    apt-get update -qq && apt-get install -y -qq postgresql-client
+  elif command -v yum &>/dev/null; then
+    yum install -y postgresql-client
+  elif command -v apk &>/dev/null; then
+    apk add --no-cache postgresql-client
+  else
+    [HH:MM:SS] [ERROR] TYPE=unsupported-os FIX="手动安装: https://www.postgresql.org/download/"
+    exit 1
+  fi
+
+  if command -v psql &>/dev/null; then
+    PSQL_VER=$(psql --version 2>&1)
+    [HH:MM:SS] [RESULT] status=installed version="$PSQL_VER"
+  else
+    [HH:MM:SS] [ERROR] TYPE=install-failed FIX="检查系统包管理器或手动安装"
+    exit 1
+  fi
+fi
+```
+
+> **注意**：如果执行机是阿里云 ECS，推荐通过 [Cloud Assistant（云助手）](https://help.aliyun.com/zh/ecs/cloud-assistant/) 执行远程安装，避免逐台登录。
 
 ## Connection Methods
 
