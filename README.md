@@ -51,7 +51,7 @@ aliyun-skills/
 ├── alicloud-kms-ops/                  # Key Management Service (KMS)
 ├── alicloud-sas-ops/                  # Security Center (SAS)
 ├── alicloud-polar-mysql-ops/          # PolarDB for MySQL
-├── alicloud-polar-pg-ops/             # PolarDB for PostgreSQL
+├── alicloud-polar-postgresql-ops/      # PolarDB for PostgreSQL
 ├── alicloud-polar-oracle-ops/         # PolarDB for Oracle (compatible)
 ├── alicloud-bailian-ops/              # Bailian (百炼) GenAI Platform - LLM, Agent, RAG, Prompt
 └── alicloud-topo-discovery/          # [Discovery Skill] Network topology & resource inventory

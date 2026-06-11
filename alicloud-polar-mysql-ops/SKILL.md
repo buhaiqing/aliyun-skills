@@ -88,7 +88,7 @@ response validation, and failure recovery.
 - Task is purely billing / account management → delegate to billing skill
 - Task is RAM / permission model only → delegate to: `alicloud-ram-ops`
 - Task is about **RDS MySQL** → delegate to: `alicloud-rds-ops`
-- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-pg-ops`
+- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-postgresql-ops`
 - Task is about **PolarDB Oracle-compatible (O)** → delegate to: `alicloud-polar-oracle-ops`
 - Task is about **Redis / Tair** → delegate to: `alicloud-redis-ops`
 - Task requires **DAS diagnosis** (SQL throttling, auto-scaling, deadlock analysis)

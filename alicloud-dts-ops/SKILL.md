@@ -91,7 +91,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 - Task is purely billing / account management → delegate to: `alicloud-billing-ops`
 - Task is RAM / permission model only → delegate to: `alicloud-ram-ops`
 - Task is about **RDS instance CRUD** (not migration/sync) → delegate to: `alicloud-rds-ops`
-- Task is about **PolarDB cluster CRUD** → delegate to: `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops`
+- Task is about **PolarDB cluster CRUD** → delegate to: `alicloud-polar-mysql-ops` / `alicloud-polar-postgresql-ops`
 - Task is about **Redis/Tair CRUD** → delegate to: `alicloud-redis-ops`
 - Task is about **MongoDB instance CRUD** → delegate to: `alicloud-mongodb-ops`
 - User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps

@@ -80,7 +80,7 @@ validation, and failure recovery.
 - Task is about **RDS (relational database)** → delegate to: `alicloud-rds-ops`
   (when present)
 - Task is about **PolarDB MySQL** → delegate to: `alicloud-polar-mysql-ops`
-- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-pg-ops`
+- Task is about **PolarDB PostgreSQL** → delegate to: `alicloud-polar-postgresql-ops`
 - Task is about **PolarDB Oracle-compatible** → delegate to: `alicloud-polar-oracle-ops`
 - Task is about **MongoDB** → delegate to: `alicloud-mongodb-ops` (when present)
 - User insists on **console-only** flows with no API → state limitation; do not

@@ -105,7 +105,7 @@ as the primary agent execution path** in `SKILL.md`.
   (when present)
 - Task is about **creating or deleting the underlying database engine
   instances** (e.g., creating an RDS MySQL instance) → delegate to:
-  `alicloud-rds-ops`, `alicloud-polar-mysql-ops`, `alicloud-polar-pg-ops`, `alicloud-polar-oracle-ops`, or the engine-specific skill
+  `alicloud-rds-ops`, `alicloud-polar-mysql-ops`, `alicloud-polar-postgresql-ops`, `alicloud-polar-oracle-ops`, or the engine-specific skill
 - Task is about **DAS Agent chat / LLM Q&A** → this skill covers API-level
   DAS Agent operations (e.g., querying usage); conversational LLM features
   are console-only and out of scope for API automation

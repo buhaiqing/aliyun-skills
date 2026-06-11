@@ -49,5 +49,5 @@ database compatible with Oracle syntax, providing:
 |---------------|-------------------|
 | `alicloud-vpc-ops` | VPC/VSwitch creation or verification |
 | `alicloud-polar-mysql-ops` | PolarDB MySQL tasks |
-| `alicloud-polar-pg-ops` | PolarDB PostgreSQL tasks |
+| `alicloud-polar-postgresql-ops` | PolarDB PostgreSQL tasks |
 | `alicloud-rds-ops` | RDS Oracle (not supported; only RDS MySQL/PG) |

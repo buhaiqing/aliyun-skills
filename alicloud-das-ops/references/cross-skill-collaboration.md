@@ -4,7 +4,7 @@
 
 | 触发条件 | 当前技能 | 目标技能 | 传递数据 |
 |----------|----------|----------|----------|
-| InvalidDBInstanceId.NotFound | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-pg-ops / alicloud-polar-oracle-ops | instance_id, engine |
+| InvalidDBInstanceId.NotFound | alicloud-das-ops | alicloud-rds-ops / alicloud-polar-mysql-ops / alicloud-polar-postgresql-ops / alicloud-polar-oracle-ops | instance_id, engine |
 | 连通性诊断失败（安全组/白名单） | alicloud-das-ops | alicloud-vpc-ops | instance_id, src_ip, failure_reason |
 | 连通性诊断失败（路由） | alicloud-das-ops | alicloud-vpc-ops | instance_id, vpc_id, route_table_id |
 | 实例状态异常 | alicloud-das-ops | alicloud-rds-ops / engine-specific | instance_id, status, engine |

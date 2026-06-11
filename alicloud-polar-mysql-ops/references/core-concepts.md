@@ -100,7 +100,7 @@ Running ──→ Paused ──→ Resuming ──→ Running (Serverless)
 |---------------|-------------------|
 | `alicloud-vpc-ops` | VPC/VSwitch creation or verification |
 | `alicloud-rds-ops` | RDS MySQL-related tasks |
-| `alicloud-polar-pg-ops` | PolarDB PostgreSQL tasks |
+| `alicloud-polar-postgresql-ops` | PolarDB PostgreSQL tasks |
 | `alicloud-polar-oracle-ops` | PolarDB Oracle-compatible tasks |
 | `alicloud-das-ops` | SQL diagnosis, automatic tuning, deadlock analysis |
 | `alicloud-cms-ops` | CloudMonitor alarm configuration |

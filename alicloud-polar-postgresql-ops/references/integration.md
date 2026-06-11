@@ -1,17 +1,17 @@
 # Integration — PolarDB PostgreSQL
 
-> Version: 1.0.0 | Last Updated: 2026-05-16
+> Version: 1.0.0 | Last Updated: 2026-06-11
 
 ## Environment Setup
 
-**Primary path:** `aliyun polardb-pg` CLI
+**Primary path:** `aliyun polardb` CLI with `--DBType PostgreSQL`
 
-**Fallback path:** JIT Go SDK via `polardb-pg-20211126/v2/client`
+**Fallback path:** JIT Go SDK via `polardb-2022-05-30/client`
 
 ## Go SDK Package
 
 ```
-github.com/alibabacloud-go/polardb-pg-20211126/v2/client
+github.com/alibabacloud-go/polardb-2022-05-30/v2/client
 ```
 
 ## JIT Go SDK Workflow
@@ -22,7 +22,7 @@ go mod init sdk-script
 export GOPROXY="https://goproxy.cn,direct"
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/tea
-go get github.com/alibabacloud-go/polardb-pg-20211126/v2/client
+go get github.com/alibabacloud-go/polardb-2022-05-30/v2/client
 go run ./main.go
 ```
 

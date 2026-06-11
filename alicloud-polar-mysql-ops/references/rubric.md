@@ -22,11 +22,11 @@ metadata:
 # PolarDB GCL Rubric (Phase 1 — Eleventh Skill — **Canonical for all 4 PolarDB variants**)
 
 PolarDB is the **distributed relational database family** for Alibaba Cloud.
-This rubric is the **canonical source** for all 4 PolarDB skills
+This rubric is the **canonical source** for all 3 PolarDB skills
 (`alicloud-polar-mysql-ops`, `alicloud-polar-postgresql-ops`,
-`alicloud-polar-oracle-ops`, `alicloud-polar-pg-ops`). The other 3
+`alicloud-polar-oracle-ops`). The other 2
 rubrics inherit this structure with engine-specific notes
-(MySQL → PostgreSQL → Oracle → PG-2021).
+(MySQL → PostgreSQL → Oracle).
 
 PolarDB inherits the **RDS-style GCL risk model** (DDL/DML with WHERE-clause
 hard rule, control-plane delete with backup) and adds **cluster-level

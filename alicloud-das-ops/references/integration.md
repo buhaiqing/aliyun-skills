@@ -57,7 +57,7 @@ DAS is **NOT** supported by `aliyun` CLI as of 2026-05-14. All operations requir
 | Task | Delegate To |
 |------|-------------|
 | Create/delete RDS instance | `alicloud-rds-ops` |
-| Create/delete PolarDB instance | `alicloud-polar-mysql-ops` / `alicloud-polar-pg-ops` / `alicloud-polar-oracle-ops` |
+| Create/delete PolarDB instance | `alicloud-polar-mysql-ops` / `alicloud-polar-postgresql-ops` / `alicloud-polar-oracle-ops` |
 | Create/delete Tair instance | `alicloud-redis-ops` |
 | Create/delete MongoDB instance | `alicloud-mongodb-ops` |
 | RAM permission setup | `alicloud-ram-ops` |

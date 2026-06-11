@@ -55,7 +55,7 @@ credential rules, pre-flight checks, **dual-path execution** (official **SDK/API
 
 - Task is pure billing / RAM → billing / `alicloud-ram-ops`
 - Task is **PolarDB MySQL** → delegate to: `alicloud-polar-mysql-ops`
-- Task is **PolarDB PostgreSQL** → delegate to: `alicloud-polar-pg-ops`
+- Task is **PolarDB PostgreSQL** → delegate to: `alicloud-polar-postgresql-ops`
 - Task is **standalone Oracle Database** (not PolarDB) → out of scope
 - Task is **RDS** → delegate to: `alicloud-rds-ops`
 - Task requires **DAS diagnosis** → delegate to: `alicloud-das-ops`
