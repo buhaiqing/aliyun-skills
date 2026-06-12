@@ -118,7 +118,6 @@ ehthumbs.db
 # *.aliyun-sdk-*  # Keep pre-compiled binaries if we distribute them
 
 .trae/
-.agents/
 .omc/
 .omo/
 .omp/
