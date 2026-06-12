@@ -1,6 +1,6 @@
 ---
 name: alicloud-aiops-cruise
-version: "1.5.1"
+version: "1.5.2"
 metadata:
   description: >-
     阿里云全链路 AIOps 巡检 + 感知 Agent 层 — 内置 7 个感知 Agent（HealthCruise/TopoScan/
@@ -208,6 +208,10 @@ scripts/agents/perceive/       # 感知层统一入口
 ### Phase 3: 推理 + 报告
 Agent 对照 `references/inference-rules.md` 做链路关联推理。输出: Markdown + JSON。
 
+### 统一风险模型与 ML 灰度
+
+`daily-health-check.py` 输出 `risk_evidence[]`，统一呈现固定阈值、持续时间、趋势预测、动态基线和 ML 灰度旁路证据。ML 默认关闭，仅通过环境变量 `AIOPS_ML_MODE=shadow|advisory|active` 灰度启用；详见 [`references/risk-model.md`](references/risk-model.md)。
+
 ## Quality Gate (GCL)
 
 ### Rubric Dimensions
@@ -254,6 +258,7 @@ GCL Prompt 见 `references/prompt-templates.md`。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.5.2 | 2026-06-12 | Sprint 21: 新增统一风险模型与 ML 灰度增强；`daily-health-check.py` 输出 `risk_evidence[]` / `ml_policy`，Incident metadata 追加风险证据；ML 默认 off，支持 shadow/advisory/active 环境变量灰度 |
 | 1.5.0 | 2026-06-08 | P0-2 补漏 Sprint 19: 6 个 perceive shell Agent 路径迁移 (advisorscan / costwatch / healthcruise / toposcan / audittrail / securityscan) 全部从 `${AIOPS_DIR}/audit-results` 改为 `${RUNTIME_AUDIT_DIR}/perceive`; 修复 healthcruise.sh BUF-003 同类 bug (AIOPS_DIR 误指 runbooks/scripts); 6 个脚本均通过 bash 语法检查 + 路径解析验证; F8 同步 (TODO.md 索引 + Sprint 19 状态) |
 | 1.5.1 | 2026-06-08 | P0-4 补齐仓库根 `.gitignore`: 补漏凭证类 (`*.env` `credentials.json` `*.key` `*.pem` `*credentials*` `*secrets*`); 补漏 Python 工具链缓存 (`.ruff_cache/` `.mypy_cache/` `.tox/` `.coverage/` `htmlcov/`); 补漏 Node.js (`node_modules/` `package-lock.json`); 补漏 skill 报告目录 (`alicloud-*/reports/*` 排除 `reports/templates/`); 36 项 `git check-ignore` 跨 skill 验证通过 |
 | 1.4.0 | 2026-06-07 | Sprint 17 完成: Baseline 重采样能力 (`--resample --from-baseline <DATE> --as-of <DATE>` 复制式; `--as-of-range` 区间批量; `--fill-gaps` 智能补全; `--force` 覆盖保护; configdrift.sh 透传; 10 个单测全部通过) |

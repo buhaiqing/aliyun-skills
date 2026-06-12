@@ -18,6 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import _shared
 from _shared import *
 
 P = [
@@ -190,14 +191,29 @@ def _list(prod, region, rg_id="", tag_k="", tag_v=""):
     return dig(d, jq_path) if d else []
 
 
+def _csv_names(value):
+    return {v.strip().lower() for v in (value or "").split(",") if v.strip()}
+
+
+def _product_in_discovery_scope(name, args):
+    include = _csv_names(args.include)
+    skip = _csv_names(args.skip)
+    lname = name.lower()
+    if include and lname not in include:
+        return False
+    return lname not in skip
+
+
 def discover(args):
     log("DIAG", f"discovery region={args.region} rg={args.resource_group_id}")
     result = {}
     rg = args.resource_group_id or ""
     tag_k = args.tag_key or ""
     tag_v = args.tag_value or args.customer or ""
+    products = [prod for prod in P if _product_in_discovery_scope(prod[I_NAME], args)]
+    log("DIAG", "discovery scope=" + ",".join(prod[I_NAME] for prod in products))
     with ThreadPoolExecutor(max_workers=12) as pool:
-        fmap = {pool.submit(_list, prod, args.region, rg, tag_k, tag_v): prod for prod in P}
+        fmap = {pool.submit(_list, prod, args.region, rg, tag_k, tag_v): prod for prod in products}
         for fut in as_completed(fmap):
             prod = fmap[fut]
             try:
@@ -211,20 +227,27 @@ def discover(args):
     return result
 
 
+def _filter_by_resource_id(name, items, resource_id):
+    if not resource_id:
+        return items
+    prod = P_BY_NAME.get(name)
+    id_field = prod[I_ID] if prod else ""
+    return [item for item in items if item.get(id_field) == resource_id]
+
+
 def confirm(discovered, args):
     total = sum(len(v) for v in discovered.values())
     print(f"\n{'=' * 40}\n  资源发现: {total} 个 ({len(discovered)} 种)\n{'=' * 40}\n")
     selected = {}
     for name, items in sorted(discovered.items()):
+        filtered_items = _filter_by_resource_id(name, items, args.resource_id)
         if args.non_interactive:
-            inc = not args.include or name.lower() in args.include.lower().split(",")
-            skip = args.skip and name.lower() in args.skip.lower().split(",")
-            if inc and not skip:
-                selected[name] = items
+            if _product_in_discovery_scope(name, args) and filtered_items:
+                selected[name] = filtered_items
             continue
-        ans = input(f"  [x] {name:16s} {len(items):3d} 个 (Y/n): ").strip().lower()
-        if not ans or ans[0] == "y":
-            selected[name] = items
+        ans = input(f"  [x] {name:16s} {len(filtered_items):3d} 个 (Y/n): ").strip().lower()
+        if (not ans or ans[0] == "y") and filtered_items:
+            selected[name] = filtered_items
     log("RESULT", f"selected total={sum(len(v) for v in selected.values())}")
     return selected
 
@@ -309,6 +332,7 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
             # 降噪检查
             if not _has_consecutive_anomaly(bvals, method, ANOMALY_WARN_Z):
                 continue
+            ml_shadow = build_ml_shadow_result(bvals, btimes, bvals[-1], method, rid, mk)
             if method in (ANOMALY_METHOD_ZSCORE, ANOMALY_METHOD_DUAL):
                 z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
             elif method == ANOMALY_METHOD_PERCENTILE:
@@ -325,6 +349,17 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
                         z, level = compute_anomaly_score_zscore(bvals, bvals[-1])
             else:
                 continue
+            risk_evidence = build_metric_risk_evidence(
+                resource_id=rid,
+                resource_type=name,
+                metric_name=mk,
+                current_value=round(bvals[-1], 2),
+                warning_threshold=mdefs.get(mk, {}).get(W, 0),
+                critical_threshold=mdefs.get(mk, {}).get(C, 0),
+                history_values=bvals,
+                anomaly={"l": level or "NORMAL"},
+                ml_shadow=ml_shadow,
+            )
             if level in ("CRITICAL", "WARNING"):
                 mean = sum(bvals) / len(bvals)
                 std = (sum((v - mean) ** 2 for v in bvals) / len(bvals)) ** 0.5
@@ -339,6 +374,9 @@ def _collect_one(name, resources, ns, id_f, mdefs, h6, d7, end):
                         "std": round(std, 2) if std else 0,
                         "l": level,
                         "method": method,
+                        "risk_evidence": risk_evidence,
+                        "risk_score": risk_evidence.get("risk_score"),
+                        "ml_shadow_result": ml_shadow,
                     }
                 )
                 log(level, f"{name}/{rid}/{mk} z={z} [{level}] ")
@@ -479,24 +517,54 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
     os.makedirs(args.output_dir, exist_ok=True)
     md = os.path.join(args.output_dir, f"{rid}.md")
     js = os.path.join(args.output_dir, f"{rid}.json")
-    criticals, warnings = [], []
+    criticals, warnings, risk_evidence = [], [], []
     for rk, mdic in metrics.items():
         t = mdic.get("_type", "")
+        rid_static = mdic.get("_id", "")
         for mk, mv in mdic.items():
             if mk in ("_type", "_id"):
                 continue
             mt = P_BY_NAME.get(t, (0,) * 10 + ({},))[I_METRICS].get(mk, {})
+            history = (baseline_data or {}).get(rk, {}).get(mk, {}).get("values", [])
+            evidence = build_metric_risk_evidence(
+                resource_id=rid_static,
+                resource_type=t,
+                metric_name=mk,
+                current_value=mv,
+                warning_threshold=mt.get("w", 0),
+                critical_threshold=mt.get("c", 0),
+                history_values=history,
+            )
+            risk_evidence.append(evidence)
             if mv >= mt.get("c", 999):
                 criticals.append(
-                    {"r": mdic.get("_id", ""), "t": t, "m": mk, "v": mv, "th": f"{mt.get('w', 0)}/{mt.get('c', 0)}"}
+                    {
+                        "r": rid_static,
+                        "t": t,
+                        "m": mk,
+                        "v": mv,
+                        "th": f"{mt.get('w', 0)}/{mt.get('c', 0)}",
+                        "risk_score": evidence.get("risk_score"),
+                        "metadata": {"risk_evidence": evidence},
+                    }
                 )
             elif mv >= mt.get("w", 999):
                 warnings.append(
-                    {"r": mdic.get("_id", ""), "t": t, "m": mk, "v": mv, "th": f"{mt.get('w', 0)}/{mt.get('c', 0)}"}
+                    {
+                        "r": rid_static,
+                        "t": t,
+                        "m": mk,
+                        "v": mv,
+                        "th": f"{mt.get('w', 0)}/{mt.get('c', 0)}",
+                        "risk_score": evidence.get("risk_score"),
+                        "metadata": {"risk_evidence": evidence},
+                    }
                 )
     # 构建 anomaly_scores（完整 JSON schema）
     anomaly_scores = []
     for a in anomalies:
+        if a.get("risk_evidence"):
+            risk_evidence.append(a.get("risk_evidence"))
         score = {
             "instance_id": a.get("id", ""),
             "metric": a.get("m", ""),
@@ -509,6 +577,9 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
             "window_days": 7,
             "bucket_strategy": "global",
             "resource_type": a.get("p", ""),
+            "risk_score": a.get("risk_score"),
+            "risk_evidence": a.get("risk_evidence"),
+            "ml_shadow_result": a.get("ml_shadow_result"),
         }
         anomaly_scores.append(score)
     with open(md, "w") as f:
@@ -530,7 +601,8 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
             f.write("|:------|:-----|:---------|:-------|------:|:------|\n")
             for i in rpt.get("incidents", []):
                 f.write(f"| {i['level']} | `{i['rule_id']}` | {i['resource_type']}/{i['resource_id'][:20]} | {i.get('metric', '-')} | {i.get('current_value', '-')} | {i['title']} |\n")
-        # 异常评分摘要表格
+        # 统一风险证据 + 异常评分摘要表格
+        f.write(format_risk_evidence_table(risk_evidence))
         if anomaly_scores:
             f.write("\n" + format_anomaly_scores_table(anomaly_scores) + "\n")
         # ACK report section
@@ -561,6 +633,8 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
         "critical": criticals,
         "warning": warnings,
         "anomaly_scores": anomaly_scores,
+        "risk_evidence": risk_evidence,
+        "ml_policy": get_ml_policy(),
         "ack": {
             "backtrack": ack_data.get("backtrack"),
             "audit": ack_data.get("audit"),
@@ -658,10 +732,18 @@ def format_limits_report(limits):
 def _write_topology_health_json(rpt, output_dir):
     """Write simplified health JSON for topo-render.py --health-json."""
     health = {}
+    for r in rpt.get("risk_evidence", []):
+        rid = r.get("resource_id", "")
+        if rid and r.get("risk_level") != "NORMAL":
+            health[rid] = {
+                "level": r.get("risk_level", "INFO"),
+                "type": r.get("resource_type", ""),
+                "z_score": r.get("risk_score", 0),
+            }
     for c in rpt.get("critical", []):
-        health[c["r"]] = {"level": "CRITICAL", "type": c["t"], "z_score": 0}
+        health[c["r"]] = {"level": "CRITICAL", "type": c["t"], "z_score": c.get("risk_score", 0)}
     for w in rpt.get("warning", []):
-        health[w["r"]] = {"level": "WARNING", "type": w["t"], "z_score": 0}
+        health[w["r"]] = {"level": "WARNING", "type": w["t"], "z_score": w.get("risk_score", 0)}
     for a in rpt.get("anomaly_scores", []):
         rid = a.get("instance_id", "")
         if rid and rid not in health:
@@ -745,6 +827,28 @@ def _merge_topology_into_report(md_path, topo_content):
         log("WARN", f"merge topology failed: {e}")
 
 
+def _append_single_resource_topology_note(md_path, resource_id):
+    """Avoid merging account-level topology into a single-resource report."""
+    try:
+        with open(md_path) as f:
+            md = f.read()
+        marker = "## Critical"
+        note = (
+            "\n## Topology\n\n"
+            f"单资源巡检范围：`{resource_id}`。已跳过账号级拓扑合并，避免将全局 VPC/SLB/EIP 资源清单误认为本次巡检对象。\n\n"
+        )
+        if marker in md:
+            idx = md.index(marker)
+            md = md[:idx] + note + md[idx:]
+        else:
+            md += note
+        with open(md_path, "w") as f:
+            f.write(md)
+        log("RESULT", f"single-resource topology note appended to {md_path}")
+    except Exception as e:
+        log("WARN", f"append topology note failed: {e}")
+
+
 def main():
     # Sprint 12 Stage 2 D1: 重入检查 (file lock)
     from lib_idempotent import acquire_lock, release_lock, is_locked
@@ -791,8 +895,12 @@ def _main_locked():
     md, js, rpt = report(selected, metrics, anomalies, args, ack_data, baseline_data)
     # Phase 4: 拓扑渲染（非阻塞）
     hpath = _write_topology_health_json(rpt, args.output_dir)
-    topo_content = _call_topo_render(hpath, args.output_dir, region)
-    _merge_topology_into_report(md, topo_content)
+    if args.resource_id:
+        log("DIAG", f"skip account-level topology render for single resource={args.resource_id}")
+        _append_single_resource_topology_note(md, args.resource_id)
+    else:
+        topo_content = _call_topo_render(hpath, args.output_dir, region)
+        _merge_topology_into_report(md, topo_content)
     print(f"\n{'=' * 50}\n  完成: {md}\n{'=' * 50}")
     log("DIAG", f"cache_stats: {cache_stats()}")
     sys.exit(

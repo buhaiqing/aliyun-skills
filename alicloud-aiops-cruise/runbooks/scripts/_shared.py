@@ -70,7 +70,6 @@ ANOMALY_METHOD_PROPHET = "prophet"  # Sprint 11.5: Prophet 节假日感知预测
 METRIC_ANOMALY_METHOD = {
     # ECS
     "acs_ecs_dashboard.CPUUtilization": ANOMALY_METHOD_PROPHET,  # Sprint 11.5: 节假日 + 趋势 + 周期
-    "acs_ecs_dashboard.memory_usage": ANOMALY_METHOD_PROPHET,  # Sprint 11.5: 节假日趋势
     "acs_ecs_dashboard.memory_usage": ANOMALY_METHOD_ZSCORE,
     "acs_ecs_dashboard.DiskReadIOPS": ANOMALY_METHOD_PERCENTILE,
     "acs_ecs_dashboard.DiskWriteIOPS": ANOMALY_METHOD_PERCENTILE,
@@ -108,6 +107,22 @@ BASELINE_MIN_POINTS = 24  # Z-Score/P95 少于 24 个点回退到固定阈值
 STL_MIN_POINTS = 24 * 6  # Sprint 11: 至少 6×24=144 点 (7d 留 1 天容差)
 PROPHET_MIN_POINTS = 24 * 14  # Sprint 11.5: Prophet 需 14d = 336 点 (足够 2 个周周期)
 
+# 统一风险模型 + ML 灰度策略 (Sprint 21)
+RISK_LEVEL_NORMAL = "NORMAL"
+RISK_LEVEL_INFO = "INFO"
+RISK_LEVEL_WARNING = "WARNING"
+RISK_LEVEL_CRITICAL = "CRITICAL"
+RISK_LEVEL_RANK = {
+    RISK_LEVEL_NORMAL: 0,
+    RISK_LEVEL_INFO: 1,
+    RISK_LEVEL_WARNING: 2,
+    RISK_LEVEL_CRITICAL: 3,
+}
+ML_MODE_OFF = "off"
+ML_MODE_SHADOW = "shadow"
+ML_MODE_ADVISORY = "advisory"
+ML_MODE_ACTIVE = "active"
+
 # ACK product registry
 ACK_K8S_NS = "acs_k8s"
 
@@ -133,6 +148,8 @@ __all__ = [
     "warn",
     "err",
     "q",
+    "q_cms_batch",
+    "q_cms_batch_by_dim",
     "dig",
     "gate",
     "list_resource_groups",
@@ -180,6 +197,19 @@ __all__ = [
     "compute_anomaly_score_percentile",
     "compute_anomaly_score_stl",
     "format_anomaly_scores_table",
+    "get_ml_policy",
+    "should_enable_ml_shadow",
+    "build_ml_shadow_result",
+    "build_metric_risk_evidence",
+    "format_risk_evidence_table",
+    "RISK_LEVEL_NORMAL",
+    "RISK_LEVEL_INFO",
+    "RISK_LEVEL_WARNING",
+    "RISK_LEVEL_CRITICAL",
+    "ML_MODE_OFF",
+    "ML_MODE_SHADOW",
+    "ML_MODE_ADVISORY",
+    "ML_MODE_ACTIVE",
     "_get_anomaly_method",
     "_has_consecutive_anomaly",
 ]
@@ -1340,6 +1370,265 @@ def _get_anomaly_method(ns: str, metric_name: str) -> str:
     return METRIC_ANOMALY_METHOD.get(key, "")
 
 
+def _risk_level_max(*levels: str) -> str:
+    """Return the highest level by aiops-cruise risk ordering."""
+    best = RISK_LEVEL_NORMAL
+    for level in levels:
+        if RISK_LEVEL_RANK.get(level, 0) > RISK_LEVEL_RANK.get(best, 0):
+            best = level
+    return best
+
+
+def _score_to_level(score: float) -> str:
+    """Map normalized risk_score to report level."""
+    if score >= 0.75:
+        return RISK_LEVEL_CRITICAL
+    if score >= 0.5:
+        return RISK_LEVEL_WARNING
+    if score >= 0.25:
+        return RISK_LEVEL_INFO
+    return RISK_LEVEL_NORMAL
+
+
+def _level_to_score(level: str) -> float:
+    return {
+        RISK_LEVEL_CRITICAL: 0.85,
+        RISK_LEVEL_WARNING: 0.6,
+        RISK_LEVEL_INFO: 0.3,
+        RISK_LEVEL_NORMAL: 0.0,
+    }.get(level, 0.0)
+
+
+def _trend_from_values(values: list[float], warning_threshold: float = 0, critical_threshold: float = 0) -> dict:
+    """Compute lightweight explainable trend evidence from historical values."""
+    if not values:
+        return {"direction": "unknown", "daily_growth": 0.0, "days_to_warning": None, "days_to_critical": None}
+    first = float(values[0])
+    last = float(values[-1])
+    n = len(values)
+    day_span = max((n - 1) / 24.0, 1.0)
+    daily_growth = (last - first) / day_span
+    if abs(daily_growth) < 1e-6:
+        direction = "flat"
+    elif daily_growth > 0:
+        direction = "rising"
+    else:
+        direction = "falling"
+
+    def _days_to(threshold: float):
+        if threshold <= 0:
+            return None
+        if last >= threshold:
+            return 0
+        if daily_growth <= 0:
+            return None
+        return int((threshold - last) / daily_growth)
+
+    return {
+        "direction": direction,
+        "daily_growth": round(daily_growth, 4),
+        "days_to_warning": _days_to(warning_threshold),
+        "days_to_critical": _days_to(critical_threshold),
+    }
+
+
+def _duration_from_values(values: list[float], warning_threshold: float = 0, critical_threshold: float = 0, period_seconds: int = 3600) -> dict:
+    """Compute consecutive threshold breach evidence from latest points."""
+    if not values:
+        return {"consecutive_points": 0, "duration_minutes": 0, "breach_level": RISK_LEVEL_NORMAL}
+    breach_level = RISK_LEVEL_NORMAL
+    threshold = 0
+    current = float(values[-1])
+    if critical_threshold > 0 and current >= critical_threshold:
+        breach_level = RISK_LEVEL_CRITICAL
+        threshold = critical_threshold
+    elif warning_threshold > 0 and current >= warning_threshold:
+        breach_level = RISK_LEVEL_WARNING
+        threshold = warning_threshold
+    else:
+        return {"consecutive_points": 0, "duration_minutes": 0, "breach_level": breach_level}
+    consecutive = 0
+    for value in reversed(values):
+        if float(value) >= threshold:
+            consecutive += 1
+        else:
+            break
+    return {
+        "consecutive_points": consecutive,
+        "duration_minutes": int(consecutive * period_seconds / 60),
+        "breach_level": breach_level,
+    }
+
+
+def _trend_level(trend: dict) -> str:
+    days_critical = trend.get("days_to_critical")
+    days_warning = trend.get("days_to_warning")
+    if days_critical is not None and days_critical <= 3:
+        return RISK_LEVEL_CRITICAL
+    if days_critical is not None and days_critical <= 7:
+        return RISK_LEVEL_WARNING
+    if days_warning is not None and days_warning <= 14:
+        return RISK_LEVEL_INFO
+    return RISK_LEVEL_NORMAL
+
+
+def get_ml_policy() -> dict:
+    """Read ML gray policy from environment. Defaults to off for safe rollout."""
+    mode = os.environ.get("AIOPS_ML_MODE", ML_MODE_OFF).strip().lower()
+    if mode not in {ML_MODE_OFF, ML_MODE_SHADOW, ML_MODE_ADVISORY, ML_MODE_ACTIVE}:
+        mode = ML_MODE_OFF
+    try:
+        gray_percent = int(os.environ.get("AIOPS_ML_GRAY_PERCENT", "0"))
+    except ValueError:
+        gray_percent = 0
+    try:
+        min_confidence = float(os.environ.get("AIOPS_ML_MIN_CONFIDENCE", "0.85"))
+    except ValueError:
+        min_confidence = 0.85
+    return {
+        "mode": mode,
+        "engine": os.environ.get("AIOPS_ML_ENGINE", "auto").strip().lower() or "auto",
+        "gray_percent": max(0, min(gray_percent, 100)),
+        "min_confidence": max(0.0, min(min_confidence, 1.0)),
+    }
+
+
+def should_enable_ml_shadow(resource_id: str, metric_name: str, policy: dict | None = None) -> bool:
+    """Stable resource+metric gray decision. No randomness, reproducible across runs."""
+    policy = policy or get_ml_policy()
+    if policy.get("mode") == ML_MODE_OFF:
+        return False
+    gray_percent = int(policy.get("gray_percent", 0))
+    if gray_percent <= 0:
+        return False
+    if gray_percent >= 100:
+        return True
+    key = f"{resource_id}:{metric_name}"
+    bucket = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) % 100
+    return bucket < gray_percent
+
+
+def build_ml_shadow_result(values: list[float], timestamps: list | None, current_val: float, method: str, resource_id: str, metric_name: str, policy: dict | None = None) -> dict | None:
+    """Run optional ML path in shadow/advisory/active mode without breaking rule engine."""
+    policy = policy or get_ml_policy()
+    if not should_enable_ml_shadow(resource_id, metric_name, policy):
+        return None
+    engine = policy.get("engine", "auto")
+    z, level, used_method = None, None, None
+    if engine in ("auto", "prophet") and timestamps:
+        z, level = compute_anomaly_score_prophet(values, timestamps, current_val)
+        used_method = ANOMALY_METHOD_PROPHET if z is not None else None
+    if z is None and engine in ("auto", "stl", "prophet"):
+        z, level = compute_anomaly_score_stl(values, current_val)
+        used_method = ANOMALY_METHOD_STL if z is not None else used_method
+    if z is None:
+        return {
+            "mode": policy.get("mode"),
+            "enabled": True,
+            "resource_id": resource_id,
+            "metric": metric_name,
+            "method": method,
+            "status": "fallback",
+            "reason": "ml dependency unavailable or insufficient history",
+            "decision": "shadow_only" if policy.get("mode") == ML_MODE_SHADOW else "advisory_only",
+        }
+    confidence = min(abs(float(z)) / max(ANOMALY_CRIT_Z, 1.0), 1.0)
+    return {
+        "mode": policy.get("mode"),
+        "enabled": True,
+        "resource_id": resource_id,
+        "metric": metric_name,
+        "method": used_method or method,
+        "predicted_level": level,
+        "score": round(float(z), 2),
+        "confidence": round(confidence, 2),
+        "meets_confidence": confidence >= float(policy.get("min_confidence", 0.85)),
+        "decision": "shadow_only" if policy.get("mode") == ML_MODE_SHADOW else "advisory_only",
+    }
+
+
+def build_metric_risk_evidence(resource_id: str, resource_type: str, metric_name: str, current_value: float, warning_threshold: float = 0, critical_threshold: float = 0, history_values: list | None = None, anomaly: dict | None = None, ml_shadow: dict | None = None) -> dict:
+    """Unify threshold, duration, trend, baseline anomaly, and ML shadow evidence."""
+    values = [float(v) for v in (history_values or []) if isinstance(v, int | float)]
+    static_level = RISK_LEVEL_NORMAL
+    if critical_threshold > 0 and current_value >= critical_threshold:
+        static_level = RISK_LEVEL_CRITICAL
+    elif warning_threshold > 0 and current_value >= warning_threshold:
+        static_level = RISK_LEVEL_WARNING
+    duration = _duration_from_values(values, warning_threshold, critical_threshold)
+    trend = _trend_from_values(values, warning_threshold, critical_threshold)
+    anomaly_level = (anomaly or {}).get("l") or (anomaly or {}).get("level") or RISK_LEVEL_NORMAL
+    final_level = _risk_level_max(static_level, duration.get("breach_level"), _trend_level(trend), anomaly_level)
+    ml_policy = get_ml_policy()
+    ml_level = (ml_shadow or {}).get("predicted_level", RISK_LEVEL_NORMAL)
+    ml_can_affect_level = bool(
+        ml_shadow and ml_policy.get("mode") == ML_MODE_ACTIVE and ml_shadow.get("meets_confidence")
+    )
+    if ml_can_affect_level:
+        final_level = _risk_level_max(final_level, ml_level)
+    risk_score = max(
+        _level_to_score(static_level),
+        _level_to_score(duration.get("breach_level", RISK_LEVEL_NORMAL)),
+        _level_to_score(_trend_level(trend)),
+        _level_to_score(anomaly_level),
+    )
+    if ml_can_affect_level and ml_shadow.get("confidence") is not None:
+        risk_score = max(risk_score, float(ml_shadow.get("confidence", 0)) * 0.8)
+    risk_score = min(round(risk_score, 2), 1.0)
+    final_level = _risk_level_max(final_level, _score_to_level(risk_score))
+    reasons = []
+    if static_level != RISK_LEVEL_NORMAL:
+        reasons.append(f"current {current_value} >= threshold {warning_threshold}/{critical_threshold}")
+    if duration.get("consecutive_points", 0) > 0:
+        reasons.append(f"duration {duration['duration_minutes']}min over {duration['breach_level']} threshold")
+    if trend.get("direction") == "rising":
+        reasons.append(f"trend rising {trend.get('daily_growth')}/day")
+    if anomaly_level != RISK_LEVEL_NORMAL:
+        reasons.append(f"baseline anomaly {anomaly_level}")
+    if ml_shadow:
+        reasons.append(f"ml {ml_shadow.get('mode')} predicts {ml_shadow.get('predicted_level', ml_shadow.get('status'))}")
+    return {
+        "resource_id": resource_id,
+        "resource_type": resource_type,
+        "metric": metric_name,
+        "current_value": current_value,
+        "risk_level": final_level,
+        "risk_score": risk_score,
+        "confidence": risk_score,
+        "static_level": static_level,
+        "duration": duration,
+        "trend": trend,
+        "anomaly_level": anomaly_level,
+        "ml_shadow_result": ml_shadow,
+        "detection_methods": [m for m in ["static-threshold" if static_level != RISK_LEVEL_NORMAL else "", "duration" if duration.get("consecutive_points", 0) > 0 else "", "trend" if trend.get("direction") == "rising" else "", "dynamic-baseline" if anomaly_level != RISK_LEVEL_NORMAL else "", "ml-shadow" if ml_shadow else ""] if m],
+        "reason": "; ".join(reasons) if reasons else "no material risk",
+    }
+
+
+def format_risk_evidence_table(risk_evidence: list[dict], max_rows: int = 50) -> str:
+    """Format unified risk evidence as a compact Markdown table."""
+    rows = [r for r in risk_evidence if r.get("risk_level") in (RISK_LEVEL_CRITICAL, RISK_LEVEL_WARNING, RISK_LEVEL_INFO)]
+    if not rows:
+        return "\n## Risk Evidence\n\nPASS 未检测到显著风险证据\n\n"
+    order = {RISK_LEVEL_CRITICAL: 0, RISK_LEVEL_WARNING: 1, RISK_LEVEL_INFO: 2}
+    rows = sorted(rows, key=lambda r: (order.get(r.get("risk_level"), 9), -float(r.get("risk_score", 0))))[:max_rows]
+    lines = ["\n## Risk Evidence（统一风险模型）\n\n"]
+    lines.append("| Level | Score | Resource | Metric | Current | Duration | Trend | Methods |\n")
+    lines.append("|:------|------:|:---------|:-------|--------:|:---------|:------|:--------|\n")
+    for r in rows:
+        duration = r.get("duration", {})
+        trend = r.get("trend", {})
+        lines.append(
+            f"| {r.get('risk_level', '')} | {float(r.get('risk_score', 0)):.2f} | "
+            f"{r.get('resource_type', '')}/{str(r.get('resource_id', ''))[:20]} | "
+            f"{r.get('metric', '')} | {float(r.get('current_value', 0))} | "
+            f"{duration.get('duration_minutes', 0)}min/{duration.get('consecutive_points', 0)}pts | "
+            f"{trend.get('direction', 'unknown')} {float(trend.get('daily_growth', 0)):.4f}/d | "
+            f"{','.join(r.get('detection_methods', []))} |\n"
+        )
+    return "".join(lines) + "\n"
+
+
 def compute_anomaly_score_zscore(values, current_val):
     """Compute Z-Score anomaly score.
     Returns (z_score, level) or (None, None) if insufficient data.
@@ -1424,7 +1713,7 @@ def compute_anomaly_score_stl(values, current_val):
         elif z > ANOMALY_INFO_Z:
             return round(float(z), 2), "INFO"
         return round(float(z), 2), "NORMAL"
-    except Exception as e:
+    except Exception:
         # STL 失败回退 None (调用方应 fallback 到 Z-Score)
         return None, None
 
@@ -1475,7 +1764,7 @@ def compute_anomaly_score_prophet(values, timestamps, current_val):
         from prophet import Prophet
 
         # Sprint 11.5 fix: 支持毫秒时间戳 (CMS Datapoints.timestamp 是 ms)
-        if timestamps and isinstance(timestamps[0], (int, float)):
+        if timestamps and isinstance(timestamps[0], int | float):
             ts_series = pd.to_datetime(pd.Series(timestamps), unit="ms")
         else:
             ts_series = pd.to_datetime(pd.Series(timestamps))
@@ -1540,7 +1829,7 @@ def _has_consecutive_anomaly(values, method, threshold):
     if n < ANOMALY_MIN_CONSECUTIVE * 2:
         return False
 
-    if method in (ANOMALY_METHOD_ZSCORE, ANOMALY_METHOD_DUAL, ANOMALY_METHOD_STL):  # Sprint 11: STL 降噪复用 Z-Score 逻辑
+    if method in (ANOMALY_METHOD_ZSCORE, ANOMALY_METHOD_DUAL, ANOMALY_METHOD_STL, ANOMALY_METHOD_PROPHET):  # STL/Prophet 降噪复用 Z-Score 逻辑
         # Use full baseline for mean/std
         mean = sum(values) / n
         std = (sum((v - mean) ** 2 for v in values) / n) ** 0.5
@@ -1719,7 +2008,7 @@ def to_incident(finding: dict, *, customer: str, run_id: str, region: str, runbo
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "run_id": run_id,
         "level": level,
-        "score": None,
+        "score": finding.get("risk_score"),
         "resource_type": resource_type,
         "resource_id": resource_id,
         "resource_name": None,
@@ -1755,7 +2044,7 @@ def to_incident(finding: dict, *, customer: str, run_id: str, region: str, runbo
             "report_path": report_path,
         },
         "tags": [resource_type_raw.lower()],
-        "metadata": {},
+        "metadata": finding.get("metadata", {}),
     }
 
 
@@ -1774,6 +2063,8 @@ def anomaly_to_incident(a: dict, *, customer: str, run_id: str, region: str, run
             "impact": f"动态基线偏离 (z-score={a.get('z_score', 0):.2f})",
             "suggestion": "观察是否持续偏离, 必要时巡检确认",
             "method": a.get("method", "z-score"),
+            "risk_score": a.get("risk_score"),
+            "metadata": {"risk_evidence": a.get("risk_evidence"), "ml_shadow_result": a.get("ml_shadow_result")},
         },
         customer=customer, run_id=run_id, region=region,
         runbook_id=runbook_id, runbook_version=runbook_version,

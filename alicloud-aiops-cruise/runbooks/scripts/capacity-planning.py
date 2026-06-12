@@ -14,6 +14,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 
+import _shared
 from _shared import *
 
 # (name, cli, api, id_field, cms_ns, jq_path, {metric:{w,c}})
