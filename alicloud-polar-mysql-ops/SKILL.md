@@ -9,8 +9,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.5.0"
-  last_updated: "2026-06-04"
+  version: "1.6.0"
+  last_updated: "2026-06-11"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -172,6 +172,7 @@ response validation, and failure recovery.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.6.0 | 2026-06-11 | Add `scripts/slow-sql-aggregator.py`: multi-dimension slow SQL aggregation tool with auto-pagination, SQLHash dedup, and 5-section report (by count/time/node/db/minute). Update `references/advanced/slow-query-analysis.md` §2.3 with script usage. (DOPS-85809) |
 | 1.5.0 | 2026-05-27 | Extend AIOps anomaly detection: 12 patterns (P001-P012), 5 PolarDB-specific patterns (Replication Lag, Read Node Imbalance, Storage IO, GDN Sync, Serverless Elasticity), Pattern Correlation Engine (DOPS-85277) |
 | 1.4.0 | 2026-05-26 | Add Slow Query Analysis workflow: DescribeSlowLogs/DescribeSlowLogRecords, Top N identification, index optimization recommendations, and diagnostic report template (DOPS-85274) |
 | 1.3.0 | 2026-05-26 | Add AIOps capabilities: Storage Prediction (30/60/90 days), Connection Prediction (cycle detection), Anomaly Detection (root cause correlation) (DOPS-85275) |
@@ -757,6 +758,8 @@ PolarDB 慢查询分析报告:
 > **深度诊断边界：** 如需深度 SQL 优化建议、执行计划 EXPLAIN、锁分析、SQL 限流，委托至 `alicloud-das-ops` Skill。
 
 > **详细工作流文档**请参阅: [references/advanced/slow-query-analysis.md](references/advanced/slow-query-analysis.md)
+> 
+> **聚合分析脚本**: [scripts/slow-sql-aggregator.py](scripts/slow-sql-aggregator.py) — 全量拉取 + SQLHash 去重 + 多维度报告（按次数/总耗时/节点/数据库/时间分布），支持自动分页，零外部依赖。
 
 ---
 
@@ -866,6 +869,7 @@ Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com
 - [Integration](references/integration.md)
 - [SQL Execution](references/advanced/sql-execution.md) — SQL 执行能力（ExecuteSQL、ExecuteSQLFile、慢查询）
 - [Slow Query Analysis Workflow](references/advanced/slow-query-analysis.md) — 慢查询分析工作流：Top N、趋势分析、索引优化建议
+- [Slow SQL Aggregator Script](scripts/slow-sql-aggregator.py) — 慢 SQL 聚合分析脚本：全量拉取 + 多维度报告
 - [FinOps: Node Analysis](references/advanced/finops-node-analysis.md) — 节点级成本优化分析
 - [FinOps: Storage Tier Analysis](references/advanced/finops-storage-tier-analysis.md) — 存储层级成本优化分析
 - [AIOps: Storage Prediction](references/advanced/aiops-storage-prediction.md) — 存储空间趋势预测（30/60/90天）
