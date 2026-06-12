@@ -62,6 +62,7 @@ credentials.json
 venv/
 env/
 __pycache__/
+*/scripts/__pycache__
 *.py[cod]
 *$py.class
 .mypy_cache/
@@ -90,6 +91,7 @@ package-lock.json
 *.swp
 *.swo
 *~
+.codebuddy/
 
 # ===== OS Generated =====
 

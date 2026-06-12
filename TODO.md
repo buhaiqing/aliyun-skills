@@ -3,6 +3,10 @@
 ## Skill Development
 
 - ✅ Add Alibaba Cloud Cloud Enterprise Network (CEN/云企业网) operations skill: `alicloud-cen-ops`
+
+## Recent Updates
+
+- ✅ alicloud-polar-mysql-ops v1.6.0: Add `assets/scripts/slow-sql-aggregator.py` — multi-dimension slow SQL aggregation tool (DOPS-85809)
 - ✅ Refactor `alicloud-redis-ops` redis-cli install layer: extract `references/redis-cli-install.md` as single source of truth; add SUSE/zypper, Aliyun ECS mirror acceleration, offline mode (`REDIS_CLI_BIN_URL`), auto-install build tools for source fallback; unify exit code contract (20/21/22)
 - ✅ Add user-friendly configuration guide to `redis-cli-install.md`: 30s decision tree, scenario-driven setup for mirror acceleration & offline mode, 4-step offline binary preparation, side effects & rollback instructions, 6 FAQs; update `.env.example` with `REDIS_CLI_BIN_URL` template and discoverability comments
 - ✅ Extract install script to executable `scripts/redis-cli-install.sh` (344 lines); refactor `redis-cli-execution.md` to inline via `cat` (no manual copy-paste); strip redundant 311-line script from `redis-cli-install.md` (now design spec + user guide only); single source of truth verified via grep
