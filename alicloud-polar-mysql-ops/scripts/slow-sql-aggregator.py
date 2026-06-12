@@ -24,9 +24,10 @@ import json
 import os
 import subprocess
 import sys
+import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
 
 # ──────────────────────────────────────────────
@@ -38,6 +39,8 @@ ENV_REGION = "ALIBABA_CLOUD_REGION_ID"
 
 DEFAULT_PAGE_SIZE = 100
 DEFAULT_TOP_N = 15
+MAX_RETRIES = 3
+RETRY_BACKOFF_BASE = 2  # seconds, exponential: base^attempt
 
 
 def _check_prerequisites() -> None:
@@ -49,63 +52,125 @@ def _check_prerequisites() -> None:
         print("[ERROR] TYPE=PREREQUISITE FIX=Install aliyun CLI: https://aliyuncli.alicdn.com/install.sh")
         sys.exit(2)
 
-    # Check credentials
+    # Check credentials (region checked later, allows --region CLI override)
     missing = []
-    for var in [ENV_KEY_ID, ENV_KEY_SECRET, ENV_REGION]:
+    for var in [ENV_KEY_ID, ENV_KEY_SECRET]:
         if not os.environ.get(var):
             missing.append(var)
     if missing:
         print(f"[ERROR] TYPE=PREREQUISITE FIX=Set env vars: {', '.join(missing)}")
         sys.exit(2)
 
+    # Warn if region also not set (but don't halt — may be passed via --region)
+    if not os.environ.get(ENV_REGION):
+        print(f"[WARN] {ENV_REGION} not set; must provide --region CLI argument")
+
+
+class FetchError(Exception):
+    """Raised when API call fails after all retries exhausted."""
+    def __init__(self, page: int, exit_code: int, stderr: str):
+        self.page = page
+        self.exit_code = exit_code
+        self.stderr = stderr
+        super().__init__(f"Page {page} API call failed after {MAX_RETRIES} retries (exit={exit_code})")
+
+
+class EmptyPage(Exception):
+    """Raised when API returns success but zero records (normal end-of-data)."""
+    pass
+
 
 def fetch_slow_log_page(cluster_id: str, start_time: str, end_time: str,
-                        page: int, page_size: int) -> List[Dict[str, Any]]:
-    """Call aliyun polardb DescribeSlowLogRecords for a single page."""
+                        page: int, page_size: int,
+                        region: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Call aliyun polardb DescribeSlowLogRecords for a single page.
+
+    Args:
+        region: 阿里云区域，优先 CLI 参数，其次环境变量 ALIBABA_CLOUD_REGION_ID。
+               若都未设置则 HALT。
+
+    Raises:
+        FetchError: API 调用失败且重试耗尽。
+        EmptyPage: API 成功但无数据（正常分页终止信号）。
+    """
+    actual_region = region or os.environ.get(ENV_REGION, "")
+    if not actual_region:
+        print(f"[ERROR] TYPE=PREREQUISITE FIX=Set --region or env var {ENV_REGION}")
+        sys.exit(2)
+
     cmd = [
         "aliyun", "polardb", "DescribeSlowLogRecords",
+        "--RegionId", actual_region,
         "--DBClusterId", cluster_id,
         "--StartTime", start_time,
         "--EndTime", end_time,
         "--PageSize", str(page_size),
         "--PageNumber", str(page),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    if result.returncode != 0:
-        print(f"[WARN] Page {page} returned non-zero exit code: {result.returncode}")
-        return []
 
-    try:
-        data = json.loads(result.stdout)
-    except json.JSONDecodeError:
-        print(f"[WARN] Page {page} returned non-JSON response")
-        return []
+    last_error: Optional[Tuple[int, str]] = None
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        except subprocess.TimeoutExpired:
+            print(f"[WARN] Page {page} attempt {attempt}/{MAX_RETRIES} timed out")
+            last_error = (-1, "timeout")
+            time.sleep(RETRY_BACKOFF_BASE ** attempt)
+            continue
 
-    return data.get("Items", {}).get("SQLSlowRecord", [])
+        if result.returncode != 0:
+            last_error = (result.returncode, result.stderr.strip())
+            print(f"[WARN] Page {page} attempt {attempt}/{MAX_RETRIES} failed (exit={result.returncode})")
+            time.sleep(RETRY_BACKOFF_BASE ** attempt)
+            continue
+
+        # Parse JSON response
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            last_error = (-2, "non-JSON response")
+            print(f"[WARN] Page {page} attempt {attempt}/{MAX_RETRIES} returned non-JSON response")
+            time.sleep(RETRY_BACKOFF_BASE ** attempt)
+            continue
+
+        records = data.get("Items", {}).get("SQLSlowRecord", [])
+        if not records:
+            raise EmptyPage()
+        return records
+
+    # All retries exhausted
+    raise FetchError(page, last_error[0] if last_error else -1,
+                     last_error[1] if last_error else "unknown")
 
 
 def fetch_all_slow_logs(cluster_id: str, start_time: str, end_time: str,
-                        page_size: int = DEFAULT_PAGE_SIZE) -> List[Dict[str, Any]]:
-    """Fetch all slow log records with automatic pagination."""
+                        page_size: int = DEFAULT_PAGE_SIZE,
+                        region: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Fetch all slow log records with automatic pagination.
+
+    Pagination stops when EmptyPage is raised (normal end-of-data).
+    FetchError propagates to caller — no silent data loss.
+    """
     all_records: List[Dict[str, Any]] = []
     page = 1
 
-    print(f"[DIAG] Fetching slow logs: cluster={cluster_id} range=[{start_time}, {end_time}]")
+    print(f"[DIAG] Fetching slow logs: cluster={cluster_id} range=[{start_time}, {end_time}] region={region or os.environ.get(ENV_REGION, '?')}")
 
-    # First page to get total count
-    first_page = fetch_slow_log_page(cluster_id, start_time, end_time, 1, page_size)
-    if not first_page:
+    # First page
+    try:
+        first_page = fetch_slow_log_page(cluster_id, start_time, end_time, 1, page_size, region)
+    except EmptyPage:
         print("[INFO] No slow log records found in time range.")
         return []
-
     all_records.extend(first_page)
 
-    # Estimate total pages from first page context (conservative: keep going until empty)
+    # Keep fetching until EmptyPage (natural end) or FetchError (failure)
     while True:
         page += 1
-        records = fetch_slow_log_page(cluster_id, start_time, end_time, page, page_size)
-        if not records:
-            break
+        try:
+            records = fetch_slow_log_page(cluster_id, start_time, end_time, page, page_size, region)
+        except EmptyPage:
+            break  # Normal termination: no more data
         all_records.extend(records)
         if page % 5 == 0:
             print(f"[DIAG] Fetched page {page}, total records so far: {len(all_records)}")
@@ -268,6 +333,7 @@ def main():
     parser.add_argument("--cluster-id", required=True, help="PolarDB 集群 ID (e.g. pc-xxx)")
     parser.add_argument("--start-time", required=True, help="起始时间 (ISO 8601, e.g. 2026-06-10T08:28Z)")
     parser.add_argument("--end-time", required=True, help="结束时间 (ISO 8601)")
+    parser.add_argument("--region", help=f"阿里云区域 (默认: 环境变量 {ENV_REGION})")
     parser.add_argument("--page-size", type=int, default=DEFAULT_PAGE_SIZE, help=f"每页记录数 (默认: {DEFAULT_PAGE_SIZE})")
     parser.add_argument("--top-n", type=int, default=DEFAULT_TOP_N, help=f"Top N 数量 (默认: {DEFAULT_TOP_N})")
     parser.add_argument("--output", "-o", help="输出文件路径 (默认: stdout)")
@@ -278,7 +344,11 @@ def main():
     _check_prerequisites()
 
     # Fetch
-    records = fetch_all_slow_logs(args.cluster_id, args.start_time, args.end_time, args.page_size)
+    try:
+        records = fetch_all_slow_logs(args.cluster_id, args.start_time, args.end_time, args.page_size, args.region)
+    except FetchError as e:
+        print(f"[ERROR] TYPE=API_FAILURE FIX=Check network/credentials, or retry later. {e}")
+        sys.exit(1)
     if not records:
         print("[INFO] No slow log records found.")
         sys.exit(0)

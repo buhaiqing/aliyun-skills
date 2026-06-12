@@ -133,7 +133,7 @@ jq '
 ### 2.3 Scripted Aggregation Tool (Recommended)
 
 For production-grade analysis with multi-dimensional reporting, use the bundled
-`slow-sql-aggregator.py` script at `assets/scripts/slow-sql-aggregator.py`.
+`slow-sql-aggregator.py` script at `scripts/slow-sql-aggregator.py`.
 
 **Features:**
 
@@ -151,7 +151,7 @@ export ALIBABA_CLOUD_ACCESS_KEY_ID="..."
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"
 export ALIBABA_CLOUD_REGION_ID="cn-qingdao"
 
-python3 assets/scripts/slow-sql-aggregator.py \
+python3 scripts/slow-sql-aggregator.py \
   --cluster-id "pc-m5euynyck962mwbqg" \
   --start-time "2026-06-10T08:28Z" \
   --end-time "2026-06-10T09:28Z" \
@@ -177,7 +177,7 @@ large datasets) consistently.
 
 ```bash
 # Agent calls the script directly
-python3 assets/scripts/slow-sql-aggregator.py \
+python3 scripts/slow-sql-aggregator.py \
   --cluster-id "{{output.db_cluster_id}}" \
   --start-time "{{user.start_time}}" \
   --end-time "{{user.end_time}}"

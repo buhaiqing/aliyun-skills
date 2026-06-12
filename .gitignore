@@ -84,6 +84,9 @@ package-lock.json
 # IDE/Editor
 .idea/
 .vscode/
+.claude/
+.deepeval/
+.omo
 *.swp
 *.swo
 *~
