@@ -14,6 +14,11 @@ Generator-Critic-Loop (GCL) adversarial quality gate, defined in
 | `gcl_actiontrail_crosscheck.py` | **Phase 3-C** cross-checker: verifies GCL traces against ActionTrail `LookupEvents`. Catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY`. |
 | `gcl_actiontrail_crosscheck_test.py` | Pure-stdlib `unittest` suite. 25 tests, ~0.01s runtime. |
 | `gcl_passrate_reporter.py` | **Phase 4** pass-rate reporter: aggregates GCL traces, computes per-skill and per-dimension pass-rates, pushes to CMS custom metrics (`acs_custom_gcl`). |
+| `gcl_smart_alarm_engine.py` | **Phase 7** smart alert engine: pattern-driven dynamic alerting with auto-degradation. Detects `resource_safety_repeated`, `region_safety_burst`, etc. |
+| `gcl_smart_alarm_cms_setup.py` | **Phase 7** CMS alarm setup for smart alert metrics. |
+| `gcl_smart_alarm_test.py` | Unit tests for smart alarm engine (79 tests). |
+| `gcl_smart_alarm_integration_test.py` | Integration tests for smart alarm + runner (12 tests). |
+| `README-Smart-Alert.md` | **Phase 7** usage guide for smart alert loop. |
 | `README.md` | This file. |
 
 ## What `gcl_runner.py` Does
@@ -213,10 +218,13 @@ unittest.TextTestRunner(verbosity=2).run(suite)
 | Phase 3 | LLM-based Critic, ActionTrail cross-check | ✅ Shipped 2026-06-04 |
 | Phase 4 | CMS alarm on SAFETY_FAIL rate + pass-rate metrics | ✅ Shipped 2026-06-04 |
 | Phase 5 | Auto-rollout to 7 `recommended` skills (SLB, ACK, etc.) | ✅ Shipped 2026-06-04 |
+| Phase 6 | Hallucination Detection (H) pre-execution gate | ✅ Shipped 2026-06-10 |
+| Phase 7 | Smart Alert Loop — pattern-driven auto-degradation | ✅ Shipped 2026-06-13 |
 
 ## Related
 
 - [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate) — canonical GCL spec
 - [`alicloud-skill-generator/references/gcl-rollout-spec.md`](../alicloud-skill-generator/references/gcl-rollout-spec.md) — how to generate GCL files for a new skill
 - [`alicloud-skill-generator/references/gcl-orchestrator-agent.md`](../alicloud-skill-generator/references/gcl-orchestrator-agent.md) — pi-subagents agent definition that wraps this script
+- [`README-Smart-Alert.md`](./README-Smart-Alert.md) — Phase 7 Smart Alert Loop usage guide
 - `audit-results/` — gitignored; ephemeral trace storage

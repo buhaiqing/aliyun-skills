@@ -64,6 +64,12 @@ REQUIREMENTS
 ------------
     Python 3.10+ stdlib only. No external dependencies.
 
+SMART ALERT LOOP INTEGRATION
+----------------------------
+    When --adaptive is enabled, the runner consults the smart alarm engine's
+    degradation state to dynamically adjust max_iter for high-risk resources.
+    See gcl_smart_alarm_engine.py for pattern detection and auto-degradation.
+
 DESIGN
 ------
 - The script is intentionally a single file. It can be copy-pasted into
@@ -354,6 +360,89 @@ EXIT_SAFETY_FAIL = 2
 EXIT_USAGE_ERROR = 3
 EXIT_RUBRIC_ERROR = 4
 EXIT_HALLUCINATION_ABORT = 5
+
+
+# ---------------------------------------------------------------------------
+# Smart Alert Loop — Adaptive max_iter (Phase 7)
+# ---------------------------------------------------------------------------
+
+#: Resource ID extraction patterns for adaptive degradation.
+#: Maps skill name to regex pattern for extracting resource identifier.
+RESOURCE_ID_PATTERNS: Dict[str, str] = {
+    "alicloud-ecs-ops": r"--InstanceId\s+['\"]?(i-[a-z0-9]+)['\"]?",
+    "alicloud-rds-ops": r"--DBInstanceId\s+['\"]?(rm-[a-z0-9]+)['\"]?",
+    "alicloud-redis-ops": r"--InstanceId\s+['\"]?(r-[a-z0-9]+)['\"]?",
+    "alicloud-mongodb-ops": r"--DBInstanceId\s+['\"]?(dds-[a-z0-9]+)['\"]?",
+    "alicloud-polar-mysql-ops": r"--DBClusterId\s+['\"]?(pc-[a-z0-9]+)['\"]?",
+    "alicloud-polar-postgresql-ops": r"--DBClusterId\s+['\"]?(pc-[a-z0-9]+)['\"]?",
+    "alicloud-polar-oracle-ops": r"--DBClusterId\s+['\"]?(pc-[a-z0-9]+)['\"]?",
+    "alicloud-elasticsearch-ops": r"--InstanceId\s+['\"]?(es-[a-z0-9]+)['\"]?",
+    "alicloud-vpc-ops": r"--VpcId\s+['\"]?(vpc-[a-z0-9]+)['\"]?",
+    "alicloud-nat-ops": r"--NatGatewayId\s+['\"]?(ngw-[a-z0-9]+)['\"]?",
+    "alicloud-eip-ops": r"--AllocationId\s+['\"]?(eip-[a-z0-9]+)['\"]?",
+    "alicloud-slb-ops": r"--LoadBalancerId\s+['\"]?(lb-[a-z0-9]+)['\"]?",
+    "alicloud-ack-ops": r"--ClusterId\s+['\"]?(c-[a-z0-9]+)['\"]?",
+    "alicloud-fc-ops": r"--serviceName\s+['\"]?([^\s'\"]+)['\"]?",
+    "alicloud-kms-ops": r"--KeyId\s+['\"]?(key-[a-z0-9]+)['\"]?",
+    "alicloud-ram-ops": r"--UserName\s+['\"]?([^\s'\"]+)['\"]?",
+    "alicloud-sls-ops": r"--project\s+['\"]?([^\s'\"]+)['\"]?",
+}
+
+
+def _get_degradation_state_path() -> Path:
+    """Resolve path to the smart alarm engine's degradation state file."""
+    env_root = os.environ.get("ALIYUN_SKILLS_RUNTIME_ROOT")
+    if env_root:
+        return Path(env_root) / "gcl-degradation-state.json"
+    script_dir = Path(__file__).resolve().parent
+    return script_dir.parent / ".runtime" / "gcl-degradation-state.json"
+
+
+def _load_degradation_state() -> Dict[str, Any]:
+    """Load degradation state from smart alarm engine."""
+    path = _get_degradation_state_path()
+    if path.is_file():
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {"downgraded_resources": {}}
+
+
+def _extract_resource_id(skill: str, command: str) -> Optional[str]:
+    """Extract resource identifier from command for adaptive lookup."""
+    pattern = RESOURCE_ID_PATTERNS.get(skill)
+    if not pattern:
+        return None
+    m = re.search(pattern, command)
+    return m.group(1) if m else None
+
+
+def get_adaptive_max_iter(skill: str, command: str, base_max_iter: int) -> Tuple[int, Optional[str]]:
+    """
+    Determine max_iter using smart alarm engine's degradation state.
+
+    Returns (effective_max_iter, degradation_reason).
+    If the resource is downgraded, returns the reduced max_iter and reason.
+    Otherwise returns base_max_iter and None.
+    """
+    resource_id = _extract_resource_id(skill, command)
+    if not resource_id:
+        return base_max_iter, None
+
+    state = _load_degradation_state()
+    downgraded = state.get("downgraded_resources", {})
+
+    if resource_id in downgraded:
+        info = downgraded[resource_id]
+        current = info.get("current_max_iter", base_max_iter)
+        reason = (
+            f"Resource {resource_id} downgraded due to {info.get('reason', 'unknown')} "
+            f"(restore at {info.get('auto_restore_at', 'unknown')})"
+        )
+        return current, reason
+
+    return base_max_iter, None
 
 
 # ---------------------------------------------------------------------------
@@ -1324,6 +1413,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--timeout", type=int, default=300, help="Per-iteration subprocess timeout in seconds; default: 300")
     p.add_argument("--dry-run", action="store_true", help="Skip the actual subprocess; useful for Critic-only regression tests")
     p.add_argument("--enable-hallucination-check", action="store_true", help="Enable the pre-execution Hallucination Detection (H) gate (§14)")
+    p.add_argument("--adaptive", action="store_true", help="Enable adaptive max_iter based on smart alarm engine degradation state (Phase 7)")
     return p
 
 
@@ -1342,7 +1432,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         return EXIT_RUBRIC_ERROR
 
     # Override max_iter
-    max_iter = args.max_iter or rubric["max_iter"] or SKILL_MAX_ITER.get(args.skill, 2)
+    base_max_iter = args.max_iter or rubric["max_iter"] or SKILL_MAX_ITER.get(args.skill, 2)
+    max_iter = base_max_iter
+    adaptive_reason = None
+
+    # Adaptive mode: consult smart alarm engine degradation state
+    if args.adaptive:
+        adaptive_max_iter, adaptive_reason = get_adaptive_max_iter(args.skill, args.command, base_max_iter)
+        if adaptive_max_iter != base_max_iter:
+            max_iter = adaptive_max_iter
+            print(f"[ADAPTIVE] max_iter adjusted: {base_max_iter} → {max_iter}")
+            print(f"[ADAPTIVE] Reason: {adaptive_reason}")
 
     # Pre-flight
     ok, errors = preflight(args.skill, args.op, args.command, rubric, args.user_request)
@@ -1382,8 +1482,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Print summary
     final = trace["final"]
-    print(f"[GCL] skill={args.skill} op={args.op} status={final['status']} iter={final['iter']}")
+    adaptive_marker = " [ADAPTIVE]" if args.adaptive and adaptive_reason else ""
+    print(f"[GCL] skill={args.skill} op={args.op} status={final['status']} iter={final['iter']}{adaptive_marker}")
     print(f"[GCL] trace: {path}")
+    if args.adaptive and adaptive_reason:
+        print(f"[GCL] adaptive note: {adaptive_reason}")
     if final["status"] == "PASS":
         return EXIT_PASS
     if final["status"] == "SAFETY_FAIL":

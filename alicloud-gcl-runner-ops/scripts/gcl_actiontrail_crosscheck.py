@@ -175,18 +175,19 @@ PRODUCT_TO_EVENTNAME = {
 #: Resource-ID parameter name. Different skills use different flag names
 #: for the resource identifier (InstanceId, DBInstanceId, AllocationId,
 #: etc.). This regex extracts the value from the command line.
+#: Supports quoted values (single and double quotes).
 _RESOURCE_ID_PATTERNS = [
-    r"--InstanceId\s+(\S+)",
-    r"--DBInstanceId\s+(\S+)",
-    r"--DBClusterId\s+(\S+)",
-    r"--VpcId\s+(\S+)",
-    r"--VSwitchId\s+(\S+)",
-    r"--NatGatewayId\s+(\S+)",
-    r"--AllocationId\s+(\S+)",
-    r"--KeyId\s+(\S+)",
-    r"--UserName\s+(\S+)",
-    r"--AccessKeyId\s+(\S+)",
-    r"--AlarmName\s+(\S+)",
+    r"--InstanceId\s+['\"]?(\S+)['\"]?",
+    r"--DBInstanceId\s+['\"]?(\S+)['\"]?",
+    r"--DBClusterId\s+['\"]?(\S+)['\"]?",
+    r"--VpcId\s+['\"]?(\S+)['\"]?",
+    r"--VSwitchId\s+['\"]?(\S+)['\"]?",
+    r"--NatGatewayId\s+['\"]?(\S+)['\"]?",
+    r"--AllocationId\s+['\"]?(\S+)['\"]?",
+    r"--KeyId\s+['\"]?(\S+)['\"]?",
+    r"--UserName\s+['\"]?(\S+)['\"]?",
+    r"--AccessKeyId\s+['\"]?(\S+)['\"]?",
+    r"--AlarmName\s+['\"]?(\S+)['\"]?",
 ]
 
 #: Exit codes
