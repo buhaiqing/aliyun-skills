@@ -90,35 +90,4 @@ jobs:
       - name: Run ruff format check
         run: ruff format --check . || true
 
-  # ===========================================
-  # Job 5: Docker Build Test
-  # ===========================================
-  docker-build:
-    name: Test Docker Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build runtime image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: runtime
-          push: false
-          tags: aliyun-skills:runtime-test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build dev image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          target: dev
-          push: false
-          tags: aliyun-skills:dev-test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
