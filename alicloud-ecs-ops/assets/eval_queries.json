@@ -1,0 +1,44 @@
+{
+  "queries": [
+    {
+      "query": "创建一台 ECS 实例",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "启动云服务器",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "停止我的 ECS",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "扩容云盘",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "创建磁盘快照",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看安全组规则",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "通过云助手执行命令",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "更换操作系统镜像",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P2"
+    }
+  ]
+}

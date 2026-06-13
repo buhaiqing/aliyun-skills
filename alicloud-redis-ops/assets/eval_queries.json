@@ -1,0 +1,29 @@
+{
+  "queries": [
+    {
+      "query": "创建 Redis 实例",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "清空 Redis 数据",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "查看 Redis 内存使用情况",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "修改 Redis 密码",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "Redis 备份恢复",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P1"
+    }
+  ]
+}

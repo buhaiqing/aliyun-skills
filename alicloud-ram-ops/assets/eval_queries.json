@@ -1,0 +1,29 @@
+{
+  "queries": [
+    {
+      "query": "创建 RAM 用户",
+      "expected_skill": "alicloud-ram-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建访问策略",
+      "expected_skill": "alicloud-ram-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "给用户授权",
+      "expected_skill": "alicloud-ram-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "创建 RAM 角色",
+      "expected_skill": "alicloud-ram-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "禁用 AccessKey",
+      "expected_skill": "alicloud-ram-ops",
+      "priority": "P1"
+    }
+  ]
+}

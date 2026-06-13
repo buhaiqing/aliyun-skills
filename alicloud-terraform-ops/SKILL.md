@@ -1,4 +1,11 @@
 ---
+name: alicloud-terraform-ops
+description: >-
+  Use when the user needs to manage Alibaba Cloud infrastructure using Terraform —
+  create, modify, and destroy resources through Infrastructure-as-Code. Supports
+  multi-environment management, remote state storage, NL2HCL (natural language to
+  HCL), and reverse engineering from existing resources.
+license: MIT
 triggers:
   - terraform
   - iac

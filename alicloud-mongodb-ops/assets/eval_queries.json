@@ -1,0 +1,19 @@
+{
+  "queries": [
+    {
+      "query": "创建 MongoDB 实例",
+      "expected_skill": "alicloud-mongodb-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "MongoDB 备份",
+      "expected_skill": "alicloud-mongodb-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "重置 MongoDB 密码",
+      "expected_skill": "alicloud-mongodb-ops",
+      "priority": "P1"
+    }
+  ]
+}

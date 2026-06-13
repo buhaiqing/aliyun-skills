@@ -1,1 +1,38 @@
-{}
+{
+  "name": "aliyun-skills",
+  "version": "2.0.0",
+  "description": "Alibaba Cloud operational Agent Skills — CLI-first with JIT Go SDK fallback",
+  "scripts": {
+    "lint": "markdownlint-cli2 'alicloud-*/SKILL.md'",
+    "lint:fix": "markdownlint-cli2-fix 'alicloud-*/SKILL.md'",
+    "test": "python -m unittest alicloud-gcl-runner-ops/scripts/gcl_runner_test.py -v",
+    "test:all": "make test",
+    "validate": "python scripts/validate_all_skills.py",
+    "validate:strict": "python scripts/validate_all_skills.py --strict",
+    "fmt": "ruff format . && find . -name '*.go' -exec gofmt -w {} \\;",
+    "clean": "python scripts/runtime_cleanup.py --apply",
+    "docker:dev": "docker compose --profile dev up -d",
+    "docker:test": "docker compose --profile test run --rm test",
+    "docker:build": "docker build --target runtime -t aliyun-skills:runtime . && docker build --target dev -t aliyun-skills:dev .",
+    "ci": "npm run lint && npm run test && npm run validate"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.17.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/aliyun-skills.git"
+  },
+  "keywords": [
+    "alibaba-cloud",
+    "aliyun",
+    "devops",
+    "agent-skills",
+    "cli",
+    "infrastructure-as-code"
+  ],
+  "license": "MIT"
+}

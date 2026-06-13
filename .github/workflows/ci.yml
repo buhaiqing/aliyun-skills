@@ -1,0 +1,124 @@
+name: Skill Quality Gate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ===========================================
+  # Job 1: Markdown Linting
+  # ===========================================
+  lint:
+    name: Lint SKILL.md Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2
+
+      - name: Run markdown lint
+        run: markdownlint-cli2 "alicloud-*/SKILL.md" || true
+
+  # ===========================================
+  # Job 2: GCL Runner Tests
+  # ===========================================
+  gcl-test:
+    name: GCL Runner Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run GCL runner tests
+        working-directory: alicloud-gcl-runner-ops/scripts
+        run: python -m unittest gcl_runner_test -v
+
+  # ===========================================
+  # Job 3: Skill Structure Validation
+  # ===========================================
+  structure-check:
+    name: Validate Skill Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Validate all skills
+        run: python scripts/validate_all_skills.py
+
+  # ===========================================
+  # Job 4: Python Code Quality
+  # ===========================================
+  python-quality:
+    name: Python Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check . || true
+
+      - name: Run ruff format check
+        run: ruff format --check . || true
+
+  # ===========================================
+  # Job 5: Docker Build Test
+  # ===========================================
+  docker-build:
+    name: Test Docker Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: runtime
+          push: false
+          tags: aliyun-skills:runtime-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build dev image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: dev
+          push: false
+          tags: aliyun-skills:dev-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
