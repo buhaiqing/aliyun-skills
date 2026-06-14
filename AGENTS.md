@@ -199,13 +199,14 @@ docker compose --profile interactive run interactive  # Interactive sandbox
 
 ## 10. Quality Gates
 
-Every Skill MUST pass these five quality gates:
+Every Skill MUST pass these six quality gates:
 
 1. **Clear Boundaries**: SHOULD/SHOULD NOT triggers with delegation rules; trigger description optimized per agentskills.io guidelines (< 1024 chars)
 2. **Structured I/O**: `{{env.*}}` (never ask user), `{{user.*}}` (ask once reuse), `{{output.*}}` (parse from API responses)
 3. **Explicit Steps**: Pre-flight → Execute → Validate → Recover for **each** critical operation
 4. **Failure Strategies**: Error taxonomy (≥10 product-specific codes), HALT vs retry logic, credential vs quota vs business error separation
 5. **Single Responsibility**: One product, one primary resource; cross-product delegation documented, not duplicated
+6. **CLI Format Verification**: All `aliyun` CLI commands MUST use verified parameter formats; RepeatList params require `.N` suffix, JSON arrays require `'["val"]'` format — see [§14 CLI Usage Protocol](#14-cli-usage-protocol-mandatory)
 
 Additionally, every skill MUST include a **Well-Architected Framework** table (five pillars: Security, Stability, Cost, Efficiency, Performance) and pass the **P0/P1 checklist** defined in `alicloud-skill-generator/SKILL.md`.
 
@@ -369,3 +370,70 @@ Per-skill `runtime_cleanup.py` scripts are Makefile implementation details — n
 1. Path under `.runtime/`, `audit-results/`, `*.tfstate`, `.terraform/` → **do not commit**
 2. Only `*.example` templates under committed `environments/` → OK
 3. User requests runtime commit → require explicit written confirmation
+
+---
+
+## 14. CLI Usage Protocol (MANDATORY)
+
+> **Rule**: Before executing ANY unfamiliar `aliyun` CLI command, the agent MUST verify parameter formats via `--help` or official documentation. **Never guess parameter formats.**
+
+### 14.1 The Problem
+
+Alibaba Cloud CLI has non-obvious parameter conventions:
+- **RepeatList parameters** require `.n` suffix: `--InstanceId.1 i-xxx` (not `--InstanceId i-xxx`)
+- **Array parameters** use JSON format: `--InstanceIds '["i-xxx"]'`
+- **Nested objects** use dot notation: `--Tag.1.Key=env --Tag.1.Value=prod`
+
+Guessing leads to: `MissingParam`, `InvalidParameter`, or silent failures.
+
+### 14.2 Mandatory Pre-Flight Check
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  CLI PRE-FLIGHT CHECKLIST (before first execution)             │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Is this command already documented in a loaded Skill?       │
+│     → YES: Use the documented command directly                  │
+│     → NO:  Proceed to step 2                                   │
+│                                                                 │
+│  2. Run `aliyun <product> <action> --help`                      │
+│     → Check Required parameters                                │
+│     → Check parameter types (RepeatList, JSON array, etc.)     │
+│     → Look for example commands                                │
+│                                                                 │
+│  3. Verify parameter format with a dry-run if possible         │
+│     → Use Describe/List operations first (read-only, safe)     │
+│                                                                 │
+│  4. Execute the command                                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 14.3 Common Parameter Patterns
+
+| Pattern | Wrong ❌ | Correct ✅ |
+|---------|---------|-----------|
+| Single instance ID | `--InstanceId i-xxx` | `--InstanceId.1 i-xxx` |
+| Multiple instance IDs | `--InstanceIds i-xxx,i-yyy` | `--InstanceIds '["i-xxx","i-yyy"]'` |
+| Tag key-value | `--Tag.Key=env --Tag.Value=prod` | `--Tag.1.Key=env --Tag.1.Value=prod` |
+| Security group list | `--SecurityGroupId sg-xxx` | `--SecurityGroupId.1 sg-xxx` |
+
+> **Full reference**: [docs/cli-usage-patterns.md](docs/cli-usage-patterns.md)
+
+### 14.4 Error Recovery Protocol
+
+When CLI returns parameter errors:
+
+```
+1. STOP — Do not retry with guessed parameters
+2. READ — Check the error message for parameter name hints
+3. HELP — Run `aliyun <product> <action> --help` to verify format
+4. FIX — Correct the parameter format based on documentation
+5. RETRY — Execute with verified parameters
+```
+
+### 14.5 Skill Authoring Requirement
+
+Every `alicloud-*-ops` skill MUST include a `references/cli-usage.md` file with:
+- **Verified command examples** (tested against real API)
+- **Parameter format notes** for non-obvious patterns
+- **Common error codes** and their fixes

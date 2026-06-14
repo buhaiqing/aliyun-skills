@@ -62,6 +62,7 @@ execution_time_estimate: "5-12 分钟"
 - 无明确异常窗口 -> 使用 `01-daily-health-check` 做主动扫描
 - 问题在应用代码层（非阿里云基础设施）-> 建议接入 ARMS APM
 - 只排查单个产品（如仅 RDS）-> `05-slow-query-diagnosis` 更合适
+- **仅 ECS 网络层问题（带宽、延迟、丢包）不涉及全链路** -> 直接使用 `alicloud-ecs-ops/references/network-troubleshooting-and-tuning.md`，无需跑全链路瓶颈定位
 
 ---
 
@@ -243,7 +244,7 @@ for LB_ID in $SLB_IDS; do
 done
 ```
 
-#### Step 2.3: 计算层（ECS）— CPU/内存/IOPS
+#### Step 2.3: 计算层（ECS）— CPU/内存/网络/IOPS
 
 ```bash
 echo ""
@@ -291,15 +292,39 @@ for INST_ID in $ECS_IDS; do
     --StartTime "$WINDOW_START" --EndTime "$WINDOW_END" \
     | jq '.Datapoints | fromjson | [.[].Maximum] | max // 0')
 
+  # 网络带宽（公网 + 内网）
+  NET_INTERNET_OUT=$(aliyun cms DescribeMetricList \
+    --Namespace acs_ecs_dashboard \
+    --MetricName InternetOutRate \
+    --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
+    --Period 60 \
+    --StartTime "$WINDOW_START" --EndTime "$WINDOW_END" \
+    | jq '.Datapoints | fromjson | [.[].Maximum] | max // 0')
+
+  NET_INTRANET_OUT=$(aliyun cms DescribeMetricList \
+    --Namespace acs_ecs_dashboard \
+    --MetricName IntranetOutRate \
+    --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
+    --Period 60 \
+    --StartTime "$WINDOW_START" --EndTime "$WINDOW_END" \
+    | jq '.Datapoints | fromjson | [.[].Maximum] | max // 0')
+
+  # 获取实例带宽上限（Mbps -> bps 统一比较）
+  INTERNET_BANDWIDTH=$(aliyun ecs DescribeInstances --RegionId "$REGION" \
+    --InstanceIds "[\"$INST_ID\"]" | jq -r '.Instances.Instance[0].InternetMaxBandwidthOut // 0')
+  # 内网基线需要查实例类型规格（简化：用 0.5 Gbps 作为通用 small 基线，实际应查 DescribeInstanceTypes）
+  # 这里用 CloudMonitor 原始值直接对比经验阈值
+
   INST_TYPE=$(aliyun ecs DescribeInstances --RegionId "$REGION" \
     --InstanceIds "[\"$INST_ID\"]" | jq -r '.Instances.Instance[0].InstanceType // "unknown"')
 
-  echo "  ECS $INST_ID ($INST_TYPE): CPU峰值=${CPU_PEAK}% 内存峰值=${MEM_PEAK}% IOPS=读${IO_READ_PEAK}/写${IO_WRITE_PEAK}"
+  echo "  ECS $INST_ID ($INST_TYPE): CPU=${CPU_PEAK}% 内存=${MEM_PEAK}% IOPS=读${IO_READ_PEAK}/写${IO_WRITE_PEAK} 公网出=${NET_INTERNET_OUT}bps 内网出=${NET_INTRANET_OUT}bps"
 
   # 判定
   HAS_CPU_ISSUE=false
   HAS_MEM_ISSUE=false
   HAS_IO_ISSUE=false
+  HAS_NET_ISSUE=false
 
   if [ "$(echo "$CPU_PEAK > 85" | bc -l 2>/dev/null)" = "1" ]; then
     ECS_BOTTLENECK="YES"; HAS_CPU_ISSUE=true
@@ -320,18 +345,43 @@ for INST_ID in $ECS_IDS; do
     ECS_HIGH_IOPS="$ECS_HIGH_IOPS $INST_ID(${TOTAL_IOPS})"
   fi
 
+  # 网络带宽判定（公网 Mbps -> bps: * 1000 * 1000）
+  INTERNET_BANDWIDTH_BPS=$(echo "$INTERNET_BANDWIDTH * 1000 * 1000" | bc)
+  if [ "$(echo "$NET_INTERNET_OUT > $INTERNET_BANDWIDTH_BPS * 0.8" | bc -l 2>/dev/null)" = "1" ]; then
+    ECS_BOTTLENECK="YES"; HAS_NET_ISSUE=true
+    ECS_HIGH_NET="$ECS_HIGH_NET $INST_ID(公网${NET_INTERNET_OUT}bps/${INTERNET_BANDWIDTH}Mbps)"
+    echo "  CRITICAL ECS $INST_ID 公网带宽打满 -> 计算层网络瓶颈!"
+  elif [ "$(echo "$NET_INTRANET_OUT > 700000000" | bc -l 2>/dev/null)" = "1" ]; then
+    # 700Mbps 作为通用 small 实例内网基线经验值，实际应查实例类型规格
+    ECS_BOTTLENECK="YES"; HAS_NET_ISSUE=true
+    ECS_HIGH_NET="$ECS_HIGH_NET $INST_ID(内网${NET_INTRANET_OUT}bps)"
+    echo "  CRITICAL ECS $INST_ID 内网带宽过高 -> 计算层网络瓶颈!"
+  fi
+
   # 异常 ECS -> 触发 CloudAssistant 内检测
   if [ "$HAS_CPU_ISSUE" = "true" ] || [ "$HAS_MEM_ISSUE" = "true" ]; then
     echo "  [WARN] ECS $INST_ID 异常 -> 启动 CloudAssistant 内检测"
 
     # [AUTO-QUIET] 只读诊断（白名单 W-01）
-    DIAG_SCRIPT='#!/bin/bash
-echo "=== TOP CPU ==="; ps aux --sort=-%cpu 2>/dev/null | head -8
-echo "=== TOP MEM ==="; ps aux --sort=-%mem 2>/dev/null | head -8
-echo "=== DISK ==="; df -h / 2>/dev/null
-echo "=== LOAD ==="; uptime 2>/dev/null
-echo "=== NET CONN ==="; ss -tan 2>/dev/null | awk "{print \$1}" | sort | uniq -c
-echo "=== DOCKER ==="; docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev/null || true'
+    # 若网络异常，追加网络层诊断命令（参考 alicloud-ecs-ops network-troubleshooting-and-tuning.md）
+    NET_DIAG=""
+    if [ "$HAS_NET_ISSUE" = "true" ]; then
+      NET_DIAG='echo "=== NET IFACE ==="; ip addr show eth0 2>/dev/null
+echo "=== NET ROUTE ==="; ip route 2>/dev/null
+echo "=== NET DEV COUNTERS ==="; cat /proc/net/dev | grep eth0 2>/dev/null
+echo "=== NET SOCKSTAT ==="; ss -s 2>/dev/null
+echo "=== NET TCP RETRANS ==="; cat /proc/net/snmp 2>/dev/null | grep Tcp | tail -1 | awk "{print \"retrans=\"\$12}"
+'
+    fi
+
+    DIAG_SCRIPT="#!/bin/bash
+echo \"=== TOP CPU ===\"; ps aux --sort=-%cpu 2>/dev/null | head -8
+echo \"=== TOP MEM ===\"; ps aux --sort=-%mem 2>/dev/null | head -8
+echo \"=== DISK ===\"; df -h / 2>/dev/null
+echo \"=== LOAD ===\"; uptime 2>/dev/null
+echo \"=== NET CONN ===\"; ss -tan 2>/dev/null | awk '{print \$1}' | sort | uniq -c
+echo \"=== DOCKER ===\"; docker ps --format 'table {{.Names}}\t{{.Status}}' 2>/dev/null || true
+$NET_DIAG"
 
     ENCODED_SCRIPT=$(echo "$DIAG_SCRIPT" | base64)
     CMD_ID=$(aliyun ecs RunCommand --RegionId "$REGION" \
@@ -529,10 +579,12 @@ done
 │   └── PASS -> 分发层瓶颈 -> 查后端 ECS / 升配 SLB
 │   └── FAIL -> 查下一层
 │
-├── ECS CPU > 85% OR 内存 > 90%?
+├── ECS CPU > 85% OR 内存 > 90% OR 网络带宽 > 80%?
 │   └── PASS -> 计算层瓶颈
 │   │   ├── CPU 高 + 内存正常 = CPU 密集型
 │   │   ├── 内存高 + CPU 正常 = 内存泄漏
+│   │   ├── 公网带宽高 = EIP/带宽瓶颈 -> 建议升配带宽或 CDN  offload
+│   │   ├── 内网带宽高 = 实例规格网络瓶颈 -> 建议升配实例类型或 RPC 压缩
 │   │   └── 双高 = 规格不够 -> 建议升配或拆分
 │   └── FAIL -> 查下一层
 │
@@ -571,7 +623,14 @@ elif [ "$SLB_BOTTLENECK" = "YES" ]; then
   BOTTLENECK_REASON="SLB 连接数过高或健康检查异常"
 elif [ "$ECS_BOTTLENECK" = "YES" ]; then
   BOTTLENECK_LAYER="计算层 (ECS)"
-  BOTTLENECK_REASON="ECS CPU/内存/IOPS 超限"
+  # 细化 ECS 瓶颈原因
+  if [ -n "${ECS_HIGH_NET:-}" ]; then
+    BOTTLENECK_REASON="ECS 网络带宽超限: $ECS_HIGH_NET"
+  elif [ -n "${ECS_HIGH_CPU:-}" ]; then
+    BOTTLENECK_REASON="ECS CPU/内存/IOPS 超限: CPU=$ECS_HIGH_CPU"
+  else
+    BOTTLENECK_REASON="ECS CPU/内存/IOPS 超限"
+  fi
 elif [ "$RDS_BOTTLENECK" = "YES" ]; then
   BOTTLENECK_LAYER="数据层 (RDS)"
   BOTTLENECK_REASON="RDS CPU 打满或慢查询堆积"
@@ -672,7 +731,7 @@ cat > "audit-results/bottleneck-${CUSTOMER}-$(date +%Y%m%d).json" << BTN_JSON
   "layer_status": {
     "eip": {"status": "${EIP_STATUS}", "in_pct": "${EIP_IN_PCT}", "out_pct": "${EIP_OUT_PCT}"},
     "slb": {"status": "${SLB_STATUS}", "active_conn": "${SLB_ACTIVE_CONN}", "unhealthy": "${SLB_UNHEALTHY}"},
-    "ecs": {"status": "${ECS_STATUS}", "high_cpu_instances": "${ECS_HIGH_CPU}", "high_mem_instances": "${ECS_HIGH_MEM}"},
+    "ecs": {"status": "${ECS_STATUS}", "high_cpu_instances": "${ECS_HIGH_CPU}", "high_mem_instances": "${ECS_HIGH_MEM}", "high_net_instances": "${ECS_HIGH_NET:-}"},
     "rds": {"status": "${RDS_STATUS}", "high_cpu": "${RDS_HIGH_CPU}", "slow_sql": "${RDS_SLOW_SQL}"},
     "redis": {"status": "${REDIS_STATUS}", "memory_pct": "${REDIS_MEM}", "evicted": "${REDIS_EVICTED}"},
     "nat": {"status": "${NAT_STATUS}", "snat": "${NAT_SNAT}", "drop": "${NAT_DROP}"}
@@ -694,6 +753,8 @@ echo "[RESULT] JSON报告已持久化到 audit-results/"
 | **SLB** | 健康检查失败 | — | > 0 | 请求路由到不健康后端 |
 | **ECS** | CPU 使用率 | > 70% | > 85% | 应用线程阻塞 |
 | **ECS** | 内存使用率 | > 80% | > 90% | OOM 风险 |
+| **ECS** | 公网带宽使用率 (`InternetOutRate` / `InternetMaxBandwidthOut`) | > 70% | > 90% | 出方向丢包、延迟增加 |
+| **ECS** | 内网带宽使用率 (`IntranetOutRate` / 实例类型基线) | > 70% | > 90% | 跨服务调用超时 |
 | **ECS** | 磁盘 IOPS/规格上限 | > 70% | > 85% | I/O 等待增加 |
 | **RDS** | CPU 使用率 | > 75% | > 85% | SQL 执行超时 |
 | **RDS** | 慢查询 | > 10/min | > 50/min | 请求堆积 |

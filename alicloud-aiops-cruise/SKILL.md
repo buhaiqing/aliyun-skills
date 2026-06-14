@@ -57,7 +57,8 @@ metadata:
 | DAS 数据库诊断 | `alicloud-das-ops` | 复用 `assets/code-snippets/` 的 Go 零件 |
 | CloudAssistant 内检测 | `alicloud-agentrun-ops` | 复用 RunCommand 交互模式 |
 | 拓扑发现 | `alicloud-topo-discovery` | 用户需纯拓扑图时引导至此 |
-| ECS 详细诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
+| ECS 详细诊断 | `alicloud-ecs-ops` | 引用 `references/network-troubleshooting-and-tuning.md` 进行网络带宽瓶颈排查、NIC 调优、sysctl 基线 |
+| ECS 计算/存储诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
 | SLB 详细诊断 | `alicloud-slb-ops` | 引用 Describe* 命令模式 |
 
 ## Perceive Layer — 感知 Agent

@@ -1056,7 +1056,18 @@ aliyun cms DescribeMetricList \
 
 - High CPU / memory may indicate the OS is unresponsive, not a network issue.
 
-#### Step 6: Escalation
+#### Step 6: Network Deep-Diagnosis (if metrics indicate network anomaly)
+
+If CloudMonitor shows `InternetOutRate`/`IntranetOutRate` at ceiling, `VPCPublicIPConnection` spikes, or latency is abnormal:
+
+1. **Cloud-side first:** Use VPC Flow Log and SLS access logs to identify top talkers (see [observability.md](references/observability.md)).
+2. **In-instance second:** Use Cloud Assistant to run the built-in diagnostic commands from [network-troubleshooting-and-tuning.md](references/network-troubleshooting-and-tuning.md).
+3. **Install tools on demand:** If built-ins are insufficient, use the OS-aware installation script from the network runbook to deploy `ethtool`, `tcpdump`, `mtr`, etc.
+4. **Generate report:** Use the standardized report template and decision strategy matrix in the network runbook to produce a structured diagnosis.
+
+> **Delegation rule:** If the issue is VPC routing, NAT Gateway, or SLB-only, delegate to `alicloud-vpc-ops` / `alicloud-slb-ops`.
+
+#### Step 7: Escalation
 
 If all above checks pass but connectivity still fails:
 - Collect `RequestId` from all API calls.
@@ -1410,7 +1421,7 @@ aliyun ecs DescribeCloudAssistantStatus \
 | **Stability** | Multi-AZ deployment + Auto Scaling + SLB. Tag instances (`Environment`, `Owner`, `Project`). Snapshot before destructive ops. **Scenario:** Instance down → check status/security group → restore from snapshot → validate connectivity. **RTO:** < 15 min single, < 1 min HA. **RPO:** < 4h (snapshot) |
 | **Cost** | Prepaid up to 85% off, Spot up to 90%. Waste: CPU < 10% AND I/O < 1MB/s for 7d → downsize. Snapshot without source disk → delete. Disk `Available` for 30d → delete. Memory < 50% for 14d → right-size |
 | **Efficiency** | `RunInstances` (batch) over serial `CreateInstance`. `SendFile`+`RunCommand` (Cloud Assistant) over SSH. Tag-based lifecycle. JSON output for pipelines |
-| **Performance** | CPU > 80% → scale up. Memory > 85% → scale up. InternalBandwidth > 70% → scale up. Disk > 90% → scale up. Use `cloud_essd` PL1+ for I/O-intensive. Monitor `InternalBandwidthRX`/`TX` for inter-zone bottlenecks |
+| **Performance** | CPU > 80% → scale up. Memory > 85% → scale up. Disk > 90% → scale up. Use `cloud_essd` PL1+ for I/O-intensive. **Network:** `InternetOutRate` > 70% → alert; > 90% → upgrade bandwidth or CDN offload. `IntranetOutRate` > 70% baseline → alert; > 90% → upgrade instance type or enable compression. Monitor `VPCPublicIPConnection` for connection leaks. See [network-troubleshooting-and-tuning.md](references/network-troubleshooting-and-tuning.md) for full bandwidth bottleneck runbook, NIC tuning, and sysctl baseline. |
 
 ## Prerequisites
 
@@ -1423,6 +1434,7 @@ aliyun ecs DescribeCloudAssistantStatus \
 - [CLI Usage](references/cli-usage.md)
 - [Troubleshooting Guide](references/troubleshooting.md)
 - [Monitoring & Alerts](references/monitoring.md)
+- [Network Troubleshooting & Tuning](references/network-troubleshooting-and-tuning.md) — **分层网络排查**（CloudMonitor → VPC Flow Log → 实例内置工具 → 可选深度工具），含安装脚本、故障模式、诊断报告模板、决策策略矩阵、单主机集成测试套件
 - [Integration](references/integration.md)
 - [Prompt Examples](references/prompt-examples.md) — 自然语言提示词示例，开箱即用
 - [Batch Operations](references/idle-resource-detection.md) — 批量并行操作模板
