@@ -1,0 +1,62 @@
+[
+  {
+    "query": "发送一条验证码短信到13800138000，使用阿里云签名",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["SendSms"],
+    "notes": "用户需要发送验证码，应触发SMS skill"
+  },
+  {
+    "query": "查询昨天所有短信的发送成功率",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["QuerySendStatistics"],
+    "notes": "用户需要查询发送统计，应触发SMS skill"
+  },
+  {
+    "query": "新增一个短信签名，签名源是验证码",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["AddSmsSign"],
+    "notes": "用户需要添加签名，应触发SMS skill"
+  },
+  {
+    "query": "短信模板审核不通过怎么办",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["QuerySmsTemplate"],
+    "notes": "用户需要排查模板审核问题，应触发SMS skill"
+  },
+  {
+    "query": "批量发送短信给多个手机号",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["SendBatchSms"],
+    "notes": "用户需要批量发送，应触发SMS skill"
+  },
+  {
+    "query": "短信发送失败，错误码是isv.BUSINESS_LIMIT_CONTROL",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["SendSms"],
+    "notes": "用户遇到限流错误，应触发SMS skill进行排查"
+  },
+  {
+    "query": "删除一个未使用的短信模板",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["DeleteSmsTemplate"],
+    "notes": "用户需要删除模板，应触发SMS skill"
+  },
+  {
+    "query": "查询某个手机号昨天的短信发送详情",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["QuerySendDetails"],
+    "notes": "用户需要查询发送详情，应触发SMS skill"
+  },
+  {
+    "query": "验证码没收到，帮我查一下",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["QuerySendDetails"],
+    "notes": "用户遇到验证码未收到问题，应触发SMS skill排查"
+  },
+  {
+    "query": "修改短信模板内容，增加变量",
+    "expected_skill": "alicloud-sms-ops",
+    "expected_operations": ["ModifySmsTemplate"],
+    "notes": "用户需要修改模板，应触发SMS skill"
+  }
+]

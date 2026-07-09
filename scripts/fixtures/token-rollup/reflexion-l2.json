@@ -1,0 +1,24 @@
+{
+  "cli_parameter": [
+    {
+      "category": "cli_parameter",
+      "skill": "alicloud-cms-ops",
+      "command": "aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard",
+      "error": "MissingParameter",
+      "fix": "Add required parameters; RepeatList params need `.N` suffix.",
+      "count": 4,
+      "last_seen": "2026-06-22T11:30:00Z"
+    }
+  ],
+  "max_iter": [
+    {
+      "category": "max_iter",
+      "skill": "alicloud-ecs-ops",
+      "operation": "DeleteInstance",
+      "failing_dimensions": "safety,correctness",
+      "fix": "Confirm destructive op with explicit resource id; review rubric Safety dimension.",
+      "count": 2,
+      "last_seen": "2026-06-22T12:30:00Z"
+    }
+  ]
+}

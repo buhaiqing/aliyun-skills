@@ -1,0 +1,19 @@
+{
+  "queries": [
+    {
+      "query": "查看数据库性能",
+      "expected_skill": "alicloud-das-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "分析慢 SQL",
+      "expected_skill": "alicloud-das-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "开启 SQL 审计",
+      "expected_skill": "alicloud-das-ops",
+      "priority": "P1"
+    }
+  ]
+}

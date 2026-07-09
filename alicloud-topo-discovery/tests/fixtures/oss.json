@@ -1,0 +1,9 @@
+{
+  "Name": "prod-data-lake",
+  "Location": "oss-cn-hangzhou",
+  "CreationDate": "2026-01-01T00:00:00.000Z",
+  "StorageClass": "Standard",
+  "ExtranetEndpoint": "oss-cn-hangzhou.aliyuncs.com",
+  "IntranetEndpoint": "oss-cn-hangzhou-internal.aliyuncs.com",
+  "ACL": "private"
+}

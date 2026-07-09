@@ -1,0 +1,65 @@
+[
+  {
+    "trigger": "帮我做一次架构评审",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "assess",
+    "description": "用户请求完整的架构评审"
+  },
+  {
+    "trigger": "检查一下当前环境的安全性",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "assess",
+    "params": { "pillars": "security" },
+    "description": "用户只要求安全性检查"
+  },
+  {
+    "trigger": "看看我当前云上是什么架构",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "assess",
+    "params": { "reverse_eng": true },
+    "description": "用户需要 Reverse Engineering"
+  },
+  {
+    "trigger": "帮我设计一个电商平台架构",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "recommend",
+    "params": { "scenario": "ecommerce" },
+    "description": "用户需要电商架构方案"
+  },
+  {
+    "trigger": "游戏服务器上云怎么搭",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "recommend",
+    "params": { "scenario": "gaming" },
+    "description": "用户需要游戏架构方案"
+  },
+  {
+    "trigger": "金融合规场景的高可用架构",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "recommend",
+    "params": { "scenario": "fintech", "ha": "multi-az" },
+    "description": "金融合规 + 高可用"
+  },
+  {
+    "trigger": "做一个SaaS平台，多租户怎么隔离",
+    "expected_skill": "alicloud-arch-advisor",
+    "mode": "recommend",
+    "params": { "scenario": "saas-multi-tenant" },
+    "description": "SaaS多租户架构"
+  },
+  {
+    "trigger": "创建一台ECS",
+    "expected_skill": "alicloud-ecs-ops",
+    "description": "不应该触发 arch-advisor"
+  },
+  {
+    "trigger": "查看本月账单",
+    "expected_skill": "alicloud-billing-ops",
+    "description": "不应该触发 arch-advisor"
+  },
+  {
+    "trigger": "做一次健康巡检",
+    "expected_skill": "alicloud-aiops-cruise",
+    "description": "不应该触发 arch-advisor"
+  }
+]

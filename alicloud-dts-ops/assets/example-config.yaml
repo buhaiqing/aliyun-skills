@@ -1,0 +1,68 @@
+# DTS Migration Configuration Example
+
+## Simple MySQL-to-RDS Migration
+
+This is a minimal configuration for migrating a self-managed MySQL database to RDS MySQL.
+
+```yaml
+# Minimal MySQL to RDS MySQL migration
+migration:
+  name: "migrate-mysql-to-rds"
+  source:
+    endpoint_type: "ECS"
+    region: "cn-hangzhou"
+    instance_id: "rm-xxxxx"           # RDS instance ID or ECS instance ID
+    engine: "mysql"
+    database: "mydb"
+    username: "dts_migrate_user"
+    password: "{{env.SOURCE_PASSWORD}}"   # NEVER hardcode
+    port: 3306
+  target:
+    endpoint_type: "RDS"
+    region: "cn-hangzhou"
+    instance_id: "rm-yyyyy"
+    engine: "mysql"
+    database: "mydb"
+    username: "dts_target_user"
+    password: "{{env.TARGET_PASSWORD}}"   # NEVER hardcode
+    port: 3306
+  settings:
+    data_initialization: true          # Full data migration
+    data_synchronization: true         # Incremental sync after full
+    structure_initialization: true     # Create tables on target
+    du_limit: 2                        # DTS Units
+  precheck:
+    required: true
+    wait_for_completion: true
+
+# Cross-region replication (RDS MySQL → RDS MySQL in different region)
+cross_region_sync:
+  name: "sync-rds-cross-region"
+  source:
+    endpoint_type: "RDS"
+    region: "cn-hangzhou"
+    instance_id: "rm-aaaaa"
+    engine: "mysql"
+  target:
+    endpoint_type: "RDS"
+    region: "cn-shanghai"
+    instance_id: "rm-bbbbb"
+    engine: "mysql"
+  settings:
+    data_initialization: true
+    data_synchronization: true
+    conflict_strategy: "OVERWRITE"     # OVERWRITE | IGNORE | REPORT
+
+# Change tracking subscription (CDC)
+change_tracking:
+  name: "subscribe-mysql-cdc"
+  source:
+    endpoint_type: "RDS"
+    region: "cn-hangzhou"
+    instance_id: "rm-ccccc"
+    engine: "mysql"
+  settings:
+    consumer_group:
+      name: "my-cdc-consumer"
+      username: "cdc_user"
+      password: "{{env.CONSUMER_PASSWORD}}"   # NEVER hardcode

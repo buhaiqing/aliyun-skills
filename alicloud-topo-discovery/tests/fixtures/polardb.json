@@ -1,0 +1,14 @@
+{
+  "DBClusterId": "pc-bp1aevb8sfi8mh1qj5th",
+  "DBClusterDescription": "prod-polardb",
+  "DBType": "MySQL",
+  "DBVersion": "8.0",
+  "DBNodeClass": "polar.mysql.x8.large",
+  "DBNodeStorage": 200,
+  "PayType": "PostPaid",
+  "DBClusterNetworkType": "VPC",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+  "CreateTime": "2026-02-20T08:00:00Z",
+  "DBClusterStatus": "Running"
+}

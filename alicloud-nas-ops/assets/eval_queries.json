@@ -1,0 +1,132 @@
+[
+  {
+    "query": "I need to create a new NAS file system for my web application",
+    "should_trigger": true
+  },
+  {
+    "query": "Mount a new NFS share on my ECS",
+    "should_trigger": true
+  },
+  {
+    "query": "List all file storage instances in cn-hangzhou",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a CPFS file system with 200 MB/s/TiB throughput for AI training",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up a permission group that only allows 10.0.0.0/8 to access my NAS",
+    "should_trigger": true
+  },
+  {
+    "query": "Take a snapshot of file system 31a8e42551a44ad496adf before I upgrade",
+    "should_trigger": true
+  },
+  {
+    "query": "Enable recycle bin on my General-purpose NAS with 30-day retention",
+    "should_trigger": true
+  },
+  {
+    "query": "Restore /var/data/mysql from the recycle bin",
+    "should_trigger": true
+  },
+  {
+    "query": "Add an auto-snapshot policy to take a snapshot every day at 3 AM and keep for 7 days",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a tier-down policy that moves /archive to IA after 30 days",
+    "should_trigger": true
+  },
+  {
+    "query": "I need an SMB file share with Active Directory integration",
+    "should_trigger": true
+  },
+  {
+    "query": "Activate NAS service in my account for cn-shanghai",
+    "should_trigger": true
+  },
+  {
+    "query": "Show me the latency and IOPS metrics for my Extreme NAS file system",
+    "should_trigger": true
+  },
+  {
+    "query": "Create an access point scoped to /var/log/app1 in my file system",
+    "should_trigger": true
+  },
+  {
+    "query": "Roll back file system 31a8e4xxxx to snapshot s-1234xxxx",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the file system and all its mount targets",
+    "should_trigger": true
+  },
+  {
+    "query": "List zones in cn-beijing that support CPFS",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a fileset for my checkpoint directory on CPFS",
+    "should_trigger": true
+  },
+  {
+    "query": "Tag my production NAS with env=prod and team=platform",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete an old file system that has been running for 2 years",
+    "should_trigger": true
+  },
+  {
+    "query": "Create an OSS bucket to store my static images",
+    "should_trigger": false,
+    "reason": "OSS is a different product (alicloud-oss-ops)"
+  },
+  {
+    "query": "Provision a 1 TB EBS disk for my database",
+    "should_trigger": false,
+    "reason": "EBS is part of alicloud-ecs-ops, not NAS"
+  },
+  {
+    "query": "Set up a VPC peering between my two VPCs",
+    "should_trigger": false,
+    "reason": "VPC is a different product (alicloud-vpc-ops); NAS uses VPC but is not the VPC skill"
+  },
+  {
+    "query": "Show me my monthly bill for NAS",
+    "should_trigger": false,
+    "reason": "Billing is owned by alicloud-billing-ops"
+  },
+  {
+    "query": "Grant a RAM user permission to read from my NAS",
+    "should_trigger": false,
+    "reason": "RAM policy authoring is owned by alicloud-ram-ops"
+  },
+  {
+    "query": "I need to use HDFS for a Hadoop cluster",
+    "should_trigger": false,
+    "reason": "HDFS is not NAS; use the data analytics skill"
+  },
+  {
+    "query": "Configure CDN to deliver content from my origin storage",
+    "should_trigger": false,
+    "reason": "CDN is a different product; NAS is not a CDN origin (use OSS + CDN)"
+  },
+  {
+    "query": "Restart my ECS instance",
+    "should_trigger": false,
+    "reason": "ECS operations are owned by alicloud-ecs-ops; this skill only handles NAS"
+  },
+  {
+    "query": "How do I analyze slow SQL queries in my MySQL database?",
+    "should_trigger": false,
+    "reason": "Slow SQL analysis is a database skill (alicloud-das-ops / alicloud-rds-ops)"
+  },
+  {
+    "query": "Set up an Elasticsearch cluster for log search",
+    "should_trigger": false,
+    "reason": "Elasticsearch is a different product (alicloud-elasticsearch-ops)"
+  }
+]

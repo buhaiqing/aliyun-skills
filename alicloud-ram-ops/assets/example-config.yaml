@@ -1,0 +1,35 @@
+# RAM config (replace {{user.*}} and {{env.*}} at runtime)
+x-cred: &cred
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+x-pass-policy: &pass-policy
+  minimum_password_length: 12
+  require_lowercase_characters: true
+  require_uppercase_characters: true
+  require_numbers: true
+  require_symbols: true
+  max_login_attempts: 5
+  password_reuse_prevention: 5
+  max_password_age: 90
+  hard_expiry: false
+
+credentials:
+  <<: *cred
+
+defaults:
+  region: "cn-hangzhou"
+  timeout_seconds: 30
+  retry_count: 3
+
+ram:
+  password_policy: *pass-policy
+  max_session_duration: 3600
+  default_trust_policy:
+    Version: "1"
+    Statement:
+      - Action: "sts:AssumeRole"
+        Effect: "Allow"
+        Principal:
+          RAM: ["acs:ram::{{user.account_id}}:root"]

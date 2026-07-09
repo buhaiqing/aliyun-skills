@@ -1,0 +1,22 @@
+[
+  {"query":"帮我创建一个云企业网并接入两个 VPC", "should_trigger":true},
+  {"query":"CEN 跨地域互通不通，帮我查路由", "should_trigger":true},
+  {"query":"aliyun cbn CreateTransitRouterVpcAttachment 怎么用", "should_trigger":true},
+  {"query":"转发路由器的路由传播配置检查一下", "should_trigger":true},
+  {"query":"Cloud Enterprise Network bandwidth package 需要扩容", "should_trigger":true},
+  {"query":"VBR 通过云企业网接入后健康检查失败", "should_trigger":true},
+  {"query":"创建杭州到上海的 transit router peer attachment", "should_trigger":true},
+  {"query":"DescribeRouteConflict 看一下 CEN 路由冲突", "should_trigger":true},
+  {"query":"删除 cen-xxx 之前帮我检查依赖", "should_trigger":true},
+  {"query":"CEN flow log 开启用于排查流量", "should_trigger":true},
+  {"query":"创建一个普通 VPC 和两个交换机", "should_trigger":false},
+  {"query":"给 ECS 绑定安全组规则", "should_trigger":false},
+  {"query":"RDS MySQL 连接慢帮我看慢 SQL", "should_trigger":false},
+  {"query":"申请一个 EIP 并绑定到 ECS", "should_trigger":false},
+  {"query":"创建 NAT 网关和 SNAT 条目", "should_trigger":false},
+  {"query":"帮我看阿里云账单为什么变高", "should_trigger":false},
+  {"query":"RAM 用户需要什么权限", "should_trigger":false},
+  {"query":"SLB 后端 502 怎么排查", "should_trigger":false},
+  {"query":"ACK 集群网络插件异常", "should_trigger":false},
+  {"query":"PolarDB 跨 VPC 访问怎么配白名单", "should_trigger":false}
+]

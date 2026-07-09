@@ -1,0 +1,260 @@
+# Bailian Example Configurations
+# Copy and modify for your use case
+
+# ═══════════════════════════════════════════════════════════════
+# Common Settings
+# ═══════════════════════════════════════════════════════════════
+x-common: &common
+  region: &region cn-hangzhou
+  # Environment variables required:
+  # - ALIBABA_CLOUD_ACCESS_KEY_ID
+  # - ALIBABA_CLOUD_ACCESS_KEY_SECRET
+  # - DASHSCOPE_API_KEY
+
+# ═══════════════════════════════════════════════════════════════
+# Model Configuration
+# ═══════════════════════════════════════════════════════════════
+model_selection:
+  fast: &model-fast
+    model_id: qwen-turbo
+    context_window: 8192
+    max_tokens: 2000
+    temperature: 0.7
+    
+  balanced: &model-balanced
+    model_id: qwen-plus
+    context_window: 32768
+    max_tokens: 4000
+    temperature: 0.7
+    
+  powerful: &model-powerful
+    model_id: qwen-max
+    context_window: 32768
+    max_tokens: 8000
+    temperature: 0.5
+    
+  embedding: &model-embedding
+    model_id: text-embedding-v2
+    dimensions: 1536
+
+# ═══════════════════════════════════════════════════════════════
+# Agent Configuration Examples
+# ═══════════════════════════════════════════════════════════════
+agents:
+  # Simple Q&A Agent
+  simple_qa:
+    <<: *common
+    name: simple-assistant
+    description: General purpose Q&A agent
+    model: *model-fast
+    instructions: |
+      You are a helpful assistant. Answer questions accurately and concisely.
+      If you don't know something, say so honestly.
+    tools: []
+    
+  # Customer Support Agent with RAG
+  support_with_kb:
+    <<: *common
+    name: customer-support
+    description: Customer support with knowledge base
+    model: *model-balanced
+    instructions: |
+      You are a customer support specialist. Use the knowledge base to answer
+      product questions accurately. Be polite and professional.
+      
+      Guidelines:
+      1. Search knowledge base before answering
+      2. Cite sources when providing information
+      3. Escalate complex issues to human agents
+      4. Always confirm the solution helped
+    knowledge_base_ids:
+      - kb-product-docs
+      - kb-faqs
+    tools:
+      - create_ticket
+      - escalate_to_human
+      
+  # Code Review Agent
+  code_reviewer:
+    <<: *common
+    name: code-reviewer
+    description: Automated code review assistant
+    model: *model-powerful
+    instructions: |
+      You are a senior software engineer conducting code reviews.
+      
+      Review criteria:
+      1. Bugs and logic errors
+      2. Security vulnerabilities (SQL injection, XSS, etc.)
+      3. Performance issues
+      4. Code style and best practices
+      5. Test coverage
+      
+      Format:
+      - Severity: [Critical/High/Medium/Low]
+      - Line: [line number]
+      - Issue: [description]
+      - Suggestion: [improved code]
+    tools:
+      - run_tests
+      - check_security
+
+# ═══════════════════════════════════════════════════════════════
+# Knowledge Base Configuration
+# ═══════════════════════════════════════════════════════════════
+knowledge_bases:
+  # General Documentation KB
+  product_docs:
+    <<: *common
+    name: product-documentation
+    description: Product documentation and user guides
+    embedding_model: text-embedding-v2
+    chunk_strategy:
+      type: fixed
+      chunk_size: 500
+      overlap_size: 50
+    sources:
+      - type: oss
+        bucket: docs-bucket
+        prefix: product/
+    
+  # Technical KB (Code docs)
+  technical_docs:
+    <<: *common
+    name: technical-reference
+    description: API documentation and technical specs
+    embedding_model: text-embedding-v2
+    chunk_strategy:
+      type: recursive
+      chunk_size: 1000
+      overlap_size: 100
+    sources:
+      - type: oss
+        bucket: tech-docs-bucket
+        prefix: api/
+    
+  # FAQ KB
+  faqs:
+    <<: *common
+    name: frequently-asked-questions
+    description: Customer FAQ database
+    embedding_model: text-embedding-v2
+    chunk_strategy:
+      type: semantic
+    sources:
+      - type: database
+        connection: faq-db
+        table: faqs
+
+# ═══════════════════════════════════════════════════════════════
+# Prompt Template Examples
+# ═══════════════════════════════════════════════════════════════
+prompt_templates:
+  # Simple greeting
+  greeting:
+    name: greeting
+    model: qwen-turbo
+    content: |
+      Hello {{customer_name}}! Welcome to {{company_name}}.
+      How can I assist you today?
+    variables:
+      - customer_name
+      - company_name
+      
+  # Classifier
+  intent_classifier:
+    name: intent-classifier
+    model: qwen-turbo
+    content: |
+      Classify the user's intent into one of these categories:
+      - ORDER: Questions about orders, shipping, returns
+      - TECHNICAL: Technical issues, bugs, errors
+      - BILLING: Payment, invoices, refunds
+      - GENERAL: General inquiries, feedback
+      
+      User message: {{message}}
+      
+      Intent (just the category name):
+    variables:
+      - message
+      
+  # Data extractor
+  entity_extractor:
+    name: entity-extractor
+    model: qwen-plus
+    content: |
+      Extract entities from the text and return as JSON.
+      
+      Text: {{text}}
+      
+      Entities to extract:
+      - dates (ISO 8601 format)
+      - amounts (with currency)
+      - names (person or organization)
+      - locations
+      
+      Return valid JSON only:
+      {"dates": [], "amounts": [], "names": [], "locations": []}
+    variables:
+      - text
+    response_format: json
+
+# ═══════════════════════════════════════════════════════════════
+# Fine-tuning Configuration
+# ═══════════════════════════════════════════════════════════════
+fine_tuning:
+  domain_model:
+    <<: *common
+    base_model: qwen-turbo
+    output_model_name: my-domain-model-v1
+    training_data:
+      source: oss://training-bucket/domain-data.jsonl
+      format: conversations
+    validation_data:
+      source: oss://training-bucket/validation.jsonl
+    hyperparameters:
+      epochs: 3
+      learning_rate: 0.0001
+      batch_size: 4
+      warmup_steps: 100
+    early_stopping:
+      patience: 2
+      metric: validation_loss
+
+# ═══════════════════════════════════════════════════════════════
+# Monitoring Configuration
+# ═══════════════════════════════════════════════════════════════
+monitoring:
+  alerts:
+    high_error_rate:
+      metric: ErrorRate
+      threshold: 0.05
+      duration: 5m
+      severity: critical
+      
+    high_latency:
+      metric: InferenceLatency
+      percentile: p99
+      threshold: 3000
+      duration: 10m
+      severity: warning
+      
+    quota_exhaustion:
+      metric: QuotaUsage
+      threshold: 0.8
+      severity: warning
+      
+  dashboards:
+    overview:
+      metrics:
+        - RequestRate
+        - TokenInputRate
+        - TokenOutputRate
+        - ErrorRate
+        - InferenceLatency
+        
+    cost:
+      metrics:
+        - DailyTokenCost
+        - CostByModel
+        - CostByAgent

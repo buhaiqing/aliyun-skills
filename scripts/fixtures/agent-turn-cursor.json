@@ -1,0 +1,9 @@
+{
+  "turn_id": "turn-fixture-cursor-1",
+  "coding_agent": "cursor",
+  "model": "claude-sonnet-4",
+  "prompt_tokens": 12000,
+  "completion_tokens": 800,
+  "total_tokens": 12800,
+  "context_metadata": {}
+}

@@ -1,0 +1,22 @@
+[
+  { "query": "Generate a skill for Alibaba Cloud ECS instances", "should_trigger": true },
+  { "query": "生成阿里云 RDS 的运维技能", "should_trigger": true },
+  { "query": "I need a new alicloud-redis-ops skill from OpenAPI spec", "should_trigger": true },
+  { "query": "Add an ops skill for SLB in this repo: listeners, backends, health checks", "should_trigger": true },
+  { "query": "Create alicloud-vpc-ops for VPC, VSwitch, NAT Gateway management", "should_trigger": true },
+  { "query": "Scaffold a skill for ACK cluster lifecycle, the docs are at help.aliyun.com/zh/cs", "should_trigger": true },
+  { "query": "Regenerate the ECS skill — OpenAPI changed and we have gaps in the current version", "should_trigger": true },
+  { "query": "The RDS skill is missing backup operations, please realign from latest API docs", "should_trigger": true },
+  { "query": "Fix the generated skill description — it triggers too broadly on billing queries", "should_trigger": true },
+  { "query": "Add a new product skill template for OSS with dual-path execution", "should_trigger": true },
+  { "query": "Create an ECS instance in cn-hangzhou with 4 cores and 8GB memory", "should_trigger": false },
+  { "query": "How much does my Alibaba Cloud account cost this month?", "should_trigger": false },
+  { "query": "My RDS instance is showing high CPU, help me investigate", "should_trigger": false },
+  { "query": "List all running Redis instances in production", "should_trigger": false },
+  { "query": "Add a RAM policy allowing read-only access to ECS", "should_trigger": false },
+  { "query": "Set up CloudMonitor alert for SLB 5xx errors above 5%", "should_trigger": false },
+  { "query": "What's the best practice for Alibaba Cloud VPC design?", "should_trigger": false },
+  { "query": "Delete the ECS instance i-bp1abc123def456", "should_trigger": false },
+  { "query": "Configure auto-scaling for my ACK cluster based on CPU utilization", "should_trigger": false },
+  { "query": "Run a database slow query analysis on my PolarDB instance", "should_trigger": false }
+]

@@ -1,0 +1,24 @@
+{
+  "queries": [
+    {
+      "query": "创建 NAT 网关",
+      "expected_skill": "alicloud-nat-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "配置 SNAT 规则",
+      "expected_skill": "alicloud-nat-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "配置 DNAT 规则",
+      "expected_skill": "alicloud-nat-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 NAT 网关监控",
+      "expected_skill": "alicloud-nat-ops",
+      "priority": "P1"
+    }
+  ]
+}

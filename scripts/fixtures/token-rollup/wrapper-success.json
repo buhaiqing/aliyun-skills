@@ -1,0 +1,45 @@
+{
+  "trace_id": "trace-fixture-wrapper-1",
+  "session_id": "sess-token-rollup-1",
+  "skill": "alicloud-ecs-ops",
+  "coding_agent": "cursor",
+  "product": "ecs",
+  "action": "DescribeInstances",
+  "status": "success",
+  "start_time": "2026-06-22T10:00:00+0000",
+  "end_time": "2026-06-22T10:00:05+0000",
+  "llm_usage": {
+    "prompt_tokens": 800,
+    "completion_tokens": 200,
+    "total_tokens": 1000
+  },
+  "llm_generations": [
+    {
+      "role": "agent_turn",
+      "coding_agent": "cursor",
+      "model": "claude-sonnet-4",
+      "prompt_tokens": 500,
+      "completion_tokens": 100,
+      "total_tokens": 600,
+      "source": "agent_turn"
+    },
+    {
+      "role": "harness_llm",
+      "coding_agent": "cursor",
+      "model": "gpt-4o-mini",
+      "prompt_tokens": 300,
+      "completion_tokens": 100,
+      "total_tokens": 400,
+      "source": "harness_llm"
+    }
+  ],
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["user-context7/search", "user-context7/fetch"],
+      "mcp_tools_invoked": ["user-context7/search"],
+      "mcp_tool_utilization": 0.5,
+      "mcp_schema_waste_tokens": 120,
+      "attribution_confidence": "mixed"
+    }
+  }
+}

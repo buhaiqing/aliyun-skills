@@ -1,0 +1,42 @@
+# 电商大促弹性保障策略
+# 适用: 双11 / 618 / 秒杀活动 / 直播带货
+
+policy:
+  name: "e-commerce-event-scaling"
+  description: "大促活动弹性保障，提前扩容 + 活动期实时监控 + 结束后渐缩"
+  scenario: "event"  # S5
+
+  scaling_group:
+    min_size: 2
+    max_size: 30
+
+  event:
+    start_time: "2026-06-18T00:00:00+08:00"
+    end_time: "2026-06-18T23:59:59+08:00"
+    pre_warm_hours: 2  # 提前 2h 扩容
+    post_cooldown_hours: 2  # 结束后 2h 开始缩容
+
+    # 容量计算
+    capacity:
+      baseline_desired: 5        # 平时基准
+      event_desired: 20          # 活动期期望
+      max_capacity_temp: 30      # 临时 MaxSize
+      safety_factor: 1.5         # 安全系数
+
+    # 渐缩策略
+    scale_down:
+      mode: "gradual"           # gradual 或 immediate
+      steps: 5                  # 分 5 步缩回
+      step_interval_minutes: 30
+      final_desired: 5
+
+    # 活动期专用告警 (更灵敏)
+    monitoring:
+      cpu_threshold: 60         # 平时 70，活动期降至 60
+      cpu_evaluation_count: 1   # 平时 2，活动期降至 1（更快响应）
+      memory_threshold: 70
+      alert_interval: 60        # 告警通知间隔（秒）
+
+  cleanup:
+    restore_max_size: true      # 活动后恢复 MaxSize
+    cleanup_scheduled_tasks: true  # 清理临时定时任务

@@ -1,0 +1,34 @@
+{
+  "queries": [
+    {
+      "query": "创建 RDS MySQL 实例",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "备份数据库",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建数据库账号",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "修改数据库配置参数",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看慢 SQL",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "扩容数据库磁盘",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    }
+  ]
+}

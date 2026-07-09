@@ -1,0 +1,265 @@
+{
+  "version": "2.0.0",
+  "review_type": "weekly",
+  "generated_at": "2026-06-21T13:37:36.624536Z",
+  "since_days": 7,
+  "git_signals_summary": {
+    "commit_count": 34,
+    "bugfix_count": 3,
+    "hot_skills": [],
+    "theme_clusters": {
+      "skillopt": 1,
+      "rubric": 2,
+      "general": 1
+    }
+  },
+  "runtime_signals_summary": {
+    "parsed_from": "docs/failure-patterns.md",
+    "pattern_count": 2,
+    "high_frequency_count": 0,
+    "reflexion_json_used": false
+  },
+  "skill_trends": {
+    "alicloud-vpc-ops": {
+      "total": 5,
+      "pass": 5,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-rds-ops": {
+      "total": 4,
+      "pass": 4,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-elasticsearch-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-mongodb-ops": {
+      "total": 3,
+      "pass": 3,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-cms-ops": {
+      "total": 34,
+      "pass": 30,
+      "fail": 4,
+      "failure_rate": 0.1176,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0588,
+      "confidence": "high"
+    },
+    "alicloud-agentrun-ops": {
+      "total": 2,
+      "pass": 0,
+      "fail": 2,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-polar-postgresql-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-advisor-ops": {
+      "total": 44,
+      "pass": 18,
+      "fail": 26,
+      "failure_rate": 0.5909,
+      "avg_iterations": 0.0,
+      "risk_score": 0.2955,
+      "confidence": "high"
+    },
+    "alicloud-ecs-ops": {
+      "total": 87,
+      "pass": 48,
+      "fail": 39,
+      "failure_rate": 0.4483,
+      "avg_iterations": 1.0,
+      "risk_score": 0.2641,
+      "confidence": "high"
+    },
+    "alicloud-gcl-runner-ops": {
+      "total": 5,
+      "pass": 0,
+      "fail": 5,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-terraform-ops": {
+      "total": 2,
+      "pass": 0,
+      "fail": 2,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-redis-ops": {
+      "total": 6,
+      "pass": 6,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-oss-ops": {
+      "total": 5,
+      "pass": 5,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-sms-ops": {
+      "total": 1,
+      "pass": 1,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-slb-ops": {
+      "total": 46,
+      "pass": 45,
+      "fail": 1,
+      "failure_rate": 0.0217,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0109,
+      "confidence": "high"
+    },
+    "alicloud-polar-mysql-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    }
+  },
+  "memory_available": true,
+  "memory_source": "memory_scan",
+  "high_frequency_patterns": [],
+  "actionable_items": [
+    {
+      "id": "A1-alicloud-cms-ops",
+      "severity": "high",
+      "type": "failure_rate_worsening",
+      "skill": "alicloud-cms-ops",
+      "failure_rate": 0.1176,
+      "delta": 0.1176,
+      "reason": "alicloud-cms-ops failure_rate rose 11.8% vs baseline",
+      "actions": [
+        "Inspect Layer 1 memory for alicloud-cms-ops",
+        "Check failure-patterns.md for new recurring errors"
+      ]
+    },
+    {
+      "id": "A1-alicloud-advisor-ops",
+      "severity": "high",
+      "type": "failure_rate_worsening",
+      "skill": "alicloud-advisor-ops",
+      "failure_rate": 0.5909,
+      "delta": 0.5909,
+      "reason": "alicloud-advisor-ops failure_rate rose 59.1% vs baseline",
+      "actions": [
+        "Inspect Layer 1 memory for alicloud-advisor-ops",
+        "Check failure-patterns.md for new recurring errors"
+      ]
+    },
+    {
+      "id": "A1-alicloud-ecs-ops",
+      "severity": "high",
+      "type": "failure_rate_worsening",
+      "skill": "alicloud-ecs-ops",
+      "failure_rate": 0.4483,
+      "delta": 0.4483,
+      "reason": "alicloud-ecs-ops failure_rate rose 44.8% vs baseline",
+      "actions": [
+        "Inspect Layer 1 memory for alicloud-ecs-ops",
+        "Check failure-patterns.md for new recurring errors"
+      ]
+    }
+  ],
+  "rule_proposals": [
+    {
+      "confidence": "medium",
+      "suggested_action": "Inspect Layer 1 memory for alicloud-cms-ops; Check failure-patterns.md for new recurring errors",
+      "rationale": "alicloud-cms-ops failure_rate rose 11.8% vs baseline",
+      "target_skill": "alicloud-cms-ops",
+      "id": "prop-heuristic-001",
+      "proposal_type": "failure_rate_worsening",
+      "evidence_refs": [
+        "actionable:A1-alicloud-cms-ops"
+      ],
+      "target_file": "references/cli-usage.md",
+      "title": "Address: alicloud-cms-ops failure_rate rose 11.8% vs baseline"
+    },
+    {
+      "confidence": "medium",
+      "suggested_action": "Inspect Layer 1 memory for alicloud-advisor-ops; Check failure-patterns.md for new recurring errors",
+      "rationale": "alicloud-advisor-ops failure_rate rose 59.1% vs baseline",
+      "target_skill": "alicloud-advisor-ops",
+      "id": "prop-heuristic-002",
+      "proposal_type": "failure_rate_worsening",
+      "evidence_refs": [
+        "actionable:A1-alicloud-advisor-ops"
+      ],
+      "target_file": "references/cli-usage.md",
+      "title": "Address: alicloud-advisor-ops failure_rate rose 59.1% vs baseline"
+    },
+    {
+      "confidence": "medium",
+      "suggested_action": "Inspect Layer 1 memory for alicloud-ecs-ops; Check failure-patterns.md for new recurring errors",
+      "rationale": "alicloud-ecs-ops failure_rate rose 44.8% vs baseline",
+      "target_skill": "alicloud-ecs-ops",
+      "id": "prop-heuristic-003",
+      "proposal_type": "failure_rate_worsening",
+      "evidence_refs": [
+        "actionable:A1-alicloud-ecs-ops"
+      ],
+      "target_file": "references/cli-usage.md",
+      "title": "Address: alicloud-ecs-ops failure_rate rose 44.8% vs baseline"
+    }
+  ],
+  "notification": {
+    "channel": "github",
+    "issue_created": false,
+    "reason": "pending_github_notify"
+  },
+  "write_authority": "local_maintainer",
+  "baseline_write": "allowed",
+  "history_meta": {
+    "weeks_loaded": 1,
+    "max_weeks": 12,
+    "min_weeks_for_multiweek": 3
+  }
+}

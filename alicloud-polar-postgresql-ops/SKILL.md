@@ -1,0 +1,468 @@
+---
+name: alicloud-polar-postgresql-ops
+description: >-
+  Use when the user needs to deploy, configure, troubleshoot, or monitor Alibaba Cloud PolarDB for PostgreSQL clusters (云原生数据库PolarDB PostgreSQL版) — cluster lifecycle, account management, database management, backup restoration, performance monitoring, serverless scaling, and GDN. User mentions PolarDB PostgreSQL, PolarDB PG, PolarDB for PostgreSQL, 云原生数据库PostgreSQL版, or describes cluster-specific scenarios (creation, scaling, endpoint configuration, serverless, read/write splitting) even without explicit naming. CLI: `aliyun polardb`, SDK: polardb-2022-05-30. NOT for RDS PostgreSQL, PolarDB MySQL, PolarDB Oracle-compatible (IO), Redis/Tair, MongoDB, or billing/RAM-only tasks.
+license: MIT
+compatibility: >-
+  Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime
+  (for JIT SDK fallback), valid API credentials, network access to Alibaba Cloud
+  endpoints.
+metadata:
+  author: alicloud
+  version: "1.6.0"
+  last_updated: "2026-06-04"
+  runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
+  go_version_minimum: "1.21"
+  go_version_jit: "1.24+"
+  api_profile: "PolarDB 2022-05-30 / https://help.aliyun.com/zh/polardb/polardb-for-postgresql/"
+  cli_applicability: dual-path
+  cli_support_evidence: "Confirmed via `aliyun help polardb` — PolarDB PostgreSQL is supported by the official aliyun CLI."
+  environment:
+    - ALIBABA_CLOUD_ACCESS_KEY_ID
+    - ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    - ALIBABA_CLOUD_REGION_ID
+---
+
+> This skill follows the [Agent Skill OpenSpec](https://agentskills.io/specification).
+
+# Alibaba Cloud PolarDB for PostgreSQL Operations Skill
+
+## Runtime Rules
+
+| Area | Rule | Reference |
+| --- | --- | --- |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/polar-postgresql-skillopt-wrapper.sh` for all Polar-PostgreSQL CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun polar-postgresql` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+
+
+> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/polar-postgresql-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun polardb ...` 命令在执行时应替换为 `./scripts/polar-postgresql-skillopt-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun polardb` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。
+## Overview
+
+PolarDB for PostgreSQL is Alibaba Cloud's cloud-native relational database, PostgreSQL-compatible,
+featuring compute-storage separation, serverless scaling, and global database networks
+(GDN). This skill is an **operational runbook** for agents: explicit scope, credential
+rules, pre-flight checks, **dual-path execution** (official **SDK/API** and **CLI** flows),
+response validation, and failure recovery.
+
+### CLI applicability (repository policy)
+
+- **`cli_applicability: dual-path`:** Official `aliyun` fully supports PolarDB PostgreSQL
+  via the `polardb` product slug with `DBType=PostgreSQL`. Each execution flow documents **both** the SDK step
+  and the `aliyun` step for every operation.
+
+## Five Core Standards (Quality Gates)
+
+| # | Standard | How This Skill Fulfills It |
+|---|----------|---------------------------|
+| 1 | **Clear Boundaries** | SHOULD/SHOULD NOT Use conditions with precise triggers and delegation rules |
+| 2 | **Structured I/O** | Placeholders (`{{env.*}}`, `{{user.*}}`, `{{output.*}}`) with type and source |
+| 3 | **Explicit Actionable Steps** | Every operation: Pre-flight → Execute → Validate → Recover |
+| 4 | **Complete Failure Strategies** | Error taxonomy with ≥ 10 product-specific codes; HALT vs retry |
+| 5 | **Absolute Single Responsibility** | PolarDB PostgreSQL clusters only; delegates other products |
+
+## Trigger & Scope (Agent-Readable)
+
+### SHOULD Use This Skill When
+
+- User mentions "PolarDB PostgreSQL" OR "PolarDB PG" OR "PolarDB for PostgreSQL" OR "云原生数据库PolarDB PostgreSQL版"
+  OR "PolarDB集群" with PostgreSQL context
+- Task keywords: 集群 (cluster), 节点 (node), 读写分离 (read/write split), 弹性
+  (elastic), Serverless, 全局数据库 (GDN), endpoint, DBNode, DBEndpoint
+- Task involves CRUD or lifecycle on **PolarDB DBClusters** (create, describe, modify,
+  delete, start, stop, pause, resume, upgrade) with PostgreSQL engine
+- Task involves **cluster nodes** (add, remove, restart DBNodes)
+- Task involves **cluster endpoints** (create, modify, release, configure RW splitting)
+- Task involves **accounts** (create privileged/ordinary accounts, grant privileges)
+- Task involves **databases** (create, delete databases within cluster)
+- Task involves **backups** (create, describe, restore, configure backup policy)
+- Task involves **performance monitoring** (CPU, memory, IOPS, connections, TPS/QPS)
+- Task involves **security** (whitelist, SSL, TDE, data masking)
+- Task involves **serverless** scaling (configure serverless, monitor RCUs)
+- Task involves **SQL execution** on PolarDB cluster (run SQL, execute .sql file, query slow logs)
+- User asks to "巡检", "health check", or diagnose a PolarDB PostgreSQL cluster
+- User asks to "执行 SQL", "跑 SQL 文件", "导入数据" on PolarDB cluster
+- User asks to "查询慢 SQL 统计" on PolarDB cluster (统计数据，不含诊断优化)
+- User asks to "预测存储", "容量预测", "存储趋势" on PolarDB cluster
+- User asks to "预测连接数", "连接趋势", "高峰预警" on PolarDB cluster
+- User asks to "异常检测", "根因分析", "CPU突增" on PolarDB cluster
+- User mentions "AIOps", "智能运维", "预测分析" with PolarDB PostgreSQL context
+
+> **⚠️ 与 DAS skill 边界说明：**
+> - **本 Skill 负责**：SQL 执行（ExecuteSQL/ExecuteSQLFile）、慢日志统计查询（DescribeSlowLogRecords）
+> - **DAS Skill 负责**：慢 SQL **诊断优化**、SQL 性能分析、锁分析、自动 SQL 限流
+> - 边界关键词："执行 SQL" → PolarDB；"优化 SQL"、"诊断慢 SQL" → DAS
+
+### SHOULD NOT Use This Skill When
+
+- Task is purely billing / account management → delegate to billing skill
+- Task is RAM / permission model only → delegate to: `alicloud-ram-ops`
+- Task is about **RDS PostgreSQL** → delegate to: `alicloud-rds-postgresql-ops`
+- Task is about **PolarDB MySQL** → delegate to: `alicloud-polar-mysql-ops`
+- Task is about **PolarDB Oracle-compatible (O)** → delegate to: `alicloud-polar-oracle-ops`
+- Task is about **Redis / Tair** → delegate to: `alicloud-redis-ops`
+- Task requires **DAS diagnosis** (SQL throttling, auto-scaling, deadlock analysis)
+  → delegate to: `alicloud-das-ops`
+- User insists on **console-only** flows with no API
+
+## Delegation Rules
+
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+
+## Variable Convention (Agent-Readable)
+
+| Placeholder | Meaning | Agent Action |
+|-------------|---------|--------------|
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` | From runtime environment | NEVER ask the user |
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` | From runtime environment | NEVER ask the user |
+| `{{env.ALIBABA_CLOUD_REGION_ID}}` | From runtime environment | Documented default if allowed |
+| `{{user.region}}` | User-supplied region | Ask once; reuse |
+| `{{user.db_cluster_id}}` | DBCluster ID | Ask once; reuse |
+| `{{user.db_cluster_name}}` | Cluster description | Ask once; reuse |
+| `{{user.engine_version}}` | PostgreSQL version (11/12/13/14/15) | Ask once; default 14 |
+| `{{user.db_node_class}}` | Node specification | Ask once; reuse |
+| `{{user.vpc_id}}` | VPC ID | Ask once; reuse |
+| `{{user.vswitch_id}}` | VSwitch ID | Ask once; reuse |
+| `{{user.account_name}}` | Account name | Ask once; reuse |
+| `{{user.account_password}}` | Account password | Ask once |
+| `{{user.db_name}}` | Database name | Ask once; reuse |
+| `{{output.db_cluster_id}}` | From API/CLI response | Parse per OpenAPI |
+| `{{output.request_id}}` | From API response | For correlation |
+
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
+
+## API and Response Conventions (Agent-Readable)
+
+- **OpenAPI is canonical** for all paths, fields, enums, and response shapes.
+- **ClientToken:** Generate UUID v4 for write operations for idempotency.
+- **Timestamps:** ISO 8601 format.
+
+### Response Field Table
+
+| Operation | JSON Path | Type | Description |
+|-----------|-----------|------|-------------|
+| CreateDBCluster | `$.DBClusterId` | string | New cluster ID |
+| DescribeDBClusters | `$.Items.DBCluster[].DBClusterId` | array | Cluster IDs |
+| DescribeDBClusters | `$.Items.DBCluster[].DBClusterStatus` | string | Cluster status |
+| DescribeDBClusters | `$.Items.DBCluster[].DBType` | string | PostgreSQL |
+| DescribeDBClusters | `$.Items.DBCluster[].DBVersion` | string | Engine version |
+| DescribeDBClusters | `$.Items.DBCluster[].DBClusterClass` | string | Cluster class |
+| DescribeDBClusters | `$.Items.DBCluster[].PayType` | string | Postpaid / Prepaid |
+| DescribeDBClusters | `$.Items.DBCluster[].RegionId` | string | Region ID |
+| DescribeDBClusters | `$.Items.DBCluster[].VPCId` | string | VPC ID |
+| DescribeDBClusters | `$.Items.DBCluster[].StorageUsed` | string | Storage used (bytes) |
+| DescribeDBClusterAttribute | `$.DBClusterDescription` | string | Cluster description |
+| CreateAccount | `$.RequestId` | string | Request ID |
+| DescribeAccounts | `$.Accounts.Account[].AccountName` | array | Account names |
+| DescribeAccounts | `$.Accounts.Account[].AccountPrivilege` | string | Account privilege |
+| CreateDatabase | `$.RequestId` | string | Request ID |
+| DescribeDatabases | `$.Databases.Database[].DBName` | array | Database names |
+| DescribeBackups | `$.Items.Backup[].BackupId` | array | Backup IDs |
+| DescribeBackupPolicy | `$.PreferredBackupTime` | string | Backup window |
+| DescribeBackupPolicy | `$.PreferredBackupPeriod` | string | Backup days |
+| CreateBackup | `$.BackupJobId` | string | Backup job ID |
+
+### Expected State Transitions
+
+| Operation | Initial State | Target State | Poll Interval | Max Wait |
+|-----------|---------------|--------------|---------------|----------|
+| CreateDBCluster | — | `Running` | 10s | 600s |
+| StartDBCluster | `Paused` / `Stopped` | `Running` | 10s | 300s |
+| StopDBCluster | `Running` | `Stopped` | 10s | 300s |
+| PauseDBCluster | `Running` | `Paused` | 10s | 300s |
+| ResumeDBCluster | `Paused` | `Running` | 10s | 300s |
+| DeleteDBCluster | any stable | absent | 10s | 300s |
+| CreateAccount | — | `Available` | 5s | 120s |
+| AddDBNodes | `Running` | `Running` (with new nodes) | 10s | 600s |
+| UpgradeDBCluster | `Running` | `Running` | 10s | 600s |
+
+## Quick Start
+
+## Prerequisites
+
+见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
+
+### First Command
+```bash
+# List all PolarDB PostgreSQL clusters in region
+aliyun polardb DescribeDBClusters --DBType PostgreSQL --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
+```
+
+### Capabilities at a Glance
+
+| Operation | Description | Risk | Reference |
+|-----------|-------------|------|-----------|
+| Create Cluster | Create new PostgreSQL cluster | High | [CLI Usage](references/cli-usage.md#create-db-cluster) |
+| Describe Clusters | List all clusters | Low | [CLI Usage](references/cli-usage.md#describe-db-clusters) |
+| Create Account | Create database account | Medium | [CLI Usage](references/cli-usage.md#create-account) |
+| Execute SQL | Run SQL on cluster | High | [SQL Execution](references/advanced/sql-execution.md) |
+| Storage Prediction | Predict storage growth | Low | [AIOps Storage](references/advanced/aiops-storage-prediction.md) |
+| Connection Prediction | Predict connection peaks | Low | [AIOps Connection](references/advanced/aiops-connection-prediction.md) |
+| Anomaly Detection | Detect 12 anomaly patterns | Low | [AIOps Anomaly](references/advanced/aiops-anomaly-detection.md) |
+| Auto-remediation | Auto-fix with safety controls | High | [AIOps Remediation](references/advanced/aiops-auto-remediation.md) |
+
+## Operation Flows
+
+### Flow: Create PolarDB PostgreSQL Cluster
+
+**Pre-flight Checks**
+
+| Check | Command | Expected | On Failure |
+|-------|---------|----------|------------|
+| Credentials | `test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID"` | Set | HALT; missing credentials |
+| Region | `aliyun configure get region` | Valid region | Use `cn-hangzhou` default |
+| VPC exists | `aliyun vpc DescribeVpcs` | VpcId found | Delegate to `alicloud-vpc-ops` |
+| VSwitch exists | `aliyun vpc DescribeVSwitches` | VSwitchId found | Delegate to `alicloud-vpc-ops` |
+
+**Execute (CLI Primary)**
+
+```bash
+# Create PostgreSQL cluster
+aliyun polardb CreateDBCluster \
+  --RegionId "{{user.region}}" \
+  --DBType PostgreSQL \
+  --DBVersion "{{user.engine_version}}" \
+  --DBClusterClass "{{user.db_node_class}}" \
+  --DBNodeClass "{{user.db_node_class}}" \
+  --ZoneId "{{user.zone_id}}" \
+  --VPCId "{{user.vpc_id}}" \
+  --VSwitchId "{{user.vswitch_id}}" \
+  --PayType Postpaid \
+  --ClientToken "$(uuidgen)"
+```
+
+**Execute (SDK Fallback)**
+
+**JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
+
+**Validate**
+
+```bash
+# Poll for cluster creation
+aliyun polardb DescribeDBClusters \
+  --RegionId "{{user.region}}" \
+  --DBClusterId "{{output.db_cluster_id}}" \
+  --output cols=DBClusterId,DBClusterStatus rows=Items.DBCluster[]
+
+# Expected: DBClusterStatus = "Running"
+```
+
+**Recover**
+
+| Error Code | Meaning | Action |
+|------------|---------|--------|
+| `InvalidRegionId.NotFound` | Invalid region | HALT; check region config |
+| `InvalidVPCId.NotFound` | VPC not found | Delegate to VPC skill first |
+| `InvalidVSwitchId.NotFound` | VSwitch not found | Delegate to VPC skill first |
+| `InvalidDBInstanceClass.NotFound` | Invalid instance class | List available classes |
+| `InsufficientBalance` | Account balance low | HALT; notify user |
+
+### Flow: Execute SQL on Cluster
+
+> ⚠️ **Safety Warning**: SQL execution modifies data. Always validate statements before execution.
+
+**Pre-flight Checks**
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cluster running | DescribeDBClusterAttribute | Status = `Running` | HALT; start cluster first |
+| Account exists | DescribeAccounts | Account found | Create account first |
+| SQL validated | Parse/check syntax | Valid SQL | Return syntax error |
+
+**Execute**
+
+See [SQL Execution Reference](references/advanced/sql-execution.md) for detailed implementation.
+
+### Flow: AIOps Storage Prediction
+
+**Pre-flight Checks**
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cluster Status | DescribeDBClusterAttribute | `Running` | HALT; cluster not stable |
+| Storage Metrics | CMS GetMetricStatisticsData | Data within 30 days | HALT; insufficient data |
+| Current Storage | DescribeDBClusterAttribute | `StorageUsed`, `StorageSpace` | HALT; data unavailable |
+
+**Execute**
+
+See [AIOps Storage Prediction](references/advanced/aiops-storage-prediction.md) for detailed implementation.
+
+**Output Example**
+
+```markdown
+# PolarDB PostgreSQL 存储空间趋势预测报告
+
+> 预测时间: 2026-05-27 14:30:00 | 预测算法: Linear Regression (置信度: 0.92)
+
+## 当前存储状态
+
+| 指标 | 当前值 | 状态 |
+|------|--------|------|
+| 已用存储 | 450.5 GB | 中等 |
+| 总容量 | 500 GB | - |
+| 使用率 | 90.1% | ⚠️ 需关注 |
+
+## 未来预测 (30/60/90 天)
+
+| 预测周期 | 预计存储 | 使用率 | 状态 |
+|----------|----------|--------|------|
+| **30天后** | 525.5 GB | 105.1% | 🚨 超容 |
+| **60天后** | 600.5 GB | 120.1% | 🚨 超容 |
+| **90天后** | 675.5 GB | 135.1% | 🚨 超容 |
+
+## 阈值到达时间预测
+
+| 阈值 | 预计天数 | 建议行动 |
+|------|----------|----------|
+| **85%预警线** | 已超 | 立即扩容 |
+| **95%高危线** | 已超 | 紧急扩容 |
+| **100%满载** | 3 天 | 立即扩容/清理 |
+
+## 预警级别: `critical`
+```
+
+### Flow: AIOps Anomaly Detection
+
+**Pre-flight Checks**
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Cluster Status | DescribeDBClusterAttribute | `Running` | HALT; cluster not stable |
+| Metrics Available | CMS GetMetricStatisticsData | Recent data points | HALT; no metrics |
+| Time Range | User input | Valid range | Use default (last 1 hour) |
+
+**Execute**
+
+See [AIOps Anomaly Detection](references/advanced/aiops-anomaly-detection.md) for detailed implementation.
+
+**Output Example**
+
+```markdown
+# PolarDB PostgreSQL 异常检测报告
+
+**检测时间**: 2026-05-27 15:30:00
+**集群ID**: pg-xxxxx
+**检测范围**: 最近1小时
+
+## 异常概要
+
+| 异常类型 | 检测算法 | 严重程度 | 当前值 | 阈值 |
+|----------|----------|----------|--------|------|
+| **CPU突增** | sudden_spike | critical | 85.2% | 50%突增 |
+| **慢查询增加** | threshold | warning | 120/h | 50/h |
+| **连接瓶颈** | threshold | warning | 92% | 80% |
+
+## 根因链路
+
+```mermaid
+graph TD
+    A[CPU突增 85%] --> B{慢查询分析}
+    B -->|增加| C[慢查询 120/h]
+    C --> D[Top慢SQL: SELECT * FROM orders WHERE...]
+    D --> E[执行时间: 12.5s]
+    E --> F[根因: 复杂查询导致CPU高]
+```
+
+## 优化建议
+
+### 立即执行 (P0)
+1. **SQL限流**: 对慢查询启用SQL限流
+2. **索引优化**: 为查询条件添加索引
+3. **连接释放**: 检查连接池配置
+```
+
+## Error Taxonomy (Reference)
+
+| Error Code | Severity | Meaning | Recovery Action |
+|------------|----------|---------|-----------------|
+| `InvalidDBClusterId.NotFound` | Critical | Cluster ID invalid | HALT; verify cluster ID |
+| `InvalidAccountName.NotFound` | Warning | Account not found | Create account |
+| `InvalidDBName.NotFound` | Warning | Database not found | Create database |
+| `OperationDenied.ClusterStatus` | Retryable | Cluster not in valid state | Wait and retry |
+| `OperationDenied.AccountStatus` | Retryable | Account locked | Unlock or recreate |
+| `Throttling` | Retryable | API rate limit | Exponential backoff |
+| `InvalidVPCId.NotFound` | Critical | VPC invalid | Delegate to VPC skill |
+| `InsufficientBalance` | Critical | Account balance low | HALT; notify user |
+
+## References
+
+| Document | Purpose |
+|----------|---------|
+| [CLI Usage](references/cli-usage.md) | Complete CLI command reference |
+| [API/SDK Usage](references/api-sdk-usage.md) | SDK patterns and examples |
+| [Core Concepts](references/core-concepts.md) | Architecture and terminology |
+| [Monitoring](references/monitoring.md) | Metrics and monitoring setup |
+| [Troubleshooting](references/troubleshooting.md) | Common issues and solutions |
+| [SQL Execution](references/advanced/sql-execution.md) | Execute SQL on cluster |
+| [Slow Query Analysis](references/advanced/slow-query-analysis.md) | Analyze slow queries |
+| [AIOps Storage Prediction](references/advanced/aiops-storage-prediction.md) | Storage trend prediction |
+| [AIOps Connection Prediction](references/advanced/aiops-connection-prediction.md) | Connection trend prediction |
+| [AIOps Anomaly Detection](references/advanced/aiops-anomaly-detection.md) | 12-pattern anomaly detection |
+| [AIOps Auto-remediation](references/advanced/aiops-auto-remediation.md) | Auto-fix with safety controls |
+
+## Implementation Checklist
+
+When implementing this skill:
+
+- [ ] Credentials validated (never logged)
+- [ ] Region defaults handled
+- [ ] VPC/VSwitch verification delegated
+- [ ] State transitions polled correctly
+- [ ] ClientToken used for idempotency
+- [ ] All 12 anomaly patterns implemented
+- [ ] Safety controls for auto-remediation
+- [ ] Error taxonomy covers ≥10 codes
+
+---
+
+## Advanced Analytics
+
+以下深度分析文档仅在用户明确需要时加载，**不要在常规操作中读取**：
+
+| 场景 | 文档 |
+|------|------|
+| 异常检测、根因分析 | [advanced/aiops-anomaly-detection.md](references/advanced/aiops-anomaly-detection.md) |
+| 连接数预测、容量规划 | [advanced/aiops-connection-prediction.md](references/advanced/aiops-connection-prediction.md) |
+| 存储预测 | [advanced/aiops-storage-prediction.md](references/advanced/aiops-storage-prediction.md) |
+| 自动修复方案 | [advanced/aiops-auto-remediation.md](references/advanced/aiops-auto-remediation.md) |
+| 慢查询深度分析 | [advanced/slow-query-analysis.md](references/advanced/slow-query-analysis.md) |
+
+### ⚠️ Security-Sensitive Operations
+
+以下操作涉及数据变更，**执行前必须获得用户显式确认**：
+
+| 场景 | 文档 | 风险等级 |
+|------|------|---------|
+| SQL 文件执行 | [advanced/sql-execution.md](references/advanced/sql-execution.md) | 🔴 高（可执行 DROP/TRUNCATE） |
+
+---
+
+## Quality Gate (GCL)
+
+Twelfth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + PG-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1, twelfth skill) |
+| `max_iter` | 2 |
+| Engine | PostgreSQL 11/12/13/14/15 |
+| PG-specific hot-spots | `VACUUM FULL` (table lock), `ALTER SYSTEM SET` (durable cluster-wide), `REINDEX` / `CLUSTER` (table lock), `DROP SCHEMA` |
+| Credential surface | `PGPASSWORD` / `POLARDB_PG_NEW_PASSWORD` env vars (NOT `--password` or inline `postgresql://user:pass@host`) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Twelfth rollout; inherits canonical + PG-specific.
+
+---
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `dual-path`，CLI/SDK 已覆盖，无需 code snippets.

@@ -1,0 +1,19 @@
+{
+  "queries": [
+    {
+      "query": "创建资源目录文件夹",
+      "expected_skill": "alicloud-resourcemanager-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建资源组",
+      "expected_skill": "alicloud-resourcemanager-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "配置管控策略",
+      "expected_skill": "alicloud-resourcemanager-ops",
+      "priority": "P1"
+    }
+  ]
+}

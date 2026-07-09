@@ -1,0 +1,10 @@
+{
+  "queries": [
+    {"query": "创建一台 ECS 实例", "expected_skill": "alicloud-ecs-ops", "priority": "P0"},
+    {"query": "查看安全组规则", "expected_skill": "alicloud-ecs-ops", "priority": "P1"},
+    {"query": "停止我的 ECS", "expected_skill": "alicloud-ecs-ops", "priority": "P0"}
+  ],
+  "negative_queries": [
+    {"query": "创建一台 RDS MySQL 实例", "expected_skill": "alicloud-rds-ops", "priority": "P0"}
+  ]
+}

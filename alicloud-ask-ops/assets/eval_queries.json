@@ -1,0 +1,83 @@
+[
+  {
+    "query": "Create a Serverless Kubernetes cluster on Alibaba Cloud",
+    "should_trigger": true
+  },
+  {
+    "query": "I need an ASK cluster for my batch jobs",
+    "should_trigger": true
+  },
+  {
+    "query": "Help me set up a serverless K8s cluster that scales on Pod demand",
+    "should_trigger": true
+  },
+  {
+    "query": "如何在阿里云上创建一个按 Pod 弹性计费的 K8s 集群？",
+    "should_trigger": true
+  },
+  {
+    "query": "我需要部署一个无服务器的 Kubernetes 集群，跑 CI/CD 任务",
+    "should_trigger": true
+  },
+  {
+    "query": "Get the kubeconfig for my ASK cluster c-abc123",
+    "should_trigger": true
+  },
+  {
+    "query": "Why are my ECI Pods stuck in Pending state?",
+    "should_trigger": true
+  },
+  {
+    "query": "Set up HPA on my Serverless Kubernetes cluster",
+    "should_trigger": true
+  },
+  {
+    "query": "Create a cluster where Pods run on ECI",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the ASK cluster c-xyz789",
+    "should_trigger": true
+  },
+
+  {
+    "query": "Create a managed Kubernetes cluster with 3 worker nodes",
+    "should_trigger": false
+  },
+  {
+    "query": "I need to add a new node pool to my ACK cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Scale out my cluster by adding ECS nodes",
+    "should_trigger": false
+  },
+  {
+    "query": "Upgrade the Kubernetes version on my ManagedKubernetes cluster",
+    "should_trigger": false
+  },
+  {
+    "query": "Why is my node NotReady in my ACK cluster?",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a Serverless container instance (ECI) for a single job",
+    "should_trigger": false
+  },
+  {
+    "query": "Help me deploy a VM in ECS",
+    "should_trigger": false
+  },
+  {
+    "query": "Show me my Alibaba Cloud bill for last month",
+    "should_trigger": false
+  },
+  {
+    "query": "Create a new VPC for my project",
+    "should_trigger": false
+  },
+  {
+    "query": "How do I configure a load balancer for my ECS instances?",
+    "should_trigger": false
+  }
+]

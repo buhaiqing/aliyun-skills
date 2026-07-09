@@ -1,0 +1,619 @@
+---
+name: alicloud-vpc-ops
+description: >-
+  Use this skill to manage the full lifecycle of Alibaba Cloud VPC (Virtual
+  Private Cloud) networking resources — create, describe, modify, delete VPCs,
+  vSwitches, route tables, NAT gateways, EIPs, SNAT/DNAT entries, IPv6 gateways,
+  VPN gateways, IPsec servers, customer gateways, network ACLs, DHCP options
+  sets, and flow logs. Diagnose connectivity issues. Reach for this skill when
+  the user needs network provisioning, reports "can't reach intranet", "EIP
+  binding failed", "NAT gateway quota exceeded", "VPN tunnel down", or wants to
+  deploy, configure, troubleshoot, or monitor Alibaba Cloud networking resources
+  — even if they just say "专有网络", "VPC", "虚拟交换机", "弹性公网IP",
+  "NAT网关", "VPN网关" without naming VPC explicitly. Keywords: VPC, vSwitch,
+  RouteTable, NAT, EIP, SNAT, DNAT, VPN, IPsec, NetworkACL, DHCP, FlowLog,
+  专有网络, 虚拟交换机, 弹性公网IP, NAT网关, VPN网关. Do NOT use for compute
+  (ECS), databases (RDS/Redis), load balancing (SLB/ALB), containers (ACK),
+  billing/accounting, or RAM-only tasks.
+license: MIT
+compatibility: >-
+  Official Alibaba Cloud CLI (`aliyun`, Go binary, no runtime), Go 1.21+ runtime
+  (for JIT SDK fallback), valid API credentials, network access to Alibaba Cloud
+  endpoints.
+metadata:
+  author: alicloud
+  version: "1.1.0"
+  last_updated: "2026-06-04"
+  runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
+  go_version_minimum: "1.21"
+  go_version_jit: "1.24+"
+  api_profile: "VPC 2016-04-28 / https://help.aliyun.com/zh/vpc/developer-reference/api-vpc-2016-04-28-overview"
+  cli_applicability: cli-first
+  cli_support_evidence: "Confirmed via `aliyun help vpc` — VPC (Virtual Private Cloud) API 2016-04-28 is fully supported by the official aliyun CLI. All core operations (VPC, vSwitch, NAT, EIP, RouteTable, VPN, NetworkACL) have matching CLI commands."
+  environment:
+    - ALIBABA_CLOUD_ACCESS_KEY_ID
+    - ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    - ALIBABA_CLOUD_REGION_ID
+---
+
+> This skill follows the [Agent Skill OpenSpec](https://agentskills.io/specification).
+
+# Alibaba Cloud VPC Operations Skill
+
+## Common JSON Paths (Centralized)
+
+```
+# Create VPC:           $.VpcId
+# Describe VPCs:        $.Vpcs.Vpc[].VpcId
+# Create VSwitch:       $.VSwitchId
+# Describe VSwitches:   $.VSwitches.VSwitch[].VSwitchId
+# Create NAT Gateway:   $.NatGatewayId
+# Describe NAT GWs:     $.NatGateways.NatGateway[].NatGatewayId
+# Allocate EIP:         $.AllocationId
+# Describe EIPs:        $.EipAddresses.EipAddress[].AllocationId
+# Create VPN GW:        $.VpnGatewayId
+# Create NetworkACL:    $.NetworkAclId
+# Create FlowLog:       $.FlowLogId
+```
+
+## Overview
+
+**cli-first** — `aliyun` CLI primary, JIT Go SDK fallback. Official CLI fully supports VPC; SDK only for edge cases.
+
+## Runtime Rules
+
+| Area | Rule | Reference |
+| --- | --- | --- |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` for all VPC CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun vpc` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](file://../../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
+| GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
+
+## Trigger & Scope (Agent-Readable)
+
+### SHOULD Use This Skill When
+
+- User mentions "Alibaba Cloud VPC" OR "专有网络" OR "Virtual Private Cloud" OR "VSwitch" OR "虚拟交换机"
+- Task involves CRUD or lifecycle operations on **VPC** (create, describe, modify, delete, list)
+- Task involves **vSwitch** (create, describe, modify, delete)
+- Task involves **RouteTable** (describe, create, delete, associate, unassociate)
+- Task involves **NAT Gateway** (create, describe, modify, delete)
+- Task involves **EIP** (allocate, describe, release, associate, unassociate, modify)
+- Task involves **SNAT/DNAT entries** (create, describe, delete)
+- Task involves **VPN Gateway / IPsec** (create, describe, delete, configure IPsec server)
+- Task involves **Customer Gateway** (create, describe, modify, delete)
+- Task involves **Network ACL** (create, describe, delete, associate, unassociate, copy entries)
+- Task involves **DHCP Options Set** (create, describe, associate to VPC, delete)
+- Task involves **FlowLog** (create, activate, deactivate, describe, delete)
+- Task involves **IPv6 Gateway/Egress** (create IPv6 gateway, describe, create egress-only rules)
+- Task involves **HaVip** (create, describe, delete, associate, unassociate)
+- Task involves **Common Bandwidth Package** (create, describe, add/remove EIPs)
+- Task involves **BGP** (create BGP group/peer, describe, add/delete BGP network)
+- Task keywords: VPC, 专有网络, 交换机, vSwitch, 路由表, route table, NAT网关, 弹性公网IP, EIP, SNAT, DNAT, VPN网关, IPsec, 网络ACL, DHCP, FlowLog, IPv6, HaVip, 共享带宽, BGP
+- User asks to deploy, configure, troubleshoot, or monitor VPC resources **via API, SDK, CLI, or automation**
+
+### SHOULD NOT Use This Skill When
+
+- Task is purely billing / account management → delegate to: `alicloud-billing-ops` (when present)
+- Task is RAM / permission model only → delegate to: `alicloud-ram-ops` (when present)
+- Task is about **ECS instances / compute** → delegate to: `alicloud-ecs-ops`
+- Task is about **RDS / databases** → delegate to: `alicloud-rds-ops` (when present)
+- Task is about **Redis / caching** → delegate to: `alicloud-redis-ops`
+- Task is about **SLB / load balancing** → delegate to: `alicloud-slb-ops`
+- Task is about **ACK / containers** → delegate to: `alicloud-ack-ops`
+- User insists on **console-only** flows with no API → state limitation; do not invent undocumented HTTP steps
+
+## Delegation Rules
+
+| 能力 | 委托目标 | 说明 |
+|------|----------|------|
+| GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+
+## Variable Convention (Agent-Readable)
+
+| Placeholder | Meaning | Agent Action |
+|-------------|---------|--------------|
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` | From runtime environment | NEVER ask the user; fail if unset |
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` | From runtime environment | NEVER ask the user; fail if unset |
+| `{{env.ALIBABA_CLOUD_REGION_ID}}` | From runtime environment | Use documented default only if skill explicitly allows |
+| `{{user.region}}` | User-supplied region | Ask once; reuse |
+| `{{user.vpc_id}}` | User-supplied VPC ID | Ask once; reuse |
+| `{{user.vpc_name}}` | User-supplied VPC name | Ask once; reuse |
+| `{{user.vswitch_id}}` | User-supplied VSwitch ID | Ask once; reuse |
+| `{{user.nat_gateway_id}}` | User-supplied NAT Gateway ID | Ask once; reuse |
+| `{{user.eip_id}}` | User-supplied EIP ID | Ask once; reuse |
+| `{{user.route_table_id}}` | User-supplied RouteTable ID | Ask once; reuse |
+| `{{user.cidr_block}}` | User-supplied CIDR block | Ask once; reuse |
+| `{{user.zone_id}}` | User-supplied zone ID | Ask once; reuse |
+| `{{user.vpn_gateway_id}}` | User-supplied VPN Gateway ID | Ask once; reuse |
+| `{{user.network_acl_id}}` | User-supplied Network ACL ID | Ask once; reuse |
+| `{{output.resource_id}}` | From last API or CLI JSON response | Parse per verified CLI path for this operation |
+
+> **`{{env.*}}` MUST NOT** be collected from the user. **`{{user.*}}`** MUST be collected interactively when missing.
+
+> **凭据安全（强制）：** 参考 [Credential Masking 规则](../alicloud-skill-generator/references/credential-masking.md)
+
+## API and Response Conventions (Agent-Readable)
+
+- **OpenAPI is canonical** for path, query, body fields, enums, and response shapes.
+- **Errors:** Map SDK/HTTP errors to `code` / `status` / message fields per spec.
+- **Timestamps:** ISO 8601 with timezone when the API returns strings.
+- **Idempotency:** VPC APIs uses `ClientToken` for idempotent operations.
+
+### Expected State Transitions
+
+| Operation | Initial State | Target State | Poll Interval | Max Wait |
+|-----------|---------------|--------------|---------------|----------|
+| CreateVpc | — | `Available` | 5s | 300s |
+| CreateVSwitch | — | `Available` | 5s | 300s |
+| CreateNatGateway | `Creating` | `Available` | 5s | 300s |
+| AllocateEipAddress | — | `Available` | 5s | 120s |
+| AssociateEipAddress | `Associating` | `Associating` → bound | 5s | 120s |
+| DeleteVpc | any stable state | absent | 5s | 300s |
+| DeleteNatGateway | any stable state | absent | 5s | 300s |
+
+## Next Steps
+
+- [Core Concepts](references/core-concepts.md) — Understand VPC architecture
+- [Common Operations](#execution-flows) — Create, manage, and delete networking resources
+- [Troubleshooting](references/troubleshooting.md) — Fix common issues
+
+## Capabilities at a Glance
+
+| Op | Risk | Notes |
+|----|------|-------|
+| Create VPC/VSwitch/NAT/EIP/RouteTable/VPN/ACL | Low-Medium | CLI-first |
+| Describe/List/Modify | None-Low | Read-only or config change |
+| Delete (any resource) | **High** | Irreversible — GCL required |
+
+## Execution Flows (Agent-Readable)
+
+Every operation: **Pre-flight → Execute → Validate → Recover**. Do not skip phases.
+
+**Preference hint:** CLI is preferred for coverage and simplicity; Go SDK is used for operations CLI does not expose.
+
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun vpc ...` 命令在执行时应替换为 `./scripts/vpc-skillopt-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun vpc` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。
+
+### Operation: Create VPC
+
+**Needs:** Region, VPC name (opt), CIDR (opt, default 172.16.0.0/12). **Expect:** VPC → `Available` in ~5s.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| CLI availability | `aliyun vpc DescribeRegions` | Exit code 0 | HALT; install CLI |
+| Credentials | Environment variables set | Non-empty keys | HALT; configure credentials |
+| Region validity | DescribeRegions response | Region present in response | Suggest valid regions |
+| CIDR overlap | Review existing VPCs CIDRs | No overlapping CIDRs in same region | Suggest non-overlapping CIDR |
+| Quota | DescribeVpcs + check TotalCount | Under VPC quota limit | HALT; user raises quota |
+
+#### Execution — CLI (`aliyun`) (Primary Path)
+
+```bash
+# Create VPC (JSON output by default)
+aliyun vpc CreateVpc \
+  --RegionId "{{user.region}}" \
+  --VpcName "{{user.vpc_name}}" \
+  --CidrBlock "{{user.cidr_block}}" \
+  --Description "Created via alicloud-vpc-ops skill"
+```
+
+#### Post-execution Validation
+
+1. Capture `{{output.vpc_id}}` from response `$.VpcId`.
+2. Verify VPC is `Available`:
+
+```bash
+aliyun vpc DescribeVpcs \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{output.vpc_id}}" \
+  --output cols=VpcId,Status,CidrBlock rows=Vpcs.Vpc[].{VpcId:VpcId,Status:Status,CidrBlock:CidrBlock}
+```
+
+3. On success, report VPC ID, CIDR, and status to the user.
+4. On terminal failure, go to **Failure Recovery**.
+
+#### Failure Recovery
+
+See global [Failure Recovery](#failure-recovery) table. VPC-specific patterns: `InvalidCidrBlock` → HALT, suggest RFC1918; `ResourceAlreadyExists` → ask reuse vs new; `QuotaExceeded.Vpc` → HALT, delete unused or request increase.
+
+### Operation: Create VSwitch
+
+**Needs:** VPC ID, Zone ID, CIDR (subset of VPC CIDR), name (opt). **Expect:** vSwitch created in ~5s.
+
+#### Execution
+
+```bash
+# Create VSwitch
+aliyun vpc CreateVSwitch \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}" \
+  --ZoneId "{{user.zone_id}}" \
+  --VSwitchName "{{user.vswitch_name}}" \
+  --CidrBlock "{{user.vswitch_cidr}}"
+```
+
+#### Post-execution Validation
+
+1. Capture `{{output.vswitch_id}}` from response `$.VSwitchId`.
+2. Verify:
+
+```bash
+aliyun vpc DescribeVSwitches \
+  --RegionId "{{user.region}}" \
+  --VSwitchId "{{output.vswitch_id}}" \
+  --output cols=VSwitchId,Status,ZoneId,CidrBlock rows=VSwitches.VSwitch[].{VSwitchId:VSwitchId,Status:Status,ZoneId:ZoneId,CidrBlock:CidrBlock}
+```
+
+### Operation: Create NAT Gateway
+
+**Needs:** VPC ID, VSwitch ID, NAT type (Enhanced/Normal), billing method. **Expect:** → `Available` in ~1-2min.
+
+#### Execution
+
+```bash
+# Create Enhanced NAT Gateway
+aliyun vpc CreateNatGateway \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}" \
+  --NatType "Enhanced" \
+  --VSwitchId "{{user.vswitch_id}}" \
+  --Name "{{user.nat_name}}" \
+  --BillingMethod "PayBySpec" \
+  --NatGatewayChargeType "PayBySpec"
+```
+
+#### Post-execution Validation
+
+1. Capture `{{output.nat_gateway_id}}` from response `$.NatGatewayId`.
+2. Poll until `Available`:
+
+```bash
+aliyun vpc DescribeNatGateways \
+  --RegionId "{{user.region}}" \
+  --NatGatewayId "{{output.nat_gateway_id}}" \
+  --waiter expr='NatGateways.NatGateway[0].Status' to=Available timeout=300 interval=5
+```
+
+### Operation: Allocate EIP
+
+**Needs:** Region, Bandwidth (Mbps), ISP type, name (opt). **Expect:** allocated in seconds.
+
+#### Execution
+
+```bash
+# Allocate EIP
+aliyun vpc AllocateEipAddress \
+  --RegionId "{{user.region}}" \
+  --Bandwidth "{{user.bandwidth}}" \
+  --ISP "{{user.isp}}" \
+  --Name "{{user.eip_name}}"
+```
+
+#### Post-execution Validation
+
+1. Capture `{{output.eip_allocation_id}}` from response `$.AllocationId`.
+2. Verify:
+
+```bash
+aliyun vpc DescribeEipAddresses \
+  --RegionId "{{user.region}}" \
+  --AllocationId "{{output.eip_allocation_id}}" \
+  --output cols=AllocationId,Status,IpAddress rows=EipAddresses.EipAddress[].{AllocationId:AllocationId,Status:Status,IpAddress:IpAddress}
+```
+
+### Operation: AssociateEipAddress
+
+#### Execution
+
+```bash
+# Bind EIP to a resource (ECS, NAT Gateway, SLB, etc.)
+aliyun vpc AssociateEipAddress \
+  --RegionId "{{user.region}}" \
+  --AllocationId "{{user.eip_id}}" \
+  --InstanceId "{{user.instance_id}}" \
+  --InstanceType "{{user.instance_type}}"
+```
+
+Available `InstanceType` values: `EcsInstance`, `Nat`, `SLBInstance`, `HaVip`, `NetworkInterface`, `Ngw`
+
+#### Post-execution Validation
+
+```bash
+aliyun vpc DescribeEipAddresses \
+  --RegionId "{{user.region}}" \
+  --AllocationId "{{user.eip_id}}"
+```
+
+Verify `Status` transitions to `InUse` and `InstanceId` matches.
+
+### Operation: Create SNAT Entry
+
+#### Execution
+
+```bash
+# Create SNAT entry for VPC NAT Gateway
+aliyun vpc CreateSnatEntry \
+  --RegionId "{{user.region}}" \
+  --NatGatewayId "{{user.nat_gateway_id}}" \
+  --SourceCIDR "{{user.source_cidr}}" \
+  --SnatTableId "{{user.snat_table_id}}" \
+  --SnatEntryName "{{user.snat_entry_name}}"
+```
+
+### Operation: Create DNAT Entry (Forward Entry)
+
+#### Execution
+
+```bash
+# Create DNAT entry for public access to private instance
+aliyun vpc CreateForwardEntry \
+  --RegionId "{{user.region}}" \
+  --NatGatewayId "{{user.nat_gateway_id}}" \
+  --IpProtocol "TCP" \
+  --ExternalIp "{{user.external_ip}}" \
+  --ExternalPort "{{user.external_port}}" \
+  --InternalIp "{{user.internal_ip}}" \
+  --InternalPort "{{user.internal_port}}" \
+  --ForwardEntryName "{{user.forward_entry_name}}"
+```
+
+### Operation: Describe VPC
+
+#### Execution
+
+```bash
+# Describe specific VPC
+aliyun vpc DescribeVpcs \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}"
+```
+
+#### Present to User
+
+Fields: `$.Vpcs.Vpc[].{VpcId,VpcName,Status,CidrBlock,Ipv6CidrBlock,CreationTime,IsDefault}`
+
+### Operation: List Resources
+
+```bash
+# List all VPCs
+aliyun vpc DescribeVpcs --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --output cols=VpcId,VpcName,Status,CidrBlock rows=Vpcs.Vpc[].{VpcId:VpcId,VpcName:VpcName,Status:Status,CidrBlock:CidrBlock}
+
+# List all EIPs
+aliyun vpc DescribeEipAddresses --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --output cols=AllocationId,IpAddress,Status,InstanceId rows=EipAddresses.EipAddress[].{AllocationId:AllocationId,IpAddress:IpAddress,Status:Status,InstanceId:InstanceId}
+
+# List all NAT Gateways
+aliyun vpc DescribeNatGateways --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --output cols=NatGatewayId,Name,Status,VpcId rows=NatGateways.NatGateway[].{NatGatewayId:NatGatewayId,Name:Name,Status:Status,VpcId:VpcId}
+
+# List all VSwitches in a VPC
+aliyun vpc DescribeVSwitches --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" --VpcId "{{user.vpc_id}}" \
+  --output cols=VSwitchId,VSwitchName,Status,ZoneId,CidrBlock rows=VSwitches.VSwitch[].{VSwitchId:VSwitchId,VSwitchName:VSwitchName,Status:Status,ZoneId:ZoneId,CidrBlock:CidrBlock}
+```
+
+### Operation: Delete VPC
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** obtain explicit confirmation: irreversible delete of `{{user.vpc_name}}` (`{{user.vpc_id}}`).
+- **MUST NOT** proceed unless VPC has **no** associated vSwitches, NAT Gateways, route rules, or other dependencies.
+- Check for dependencies first:
+
+```bash
+# Check vSwitches
+aliyun vpc DescribeVSwitches --RegionId "{{user.region}}" --VpcId "{{user.vpc_id}}"
+# Check NAT Gateways
+aliyun vpc DescribeNatGateways --RegionId "{{user.region}}" --VpcId "{{user.vpc_id}}"
+# Check HaVips
+aliyun vpc DescribeHaVips --RegionId "{{user.region}}" --VpcId "{{user.vpc_id}}"
+```
+
+#### Execution
+
+```bash
+aliyun vpc DeleteVpc \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}"
+```
+
+#### Post-execution Validation
+
+Poll until 404 or VPC disappears from DescribeVpcs:
+
+```bash
+aliyun vpc DescribeVpcs \
+  --RegionId "{{user.region}}" \
+  --VpcId "{{user.vpc_id}}"
+```
+
+Empty result = confirmed deleted.
+
+### Operation: Delete NAT Gateway
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** delete all SNAT and DNAT entries first
+- **MUST** unbind all associated EIPs first
+
+#### Execution
+
+```bash
+aliyun vpc DeleteNatGateway \
+  --RegionId "{{user.region}}" \
+  --NatGatewayId "{{user.nat_gateway_id}}"
+```
+
+### Operation: Release EIP
+
+#### Pre-flight (Safety Gate)
+
+- **MUST** unbind EIP first if `Status` = `InUse`
+
+```bash
+aliyun vpc UnassociateEipAddress \
+  --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --AllocationId "{{user.eip_id}}" \
+  --InstanceId "{{user.instance_id}}" \
+  --InstanceType "{{user.instance_type}}"
+```
+
+#### Execution
+
+```bash
+aliyun vpc ReleaseEipAddress \
+  --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
+  --AllocationId "{{user.eip_id}}"
+```
+
+## Failure Recovery
+
+| Error pattern | Max retries | Backoff | Agent Action | UX Feedback |
+|---------------|-------------|---------|--------------|-------------|
+| `InvalidParameter` | 0–1 | — | Fix args from OpenAPI; retry once | `[ERROR] InvalidParameter: Request parameter invalid. Fix according to API spec and retry.` |
+| `InvalidCidrBlock` | 0 | — | HALT; suggest valid CIDR | `[ERROR] InvalidCidrBlock: CIDR must be from 10.0.0.0/8, 172.16.0.0/12, or 192.168.0.0/16.` |
+| `InvalidVSwitchId.NotFound` | 0 | — | HALT; verify VSwitch exists | `[ERROR] VSwitch not found. Check the VSwitch ID.` |
+| `InvalidVpcId.NotFound` | 0 | — | HALT; verify VPC exists | `[ERROR] VPC not found. Check the VPC ID.` |
+| `DependencyViolation` | 0 | — | HALT; list dependencies | `[ERROR] DependencyViolation: Resource has dependencies. Delete associated resources first.` |
+| `QuotaExceeded` | 0 | — | HALT | `[ERROR] QuotaExceeded: Resource quota reached. Delete unused resources or request increase.` |
+| `InsufficientBalance` | 0 | — | HALT | `[ERROR] InsufficientBalance: Account balance insufficient. Recharge your account.` |
+| `ResourceAlreadyExists` | 0 | — | Ask reuse vs new | `[ERROR] Resource already exists. Reuse or choose a different name.` |
+| `AssociationViolation` | 0 | — | HALT; unbind first | `[ERROR] AssociationViolation: Resource is associated with another resource. Unbind first.` |
+| `InvalidEipStatus` | 0 | — | HALT; check EIP status | `[ERROR] InvalidEipStatus: EIP is in wrong state for this operation. Check current status.` |
+| `Throttling` / 429 | 3 | exponential | Back off | `⚠️ Rate limit reached. Retrying in {backoff}s...` |
+| `InternalError` / 5xx | 3 | 2s,4s,8s | Retry; then HALT | `[ERROR] InternalError: Server-side error. Retry or escalate with RequestId.` |
+
+---
+
+## Well-Architected Assessment (卓越架构)
+
+This skill's operations are evaluated against Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html). Reference this section for security, stability, cost, efficiency, and performance guidance specific to VPC.
+
+### 安全 (Security)
+
+| Area | Guidance |
+|------|----------|
+| **IAM** | Require: `vpc:Describe*`, `vpc:Create*` scoped to `acs:vpc:*:*:vpc/*` |
+| **Credentials** | `{{env.*}}` only. Never print secrets |
+| **Network** | Use route tables for traffic isolation. Enable FlowLog on critical VPCs for audit. Security groups per tier |
+| **CIDR Planning** | Plan non-overlapping CIDR blocks with on-premise networks before creating VPCs |
+
+### 稳定 (Stability)
+
+| Area | Guidance |
+|------|----------|
+| **面向失败的架构设计** | Deploy resources across multi-AZ VSwitches. NAT Gateway HA mode for cross-zone resilience |
+| **面向精细的运维管控** | Monitor VPC network health, EIP binding status, bandwidth utilization. Set CMS alerts |
+| **面向风险的应急快恢** | Peering connection failover plan. **RTO:** < 5 min for EIP rebind. **RPO:** N/A |
+
+### 成本 (Cost)
+
+| Billing | Best For | Savings |
+|---------|----------|---------|
+| PayByTraffic (按使用量) | Variable traffic, bursty workloads | Pay for actual GB |
+| PayByBandwidth (按固定带宽) | Stable, predictable traffic | Predictable cost |
+| Common Bandwidth Package | Multiple EIPs sharing bandwidth | Up to 40% vs individual |
+
+**Waste:** Unused EIPs (unattached for 3d) → release. Idle NAT Gateways (no SNAT rules) → delete. Over-provisioned bandwidth (usage < 30%) → downgrade.
+
+### 效率 (Efficiency)
+
+- **Terraform/IaC:** VPC templates for reproducible network infrastructure
+- **Resource Groups:** Organize VPC resources by project/environment
+- **CI/CD:** JSON output by default, compatible with pipelines
+
+### 性能 (Performance)
+
+| Metric | CMS Namespace | Scale Up | Scale Down | Window |
+|--------|--------------|----------|------------|--------|
+| DropTrafficPackageRate | `acs_vpc_dashboard` | > 0 | — | 5 min |
+| BandwidthUsage | `acs_vpc_dashboard` | > 80% | < 40% | 5 min |
+| ConnectionUsage | `acs_vpc_dashboard` | > 80% | < 50% | 5 min |
+
+**Key guidance:** Plan VPC CIDR blocks with adequate subnet space (reserve at least 50% of CIDR for growth). Use VPC Peering or CEN for cross-VPC connectivity.
+
+## Reference Directory
+
+- [Core Concepts](references/core-concepts.md)
+- [API & SDK Usage](references/api-sdk-usage.md)
+- [CLI Usage](references/cli-usage.md)
+- [Troubleshooting Guide](references/troubleshooting.md)
+- [Monitoring & Alerts](references/monitoring.md)
+- [Advanced Observability](references/advanced/observability.md)
+- [Integration](references/integration.md)
+- [Prompt Examples](references/prompt-examples.md)
+- [Knowledge Base](references/knowledge-base.md)
+- [User Experience Specification](../alicloud-skill-generator/references/user-experience-spec.md)
+- [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
+- [CLI Behavioral Reference](../alicloud-skill-generator/references/cli-behavior.md)
+- [Enhanced Self-Healing Framework](../alicloud-skill-generator/references/enhanced-self-healing-framework.md)
+- [Batch Operations Template](../alicloud-skill-generator/templates/batch-operations.md)
+- [Proactive Inspection Template](../alicloud-skill-generator/templates/proactive-inspection.md)
+- [API Call Counter Template](../alicloud-skill-generator/templates/api-call-counter.md)
+
+## Supported Anomaly Patterns
+
+| # | Pattern | Detection Criteria | Severity |
+|---|---------|-------------------|----------|
+| 1 | VPC流量突增 | 流量 > 3x baseline | High |
+| 2 | 路由表变更异常 | 频繁修改路由规则 | Medium |
+| 3 | 交换机容量不足 | 可用IP < 10% | Medium |
+| 4 | 网络连通性中断 | Ping/连通性检查失败 | Critical |
+
+## Operational Best Practices
+
+- **Least privilege:** RAM policies scoped to required VPC API actions only.
+- **Network segmentation:** Use separate VPCs for prod/int/dev environments.
+- **NAT Gateway HA:** Deploy in multiple zones with SNAT for high availability.
+- **EIP management:** Use Common Bandwidth Packages for cost optimization when multiple EIPs share bandwidth.
+- **CIDR planning:** Plan CIDR blocks early to avoid overlap with on-premise or partner networks.
+- **FlowLog:** Enable FlowLog on critical VPC/vSwitch for traffic auditing and troubleshooting.
+
+---
+
+## Quality Gate (GCL)
+
+This skill is the **seventh rollout** of the Generator-Critic-Loop (GCL)
+adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Every runtime execution of an `alicloud-vpc-ops` operation MUST be wrapped
+in a GCL loop before the result is returned to the user.
+
+> **Two references in this directory carry the GCL contract:**
+> [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+
+### GCL Scope for VPC
+
+| Aspect | Setting |
+|---|---|
+| Required? | **Yes** (Phase 1 rollout, seventh skill) |
+| Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
+| Most-scrutinized ops | `DeleteVpc` (network foundation), `DeleteNatGateway` (egress), `DeleteVSwitch` (subnet), EIP ops (delegate to `alicloud-eip-ops`) |
+
+### Per-Op Safety Highlights
+
+| Operation | Hard condition |
+|---|---|
+| `DeleteVpc` | **4-step dependency cascade**: `DescribeVSwitches` / `DescribeNatGateways` / `DescribeHaVips` / `DescribeRouteTables` all empty; cross-skill ECS/RDS/SLB ENI check |
+| `DeleteNatGateway` | **3-step cascade**: SNAT empty + DNAT empty + EIPs unbound |
+| `Create SNAT Entry` | No `SourceCIDR` overlap with existing SNAT |
+| `Create DNAT Entry` | No `(ExternalIp, ExternalPort, Protocol, InternalIp, InternalPort)` 5-tuple conflict |
+| EIP ops | **Delegate to `alicloud-eip-ops` GCL** (production marker, 2-step unbind, DNS audit, traffic pre-check) |
+
+### Changelog
+1.0.0 | 2026-06-04 | Seventh rollout: `## Quality Gate (GCL)` + `references/rubric.md` + `references/prompt-templates.md`. Dependency-cascade pattern; EIP cross-skill delegation.
+
+---
+
+## See Also — Meta-Skill Rules
+
+This skill is subject to cross-cutting rules defined by the
+[alicloud-skill-generator](../alicloud-skill-generator/SKILL.md) meta-skill.
+
+- **[Code Snippets Rule](../alicloud-skill-generator/templates/code-snippets.md)** —
+  When `cli_applicability: sdk-only` (CLI 不足以覆盖完整功能，必须依赖 SDK/API 方式),
+  the skill MUST provide `assets/code-snippets/` with runnable Go SDK code.
+  **DOES NOT APPLY** — 本 skill 为 `cli-first`，CLI/SDK 已覆盖，无需 code snippets.

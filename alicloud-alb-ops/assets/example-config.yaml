@@ -1,0 +1,76 @@
+# Example ALB Configuration (with YAML anchors for TE-5 compliance)
+x-prod: &prod
+  region: "cn-hangzhou"
+  vpc_id: "vpc-bp1****"
+  address_type: "Intranet"
+  edition: "Standard"
+
+x-dev: &dev
+  region: "cn-hangzhou"
+  vpc_id: "vpc-bp2****"
+  address_type: "Intranet"
+  edition: "Basic"
+
+# ALB Instance Config
+alb_prod:
+  <<: *prod
+  name: "prod-web-alb"
+  zones:
+    - zone_id: "cn-hangzhou-f"
+      vswitch_id: "vsw-bp1****"
+    - zone_id: "cn-hangzhou-g"
+      vswitch_id: "vsw-bp2****"
+  deletion_protection: true
+  tags:
+    Environment: "Production"
+    Project: "WebApp"
+    Owner: "Platform"
+
+alb_dev:
+  <<: *dev
+  name: "dev-web-alb"
+  zones:
+    - zone_id: "cn-hangzhou-f"
+      vswitch_id: "vsw-bp3****"
+  deletion_protection: false
+
+# Listener Config
+listener_https_prod:
+  protocol: "HTTPS"
+  port: 443
+  certificate_id: "cas-****"
+  security_policy_id: "SystemSecurityPolicy"
+  default_action:
+    type: "ForwardGroup"
+    server_group_id: "sgp-****"
+
+# Server Group Config
+server_group_prod:
+  name: "prod-web-servers"
+  protocol: "HTTP"
+  scheduler: "Wrr"
+  health_check:
+    path: "/health"
+    interval_seconds: 5
+    timeout_seconds: 3
+    healthy_threshold: 3
+    unhealthy_threshold: 3
+  servers:
+    - id: "i-****"
+      type: "Ecs"
+      port: 8080
+      weight: 100
+    - id: "i-****"
+      type: "Ecs"
+      port: 8080
+      weight: 100
+
+# ACL Config
+acl_white:
+  name: "office-acl"
+  type: "White"
+  entries:
+    - cidr: "203.0.113.0/24"
+      desc: "Office Network"
+    - cidr: "10.0.0.0/8"
+      desc: "Internal VPN"

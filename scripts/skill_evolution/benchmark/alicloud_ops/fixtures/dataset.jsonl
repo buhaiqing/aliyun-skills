@@ -1,0 +1,4 @@
+{"expected_skill": "alicloud-ecs-ops", "priority": "P0", "query": "创建一台 ECS 实例", "schema_version": "1.0", "split": "train", "trajectory_count": 3}
+{"expected_skill": "alicloud-ecs-ops", "priority": "P1", "query": "查看安全组规则", "schema_version": "1.0", "split": "train", "trajectory_count": 3}
+{"expected_skill": "alicloud-ecs-ops", "priority": "P0", "query": "停止我的 ECS", "schema_version": "1.0", "split": "heldout", "trajectory_count": 3}
+{"expected_skill": "alicloud-rds-ops", "priority": "P0", "query": "创建一台 RDS MySQL 实例", "schema_version": "1.0", "split": "heldout_trigger", "trajectory_count": 0}

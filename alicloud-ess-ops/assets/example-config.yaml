@@ -1,0 +1,105 @@
+# Example Configuration — Auto Scaling (ESS)
+
+# YAML anchors for shared fields
+x-prod-ess: &prod-ess
+  region: "cn-hangzhou"
+  multi_az_policy: "BALANCE"
+  default_cooldown: 300
+  group_deletion_protection: true
+  removal_policies: &removal-policies
+    - "OldestScalingConfiguration"
+    - "OldestInstance"
+
+x-staging-ess: &staging-ess
+  region: "cn-shanghai"
+  multi_az_policy: "PRIORITY"
+  default_cooldown: 600
+  group_deletion_protection: false
+  removal_policies: *removal-policies
+
+x-common-scaling: &common-scaling
+  target_value: 80.0
+  metric_name: "CpuUtilization"
+  evaluation_count: 3
+  period: 300
+  statistics: "Average"
+
+# Production scaling group
+prod-web-scaling-group:
+  <<: *prod-ess
+  scaling_group_name: "prod-web-sg"
+  vswitch_ids:
+    - "vsw-bp1abc123def456az1"
+    - "vsw-bp1abc123def456az2"
+  min_size: 3
+  max_size: 20
+  desired_capacity: 5
+
+# Staging scaling group (uses staging-ess anchor)
+staging-web-scaling-group:
+  <<: *staging-ess
+  scaling_group_name: "staging-web-sg"
+  vswitch_ids:
+    - "vsw-bp1xyz789def123az1"
+  min_size: 1
+  max_size: 5
+  desired_capacity: 1
+
+# Production scaling configuration
+prod-web-config:
+  scaling_group: "prod-web-scaling-group"
+  configuration_name: "prod-web-v2"
+  image_id: "aliyun_2_1903_x64_20G_alibase_20260607.vhd"
+  instance_type: "ecs.g7.large"
+  security_group_id: "sg-bp1abc123def456"
+  system_disk_category: "cloud_essd"
+  system_disk_size: 40
+  internet_charge_type: "PayByTraffic"
+  internet_max_bandwidth_out: 0
+
+# Target tracking scaling rule (CPU-based)
+prod-web-cpu-scale-out:
+  <<: *common-scaling
+  scaling_group: "prod-web-scaling-group"
+  rule_name: "cpu-target-tracking-80"
+  rule_type: "TargetTrackingScalingRule"
+
+# Scheduled task — scale out at 9 AM weekdays
+prod-web-scale-up-morning:
+  scaling_group: "prod-web-scaling-group"
+  task_name: "scale-up-9am"
+  scheduled_action: "{{prod-web-cpu-scale-out.rule_ari}}"
+  recurrence_type: "Cron"
+  recurrence_value: "0 9 * * 1-5"
+  task_enabled: true
+
+# Scheduled task — scale in at 9 PM daily
+prod-web-scale-down-night:
+  scaling_group: "prod-web-scaling-group"
+  task_name: "scale-down-9pm"
+  recurrence_type: "Daily"
+  recurrence_value: "1"
+  recurrence_end_time: "2027-06-07T00:00:00Z"
+  task_enabled: true
+
+# Lifecycle hook for custom health check
+prod-web-health-hook:
+  scaling_group: "prod-web-scaling-group"
+  hook_name: "custom-health-check"
+  lifecycle_transition: "Autoscaling:EC2Instance-Launching"
+  heartbeat_timeout: 600
+  default_result: "CONTINUE"
+  notification_arn: "acs:mns:cn-hangzhou:123456789:/topics/ess-lifecycle"
+
+# Alarm-based scaling rule (memory-based)
+prod-web-memory-alarm:
+  scaling_group: "prod-web-scaling-group"
+  alarm_name: "high-memory-alert"
+  metric_name: "MemoryUtilization"
+  comparison_operator: ">"
+  threshold: 85.0
+  evaluation_count: 3
+  period: 300
+  statistics: "Average"
+  dimensions:
+    scaling_group: "prod-web-scaling-group.scaling_group_id"

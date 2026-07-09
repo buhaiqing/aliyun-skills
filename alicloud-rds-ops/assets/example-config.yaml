@@ -1,0 +1,35 @@
+# RDS config (replace {{user.*}} and {{env.*}} at runtime)
+x-region: &region
+  RegionId: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+x-dev: &dev
+  DBInstanceClass: "rds.mysql.t3.small"
+  DBInstanceStorage: 20
+  StorageType: "cloud_essd"
+  SecurityIPList: "10.0.0.0/8"
+
+x-prod: &prod
+  DBInstanceClass: "rds.mysql.t3.medium"
+  DBInstanceStorage: 100
+  StorageType: "cloud_essd"
+  SecurityIPList: "10.0.0.0/8"
+  DeletionProtection: true
+
+rds_mysql_dev:
+  <<: *region; <<: *dev; Engine: "MySQL"; EngineVersion: "8.0"
+  DBInstanceDescription: "dev-mysql-{{user.instance_name}}"
+
+rds_mysql_prod:
+  <<: *region; <<: *prod; Engine: "MySQL"; EngineVersion: "8.0"
+  DBInstanceDescription: "prod-mysql-{{user.instance_name}}"
+
+rds_pg_dev:
+  <<: *region; <<: *dev; Engine: "PostgreSQL"; EngineVersion: "15.0"
+  DBInstanceDescription: "dev-pg-{{user.instance_name}}"
+
+account_create:
+  <<: *region
+  DBInstanceId: "{{user.instance_id}}"
+  AccountName: "{{user.account_name}}"
+  AccountPassword: "{{user.account_password}}"
+  AccountType: "Normal"

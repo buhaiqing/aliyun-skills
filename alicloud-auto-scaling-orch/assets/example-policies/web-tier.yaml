@@ -1,0 +1,46 @@
+# Web 层自动扩缩容策略
+# 适用: 标准 Web 服务 / API 网关 / 前端应用
+
+policy:
+  name: "web-tier-auto-scaling"
+  description: "Web 服务层基于 CPU 指标的自动扩缩容"
+  scenario: "metric"  # S1
+
+  scaling_group:
+    min_size: 2
+    max_size: 10
+    default_cooldown: 300
+
+  scale_out:
+    trigger:
+      metric: "CpuUtilization"
+      namespace: "acs_ecs_dashboard"
+      threshold: 70
+      comparison: "GreaterThanThreshold"
+      statistics: "Average"
+      period: 300
+      evaluation_count: 2  # 持续 10min 触发
+    action:
+      type: "TargetTrackingScalingRule"
+      target_value: 60
+      instance_warmup: 120
+
+  scale_in:
+    trigger:
+      metric: "CpuUtilization"
+      namespace: "acs_ecs_dashboard"
+      threshold: 30
+      comparison: "LessThanThreshold"
+      statistics: "Average"
+      period: 300
+      evaluation_count: 3  # 持续 15min 触发
+    action:
+      type: "SimpleScalingRule"
+      adjustment_type: "QuantityChangeInCapacity"
+      adjustment_value: -1
+      cooldown: 600
+
+  protection:
+    max_scale_out_per_24h: 5
+    min_interval_between_actions: 300
+    fuse_on_reversal: 3  # 1h 内超过 3 次方向反转则熔断

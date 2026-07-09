@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "context7": {
+      "tools": ["search", "fetch"]
+    },
+    "github": {
+      "tools": ["issues"]
+    }
+  }
+}

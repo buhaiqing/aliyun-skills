@@ -1,0 +1,153 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-06-21T13:37:34.580571Z",
+  "since_days": 7,
+  "source": "memory_scan",
+  "entry_skills": 16,
+  "skill_trends": {
+    "alicloud-vpc-ops": {
+      "total": 5,
+      "pass": 5,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-rds-ops": {
+      "total": 4,
+      "pass": 4,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-elasticsearch-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-mongodb-ops": {
+      "total": 3,
+      "pass": 3,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-cms-ops": {
+      "total": 34,
+      "pass": 30,
+      "fail": 4,
+      "failure_rate": 0.1176,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0588,
+      "confidence": "high"
+    },
+    "alicloud-agentrun-ops": {
+      "total": 2,
+      "pass": 0,
+      "fail": 2,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-polar-postgresql-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-advisor-ops": {
+      "total": 44,
+      "pass": 18,
+      "fail": 26,
+      "failure_rate": 0.5909,
+      "avg_iterations": 0.0,
+      "risk_score": 0.2955,
+      "confidence": "high"
+    },
+    "alicloud-ecs-ops": {
+      "total": 87,
+      "pass": 48,
+      "fail": 39,
+      "failure_rate": 0.4483,
+      "avg_iterations": 1.0,
+      "risk_score": 0.2641,
+      "confidence": "high"
+    },
+    "alicloud-gcl-runner-ops": {
+      "total": 5,
+      "pass": 0,
+      "fail": 5,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-terraform-ops": {
+      "total": 2,
+      "pass": 0,
+      "fail": 2,
+      "failure_rate": 1.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.5,
+      "confidence": "low"
+    },
+    "alicloud-redis-ops": {
+      "total": 6,
+      "pass": 6,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-oss-ops": {
+      "total": 5,
+      "pass": 5,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-sms-ops": {
+      "total": 1,
+      "pass": 1,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    },
+    "alicloud-slb-ops": {
+      "total": 46,
+      "pass": 45,
+      "fail": 1,
+      "failure_rate": 0.0217,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0109,
+      "confidence": "high"
+    },
+    "alicloud-polar-mysql-ops": {
+      "total": 2,
+      "pass": 2,
+      "fail": 0,
+      "failure_rate": 0.0,
+      "avg_iterations": 0.0,
+      "risk_score": 0.0,
+      "confidence": "low"
+    }
+  }
+}

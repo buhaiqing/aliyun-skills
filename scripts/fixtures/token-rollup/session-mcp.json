@@ -1,0 +1,14 @@
+{
+  "session_id": "sess-token-rollup-3",
+  "coding_agent": "cursor",
+  "agent_model": "claude-sonnet-4",
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["pi/tools/read"],
+      "mcp_tools_invoked": [],
+      "mcp_tool_utilization": 0.0,
+      "mcp_schema_waste_tokens": 80,
+      "attribution_confidence": "estimated"
+    }
+  }
+}

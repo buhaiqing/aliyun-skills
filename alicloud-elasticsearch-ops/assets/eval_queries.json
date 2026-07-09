@@ -1,0 +1,14 @@
+{
+  "queries": [
+    {
+      "query": "查询 elasticsearch 信息",
+      "expected_skill": "alicloud-elasticsearch-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建 elasticsearch 资源",
+      "expected_skill": "alicloud-elasticsearch-ops",
+      "priority": "P0"
+    }
+  ]
+}

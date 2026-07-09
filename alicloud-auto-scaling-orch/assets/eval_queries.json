@@ -1,0 +1,66 @@
+[
+  {
+    "query": "帮我配置自动扩缩容，Web 服务器 CPU 超过 70% 就自动加机器，低于 30% 就自动减机器",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "metric"
+  },
+  {
+    "query": "每天早上 9 点自动扩容到 5 台，晚上 6 点缩到 1 台",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "scheduled"
+  },
+  {
+    "query": "基于过去 14 天的 CPU 趋势预测未来负载，自动提前扩容",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "predictive"
+  },
+  {
+    "query": "配置复合扩缩容，CPU 超过 70% 并且内存超过 80% 才触发扩容",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "composite"
+  },
+  {
+    "query": "我们下周五有大促活动，预计流量翻倍，帮我提前配置好弹性策略",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "event"
+  },
+  {
+    "query": "自动检测闲置的测试环境，CPU 连续 7 天低于 5% 就自动缩容",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "cleanup"
+  },
+  {
+    "query": "把测试环境的 ECS 从 5 台缩到 2 台",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "cleanup"
+  },
+  {
+    "query": "帮我创建一个伸缩组，最小 2 台最大 10 台",
+    "expected_skill": "alicloud-ess-ops"
+  },
+  {
+    "query": "查看当前伸缩组的状态",
+    "expected_skill": "alicloud-ess-ops"
+  },
+  {
+    "query": "查询最近 1 小时所有 ECS 的 CPU 使用率",
+    "expected_skill": "alicloud-cms-ops"
+  },
+  {
+    "query": "做一次全链路健康巡检，看看 EIP 到 RDS 整条链路是否正常",
+    "expected_skill": "alicloud-aiops-cruise"
+  },
+  {
+    "query": "帮我创建一个定时任务，每周末凌晨自动清理日志",
+    "expected_skill": "alicloud-ecs-ops"
+  },
+  {
+    "query": "自动扩缩容怎么配置？给个方案",
+    "expected_skill": "alicloud-auto-scaling-orch"
+  },
+  {
+    "query": "双 12 活动快到了，帮我看看现有的弹性策略够不够用",
+    "expected_skill": "alicloud-auto-scaling-orch",
+    "expected_scenario": "event"
+  }
+]

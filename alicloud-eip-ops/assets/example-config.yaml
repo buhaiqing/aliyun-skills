@@ -1,0 +1,47 @@
+# EIP Example: allocate → associate → verify → modify → unbind → release
+environment:
+  ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"
+
+allocate_eip:
+  RegionId: "cn-hangzhou"
+  Bandwidth: 5
+  InternetChargeType: "PayByTraffic"
+  ISP: "BGP"
+  Name: "production-web-eip"
+
+associate_eip:
+  RegionId: "cn-hangzhou"
+  AllocationId: "{{output.allocation_id}}"
+  InstanceId: "i-bp1xxxxxxxxxx"
+  InstanceType: "EcsInstance"
+
+verify_eip:
+  RegionId: "cn-hangzhou"
+  AllocationId: "{{output.allocation_id}}"
+  ExpectedStatus: "InUse"
+
+modify_bandwidth:
+  RegionId: "cn-hangzhou"
+  AllocationId: "{{output.allocation_id}}"
+  NewBandwidth: 100
+
+unbind_eip:
+  RegionId: "cn-hangzhou"
+  AllocationId: "{{output.allocation_id}}"
+  InstanceId: "i-bp1xxxxxxxxxx"
+  InstanceType: "EcsInstance"
+
+release_eip:
+  RegionId: "cn-hangzhou"
+  AllocationId: "{{output.allocation_id}}"
+
+# Common Bandwidth Package
+bandwidth_plan:
+  Create:
+    RegionId: "cn-hangzhou"
+    Bandwidth: 200
+    Name: "shared-bw-production"
+    ChargeType: "PayByBandwidth"
+  AddEips:
+    BandwidthPackageId: "cbwp-xxxxxxx"
+    EipAllocationIds: ["eip-xxxxxxx1", "eip-xxxxxxx2", "eip-xxxxxxx3"]

@@ -1,0 +1,1 @@
+{"name":"search","description":"Search documentation for a library or framework.","inputSchema":{"type":"object","properties":{"query":{"type":"string"}}}}

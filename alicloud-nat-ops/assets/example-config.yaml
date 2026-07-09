@@ -1,0 +1,60 @@
+# NAT config: gateway → EIP → SNAT → DNAT → cleanup
+environment:
+  ALIBABA_CLOUD_REGION_ID: "cn-hangzhou"
+
+create_nat_gateway:
+  RegionId: "cn-hangzhou"
+  VpcId: "vpc-bp1xxxxxxxxxx"
+  NatType: "Enhanced"
+  VSwitchId: "vsw-bp1xxxxxxxxxx"
+  Name: "production-nat"
+  BillingMethod: "PayBySpec"
+
+allocate_eips:
+  - RegionId: "cn-hangzhou"
+    Bandwidth: 5
+    InternetChargeType: "PayByTraffic"
+    Name: "nat-snat-eip-1"
+  - RegionId: "cn-hangzhou"
+    Bandwidth: 5
+    InternetChargeType: "PayByTraffic"
+    Name: "nat-snat-eip-2"
+
+create_snat_vswitch:
+  - RegionId: "cn-hangzhou"
+    NatGatewayId: "{{output.nat_gateway_id}}"
+    SnatIp: "47.100.x.x"
+    VSwitchId: "vsw-bp1xxxxxxxxxx"
+    SnatEntryName: "snat-vswitch-1"
+
+create_snat_cidr:
+  - RegionId: "cn-hangzhou"
+    NatGatewayId: "{{output.nat_gateway_id}}"
+    SnatIp: "47.100.y.y"
+    SourceCIDR: "10.0.2.0/24"
+    SnatEntryName: "snat-dev-cidr"
+
+create_dnat:
+  - RegionId: "cn-hangzhou"
+    NatGatewayId: "{{output.nat_gateway_id}}"
+    IpProtocol: "TCP"
+    ExternalIp: "47.100.x.x"
+    ExternalPort: "80"
+    InternalIp: "10.0.1.10"
+    InternalPort: "80"
+    ForwardEntryName: "dnat-web-primary"
+  - RegionId: "cn-hangzhou"
+    NatGatewayId: "{{output.nat_gateway_id}}"
+    IpProtocol: "TCP"
+    ExternalIp: "47.100.x.x"
+    ExternalPort: "443"
+    InternalIp: "10.0.1.10"
+    InternalPort: "443"
+    ForwardEntryName: "dnat-https"
+
+cleanup:
+  - DeleteSnatEntry
+  - DeleteForwardEntry
+  - UnassociateEipAddress
+  - ReleaseEipAddress
+  - DeleteNatGateway

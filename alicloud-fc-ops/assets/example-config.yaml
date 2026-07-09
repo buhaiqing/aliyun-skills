@@ -1,0 +1,126 @@
+# Function Compute (FC 3.0) — Example Configuration
+# This file demonstrates optimal FC function settings for different workload patterns.
+
+# --- Workload: Latency-Critical API ---
+latency_critical:
+  memorySize: 1536          # MB — higher memory = faster init + execution
+  timeout: 10               # seconds — aggressive timeout for fast API
+  runtime: nodejs18         # Node.js has faster cold start than Java/Python
+  diskSize: 512             # MB — default ephemeral disk
+  provisioned:
+    enabled: true
+    target: 2               # Pre-warm 2 instances to eliminate cold start
+    qualifier: "prod"       # Target the prod alias
+  concurrency:
+    maxConcurrency: 100     # Per-function concurrency limit
+  vpcBinding:
+    enabled: false          # Avoid ENI setup latency (~200-300ms)
+  tags:
+    env: production
+    team: api
+    sla: "p99 < 100ms"
+
+# --- Workload: Batch/CPU-Intensive ---
+cpu_intensive:
+  memorySize: 3072          # Max memory for max vCPU (2 vCPU)
+  timeout: 3600             # 1 hour for long-running batch jobs
+  runtime: python3.10
+  diskSize: 10240           # 10 GB for large data processing
+  provisioned:
+    enabled: false          # On-demand for batch processing
+  concurrency:
+    reservedConcurrency: 50 # Reserve capacity for guaranteed execution
+  vpcBinding:
+    enabled: true
+    vpcId: "vpc-xxx"        # Access to internal data sources
+  tags:
+    env: production
+    team: data
+    workload: batch
+
+# --- Workload: Event-Driven/Infrequent ---
+event_driven:
+  memorySize: 256           # Minimal memory for infrequent invocations
+  timeout: 60               # seconds
+  runtime: python3.10
+  provisioned:
+    enabled: false          # No provisioned for cost-efficient sporadic usage
+  concurrency:
+    maxConcurrency: 10      # Low limit to prevent runaway costs
+  async:
+    maximumRetryAttempts: 3
+    maxAsyncEventAgeInSeconds: 7200  # 2 hours event retention
+    onFailure:
+      destination: "arn:acs:log:cn-hangzhou:..."  # DLQ
+  tags:
+    env: production
+    team: events
+    costOptimized: "true"
+
+# --- Workload: GPU + vLLM (online API) ---
+gpu_vllm_online:
+  functionType: gpu              # GPU function — not CPU runtime
+  runtime: custom-container
+  instanceType: elastic          # elastic | resident — immutable after create
+  minInstances: 1                # Reduce cold start; use 0 for dev/cost
+  instanceConcurrency: 1         # Let vLLM continuous batching multiplex requests
+  listenPort: 8000
+  timeout: 600                   # seconds — allow long generations
+  initializer:
+    enabled: true
+    timeout: 300                 # Model load before first request
+  storage:
+    nas: true                    # Cache model weights across instance recycle
+    oss: true                    # Optional: input/output for RAG artifacts
+  llmMetrics:
+    enabled: true                # Requires custom log config (not auto)
+  vllmFlags:                     # Illustrative — tune per model/GPU
+    gpu_memory_utilization: 0.90
+    max_num_seqs: 64
+    max_model_len: 8192
+  tags:
+    env: production
+    team: ml-platform
+    workload: llm-inference
+
+# --- Workload: GPU + vLLM (offline batch scoring) ---
+gpu_vllm_batch:
+  functionType: gpu
+  runtime: custom-container
+  instanceType: elastic
+  minInstances: 0                # Cost-optimized; accept cold start on job start
+  instanceConcurrency: 1
+  timeout: 86400                 # Max 24h for large batch jobs
+  async:
+    maximumRetryAttempts: 2
+    onFailure:
+      destination: "arn:acs:log:cn-hangzhou:..."  # DLQ required for batch durability
+  trigger:
+    type: oss                    # Or EventBridge — read prompts from OSS, write results
+  storage:
+    oss:
+      inputPrefix: "batch-jobs/input/"
+      outputPrefix: "batch-jobs/output/"
+    nas: true
+  provisioned:
+    enabled: false
+  tags:
+    env: production
+    team: data
+    workload: llm-batch
+
+# --- AIOps Monitoring Defaults ---
+monitoring:
+  cms:
+    namespace: "acs_fc"
+    period: 300             # 5-minute sampling
+  alerts:
+    functionErrors:
+      threshold: 10         # per 5 minutes
+      comparison: ">="
+      evaluationCount: 3    # consecutive periods
+    memoryUtilization:
+      threshold: 80         # percent
+      comparison: ">="
+    maxDuration:
+      thresholdPercent: 90  # percent of configured timeout

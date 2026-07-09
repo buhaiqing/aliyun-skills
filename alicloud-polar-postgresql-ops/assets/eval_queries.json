@@ -1,0 +1,12 @@
+[
+  { "query": "Create a PolarDB PostgreSQL cluster", "should_trigger": true },
+  { "query": "给我 PolarDB PG 集群添加节点", "should_trigger": true },
+  { "query": "PolarDB PostgreSQL 巡检", "should_trigger": true },
+  { "query": "Describe PolarDB PG cluster attributes", "should_trigger": true },
+  { "query": "Backup my PolarDB PostgreSQL cluster", "should_trigger": true },
+  { "query": "PolarDB PG 创建数据库", "should_trigger": true },
+  { "query": "Create an RDS PostgreSQL instance", "should_trigger": false },
+  { "query": "My PolarDB MySQL is slow", "should_trigger": false },
+  { "query": "Configure ECS security group", "should_trigger": false },
+  { "query": "Redis cache setup", "should_trigger": false }
+]

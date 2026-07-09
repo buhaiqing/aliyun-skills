@@ -1,0 +1,117 @@
+# ActionTrail Configuration Examples
+
+## Example 1: Single-Account Trail with OSS Delivery
+
+```yaml
+trail:
+  name: my-audit-trail
+  delivery:
+    type: oss
+    oss_bucket_name: my-company-audit-logs
+    oss_key_prefix: actiontrail
+  event_rw: All  # Read, Write, or All
+  trail_region: All  # All regions or specific region ID
+  is_organization_trail: false
+```
+
+## Example 2: Single-Account Trail with SLS Delivery
+
+```yaml
+trail:
+  name: my-sls-audit-trail
+  delivery:
+    type: sls
+    sls_project_arn: "acs:log:cn-hangzhou:1234567890:project/my-audit-project"
+    sls_write_role_arn: "acs:ram::1234567890:role/aliyunactiontraildefaultrole"
+  event_rw: Write  # Only capture write events
+  trail_region: cn-hangzhou
+  is_organization_trail: false
+```
+
+## Example 3: Multi-Account Organization Trail
+
+```yaml
+trail:
+  name: org-audit-trail
+  delivery:
+    type: oss
+    oss_bucket_name: org-audit-logs
+    oss_key_prefix: org-actiontrail
+  event_rw: All
+  trail_region: All
+  is_organization_trail: true
+```
+
+## Example 4: Trail with Data Event Selectors
+
+```yaml
+trail:
+  name: data-audit-trail
+  delivery:
+    type: oss
+    oss_bucket_name: data-audit-logs
+  event_rw: All
+  trail_region: All
+  data_event_selectors:
+    - name: oss-data-events
+      services:
+        - service_name: Oss
+          event_name_patterns:
+            - "GetObject"
+            - "PutObject"
+            - "DeleteObject"
+          logging_level: ReadWrite
+```
+
+## Example 5: Trail with Insight Enabled
+
+```yaml
+trail:
+  name: insight-audit-trail
+  delivery:
+    type: sls
+    sls_project_arn: "acs:log:cn-hangzhou:1234567890:project/audit-project"
+  event_rw: All
+  trail_region: All
+  insight:
+    enabled: true
+    insight_types:
+      - ApiCallRateInsight
+      - ApiCallErrorRateInsight
+      - ServiceLastAccessInsight
+```
+
+## Example 6: Complete Audit Setup
+
+```yaml
+# Complete audit configuration for compliance
+actiontrail_setup:
+  global_events_storage_region: cn-hangzhou
+
+  trails:
+    - name: compliance-trail-oss
+      delivery:
+        type: oss
+        oss_bucket_name: compliance-audit-logs
+        oss_key_prefix: actiontrail/compliance
+      event_rw: All
+      trail_region: All
+      is_organization_trail: false
+
+    - name: compliance-trail-sls
+      delivery:
+        type: sls
+        sls_project_arn: "acs:log:cn-hangzhou:1234567890:project/compliance-audit"
+      event_rw: Write
+      trail_region: All
+
+  insight:
+    enabled: true
+    insight_types:
+      - ApiCallRateInsight
+      - ApiCallErrorRateInsight
+
+  access_key_audit:
+    enabled: true
+    schedule: weekly
+```

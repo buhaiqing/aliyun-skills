@@ -1,0 +1,194 @@
+# 阈值定义 & 实例规格上限速查
+
+> **默认阈值**。可通过 `--threshold-override` 参数覆盖（如在 Go code-snippet 中）。
+> 来源：阿里云官方文档、阿里云 Well-Architected Framework 推荐值。
+
+## [NOTE] 提示知识力
+
+> **阈值设计原则：**
+> - Warning 阈值 = "开始关注" — 超过这个值不一定出问题，但需要纳入容量计划
+> - Critical 阈值 = "需要行动" — 超过这个值有实际的性能风险或可用性风险
+> - 阿里云 ECS 规格的基线网络带宽会受"积分制"影响（突发性能实例 t5/t6），巡检分析时要注意区分
+> - DAS 的智能评分能替代人工阈值判断，启用深度模式时优先参考 DAS 评分
+
+## 通用阈值
+
+| 指标 | Warning | Critical | 说明 |
+|---|---|---|---|
+| CPU 使用率 | > 70% | > 85% | 超过 85% 可能触发 CPU 限频（特别是 t5/t6 突发实例） |
+| 内存使用率 | > 80% | > 90% | 超过 90% OOM 风险高 |
+| 磁盘使用率（系统盘） | > 75% | > 90% | 系统盘满可能导致 ECS 异常 |
+| 磁盘使用率（数据盘） | > 80% | > 90% | 数据盘满影响业务写入 |
+| 系统负载 / vCPU 数 | > 4.0 | > 6.0 | 超过 6.0 表示严重过载 |
+| 网络带宽 / 规格上限 | > 60% | > 80% | 接近上限会丢包/限速 |
+| IOPS / 规格上限 | > 70% | > 85% | 超过上限延迟会显著增加 |
+| TCP 连接数 / 规格上限 | > 70% | > 85% | 连接耗尽导致新连接失败 |
+| 环比昨日增长率 | > 30% | > 50% | 与昨日同期对比 |
+| 连续上升采样点 | > 3 | > 6 | 每个采样点 5min |
+
+## ECS 实例规格上限速查
+
+> 以下为常用规格。未列出的规格使用同系列最小值作为安全估算。
+> 完整规格表见：https://help.aliyun.com/zh/ecs/user-guide/instance-family
+
+### 通用型 (g7/g7se)
+
+| 规格 | vCPU | 内存(GB) | 内网带宽(Gbps) | 最大PPS(万) | 最大连接数(万) |
+|---|---|---|---|---|---|
+| ecs.g7.large | 2 | 8 | 3 | 80 | 25 |
+| ecs.g7.xlarge | 4 | 16 | 6 | 120 | 50 |
+| ecs.g7.2xlarge | 8 | 32 | 10 | 160 | 80 |
+| ecs.g7.4xlarge | 16 | 64 | 16 | 200 | 150 |
+| ecs.g7.8xlarge | 32 | 128 | 24 | 300 | 250 |
+
+### 计算型 (c7/c7se)
+
+| 规格 | vCPU | 内存(GB) | 内网带宽(Gbps) | 最大PPS(万) | 最大连接数(万) |
+|---|---|---|---|---|---|
+| ecs.c7.large | 2 | 4 | 3 | 80 | 25 |
+| ecs.c7.xlarge | 4 | 8 | 6 | 120 | 50 |
+| ecs.c7.2xlarge | 8 | 16 | 10 | 160 | 80 |
+| ecs.c7.4xlarge | 16 | 32 | 16 | 200 | 150 |
+
+### 内存型 (r7)
+
+| 规格 | vCPU | 内存(GB) | 内网带宽(Gbps) | 最大PPS(万) | 最大连接数(万) |
+|---|---|---|---|---|---|
+| ecs.r7.large | 2 | 16 | 3 | 80 | 25 |
+| ecs.r7.xlarge | 4 | 32 | 6 | 120 | 50 |
+| ecs.r7.2xlarge | 8 | 64 | 10 | 160 | 80 |
+
+### 突发性能实例 (t5/t6) — [WARN] 特殊说明
+
+| 规格 | vCPU | 内存(GB) | 基准CPU(%) | 积分获取速度 |
+|---|---|---|---|---|
+| ecs.t6-lc1m1.small | 1 | 1 | 10 | 6 分/小时 |
+| ecs.t6-c1m1.large | 2 | 2 | 15 | 18 分/小时 |
+| ecs.t6-c1m2.large | 2 | 4 | 15 | 18 分/小时 |
+
+> **巡检注意**：t5/t6 实例 CPU 使用率超过基准值时会消耗积分，积分耗尽后强制限速到基准值。巡检 CPU > 70% 对 t5/t6 意义不大，应同时检查 **CPU 积分余额** 和 **CPU 超用比**。
+
+## 云盘规格上限速查
+
+| 类型 | IOPS 基准 | 单盘最大IOPS | 吞吐量(GB/s) | 说明 |
+|---|---|---|---|---|
+| ESSD PL0 | 1,000~10,000 | 10,000 | 0.5 | 起步级，适合系统盘 |
+| ESSD PL1 | 50,000 | 50,000 | 0.5 | 通用型，推荐数据盘最低配置 |
+| ESSD PL2 | 100,000 | 100,000 | 1.0 | 性能型，适合数据库 |
+| ESSD PL3 | 1,000,000 | 1,000,000 | 4.0 | 极致性能，适合核心数据库 |
+| 高效云盘 | 2,000~3,000 | 3,000 | 0.14 | 旧一代，建议迁移至 ESSD |
+
+> **巡检注意**：ESSD IOPS 与容量正相关（如 PL1 = min{50, 容量×50}），小容量盘可能达不到基准值。
+
+## SLB 实例规格上限速查
+
+| 类型 | 最大并发连接 | 最大新建连接/秒 | 带宽(Gbps) | 说明 |
+|---|---|---|---|---|
+| CLB 性能保障型 1 | 5,000 | 3,000 | 1 | 小型应用 |
+| CLB 性能保障型 2 | 50,000 | 5,000 | 1 | 中型应用 |
+| CLB 性能保障型 3 | 200,000 | 10,000 | 1 | 大型应用 |
+| CLB 性能保障型 4 | 1,000,000 | 50,000 | 1 | 超大规模 |
+| ALB 基础型 | 10,000 | 1,000 | 1 | 基础负载均衡 |
+| ALB 标准型 | 100,000 | 10,000 | 10 | 通用负载均衡 |
+| ALB WAF 增强型 | 100,000 | 10,000 | 10 | 含 WAF 能力 |
+
+> **巡检注意**：CLB 性能保障型实例支持"超配"（最大连接数超过保障规格但降级），巡检时按保障规格判断，超出即标记 Warning。
+
+## 云数据库 (RDS) 规格上限速查
+
+### RDS MySQL
+
+| 规格族 | 最大连接数 | 最大 IOPS | 说明 |
+|---|---|---|---|
+| mysql.n2m.small.2c | 2,000 | 6,000 | 1核2GB |
+| mysql.n2m.medium.2c | 4,000 | 12,000 | 2核4GB |
+| mysql.n4m.medium.2c | 4,000 | 20,000 | 2核8GB |
+| mysql.n2m.large.2c | 8,000 | 25,000 | 4核8GB |
+| mysql.n4m.large.2c | 10,000 | 40,000 | 4核16GB |
+| mysql.n2m.xlarge.2c | 12,000 | 40,000 | 8核16GB |
+| mysql.n4m.xlarge.2c | 16,000 | 60,000 | 8核32GB |
+| mysql.n4m.2xlarge.2c | 24,000 | 80,000 | 16核64GB |
+
+### Redis (Tair)
+
+| 规格 | 最大内存(GB) | 最大连接数 | 最大吞吐(QPS) |
+|---|---|---|---|
+| tair.rdb.small.2x | 1 | 10,000 | 8 万 |
+| tair.rdb.medium.2x | 4 | 10,000 | 10 万 |
+| tair.rdb.large.2x | 8 | 10,000 | 15 万 |
+| tair.rdb.xlarge.2x | 16 | 10,000 | 20 万 |
+| tair.rdb.2xlarge.2x | 32 | 10,000 | 25 万 |
+
+> **巡检注意**：Redis 最大连接数 10,000 是绝大多数规格的硬上限，超出需要提工单调整。QPS 为估算值，实际受命令复杂度影响。
+
+## 安全规则阈值
+
+| 规则 | 级别 | 判定 |
+|---|---|---|
+| CIDR = `0.0.0.0/0` AND port ∈ {22,3389} | Critical | SSH/RDP 对公网开放，暴力破解高风险 |
+| CIDR = `0.0.0.0/0` AND port ∈ {3306,5432,6379,27017} | Critical | 数据库端口对公网开放，高危 |
+| CIDR = `0.0.0.0/0` AND port ∈ {9200,5601,8080} | Warning | ES/Kibana 对公网开放 |
+| CIDR = `0.0.0.0/0` AND port > 1024 | Warning | 大范围端口对公网开放 |
+| 安全组规则数 > 50 | Warning | 规则过多，建议拆分或归并 |
+| 单个安全组关联资源 > 100 | Warning | 安全组过重，建议按角色拆分 |
+
+## NAT 网关规格上限
+
+| 规格 | 最大 SNAT 连接数 | 最大带宽(Mbps) | 说明 |
+|---|---|---|---|
+| Small | 10,000 | 100 | 小型应用 |
+| Medium | 50,000 | 200 | 中型应用 |
+| Large | 200,000 | 500 | 大型应用 |
+| 增强型(按量) | 1,000,000 | 5,000 | 超大规模，按使用量计费 |
+
+> **巡检注意**：SNAT 端口耗尽（连接数接近上限 + 短连接过多）是阿里云 NAT 网关最常见的故障模式。检查 `aliyun cms` 中 `SnatConnection` 指标的趋势。
+
+## 动态基线异常检测方法映射
+
+> **用途**：每个指标根据其统计特征选择最合适的异常检测方法。在 `_shared.py` 的 `METRIC_ANOMALY_METHOD` 中定义。
+
+### 方法说明
+
+| 方法 | 原理 | 适用指标特征 | 判定方式 |
+|------|------|-------------|---------|
+| **Z-Score** | μ ± Z×σ | 正态分布、稳定基线 | Z>2 Warning, Z>3 Critical |
+| **Percentile (P95/P99)** | 分位数偏离 | 突发特征、非正态分布 | >P95 Warning, >P99 Critical |
+| **Dual (Z-Score + Fixed)** | 两者取最高 | 递增趋势（如磁盘） | 同时用 Z-Score 和固定阈值 |
+
+### 完整映射表
+
+| 命名空间 | 指标 | 方法 | 说明 |
+|----------|------|------|------|
+| acs_ecs_dashboard | CPUUtilization | Z-Score | CPU 呈日周期，推荐 STL 分桶 |
+| acs_ecs_dashboard | memory_usage | Z-Score | 内存使用平稳 |
+| acs_ecs_dashboard | DiskReadIOPS | Percentile | IOPS 突刺特征 |
+| acs_ecs_dashboard | DiskWriteIOPS | Percentile | IOPS 突刺特征 |
+| acs_ecs_dashboard | InternetInRate | Percentile | 带宽突刺特征 |
+| acs_ecs_dashboard | InternetOutRate | Percentile | 带宽突刺特征 |
+| acs_rds_dashboard | CpuUsage | Z-Score | RDS CPU 有业务周期 |
+| acs_rds_dashboard | DiskUsage | Dual | 递增趋势，双重判定防止漏报 |
+| acs_rds_dashboard | ConnectionUsage | Z-Score | 连接数变化平稳 |
+| acs_rds_dashboard | SlowQueryCount | Percentile | 慢查询偶发性突增 |
+| acs_redis_dashboard | memory_usage | Z-Score | 内存使用平稳 |
+| acs_redis_dashboard | UsedConnection | Percentile | 连接数有突刺 |
+| acs_slb_dashboard | ActiveConnection | Percentile | 连接数突刺 |
+| acs_slb_dashboard | NewConnection | Percentile | 新建连接突刺 |
+| acs_slb_dashboard | UnhealthyServerCount | Z-Score | 健康检查失败平稳 |
+| acs_nat_gateway | SnatConnection | Z-Score | 变化缓慢 |
+| acs_vpc_eip | net_in.rate_percentage | Percentile | 带宽突刺特征 |
+
+### 降噪策略
+
+| 场景 | 策略 | 实现 |
+|------|------|------|
+| 短期突刺 | 连续 2+ 采样点超标才标记 | `ANOMALY_MIN_CONSECUTIVE = 2` |
+| 数据不足 | < 24h 数据回退到固定阈值 | `BASELINE_MIN_POINTS = 24` |
+| 零值容忍 | IOPS 可能为零（无流量） | `if max(history) == 0: skip` |
+
+### 基线窗口
+
+| 策略 | 窗口 | 数据点数 | 适用阶段 |
+|------|------|---------|---------|
+| 快速上线 | 7 天 × 1h | 168 | 新接入环境 |
+| 标准（推荐） | 30 天 × 1h | 720 | 正式生产 |
+| 含节假日 | 90 天 × 1h | 2160 | 有季节性业务 |

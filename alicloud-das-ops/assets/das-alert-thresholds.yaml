@@ -1,0 +1,190 @@
+# DAS Alert Thresholds Configuration
+# DAS 告警阈值配置 - 支持静态阈值和动态基线
+
+thresholds:
+  # 巡检评分阈值
+  inspection_score:
+    warning: 80
+    critical: 60
+    emergency: 40
+    description: "DAS 巡检评分"
+    unit: "分"
+    api: "GetInstanceInspections"
+    json_path: "$.Data.score"
+
+  # 空间使用率阈值
+  space_usage_ratio:
+    warning: 0.75
+    critical: 0.85
+    emergency: 0.95
+    description: "空间使用率 = totalSize / allocated_capacity"
+    unit: "ratio"
+    api: "GetSpaceSummary"
+    json_path: "$.Data.totalSize / $.Data.allocatedCapacity"
+    note: "allocatedCapacity 需从引擎技能获取"
+
+  # 活跃会话比率阈值
+  active_session_ratio:
+    warning: 0.70
+    critical: 0.85
+    emergency: 0.95
+    description: "活跃会话比率 = active_sessions / max_connections"
+    unit: "ratio"
+    api: "GetSessionList"
+    json_path: "len($.Data.sessionList) / max_connections"
+    note: "max_connections 需从引擎技能或实例参数获取"
+
+  # 慢查询 QPS 比率阈值
+  slow_query_qps_ratio:
+    warning: 0.05
+    critical: 0.10
+    emergency: 0.20
+    description: "慢查询占比 = slow_query_qps / total_qps"
+    unit: "ratio"
+    api: "GetQueryOptimizeData"
+    json_path: "$.Data.slowQueryQps / $.Data.totalQps"
+
+  # DAS Pro 存储使用率阈值
+  das_pro_storage_ratio:
+    warning: 0.70
+    critical: 0.85
+    emergency: 0.95
+    description: "Pro 存储使用率 = storageUsed / (storageUsed + storageFreeQuotaInMB * 1024 * 1024)"
+    unit: "ratio"
+    api: "GetDasProServiceUsage"
+    json_path: "$.Data.storageUsed / ($.Data.storageUsed + $.Data.storageFreeQuotaInMB * 1048576)"
+
+  # 死锁频率阈值（每小时）
+  deadlock_frequency:
+    warning: 1
+    critical: 5
+    emergency: 20
+    description: "每小时死锁次数"
+    unit: "次/小时"
+    api: "GetDeadLockHistory"
+    json_path: "count($.Data[?time > now() - 1h])"
+
+  # 自动扩容触发频率阈值（24 小时内）
+  auto_scaling_trigger:
+    warning: 1
+    critical: 3
+    emergency: 5
+    description: "24 小时内自动扩容触发次数"
+    unit: "次/24h"
+    api: "GetAutonomousNotifyEventsInRange"
+    json_path: "count($.Data[?eventType == 'AUTO_SCALING' && time > now() - 24h])"
+
+  # SQL 限流触发频率阈值（24 小时内）
+  sql_throttling_trigger:
+    warning: 3
+    critical: 10
+    emergency: 30
+    description: "24 小时内 SQL 限流触发次数"
+    unit: "次/24h"
+    api: "GetAutonomousNotifyEventsInRange"
+    json_path: "count($.Data[?eventType == 'SQL_THROTTLING' && time > now() - 24h])"
+
+  # 自治事件失败率阈值
+  autonomous_event_failure_rate:
+    warning: 0.10
+    critical: 0.25
+    emergency: 0.50
+    description: "自治事件失败率 = failed_events / total_events"
+    unit: "ratio"
+    api: "GetAutonomousNotifyEventsInRange"
+    json_path: "count($.Data[?eventStatus == 'FAILED']) / count($.Data)"
+    time_window: "24h"
+
+  # 会话锁等待时间阈值
+  session_lock_wait_time:
+    warning: 30
+    critical: 120
+    emergency: 300
+    description: "会话锁等待时间"
+    unit: "秒"
+    api: "GetSessionList"
+    json_path: "max($.Data.sessionList[?state == 'Waiting for lock'].time)"
+
+  # 诊断报告生成时间阈值
+  diagnostic_report_time:
+    warning: 120
+    critical: 240
+    emergency: 300
+    description: "诊断报告生成时间"
+    unit: "秒"
+    api: "DescribeDiagnosticReportList"
+    json_path: "$.Data[0].duration"
+    note: "超过 300s 视为超时"
+
+  # 缓存分析任务失败率阈值
+  cache_analysis_failure_rate:
+    warning: 0.10
+    critical: 0.30
+    emergency: 0.50
+    description: "缓存分析任务失败率"
+    unit: "ratio"
+    api: "DescribeCacheAnalysisJob"
+    json_path: "count($.Data[?status == 'FAILED']) / count($.Data)"
+    time_window: "7d"
+    engines: ["Redis", "Tair"]
+
+# 动态基线配置
+dynamic_baseline:
+  enabled: true
+  learning_period: "7d"
+  recalculation_interval: "1d"
+  recalculation_time: "00:00"
+  sigma_multiplier:
+    warning: 1.0
+    critical: 2.0
+    emergency: 3.0
+  metrics:
+    - inspection_score
+    - space_usage_ratio
+    - active_session_ratio
+    - slow_query_qps_ratio
+    - das_pro_storage_ratio
+
+# 特殊时段配置
+special_periods:
+  - name: "双11大促"
+    start: "11-01T00:00:00"
+    end: "11-12T00:00:00"
+    adjustments:
+      active_session_ratio:
+        warning: 0.80
+        critical: 0.90
+        emergency: 0.98
+      slow_query_qps_ratio:
+        warning: 0.10
+        critical: 0.20
+        emergency: 0.30
+
+  - name: "春节红包"
+    start: "01-20T00:00:00"
+    end: "02-05T00:00:00"
+    adjustments:
+      active_session_ratio:
+        warning: 0.80
+        critical: 0.90
+        emergency: 0.98
+
+# 告警收敛策略
+alert_convergence:
+  # 同一故障模式在 30 分钟内只发送一次告警
+  deduplication_window: "30m"
+  # 连续 3 次超过阈值才触发 critical 告警
+  consecutive_threshold:
+    warning: 1
+    critical: 3
+    emergency: 1
+  # 告警升级策略
+  escalation:
+    - from: warning
+      to: critical
+      condition: "连续 3 次超过 warning 阈值"
+      time_window: "15m"
+    - from: critical
+      to: emergency
+      condition: "连续 2 次超过 critical 阈值"
+      time_window: "10m"

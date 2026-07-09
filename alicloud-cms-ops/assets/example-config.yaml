@@ -1,0 +1,42 @@
+# Example configuration for alicloud-cms-ops
+# YAML anchors eliminate repeated fields (TE-5)
+x-cred: &cred
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+
+x-alarm-base: &alarm
+  evaluation_count: 3
+  period: 300
+  statistics: "Average"
+  comparison_operator: ">="
+  effective_interval: "00:00-23:59"
+
+x-threshold-prod: &thresh
+  cpu_high: 80
+  cpu_critical: 95
+  memory_high: 80
+  disk_usage_high: 80
+
+credentials:
+  <<: *cred
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+defaults:
+  region: "cn-hangzhou"
+  timeout_seconds: 30
+
+metrics:
+  default_period: 60
+  namespaces:
+    - acs_ecs_dashboard
+    - acs_rds_dashboard
+    - acs_slb_dashboard
+    - acs_kvstore_dashboard
+    - acs_k8s_dashboard
+
+alarms:
+  <<: *alarm
+  thresholds:
+    <<: *thresh
+    disk_usage_critical: 90
+    memory_critical: 95

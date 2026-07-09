@@ -1,0 +1,10 @@
+{
+  "conversation_id": "conv-turn-x15",
+  "generation_id": "gen-turn-b",
+  "model": "claude-sonnet-4",
+  "tokenUsage": {
+    "inputTokens": 5000,
+    "outputTokens": 400,
+    "totalTokens": 5400
+  }
+}

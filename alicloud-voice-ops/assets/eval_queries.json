@@ -1,0 +1,50 @@
+[
+  {
+    "query": "发送一条语音验证码到13800138000，使用阿里云签名",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["SingleCallByVoice"],
+    "notes": "用户需要发送语音验证码，应触发Voice skill"
+  },
+  {
+    "query": "查询昨天所有语音呼叫的发送成功率",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["QueryCallStatistics"],
+    "notes": "用户需要查询语音发送统计，应触发Voice skill"
+  },
+  {
+    "query": "新增一个语音签名，签名源是企业官网",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["AddVoiceSign"],
+    "notes": "用户需要添加语音签名，应触发Voice skill"
+  },
+  {
+    "query": "语音模板审核不通过怎么办",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["QueryVoiceTemplate"],
+    "notes": "用户需要排查模板审核问题，应触发Voice skill"
+  },
+  {
+    "query": "批量发送语音通知给多个手机号",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["BatchSendVoice"],
+    "notes": "用户需要批量发送语音，应触发Voice skill"
+  },
+  {
+    "query": "语音呼叫失败，错误码是isv.BUSINESS_LIMIT_CONTROL",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["SingleCallByVoice"],
+    "notes": "用户遇到限流错误，应触发Voice skill进行排查"
+  },
+  {
+    "query": "删除一个未使用的语音模板",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["DeleteVoiceTemplate"],
+    "notes": "用户需要删除语音模板，应触发Voice skill"
+  },
+  {
+    "query": "查询某个手机号昨天的语音呼叫详情",
+    "expected_skill": "alicloud-voice-ops",
+    "expected_operations": ["QueryCallDetails"],
+    "notes": "用户需要查询语音呼叫详情，应触发Voice skill"
+  }
+]

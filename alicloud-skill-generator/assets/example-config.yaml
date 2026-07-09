@@ -1,0 +1,90 @@
+# Example configuration for alicloud-[product]-ops
+# This file serves as a template for credential and resource configuration.
+
+# UX Configuration
+# All UX settings follow references/user-experience-spec.md
+ux:
+  # Onboarding settings
+  onboarding:
+    quick_start_enabled: true
+    show_capabilities_table: true
+    prerequisite_checklist: true
+
+  # Interaction settings
+  interaction:
+    max_prompts_describe: 1
+    max_prompts_create: 2
+    max_prompts_modify: 2
+    max_prompts_delete: 1
+    confirmation_required_for_destructive: true
+    smart_defaults_enabled: true
+
+  # Smart defaults (applied when user does not specify)
+  smart_defaults:
+    name_pattern: "[product]-[resource]-[timestamp]"
+    region_source: "env.ALIBABA_CLOUD_REGION_ID"
+    zone_selection: "first_available"
+    timeout_seconds: 300
+    page_size: 50
+
+  # Feedback settings
+  feedback:
+    show_progress_for_ops_over_seconds: 5
+    show_elapsed_time: true
+    show_estimated_remaining: true
+    success_show_next_steps: true
+    failure_show_remediation: true
+
+  # Error handling settings
+  error_handling:
+    format: "[ERROR] {code}: {summary}\n\nWhat happened:\n{explanation}\n\nHow to fix:\n{remediation}\n\nNext step:\n{next_action}"
+    auto_retry_throttling: true
+    max_retries_throttling: 3
+    backoff_strategy: "exponential"
+    show_request_id: true
+
+  # Escalation settings
+  escalation:
+    template_enabled: true
+    include_request_id: true
+    include_resource_id: true
+    include_error_code: true
+    include_timestamp: true
+    support_channel: "https://workorder.console.aliyun.com/"
+
+# Credentials
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+# Defaults
+defaults:
+  region: "cn-hangzhou"
+  timeout_seconds: 30
+  retry_count: 3
+
+# Optimization settings
+# Follow references/optimization-analysis.md for three-dimensional optimization
+optimization:
+  # Fault diagnosis settings
+  fault_diagnosis:
+    pre_flight_state_validation: true
+    health_check_enabled: true
+    error_taxonomy_minimum_codes: 10
+
+  # Root cause localization settings
+  root_cause:
+    dependency_mapping_enabled: true
+    log_correlation_enabled: true
+    causal_chain_analysis: true
+
+  # Rapid resolution settings
+  rapid_resolution:
+    auto_remediation_enabled: true
+    auto_remediation_safe_errors:
+      - Throttling
+      - InternalError
+      - NetworkTimeout
+    recovery_macros_enabled: true
+    escalation_template_standardized: true

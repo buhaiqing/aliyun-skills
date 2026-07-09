@@ -1,0 +1,67 @@
+# 关键交易系统复合指标扩缩策略
+# 适用: 支付系统 / 订单系统 / 实时风控
+
+policy:
+  name: "composite-critical-scaling"
+  description: "基于 CPU + 内存 + 连接数三指标复合判断的弹性策略"
+  scenario: "composite"  # S4
+
+  scaling_group:
+    min_size: 3
+    max_size: 20
+    default_cooldown: 600
+
+  # 多指标权重
+  metrics:
+    - name: "CpuUtilization"
+      namespace: "acs_ecs_dashboard"
+      weight: 0.4
+      warn_threshold: 70
+      critical_threshold: 90
+    - name: "memory_usedutilization"
+      namespace: "acs_ecs_dashboard"
+      weight: 0.3
+      warn_threshold: 80
+      critical_threshold: 90
+    - name: "InternetOutRate"
+      namespace: "acs_ecs_dashboard"
+      weight: 0.3
+      warn_threshold: 80   # 带宽使用率 %
+      critical_threshold: 95
+
+  # 决策矩阵
+  decision_matrix:
+    normal:
+      condition: "all_metrics_below_warn"
+      action: "none"
+    watch:
+      condition: "any_metric_between_warn_critical"
+      action: "monitor_only"
+      notify: true
+    confirm:
+      condition: "weighted_score > 0.6 AND any_metric_above_warn"
+      action:
+        type: "StepScalingRule"
+        adjustment: 2  # 扩容 2 台
+    danger:
+      condition: "any_metric_above_critical"
+      action:
+        type: "StepScalingRule"
+        adjustment: 5  # 扩容 5 台
+      notify: true
+      require_confirm: false  # 危险线自动执行
+    emergency:
+      condition: "multiple_metrics_above_critical"
+      action:
+        type: "StepScalingRule"
+        adjustment: 10  # 扩容 10 台
+      notify: true
+      create_incident: true   # 自动创建事件单
+
+  scale_in:
+    trigger:
+      condition: "all_metrics_below_warn AND sustained_minutes: 30"
+    action:
+      type: "SimpleScalingRule"
+      adjustment_value: -1
+      cooldown: 900

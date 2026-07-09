@@ -1,0 +1,24 @@
+{
+  "queries": [
+    {
+      "query": "申请弹性公网 IP",
+      "expected_skill": "alicloud-eip-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "绑定 EIP 到 ECS",
+      "expected_skill": "alicloud-eip-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "释放 EIP",
+      "expected_skill": "alicloud-eip-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "修改 EIP 带宽",
+      "expected_skill": "alicloud-eip-ops",
+      "priority": "P1"
+    }
+  ]
+}

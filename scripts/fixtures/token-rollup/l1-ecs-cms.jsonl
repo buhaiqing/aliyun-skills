@@ -1,0 +1,4 @@
+{"timestamp": "2026-06-22T08:00:00Z", "skill": "alicloud-ecs-ops", "operation": "DescribeInstances", "exit_code": 0, "rubric_pass": true, "gcl_status": "LIGHTWEIGHT", "source": "skillopt-wrapper"}
+{"timestamp": "2026-06-22T09:00:00Z", "skill": "alicloud-ecs-ops", "operation": "DescribeInstances", "exit_code": 0, "rubric_pass": true, "gcl_status": "LIGHTWEIGHT", "source": "skillopt-wrapper"}
+{"timestamp": "2026-06-22T10:00:00Z", "skill": "alicloud-ecs-ops", "operation": "DeleteInstance", "exit_code": 1, "rubric_pass": false, "gcl_status": "FAILED", "source": "skillopt-wrapper"}
+{"timestamp": "2026-06-22T11:00:00Z", "skill": "alicloud-cms-ops", "operation": "DescribeMetricList", "exit_code": 0, "rubric_pass": true, "gcl_status": "PASS", "source": "gcl-runner"}

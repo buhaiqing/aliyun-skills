@@ -1,0 +1,85 @@
+{
+  "skill": "alicloud-waf-ops",
+  "version": "1.0.0",
+  "eval_queries": [
+    {
+      "id": "waf-001",
+      "query": "What WAF instance do I have?",
+      "intent": "describe_instance",
+      "expected_tools": ["aliyun waf-openapi DescribeInstanceInfo"],
+      "expected_params": ["--RegionId", "--version 2021-10-01", "--force"]
+    },
+    {
+      "id": "waf-002",
+      "query": "Add example.com to WAF protection with origin at 1.2.3.4",
+      "intent": "create_domain",
+      "expected_tools": ["aliyun waf-openapi CreateDomain"],
+      "expected_params": ["--Domain", "--OriginAddress", "--ListenPorts"]
+    },
+    {
+      "id": "waf-003",
+      "query": "List all protected domains",
+      "intent": "describe_domains",
+      "expected_tools": ["aliyun waf-openapi DescribeDomainList"]
+    },
+    {
+      "id": "waf-004",
+      "query": "Block IP 10.0.0.1 on example.com",
+      "intent": "create_acl",
+      "expected_tools": ["aliyun waf-openapi CreateAccessControl"],
+      "expected_params": ["--Domain", "--Ip", "--Action forbidden"]
+    },
+    {
+      "id": "waf-005",
+      "query": "Show me the top 10 attacking IPs on example.com in the last hour",
+      "intent": "describe_top_ip",
+      "expected_tools": ["aliyun waf-openapi DescribeVisitTopIp"],
+      "expected_params": ["--Domain", "--StartTimestamp", "--EndTimestamp"]
+    },
+    {
+      "id": "waf-006",
+      "query": "Create a WAF instance in Shanghai region",
+      "intent": "create_instance",
+      "expected_tools": ["aliyun waf-openapi CreateInstance"],
+      "expected_params": ["--RegionId"]
+    },
+    {
+      "id": "waf-007",
+      "query": "Enable access logging for my WAF instance",
+      "intent": "modify_log_status",
+      "expected_tools": ["aliyun waf-openapi ModifyLogStatus"],
+      "expected_params": ["--LogOn true"]
+    },
+    {
+      "id": "waf-008",
+      "query": "Delete the domain example.com from WAF",
+      "intent": "delete_domain",
+      "expected_tools": ["aliyun waf-openapi DeleteDomain"],
+      "confirmation_required": true
+    },
+    {
+      "id": "waf-009",
+      "query": "What are the defense rules on example.com?",
+      "intent": "describe_defense_rules",
+      "expected_tools": ["aliyun waf-openapi DescribeDefenseRules"]
+    },
+    {
+      "id": "waf-010",
+      "query": "WAF quota for number of protected domains is 50",
+      "intent": "quota_check",
+      "expected_response": "Confirm quota limits"
+    }
+  ],
+  "negative_queries": [
+    {
+      "query": "Set up DDoS protection",
+      "should_not_match": true,
+      "reason": "Delegates to alicloud-ddos-ops"
+    },
+    {
+      "query": "Create a WAF RAM policy",
+      "should_not_match": true,
+      "reason": "Delegates to alicloud-ram-ops"
+    }
+  ]
+}

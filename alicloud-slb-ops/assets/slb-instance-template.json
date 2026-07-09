@@ -1,0 +1,12 @@
+{
+  "RegionId": "cn-hangzhou",
+  "LoadBalancerName": "my-slb",
+  "AddressType": "internet",
+  "InternetChargeType": "paybytraffic",
+  "VpcId": "vpc-bp67acfmxazb4ph***",
+  "VSwitchId": "vsw-bp67acfmxazb4ph***",
+  "Bandwidth": 10,
+  "LoadBalancerSpec": "slb.s1.small",
+  "DeleteProtection": "off",
+  "ModificationProtectionStatus": "NonProtection"
+}

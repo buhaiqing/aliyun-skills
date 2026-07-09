@@ -1,0 +1,62 @@
+# Example CEN/CBN configuration. Template only; do not put credentials here.
+
+x-common: &common
+  region: cn-hangzhou
+  cen_name: prod-global-cen
+  client_token_prefix: cbn-prod
+  tags:
+    Environment: prod
+    Owner: network-team
+
+x-route-safety: &route_safety
+  require_gcl: true
+  require_dry_run: true
+  require_route_conflict_check: true
+  require_rollback_export: true
+
+cen:
+  <<: *common
+  description: Production cross-region network fabric
+  protection_level: REDUCED
+
+transit_router:
+  <<: *common
+  transit_router_name: prod-hz-tr
+  route_safety: *route_safety
+
+vpc_attachment:
+  <<: *common
+  cen_id: cen-xxxxxxxx
+  transit_router_id: tr-xxxxxxxx
+  vpc_id: vpc-xxxxxxxx
+  auto_publish_route_enabled: true
+  zone_mappings:
+    - zone_id: cn-hangzhou-h
+      vswitch_id: vsw-xxxxxxxx
+    - zone_id: cn-hangzhou-i
+      vswitch_id: vsw-yyyyyyyy
+  route_safety: *route_safety
+
+peer_attachment:
+  <<: *common
+  peer_region: cn-shanghai
+  peer_transit_router_id: tr-yyyyyyyy
+  bandwidth_mbps: 100
+  cost_confirmation_required: true
+  route_safety: *route_safety
+
+route_entry:
+  route_table_id: vtb-xxxxxxxx
+  destination_cidr: 10.20.0.0/16
+  next_hop_type: Attachment
+  next_hop_attachment_id: tr-attach-xxxxxxxx
+  route_safety: *route_safety
+
+observability:
+  flow_log:
+    enabled: true
+    sls_project: cen-flowlog-prod
+    logstore: cen-flowlog
+  alarms:
+    bandwidth_warning_percent: 80
+    bandwidth_critical_percent: 95

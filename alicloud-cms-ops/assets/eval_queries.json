@@ -1,0 +1,14 @@
+{
+  "queries": [
+    {
+      "query": "查询 cms 信息",
+      "expected_skill": "alicloud-cms-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建 cms 资源",
+      "expected_skill": "alicloud-cms-ops",
+      "priority": "P0"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "NatGatewayId": "ngw-bp1aevb8sfi8mh1qj5te",
+  "Name": "prod-natgw",
+  "Description": "Production NAT gateway",
+  "NatType": "Enhanced",
+  "InternetChargeType": "PayByLcu",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "Status": "Available",
+  "BusinessStatus": "Normal",
+  "CreationTime": "2026-01-20T08:00:00Z"
+}

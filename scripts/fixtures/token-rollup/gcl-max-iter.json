@@ -1,0 +1,42 @@
+{
+  "trace_id": "gcl-fixture-max-iter",
+  "skill": "alicloud-ecs-ops",
+  "operation": "DeleteInstance",
+  "started_at": "2026-06-22T12:00:00+0000",
+  "iterations": [
+    {
+      "iter": 1,
+      "critic": {
+        "critic_meta": {
+          "mode": "llm",
+          "coding_agent": "harness_cli",
+          "model": "gpt-4o-mini",
+          "llm_usage": {
+            "prompt_tokens": 200,
+            "completion_tokens": 30,
+            "total_tokens": 230
+          }
+        }
+      }
+    },
+    {
+      "iter": 2,
+      "critic": {
+        "critic_meta": {
+          "mode": "llm",
+          "coding_agent": "harness_cli",
+          "model": "gpt-4o-mini",
+          "llm_usage": {
+            "prompt_tokens": 180,
+            "completion_tokens": 20,
+            "total_tokens": 200
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "status": "MAX_ITER",
+    "iter": 2
+  }
+}

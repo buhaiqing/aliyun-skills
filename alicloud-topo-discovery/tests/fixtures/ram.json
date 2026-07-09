@@ -1,0 +1,7 @@
+{
+  "RoleName": "ecs-role",
+  "Description": "ECS service role",
+  "Arn": "acs:ram::1234567890:role/ecs-role",
+  "AssumeRolePolicyDocument": "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":[\"ecs.aliyuncs.com\"]}}]}",
+  "CreateDate": "2026-03-01T12:00:00Z"
+}

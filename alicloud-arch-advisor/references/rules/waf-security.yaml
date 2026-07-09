@@ -1,0 +1,192 @@
+pillar: Security
+rules:
+  - id: WAF-SEC-001
+    title: RAM 用户启用 MFA
+    severity: critical
+    check_type: config
+    resource_type: RAM
+    description: 所有 RAM 用户应启用多因素认证(MFA)，以防止凭证泄露导致账号被接管
+    check_logic:
+      field: LoginProfile.MFABindRequired
+      operator: equals
+      value: true
+    remediation: 为所有 RAM 用户启用 MFA 认证，建议使用虚拟 MFA 或硬件 MFA 设备
+    data_source: ram-ops
+
+  - id: WAF-SEC-002
+    title: AccessKey 定期轮换
+    severity: high
+    check_type: config
+    resource_type: RAM
+    description: AccessKey 应每 90 天轮换一次，降低长期凭证泄露风险
+    check_logic:
+      field: AccessKeyLastUsed
+      operator: days_since
+      value: 90
+    remediation: 创建新 AK 并更新应用程序，然后禁用并删除旧 AK
+    data_source: ram-ops
+
+  - id: WAF-SEC-003
+    title: 启用操作审计 ActionTrail
+    severity: high
+    check_type: existence
+    resource_type: ActionTrail
+    description: 应启用全局 ActionTrail 记录所有 API 操作，满足审计和合规要求
+    check_logic:
+      field: TrailList
+      operator: exists
+    remediation: aliyun actiontrail CreateTrail --创建全局跟踪，并开启日志记录
+    data_source: actiontrail-ops
+
+  - id: WAF-SEC-004
+    title: ECS 安全组禁止开放 SSH 到全网
+    severity: critical
+    check_type: config
+    resource_type: ECS
+    description: ECS 安全组不应允许 0.0.0.0/0 访问 SSH(22)端口
+    check_logic:
+      field: SecurityGroupRules
+      operator: not_contains
+      value: "0.0.0.0/0:22"
+    remediation: 将 SSH 端口访问限制为特定 IP 或内网 CIDR，禁止全网开放
+    data_source: ecs-ops
+
+  - id: WAF-SEC-005
+    title: 公网 ALB/SLB 开启 WAF 防护
+    severity: critical
+    check_type: relation
+    resource_type: SLB
+    description: 面向公网的 ALB/SLB 实例应接入 Web 应用防火墙(WAF)进行安全防护
+    check_logic:
+      field: WafInstanceIds
+      operator: not_empty
+    remediation: 为公网 SLB/ALB 实例购买并配置 WAF 3.0 防护
+    data_source: slb-ops
+
+  - id: WAF-SEC-006
+    title: KMS 密钥自动轮转
+    severity: high
+    check_type: config
+    resource_type: KMS
+    description: KMS 主密钥应启用自动轮转，定期更新加密材料
+    check_logic:
+      field: AutomaticRotation
+      operator: equals
+      value: Enabled
+    remediation: aliyun kms SetKeyRotationPolicy --EnableAutomaticRotation true --RotationInterval 365d
+    data_source: kms-ops
+
+  - id: WAF-SEC-007
+    title: 安全中心主机基线检查启用
+    severity: medium
+    check_type: existence
+    resource_type: SAS
+    description: 安全中心(SAS)应启用主机基线检查功能，及时发现配置风险
+    check_logic:
+      field: BaselineCheckSwitch
+      operator: equals
+      value: "1"
+    remediation: 在云安全中心控制台开启基线检查，并设置定期扫描策略
+    data_source: sas-ops
+
+  - id: WAF-SEC-008
+    title: RDS 实例禁止公开访问
+    severity: critical
+    check_type: config
+    resource_type: RDS
+    description: RDS 实例不应绑定公网 IP，避免数据库直接暴露在互联网
+    check_logic:
+      field: PublicConnectionString
+      operator: is_null
+    remediation: 释放 RDS 公网地址，仅通过内网或私网连接访问数据库
+    data_source: rds-ops
+
+  - id: WAF-SEC-009
+    title: SLB/ALB 配置 SSL 证书
+    severity: high
+    check_type: existence
+    resource_type: SLB
+    description: 面向公网的 SLB/ALB 监听器应配置 SSL/TLS 证书，启用 HTTPS
+    check_logic:
+      field: ListenerProtocol
+      operator: in
+      value: ["HTTPS", "SSL"]
+    remediation: 为 SLB/ALB 配置 SSL 证书，使用 HTTPS 监听器替代 HTTP
+    data_source: slb-ops
+
+  - id: WAF-SEC-010
+    title: OSS Bucket 禁止公开访问
+    severity: critical
+    check_type: config
+    resource_type: OSS
+    description: OSS Bucket 不应配置公共读或公共写权限
+    check_logic:
+      field: BucketACL
+      operator: not_equals
+      value: public-read-write
+    remediation: 将 OSS Bucket ACL 设置为 private，使用 RAM 策略控制访问
+    data_source: oss-ops
+
+  - id: WAF-SEC-011
+    title: 容器镜像扫描已启用
+    severity: high
+    check_type: existence
+    resource_type: ACK
+    description: 容器镜像仓库应启用漏洞扫描，确保镜像中不含已知安全漏洞
+    check_logic:
+      field: ImageScanEnabled
+      operator: equals
+      value: true
+    remediation: 在容器镜像服务控制台开启镜像扫描功能，并设置扫描策略
+    data_source: ack-ops
+
+  - id: WAF-SEC-012
+    title: VSwitch 配置网络 ACL
+    severity: medium
+    check_type: existence
+    resource_type: VPC
+    description: VSwitch 应关联网络 ACL 实现子网级别的访问控制
+    check_logic:
+      field: NetworkAclId
+      operator: not_null
+    remediation: 为 VSwitch 创建并关联网络 ACL，配置入方向和出方向规则
+    data_source: vpc-ops
+
+  - id: WAF-SEC-013
+    title: 启用 DDoS 防护
+    severity: high
+    check_type: existence
+    resource_type: DDoS
+    description: 公网 IP 资源应开启 DDoS 原生防护或 DDoS 高防服务
+    check_logic:
+      field: DdosProtectionEnabled
+      operator: equals
+      value: true
+    remediation: 购买并配置 DDoS 原生防护或 DDoS 高防 IP 服务
+    data_source: ddos-ops
+
+  - id: WAF-SEC-014
+    title: KMS 凭据定期轮转
+    severity: medium
+    check_type: config
+    resource_type: KMS
+    description: 在 KMS 凭据管理器中的数据库口令等凭据应配置自动轮转
+    check_logic:
+      field: SecretRotationEnabled
+      operator: equals
+      value: true
+    remediation: 在 KMS 凭据管理器中配置凭据自动轮转策略，设置轮转周期
+    data_source: kms-ops
+
+  - id: WAF-SEC-015
+    title: 审计日志保留不少于 180 天
+    severity: high
+    check_type: config
+    resource_type: ActionTrail
+    description: ActionTrail 审计日志应保留至少 180 天以满足合规审计要求
+    check_logic:
+      field: TrailLogRetentionDays
+      operator: gte
+      value: 180
+    remediation: 配置 ActionTrail 将日志投递到 OSS 并设置生命周期规则保留 180 天以上
+    data_source: actiontrail-ops

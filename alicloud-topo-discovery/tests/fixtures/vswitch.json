@@ -1,0 +1,12 @@
+{
+  "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
+  "VSwitchName": "vsw-prod-web-a",
+  "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
+  "CidrBlock": "10.0.1.0/24",
+  "ZoneId": "cn-beijing-a",
+  "Description": "Web tier subnet",
+  "Status": "Available",
+  "CreationTime": "2026-01-15T08:05:00Z",
+  "AvailableIpAddressCount": 250,
+  "ResourceGroupId": "rg-aek2bti7cf7yj7q"
+}

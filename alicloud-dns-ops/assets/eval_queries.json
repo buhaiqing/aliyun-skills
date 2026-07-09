@@ -1,0 +1,395 @@
+{
+  "metadata": {
+    "skill": "alicloud-dns-ops",
+    "version": "1.0.0",
+    "created": "2026-07-03",
+    "description": "Evaluation queries for DNS operations skill"
+  },
+  "test_scenarios": [
+    {
+      "id": "DNS-001",
+      "name": "Domain Management",
+      "description": "Test domain CRUD operations",
+      "queries": [
+        {
+          "query": "Add a new domain example.com to DNS service",
+          "expected_action": "AddDomain",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        },
+        {
+          "query": "List all managed domains",
+          "expected_action": "DescribeDomains",
+          "parameters": {
+            "PageNumber": 1,
+            "PageSize": 10
+          }
+        },
+        {
+          "query": "Get details for domain example.com",
+          "expected_action": "DescribeDomainInfo",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-002",
+      "name": "Record Management",
+      "description": "Test DNS record CRUD operations",
+      "queries": [
+        {
+          "query": "Add an A record for www.example.com pointing to 1.2.3.4",
+          "expected_action": "AddRecord",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "www",
+            "Type": "A",
+            "Value": "1.2.3.4",
+            "TTL": 600
+          }
+        },
+        {
+          "query": "Add a CNAME record for app.example.com pointing to example.slb.aliyuncs.com",
+          "expected_action": "AddRecord",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "app",
+            "Type": "CNAME",
+            "Value": "example.slb.aliyuncs.com",
+            "TTL": 600
+          }
+        },
+        {
+          "query": "List all records for domain example.com",
+          "expected_action": "DescribeDomainRecords",
+          "parameters": {
+            "DomainName": "example.com",
+            "PageNumber": 1,
+            "PageSize": 50
+          }
+        },
+        {
+          "query": "Update the A record for www.example.com to point to 5.6.7.8",
+          "expected_action": "UpdateDomainRecord",
+          "parameters": {
+            "RecordId": "{{record_id}}",
+            "RR": "www",
+            "Type": "A",
+            "Value": "5.6.7.8",
+            "TTL": 300
+          }
+        },
+        {
+          "query": "Delete the A record for www.example.com",
+          "expected_action": "DeleteDomainRecord",
+          "parameters": {
+            "RecordId": "{{record_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-003",
+      "name": "Line-Based Routing",
+      "description": "Test ISP and geographic routing",
+      "queries": [
+        {
+          "query": "Add a record for www.example.com with telecom line routing",
+          "expected_action": "AddRecord",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "www",
+            "Type": "A",
+            "Value": "1.2.3.5",
+            "Line": "telecom",
+            "TTL": 600
+          }
+        },
+        {
+          "query": "List available routing lines for domain example.com",
+          "expected_action": "DescribeLines",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        },
+        {
+          "query": "Add a record for www.example.com with overseas routing",
+          "expected_action": "AddRecord",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "www",
+            "Type": "A",
+            "Value": "2.3.4.5",
+            "Line": "oversea",
+            "TTL": 600
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-004",
+      "name": "Weighted Routing",
+      "description": "Test weighted record distribution",
+      "queries": [
+        {
+          "query": "Add weighted records for api.example.com with 70/30 distribution",
+          "expected_action": "AddRecord",
+          "parameters": [
+            {
+              "DomainName": "example.com",
+              "RR": "api",
+              "Type": "A",
+              "Value": "10.0.0.1",
+              "Weight": 70,
+              "TTL": 300
+            },
+            {
+              "DomainName": "example.com",
+              "RR": "api",
+              "Type": "A",
+              "Value": "10.0.0.2",
+              "Weight": 30,
+              "TTL": 300
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "DNS-005",
+      "name": "PrivateZone Management",
+      "description": "Test internal DNS operations",
+      "queries": [
+        {
+          "query": "Create a PrivateZone for internal.example.com",
+          "expected_action": "CreateZone",
+          "parameters": {
+            "ZoneName": "internal.example.com",
+            "Remark": "Internal DNS zone"
+          }
+        },
+        {
+          "query": "Add an internal A record for api.internal.example.com",
+          "expected_action": "AddZoneRecord",
+          "parameters": {
+            "ZoneId": "{{zone_id}}",
+            "Rr": "api",
+            "Type": "A",
+            "Value": "10.0.0.1"
+          }
+        },
+        {
+          "query": "Bind PrivateZone to VPC vpc_123",
+          "expected_action": "BindZoneVpc",
+          "parameters": {
+            "ZoneId": "{{zone_id}}",
+            "Vpcs": [
+              {
+                "VpcId": "vpc_123",
+                "RegionId": "cn-hangzhou"
+              }
+            ]
+          }
+        },
+        {
+          "query": "List all PrivateZones",
+          "expected_action": "DescribeZones",
+          "parameters": {
+            "PageNumber": 1,
+            "PageSize": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-006",
+      "name": "Health Checks & GTM",
+      "description": "Test health monitoring and failover",
+      "queries": [
+        {
+          "query": "Add a GTM address pool with health checks",
+          "expected_action": "AddGtmAddressPool",
+          "parameters": {
+            "Name": "primary-pool",
+            "Type": "IPv4",
+            "Addr": "1.2.3.4,5.6.7.8"
+          }
+        },
+        {
+          "query": "Configure health check for GTM pool",
+          "expected_action": "UpdateGtmAddressPool",
+          "parameters": {
+            "PoolId": "{{pool_id}}",
+            "HealthCheckConfig": {
+              "ProbeContent": "/health",
+              "ProbeInterval": 60,
+              "ProbeType": "HTTP",
+              "ProbePort": 80
+            }
+          }
+        },
+        {
+          "query": "Get GTM instance health status",
+          "expected_action": "DescribeGtmInstanceStatus",
+          "parameters": {
+            "InstanceId": "{{instance_id}}"
+          }
+        },
+        {
+          "query": "Trigger manual failover for GTM",
+          "expected_action": "SwitchGtmFailoverAddressPool",
+          "parameters": {
+            "InstanceId": "{{instance_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-007",
+      "name": "DNSSEC Configuration",
+      "description": "Test DNS security extensions",
+      "queries": [
+        {
+          "query": "Enable DNSSEC for domain example.com",
+          "expected_action": "EnableDnssec",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        },
+        {
+          "query": "Check DNSSEC status for domain example.com",
+          "expected_action": "DescribeDnssecStatus",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        },
+        {
+          "query": "Disable DNSSEC for domain example.com",
+          "expected_action": "DisableDnssec",
+          "parameters": {
+            "DomainName": "example.com"
+          }
+        }
+      ]
+    },
+    {
+      "id": "DNS-008",
+      "name": "Query Analytics & Logs",
+      "description": "Test DNS monitoring and logging",
+      "queries": [
+        {
+          "query": "Get DNS query logs for domain example.com",
+          "expected_action": "DescribeDnsLogs",
+          "parameters": {
+            "DomainName": "example.com",
+            "StartDate": "2026-07-01",
+            "EndDate": "2026-07-03"
+          }
+        },
+        {
+          "query": "Get query statistics for domain example.com",
+          "expected_action": "DescribeDomainStatistics",
+          "parameters": {
+            "DomainName": "example.com",
+            "StartDate": "2026-07-01",
+            "EndDate": "2026-07-03"
+          }
+        },
+        {
+          "query": "Get real-time DNS QPS data",
+          "expected_action": "DescribeDnsRealTimeQps",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "id": "DNS-009",
+      "name": "Error Handling",
+      "description": "Test error scenarios and recovery",
+      "queries": [
+        {
+          "query": "Add record to non-existent domain",
+          "expected_error": "DomainNotExists",
+          "expected_recovery": "Add domain first"
+        },
+        {
+          "query": "Add CNAME record when A record exists",
+          "expected_error": "Forbidden.AliasRecord",
+          "expected_recovery": "Remove conflicting A record"
+        },
+        {
+          "query": "Update non-existent record",
+          "expected_error": "RecordNotExists",
+          "expected_recovery": "Verify record exists"
+        }
+      ]
+    },
+    {
+      "id": "DNS-010",
+      "name": "Integration Scenarios",
+      "description": "Test cross-skill integration",
+      "queries": [
+        {
+          "query": "Configure DNS CNAME to SLB endpoint",
+          "expected_integration": "alicloud-slb-ops",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "www",
+            "Type": "CNAME",
+            "Value": "{{slb_dns_name}}"
+          }
+        },
+        {
+          "query": "Configure DNS CNAME to CDN endpoint",
+          "expected_integration": "cdn-product",
+          "parameters": {
+            "DomainName": "example.com",
+            "RR": "static",
+            "Type": "CNAME",
+            "Value": "{{cdn_cname}}"
+          }
+        },
+        {
+          "query": "Configure PrivateZone for VPC services",
+          "expected_integration": "alicloud-vpc-ops",
+          "parameters": {
+            "ZoneName": "internal.example.com",
+            "VpcBindings": [
+              {
+                "VpcId": "{{vpc_id}}",
+                "RegionId": "{{region_id}}"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "validation_rules": {
+    "record_types": ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SRV", "CAA"],
+    "ttl_range": [60, 86400],
+    "weight_range": [1, 100],
+    "max_records_per_domain": 1000,
+    "max_private_zones": 100,
+    "health_check_protocols": ["HTTP", "HTTPS", "TCP", "ICMP"],
+    "gtm_strategies": ["AUTO", "MANUAL"]
+  },
+  "performance_benchmarks": {
+    "record_add_latency_ms": 1000,
+    "record_update_latency_ms": 1000,
+    "record_delete_latency_ms": 1000,
+    "dns_resolution_latency_ms": 100,
+    "propagation_time_seconds": 300,
+    "gtm_failover_time_seconds": 60
+  },
+  "security_requirements": {
+    "dnssec_enabled": true,
+    "audit_logging": true,
+    "ram_policies": true,
+    "mfa_required": true,
+    "change_approval": true
+  }
+}

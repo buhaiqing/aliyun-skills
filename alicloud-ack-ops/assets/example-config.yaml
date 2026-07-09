@@ -1,0 +1,33 @@
+# Example configuration for alicloud-ack-ops
+# YAML anchors eliminate repeated fields (TE-5)
+x-cred: &cred
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+
+x-cluster-base: &cbase
+  cluster_type: "ManagedKubernetes"
+  region: "cn-hangzhou"
+  worker_instance_type: "ecs.g7.xlarge"
+  num_of_nodes: 2
+
+x-nodepool-base: &npbase
+  min_size: 1
+  max_size: 10
+  instance_types:
+    - "ecs.g7.xlarge"
+
+credentials:
+  <<: *cred
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+cluster_defaults:
+  <<: *cbase
+  kubernetes_version: "1.28.3-aliyun.1"
+  service_cidr: "172.16.0.0/16"
+  pod_cidr: "10.0.0.0/8"
+  key_pair: ""
+
+node_pool_defaults:
+  <<: *npbase
+  desired_size: 2
+  spot_strategy: "NoSpot"

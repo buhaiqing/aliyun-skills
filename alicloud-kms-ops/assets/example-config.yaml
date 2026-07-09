@@ -1,0 +1,84 @@
+# example-config.yaml — KMS
+
+# Alibaba Cloud KMS Example Configuration
+# This file demonstrates common KMS operational scenarios.
+# Replace placeholder values with actual credentials and resource IDs.
+
+# === Credentials ===
+# NEVER commit real credentials to version control
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+# === Key Management Examples ===
+kms_keys:
+  # Symmetric encryption key (default)
+  - name: "production-data-key"
+    key_spec: "Aliyun_AES_256"
+    key_usage: "ENCRYPT/DECRYPT"
+    protection_level: "SOFTWARE"
+    description: "Encrypts production application data"
+    automatic_rotation: true
+    rotation_interval_days: 90
+    tags:
+      env: "production"
+      app: "order-service"
+
+  # Asymmetric signing key
+  - name: "api-signing-key"
+    key_spec: "EC_P256"
+    key_usage: "SIGN/VERIFY"
+    protection_level: "SOFTWARE"
+    description: "Signs API responses for integrity verification"
+    tags:
+      env: "production"
+
+  # BYOK key with HSM protection
+  - name: "compliance-key"
+    key_spec: "Aliyun_AES_256"
+    key_usage: "ENCRYPT/DECRYPT"
+    protection_level: "HSM"
+    origin: "EXTERNAL"
+    description: "Compliance-mandated key with external key material"
+    deletion_protection: true
+    tags:
+      env: "production"
+      compliance: "required"
+
+# === Secret Management Examples ===
+kms_secrets:
+  - name: "db-admin-password"
+    description: "Production database admin credentials"
+    secret_type: "Generic"
+    rotation_interval: "30d"
+    version_stages:
+      - "ACSCurrent"
+
+  - name: "api-secret-key"
+    description: "Third-party API authentication secret"
+    secret_type: "Generic"
+    rotation_interval: "7d"
+
+# === Operational Settings ===
+operational:
+  # Safety gates
+  deletion_confirmation_required: true
+  default_key_deletion_window_days: 30
+  default_secret_deletion_window_days: 30
+
+  # Polling defaults
+  key_state_poll_interval_seconds: 2
+  key_state_poll_max_wait_seconds: 30
+  secret_state_poll_interval_seconds: 2
+  secret_state_poll_max_wait_seconds: 30
+
+  # UX settings
+  max_prompts_per_operation: 3
+  smart_defaults_enabled: true
+  destructive_operation_confirmation: true
+
+  # Error handling
+  max_api_retries: 3
+  exponential_backoff_base_ms: 1000
+  rate_limit_backoff_ms: 2000

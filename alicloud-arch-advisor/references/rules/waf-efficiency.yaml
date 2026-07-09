@@ -1,0 +1,121 @@
+pillar: Efficiency
+rules:
+  - id: WAF-EFF-001
+    title: 基础设施即代码(IaC)使用
+    severity: high
+    check_type: existence
+    resource_type: OPS
+    description: 应使用 Terraform 或 ROS 等 IaC 工具管理云资源，实现基础设施的版本化和自动化
+    check_logic:
+      field: IaC_Templates
+      operator: exists
+    remediation: 使用 Terraform 或 ROS 编写基础设施模板，将资源定义纳入版本控制
+    data_source: ros-ops
+
+  - id: WAF-EFF-002
+    title: 关键指标监控覆盖
+    severity: high
+    check_type: existence
+    resource_type: CMS
+    description: 应对 CPU、内存、磁盘、网络等关键资源指标配置云监控告警
+    check_logic:
+      field: AlarmRules
+      operator: exists
+    remediation: 为所有核心资源配置云监控告警规则，覆盖 CPU、内存、磁盘和网络指标
+    data_source: cms-ops
+
+  - id: WAF-EFF-003
+    title: 自动化部署流水线
+    severity: high
+    check_type: existence
+    resource_type: OPS
+    description: 应构建自动化部署流水线实现应用的持续集成和持续部署
+    check_logic:
+      field: PipelineConfig
+      operator: exists
+    remediation: 使用云效或 Jenkins 构建 CI/CD 流水线，实现代码提交后自动构建和部署
+    data_source: devops-ops
+
+  - id: WAF-EFF-004
+    title: 标签治理和资源管理
+    severity: medium
+    check_type: existence
+    resource_type: TAG
+    description: 应对云资源实施标签策略，便于资源分类、成本分摊和运维管理
+    check_logic:
+      field: Tags
+      operator: exists
+    remediation: 制定标签规范（环境、项目、负责人等），对现有资源补充标签并治理不合规资源
+    data_source: tag-ops
+
+  - id: WAF-EFF-005
+    title: 资源组组织管理
+    severity: medium
+    check_type: existence
+    resource_type: RG
+    description: 应使用资源组对云资源进行逻辑分组，实现细粒度的权限管理和资源隔离
+    check_logic:
+      field: ResourceGroupId
+      operator: exists
+    remediation: 按业务/项目/环境创建资源组，将资源分配到对应资源组统一管理
+    data_source: ram-ops
+
+  - id: WAF-EFF-006
+    title: 弹性伸缩配置
+    severity: high
+    check_type: existence
+    resource_type: ESS
+    description: 应对有波峰波谷特征的业务配置弹性伸缩策略，自动调整资源数量
+    check_logic:
+      field: ScalingGroupId
+      operator: exists
+    remediation: 配置弹性伸缩组和伸缩规则，设置合理的触发条件和冷却时间
+    data_source: ess-ops
+
+  - id: WAF-EFF-007
+    title: CloudOps 自动化运维脚本
+    severity: medium
+    check_type: existence
+    resource_type: OOS
+    description: 应使用运维编排服务(OOS)编写自动化运维脚本处理日常运维任务
+    check_logic:
+      field: OOS_Templates
+      operator: exists
+    remediation: 使用 OOS 编写自动化运维模板，实现巡检、重启、扩缩容等操作的自动化
+    data_source: oos-ops
+
+  - id: WAF-EFF-008
+    title: 运维 Runbook 文档化
+    severity: low
+    check_type: existence
+    resource_type: OPS
+    description: 常见运维操作应有标准化的 Runbook 文档，减少人为失误并提升效率
+    check_logic:
+      field: Runbook_Docs
+      operator: exists
+    remediation: 编写运维操作手册，覆盖部署、扩缩容、备份恢复、故障处理等场景
+    data_source: ops-docs
+
+  - id: WAF-EFF-009
+    title: 关键指标监控大盘
+    severity: medium
+    check_type: existence
+    resource_type: CMS
+    description: 应创建 Grafana 或云监控大盘可视化展示关键业务和技术指标
+    check_logic:
+      field: DashboardId
+      operator: exists
+    remediation: 创建云监控或 Grafana 监控大盘，展示核心服务的性能、容量和健康状态
+    data_source: cms-ops
+
+  - id: WAF-EFF-010
+    title: 基础设施 CI/CD 流水线
+    severity: medium
+    check_type: existence
+    resource_type: OPS
+    description: 基础设施变更应通过 CI/CD 流水线自动化审批和执行，减少手动操作风险
+    check_logic:
+      field: Infra_CICD
+      operator: exists
+    remediation: 配置基础设施 CI/CD 流水线，集成 Terraform/ROS 模板的自动化审核、测试和部署
+    data_source: devops-ops

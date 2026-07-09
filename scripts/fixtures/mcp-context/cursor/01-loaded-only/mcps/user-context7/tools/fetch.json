@@ -1,0 +1,1 @@
+{"name":"fetch","description":"Fetch a documentation page by URL path.","inputSchema":{"type":"object","properties":{"url":{"type":"string"}}}}

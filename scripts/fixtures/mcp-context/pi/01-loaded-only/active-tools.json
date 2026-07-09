@@ -1,0 +1,6 @@
+{
+  "tools": [
+    {"server": "pi-ext", "name": "read_file"},
+    {"server": "pi-ext", "name": "write_file"}
+  ]
+}

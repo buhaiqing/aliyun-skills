@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "assets/hooks/cursor/session-start.sh"
+      }
+    ],
+    "afterAgentResponse": [
+      {
+        "command": "assets/hooks/cursor/after-agent-response.sh"
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "assets/hooks/cursor/pre-tool-harness-wrapper.sh",
+        "matcher": "Shell"
+      }
+    ]
+  }
+}

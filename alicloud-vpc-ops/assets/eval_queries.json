@@ -1,0 +1,24 @@
+{
+  "queries": [
+    {
+      "query": "创建 VPC",
+      "expected_skill": "alicloud-vpc-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "创建交换机",
+      "expected_skill": "alicloud-vpc-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "配置路由表",
+      "expected_skill": "alicloud-vpc-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 VPC 网络拓扑",
+      "expected_skill": "alicloud-vpc-ops",
+      "priority": "P1"
+    }
+  ]
+}

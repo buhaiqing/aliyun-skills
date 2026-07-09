@@ -1,0 +1,208 @@
+# Example Configuration — Alibaba Cloud OSS
+# This file demonstrates typical configurations for OSS bucket setup.
+# Adjust region, bucket names, and storage class to match your environment.
+
+# Shared defaults — use YAML anchors to avoid repetition (TE-5)
+x-prod-base: &prod-base
+  region: cn-hangzhou
+  storage_class: Standard
+  acl: private
+  versioning: Enabled
+  encryption:
+    sse_algorithm: KMS
+    kms_key_id: ""  # leave empty to use OSS-managed CMK
+  monitoring:
+    cms_namespace: acs_oss_dashboard
+    alerts:
+      - name: 5xx-error-rate
+        threshold: 10
+        severity: critical
+      - name: storage-growth-spike
+        threshold_pct: 50
+        window_minutes: 60
+        severity: warning
+
+x-dev-base: &dev-base
+  region: cn-hangzhou
+  storage_class: IA  # dev data: cheaper
+  acl: private
+  versioning: Suspended
+  encryption:
+    sse_algorithm: SSE-OSS
+  monitoring:
+    cms_namespace: acs_oss_dashboard
+
+# ============================================================================
+# Buckets
+# ============================================================================
+
+buckets:
+
+  # --------------------------------------------------------------------------
+  # 1. Production static assets (image-style, hot)
+  # --------------------------------------------------------------------------
+  - name: prod-static-assets
+    <<: *prod-base
+    description: Production static assets (images, JS, CSS) for the web app
+    purpose: CDN origin
+    acl: public-read  # necessary for CDN to fetch
+    lifecycle_rules:
+      - id: tier-down-old-css
+        prefix: "css/"
+        enabled: true
+        transition:
+          - days: 90
+            storage_class: IA
+          - days: 365
+            storage_class: Archive
+        expiration:
+          days: 1095
+    cors_rules:
+      - allowed_origin:
+          - "https://www.example.com"
+        allowed_method:
+          - GET
+          - HEAD
+        allowed_header:
+          - "*"
+        expose_header:
+          - ETag
+          - x-oss-request-id
+        max_age_seconds: 3600
+    referer:
+      allow_empty_referer: false
+      referer_list:
+        - "https://www.example.com"
+        - "https://*.example.com"
+    logging:
+      target_bucket: prod-oss-logs
+      target_prefix: "static-assets/"
+    tags:
+      environment: production
+      team: frontend
+      cost-center: marketing
+
+  # --------------------------------------------------------------------------
+  # 2. User uploads (private, with versioning)
+  # --------------------------------------------------------------------------
+  - name: prod-user-uploads
+    <<: *prod-base
+    description: User-uploaded files (private, with versioning for safety)
+    acl: private
+    versioning: Enabled
+    lifecycle_rules:
+      - id: tier-down-inactive
+        prefix: ""
+        enabled: true
+        transition:
+          - days: 60
+            storage_class: IA
+          - days: 180
+            storage_class: Archive
+        expiration:
+          days: 2555  # 7 years
+        abort_multipart_upload:
+          days_after_initiation: 7
+    tags:
+      environment: production
+      data_classification: pii
+      team: backend
+
+  # --------------------------------------------------------------------------
+  # 3. Log archive (cold)
+  # --------------------------------------------------------------------------
+  - name: prod-logs-archive
+    <<: *prod-base
+    description: Long-term log archive (ColdArchive for cost efficiency)
+    storage_class: ColdArchive
+    lifecycle_rules:
+      - id: expire-old-logs
+        prefix: ""
+        enabled: true
+        expiration:
+          days: 2555  # 7 years retention
+    tags:
+      environment: production
+      data_classification: operational
+
+  # --------------------------------------------------------------------------
+  # 4. Static website hosting
+  # --------------------------------------------------------------------------
+  - name: prod-website
+    <<: *prod-base
+    description: Static website hosting origin
+    static_website:
+      index_document: index.html
+      error_document: error.html
+    cors_rules:
+      - allowed_origin:
+          - "*"  # public website
+        allowed_method:
+          - GET
+          - HEAD
+        allowed_header: []
+        max_age_seconds: 86400
+
+  # --------------------------------------------------------------------------
+  # 5. Development / test
+  # --------------------------------------------------------------------------
+  - name: dev-test-bucket
+    <<: *dev-base
+    description: Development and test bucket
+    acl: private
+    tags:
+      environment: development
+      owner: dev-team
+
+# ============================================================================
+# Cross-Region Replication (CRR)
+# ============================================================================
+
+replication:
+  - source_bucket: prod-user-uploads
+    destination_bucket: dr-prod-user-uploads
+    destination_region: cn-shanghai
+    rules:
+      - id: replicate-all
+        prefix: ""
+        enabled: true
+        sync_type: async  # async is default; can also be "incremental"
+    # NOTE: CRR incurs egress fees — see well-architected §2.3.
+
+# ============================================================================
+# Alert thresholds (CMS — apply via alicloud-cms-ops)
+# ============================================================================
+
+alerts:
+  - name: oss-5xx-high
+    namespace: acs_oss_dashboard
+    metric: ErrorCode5xxCount
+    threshold: 10
+    statistic: Average
+    comparison: GreaterThanThreshold
+    period_seconds: 60
+    evaluation_count: 3
+    severity: critical
+    contact_group: ops-team
+
+  - name: oss-4xx-spike
+    namespace: acs_oss_dashboard
+    metric: ErrorCode4xxCount
+    threshold: 100
+    statistic: Average
+    comparison: GreaterThanThreshold
+    period_seconds: 60
+    evaluation_count: 5
+    severity: warning
+    contact_group: ops-team
+
+  - name: oss-outbound-spike
+    namespace: acs_oss_dashboard
+    metric: InternetOut
+    threshold_bytes: 1073741824  # 1 GB / min
+    statistic: Average
+    comparison: GreaterThanThreshold
+    period_seconds: 60
+    evaluation_count: 5
+    severity: warning
+    contact_group: finops-team

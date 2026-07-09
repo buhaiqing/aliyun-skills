@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CursorNativeAgentTurnUsage",
+  "description": "TEL X-14 — Cursor afterAgentResponse native tokenUsage payload (fixture contract; fail-open in hooks).",
+  "type": "object",
+  "properties": {
+    "conversation_id": { "type": "string" },
+    "generation_id": { "type": "string" },
+    "turn_id": { "type": "string" },
+    "model": { "type": "string" },
+    "tokenUsage": {
+      "type": "object",
+      "properties": {
+        "inputTokens": { "type": "integer", "minimum": 0 },
+        "outputTokens": { "type": "integer", "minimum": 0 },
+        "totalTokens": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

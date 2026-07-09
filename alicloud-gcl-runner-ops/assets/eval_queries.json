@@ -1,0 +1,34 @@
+{
+  "eval_queries": [
+    {
+      "id": "gcl-runner-delegation",
+      "category": "delegation",
+      "query": "Before running the delete command, run the GCL quality gate through the shared GCL runner",
+      "expected_skill": "alicloud-gcl-runner-ops",
+      "description": "Skills should delegate GCL execution to the shared runner"
+    },
+    {
+      "id": "gcl-runner-safety-fail",
+      "category": "gcl-execution",
+      "query": "Check if this command passes the GCL safety check for destroying production resources",
+      "expected_skill": "alicloud-gcl-runner-ops",
+      "description": "GCL runner should catch destructive operations and flag SAFETY_FAIL"
+    },
+    {
+      "id": "gcl-runner-dry-run",
+      "category": "gcl-execution",
+      "query": "Run a dry-run GCL critique on this command without actually executing it",
+      "expected_skill": "alicloud-gcl-runner-ops",
+      "expected_op": "dry-run",
+      "description": "Dry-run mode should work for offline rubric evaluation"
+    },
+    {
+      "id": "gcl-runner-hallucination",
+      "category": "gcl-execution",
+      "query": "Check if this generated command has hallucinated parameter names before running it",
+      "expected_skill": "alicloud-gcl-runner-ops",
+      "expected_op": "hallucination-check",
+      "description": "Hallucination detection should catch invalid parameters"
+    }
+  ]
+}

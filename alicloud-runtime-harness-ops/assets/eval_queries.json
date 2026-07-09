@@ -1,0 +1,22 @@
+[
+  {
+    "query": "How do I share Langfuse session across CMS and ECS skills?",
+    "should_trigger": true,
+    "expected_skill": "alicloud-runtime-harness-ops"
+  },
+  {
+    "query": "Where is harness_runtime.py and how do product skills source the shared core?",
+    "should_trigger": true,
+    "expected_skill": "alicloud-runtime-harness-ops"
+  },
+  {
+    "query": "Where is skillopt_runtime.py and how do product skills source the shared core?",
+    "should_trigger": true,
+    "expected_skill": "alicloud-skillopt-ops"
+  },
+  {
+    "query": "Create an ECS instance in cn-hangzhou",
+    "should_trigger": false,
+    "expected_skill": "alicloud-ecs-ops"
+  }
+]

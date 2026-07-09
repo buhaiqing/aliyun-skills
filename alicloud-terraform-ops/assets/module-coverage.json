@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "description": "NL2HCL module coverage manifest — single source of truth for tf_type ↔ module ↔ import ↔ keywords",
+  "resources": {
+    "alicloud_vpc": {
+      "registry_name": "vpc",
+      "nl2hcl_module": "vpc-network",
+      "import_supported": true,
+      "keywords": ["vpc", "虚拟私有云", "专有网络"]
+    },
+    "alicloud_vswitch": {
+      "registry_name": "vswitch",
+      "nl2hcl_module": "vpc-network",
+      "import_supported": true,
+      "keywords": ["vswitch", "交换机", "子网"]
+    },
+    "alicloud_instance": {
+      "registry_name": "ecs",
+      "nl2hcl_module": "compute-ecs",
+      "import_supported": true,
+      "keywords": ["ecs", "云服务器", "实例"]
+    },
+    "alicloud_security_group": {
+      "registry_name": "security_group",
+      "nl2hcl_module": "addon-security-group",
+      "import_supported": true,
+      "note": "Standalone SG module; also bundled in compute-ecs / web-stack for ECS scenarios",
+      "keywords": ["security group", "securitygroup", "安全组"]
+    },
+    "alicloud_db_instance": {
+      "registry_name": "rds",
+      "nl2hcl_module": "addon-rds",
+      "import_supported": true,
+      "keywords": ["rds", "mysql", "关系型", "云数据库"]
+    },
+    "alicloud_kvstore_instance": {
+      "registry_name": "redis",
+      "nl2hcl_module": "addon-redis",
+      "import_supported": true,
+      "keywords": ["redis", "缓存", "kvstore", "tair"]
+    },
+    "alicloud_slb": {
+      "registry_name": "slb",
+      "registry_tf_type": "alicloud_slb_load_balancer",
+      "nl2hcl_module": "addon-slb",
+      "import_supported": true,
+      "keywords": ["slb", "负载均衡", "clb"]
+    },
+    "alicloud_nat_gateway": {
+      "registry_name": "nat_gateway",
+      "nl2hcl_module": "addon-nat",
+      "import_supported": true,
+      "keywords": ["nat", "nat网关", "网关"]
+    },
+    "alicloud_eip": {
+      "registry_name": "eip",
+      "registry_tf_type": "alicloud_eip_address",
+      "nl2hcl_module": "addon-eip",
+      "import_supported": true,
+      "keywords": ["eip", "弹性ip", "公网ip"]
+    },
+    "alicloud_route_table": {
+      "registry_name": "route_table",
+      "nl2hcl_module": "addon-route-table",
+      "import_supported": true,
+      "keywords": ["route table", "routetable", "路由表"]
+    },
+    "alicloud_disk": {
+      "registry_name": "disk",
+      "nl2hcl_module": "addon-disk",
+      "import_supported": true,
+      "keywords": ["独立云盘", "独立磁盘", "standalone disk", "云盘"]
+    },
+    "alicloud_mongodb_instance": {
+      "registry_name": "mongodb",
+      "nl2hcl_module": "addon-mongodb",
+      "import_supported": true,
+      "keywords": ["mongodb", "mongo", "文档数据库", "dds"]
+    },
+    "alicloud_oss_bucket": {
+      "registry_name": "oss",
+      "nl2hcl_module": "addon-oss",
+      "import_supported": true,
+      "keywords": ["oss", "对象存储", "bucket", "存储桶"]
+    },
+    "alicloud_polardb_cluster": {
+      "registry_name": "polardb",
+      "nl2hcl_module": "addon-polardb",
+      "import_supported": true,
+      "keywords": ["polardb", "polar db", "云原生数据库"]
+    },
+    "alicloud_alb_load_balancer": {
+      "registry_name": "alb",
+      "nl2hcl_module": "addon-alb",
+      "import_supported": true,
+      "keywords": ["alb", "应用型负载均衡", "七层负载", "应用型lb"]
+    },
+    "alicloud_wafv3_instance": {
+      "registry_name": "waf",
+      "nl2hcl_module": "addon-waf",
+      "import_supported": true,
+      "keywords": ["waf", "web安全网关", "web应用防火墙", "安全防护"]
+    },
+    "alicloud_elasticsearch_instance": {
+      "registry_name": null,
+      "nl2hcl_module": null,
+      "import_supported": false,
+      "registry_level": "planned",
+      "keywords": ["elasticsearch", "elastic search", "es集群", "搜索引擎", "open search"]
+    },
+    "alicloud_ess_scaling_group": {
+      "registry_name": "autoscaling",
+      "nl2hcl_module": null,
+      "import_supported": false,
+      "registry_level": "planned",
+      "keywords": ["ess", "弹性伸缩", "autoscaling", "scaling group"]
+    }
+  }
+}

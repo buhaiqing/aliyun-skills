@@ -1,0 +1,152 @@
+{
+  "queries": [
+    {
+      "query": "创建一台 ECS 实例",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "启动云服务器",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "停止我的 ECS",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "扩容云盘",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "创建磁盘快照",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看安全组规则",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "通过云助手执行命令",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "更换操作系统镜像",
+      "expected_skill": "alicloud-ecs-ops",
+      "priority": "P2"
+    }
+  ],
+  "negative_queries": [
+    {
+      "query": "创建一台 RDS MySQL 实例",
+      "expected_skill": "alicloud-rds-ops",
+      "rationale": "RDS product keyword must NOT trigger ECS",
+      "priority": "P0"
+    },
+    {
+      "query": "查询 SLB 后端健康状态",
+      "expected_skill": "alicloud-slb-ops",
+      "rationale": "SLB-specific API surface",
+      "priority": "P0"
+    },
+    {
+      "query": "VPC 路由表怎么配置",
+      "expected_skill": "alicloud-vpc-ops",
+      "rationale": "VPC network-only intent",
+      "priority": "P0"
+    },
+    {
+      "query": "ACK 集群添加 worker 节点",
+      "expected_skill": "alicloud-ack-ops",
+      "rationale": "Container/K8s intent",
+      "priority": "P0"
+    },
+    {
+      "query": "看下这个月的账单",
+      "expected_skill": "alicloud-billing-ops",
+      "rationale": "Billing-only",
+      "priority": "P1"
+    },
+    {
+      "query": "给 RAM 用户授权 ecs:Describe*",
+      "expected_skill": "alicloud-ram-ops",
+      "rationale": "Permission model only",
+      "priority": "P1"
+    },
+    {
+      "query": "Redis 集群扩容",
+      "expected_skill": "alicloud-redis-ops",
+      "rationale": "Managed Redis — not ECS",
+      "priority": "P1"
+    }
+  ],
+  "multi_turn": [
+    {
+      "turns": [
+        {"query": "帮我创建一台 ECS", "expected_skill": "alicloud-ecs-ops"},
+        {"query": "给这台实例加一块 100GB 数据盘", "expected_skill": "alicloud-ecs-ops"},
+        {"query": "再开放 80 端口", "expected_skill": "alicloud-ecs-ops"}
+      ],
+      "rationale": "Sequential ECS intent — instance → disk → SG rule"
+    },
+    {
+      "turns": [
+        {"query": "ECS 上的应用连不上 RDS", "expected_skill": "alicloud-ecs-ops"},
+        {"query": "查下 RDS 的连接信息", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Cross-skill intent — primary ECS routes to auxiliary RDS"
+    },
+    {
+      "turns": [
+        {"query": "批量创建 3 台 ECS 做 web", "expected_skill": "alicloud-ecs-ops"},
+        {"query": "给它们挂一个 SLB", "expected_skill": "alicloud-slb-ops"}
+      ],
+      "rationale": "Cross-skill — ECS creates instances, SLB load-balances"
+    }
+  ],
+  "anaphora": [
+    {
+      "setup": "创建一台 ECS i-bp1xxx",
+      "query": "把它的系统盘做个快照",
+      "expected_skill": "alicloud-ecs-ops",
+      "rationale": "'它' refers to the ECS instance from setup turn"
+    },
+    {
+      "setup": "删除实例 i-bp1yyy",
+      "query": "顺便把那台机器的数据盘也删了",
+      "expected_skill": "alicloud-ecs-ops",
+      "rationale": "'那台机器' = the same ECS instance; data disk lookup requires instance context"
+    },
+    {
+      "setup": "查安全组 sg-bp1zzz 的入站规则",
+      "query": "把 SSH 22 端口那条删掉",
+      "expected_skill": "alicloud-ecs-ops",
+      "rationale": "'那条' = the SSH rule just described; agent must remember SG id + port from setup"
+    }
+  ],
+  "disambiguation": [
+    {
+      "query": "弄好我的 ECS",
+      "expected_skill": "alicloud-ecs-ops",
+      "expected_default": "ask_user",
+      "rationale": "Ambiguous between Start / Repair / ReplaceSystemDisk — destructive paths default to asking per §Intent Disambiguation principle"
+    },
+    {
+      "query": "看下 ECS",
+      "expected_skill": "alicloud-ecs-ops",
+      "expected_default": "Describe Instances",
+      "rationale": "No signal — non-destructive default to Describe"
+    },
+    {
+      "query": "ECS 慢",
+      "expected_skill": "alicloud-ecs-ops",
+      "expected_default": "Multi-Metric Anomaly Inspection",
+      "rationale": "Performance intent with no signal — default to multi-metric scan"
+    }
+  ]
+}

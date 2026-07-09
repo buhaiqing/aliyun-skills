@@ -1,0 +1,875 @@
+# 成本预算配置模板
+
+阿里云成本预算 YAML 配置模板。
+
+## 1. YAML 结构模板
+
+```yaml
+# cost-budget.yaml
+apiVersion: v1
+kind: CostBudget
+metadata:
+  name: "production-cost-budget"
+  description: "生产环境成本预算配置"
+  created_at: "2026-01-15T00:00:00Z"
+  owner: "platform-team@example.com"
+
+# 预算周期配置
+budget:
+  # 周期类型: monthly / quarterly / yearly / custom
+  period:
+    type: monthly
+    start_date: "2026-01-01"
+    end_date: "2026-12-31"  # 可选，无表示永久
+
+  # 预算金额
+  amount:
+    currency: CNY
+    limit: 50000            # 预算上限
+    alert_thresholds:       # 告警阈值
+      - percentage: 50
+        action: notify
+        severity: info
+      - percentage: 80
+        action: notify
+        severity: warning
+      - percentage: 100
+        action: notify_and_block
+        severity: critical
+      - percentage: 120
+        action: escalate
+        severity: emergency
+        notify: ["director@example.com", "cfo@example.com"]
+
+# 成本范围配置
+scope:
+  # 账号范围
+  accounts:
+    - account_id: "123456789012"
+      alias: "production-account"
+    - account_id: "234567890123"
+      alias: "staging-account"
+
+  # 产品范围
+  products:
+    include:
+      - ECS
+      - RDS
+      - OSS
+      - SLB
+      - CDN
+      - ACK
+    exclude:
+      - MARKETPLACE
+
+  # 区域范围
+  regions:
+    - cn-hangzhou
+    - cn-beijing
+    - cn-shanghai
+    - cn-shenzhen
+
+  # 资源组范围
+  resource_groups:
+    - rg-production
+    - rg-staging
+
+  # 标签过滤
+  tags:
+    - key: Environment
+      values: [Production]
+    - key: Department
+      values: [Platform, Infrastructure]
+
+# 告警配置
+alerts:
+  # 通知渠道
+  channels:
+    - type: email
+      recipients:
+        - ops-team@example.com
+        - finance@example.com
+
+    - type: sms
+      recipients:
+        - "+86138xxxxxxxx"
+      severity_filter: [critical, emergency]
+
+    - type: webhook
+      url: "https://hooks.example.com/budget-alerts"
+      headers:
+        Authorization: "Bearer xxx"
+
+    - type: dingtalk
+      webhook: "https://oapi.dingtalk.com/robot/send?access_token=xxx"
+      at_users:
+        - "user123"
+
+    - type: wecom
+      webhook: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx"
+
+  # 告警模板
+  templates:
+    subject: "【成本告警】${budget_name} 预算使用率已达到 ${usage_percentage}%"
+    body: |
+      预算名称: ${budget_name}
+      当前周期: ${period}
+      预算上限: ${budget_limit} ${currency}
+      当前消费: ${current_spend} ${currency}
+      使用率: ${usage_percentage}%
+      剩余预算: ${remaining} ${currency}
+      预计月度: ${forecast} ${currency}
+
+      详细成本分布:
+      ${cost_breakdown}
+
+      查看详情: ${dashboard_url}
+
+# 自动治理规则
+governance:
+  enabled: true
+  rules:
+    # 规则1: 自动关闭闲置资源
+    - name: "auto-stop-idle-ecs"
+      condition:
+        metric: cpu_utilization_avg
+        threshold: "< 5"
+        duration: 7d
+      action:
+        type: stop_instance
+        target: ecs
+        notify_before: 24h
+        dry_run: false
+
+    # 规则2: 自动降配低负载资源
+    - name: "auto-downsize-low-load"
+      condition:
+        metric: cpu_utilization_avg
+        threshold: "< 20"
+        duration: 30d
+      action:
+        type: recommend_downsize
+        target: ecs
+        create_ticket: true
+
+    # 规则3: 过期资源清理
+    - name: "cleanup-expired-resources"
+      condition:
+        type: expired
+        days: 7
+      action:
+        type: notify_cleanup
+        target: snapshot, disk_image
+
+    # 规则4: 预留实例建议
+    - name: "ri-recommendation"
+      condition:
+        on_demand_hours: "> 720"  # 超过30天*24小时
+      action:
+        type: recommend_ri
+        instance_types: ["ecs.g7.xlarge", "ecs.c7.2xlarge"]
+
+# 分摊配置
+allocation:
+  enabled: true
+  rules:
+    # 按标签分摊
+    - dimension: tag
+      key: Project
+      method: proportional
+
+    # 按资源组分摊
+    - dimension: resource_group
+      method: direct
+
+    # 按业务单元分摊
+    - dimension: business_unit
+      mapping:
+        - pattern: "*ecommerce*"
+          unit: "ecommerce"
+        - pattern: "*platform*"
+          unit: "platform"
+
+# 成本优化建议
+optimization:
+  enabled: true
+  recommendations:
+    - type: reserved_instance
+      min_saving: 1000
+
+    - type: savings_plan
+      min_saving: 500
+
+    - type: spot_instance
+      workload_types: [batch, stateless]
+
+    - type: storage_tiering
+      target_types: [oss, disk]
+
+# 报告配置
+reports:
+  enabled: true
+  schedule:
+    daily:
+      enabled: true
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+
+    weekly:
+      enabled: true
+      day: monday
+      time: "09:00"
+
+    monthly:
+      enabled: true
+      day: 1
+      time: "09:00"
+
+  recipients:
+    - team-leads@example.com
+    - finance@example.com
+
+  format:
+    - pdf
+    - excel
+    - markdown
+
+# 预测配置
+forecast:
+  enabled: true
+  model: linear_regression  # linear_regression / arima / prophet
+  horizon_days: 30
+  confidence_interval: 0.95
+
+  scenarios:
+    - name: "growth_10_percent"
+      multiplier: 1.10
+
+    - name: "growth_20_percent"
+      multiplier: 1.20
+
+    - name: "reduction_10_percent"
+      multiplier: 0.90
+
+# 权限配置
+permissions:
+  viewers:
+    - group: finance-team
+    - group: ops-team
+
+  editors:
+    - group: platform-admins
+
+  approvers:
+    - user: cto@example.com
+    - user: cfo@example.com
+```
+
+## 2. 预算配置示例
+
+### 部门级预算
+
+```yaml
+# department-budget.yaml
+metadata:
+  name: "engineering-department-budget"
+  department: "Engineering"
+
+budget:
+  period:
+    type: monthly
+  amount:
+    currency: CNY
+    limit: 100000
+    alert_thresholds:
+      - percentage: 70
+        severity: info
+      - percentage: 90
+        severity: warning
+      - percentage: 100
+        severity: critical
+
+scope:
+  tags:
+    - key: Department
+      values: [Engineering]
+```
+
+### 项目级预算
+
+```yaml
+# project-budget.yaml
+metadata:
+  name: "ecommerce-platform-budget"
+  project: "Ecommerce-Platform"
+
+budget:
+  period:
+    type: monthly
+  amount:
+    currency: CNY
+    limit: 30000
+
+scope:
+  tags:
+    - key: Project
+      values: [Ecommerce-Platform]
+    - key: Environment
+      values: [Production, Staging]
+
+alerts:
+  channels:
+    - type: dingtalk
+      webhook: "${DINGTALK_WEBHOOK_ECOMMERCE}"
+```
+
+### 环境级预算
+
+```yaml
+# environment-budget.yaml
+metadata:
+  name: "production-environment-budget"
+  environment: "Production"
+
+budget:
+  period:
+    type: monthly
+  amount:
+    currency: CNY
+    limit: 80000
+
+scope:
+  tags:
+    - key: Environment
+      values: [Production]
+
+alerts:
+  channels:
+    - type: wecom
+      webhook: "${WECOM_WEBHOOK_PRODUCTION}"
+      at_all: true
+
+governance:
+  enabled: true
+  rules:
+    - name: "production-high-spend-alert"
+      condition:
+        daily_spend: "> 5000"
+      action:
+        type: immediate_notify
+        severity: critical
+```
+
+### 季度预算
+
+```yaml
+# quarterly-budget.yaml
+metadata:
+  name: "q1-2026-budget"
+
+budget:
+  period:
+    type: quarterly
+    quarters: [Q1]
+    year: 2026
+  amount:
+    currency: CNY
+    limit: 300000
+    alert_thresholds:
+      - percentage: 50
+      - percentage: 75
+      - percentage: 90
+      - percentage: 100
+
+reports:
+  enabled: true
+  schedule:
+    weekly:
+      enabled: true
+      recipients:
+        - management@example.com
+```
+
+## 3. 阈值配置
+
+### 多级阈值模板
+
+```yaml
+# threshold-config.yaml
+threshold_levels:
+  # 信息级别 - 提醒关注
+  info:
+    percentage: 50
+    notification:
+      channels: [email]
+      template: info_template
+    actions:
+      - type: log
+      - type: dashboard_update
+
+  # 警告级别 - 需要注意
+  warning:
+    percentage: 80
+    notification:
+      channels: [email, dingtalk]
+      template: warning_template
+      escalate_after: 4h  # 4小时后未处理则升级
+    actions:
+      - type: notify
+      - type: create_ticket
+      - type: cost_analysis
+
+  # 严重级别 - 立即处理
+  critical:
+    percentage: 100
+    notification:
+      channels: [email, dingtalk, sms, phone]
+      template: critical_template
+      require_acknowledgment: true
+    actions:
+      - type: immediate_notify
+      - type: block_new_resources
+      - type: escalation
+    escalation:
+      to: ["cto@example.com", "cfo@example.com"]
+      delay: 0
+
+  # 紧急级别 - 最高优先级
+  emergency:
+    percentage: 120
+    notification:
+      channels: [all]
+      template: emergency_template
+      on_call: true
+    actions:
+      - type: immediate_notify
+      - type: emergency_lockdown
+      - type: exec_escalation
+    escalation:
+      to: ["ceo@example.com"]
+      delay: 0
+```
+
+### 动态阈值配置
+
+```yaml
+# dynamic-thresholds.yaml
+dynamic_thresholds:
+  enabled: true
+
+  # 基于历史数据的动态阈值
+  historical_based:
+    enabled: true
+    lookback_days: 30
+    calculation: average
+    std_deviation_factor: 2
+
+  # 基于预测的动态阈值
+  forecast_based:
+    enabled: true
+    forecast_horizon: 7
+    threshold_percentage: 90
+
+  # 异常检测阈值
+  anomaly_detection:
+    enabled: true
+    algorithm: isolation_forest
+    sensitivity: medium  # low / medium / high
+
+  # 季节性调整
+  seasonal_adjustment:
+    enabled: true
+    patterns:
+      - type: weekly
+        peak_days: [friday, saturday]
+        adjustment_factor: 1.2
+      - type: monthly
+        peak_days: [1, 15]
+        adjustment_factor: 1.3
+```
+
+## 4. 成本监控配置
+
+```yaml
+# cost-monitoring.yaml
+monitoring:
+  # 实时监控
+  realtime:
+    enabled: true
+    update_interval: 5m
+
+  # 维度监控
+  dimensions:
+    - name: by_product
+      enabled: true
+      granularity: daily
+
+    - name: by_region
+      enabled: true
+      granularity: hourly
+
+    - name: by_resource_group
+      enabled: true
+      granularity: daily
+
+    - name: by_tag
+      tag_key: Project
+      enabled: true
+
+  # 异常检测
+  anomaly_detection:
+    enabled: true
+    rules:
+      - name: "cost_spike_detection"
+        condition:
+          metric: daily_cost
+          change: "> 50%"
+        action: notify
+
+      - name: "unexpected_resource_creation"
+        condition:
+          event: resource_create
+          resource_cost: "> 1000"
+        action: notify_and_audit
+
+  # 成本归因
+  attribution:
+    enabled: true
+    shared_costs:
+      allocation_method: proportional
+      based_on: usage
+```
+
+## 5. 自动化规则配置
+
+```yaml
+# automation-rules.yaml
+automation:
+  # 预算告警自动响应
+  alert_response:
+    - name: "auto-create-ticket"
+      trigger:
+        severity: [warning, critical]
+      action:
+        type: create_jira_ticket
+        project: COST
+        assignee: finance-team
+
+    - name: "auto-slack-notify"
+      trigger:
+        severity: [critical, emergency]
+      action:
+        type: slack_post
+        channel: "#cost-alerts"
+        mention: ["@finance", "@ops-leads"]
+
+  # 成本优化自动化
+  optimization:
+    - name: "auto-schedule-spot-instances"
+      condition:
+        workload: batch
+        current_instance: on_demand
+      action:
+        type: migrate_to_spot
+        approval_required: true
+
+    - name: "auto-purchase-ri"
+      condition:
+        on_demand_hours: "> 600"
+        savings_potential: "> 1000"
+      action:
+        type: recommend_ri_purchase
+        create_approval_workflow: true
+
+  # 资源生命周期管理
+  lifecycle:
+    - name: "auto-tag-untagged-resources"
+      condition:
+        tags: empty
+        age: "> 1d"
+      action:
+        type: notify_owner
+        subject: "请为资源打标签"
+
+    - name: "auto-cleanup-stopped-instances"
+      condition:
+        status: stopped
+        stopped_days: "> 30"
+      action:
+        type: notify_cleanup
+        grace_period: 7d
+```
+
+## 6. 多账号成本管理
+
+```yaml
+# multi-account-budget.yaml
+multi_account:
+  # 主账号配置
+  master_account:
+    account_id: "123456789012"
+    alias: "master"
+
+  # 成员账号
+  member_accounts:
+    - account_id: "111111111111"
+      alias: "production"
+      budget:
+        monthly_limit: 50000
+      responsible_party: "production-team@example.com"
+
+    - account_id: "222222222222"
+      alias: "staging"
+      budget:
+        monthly_limit: 10000
+      responsible_party: "dev-team@example.com"
+
+    - account_id: "333333333333"
+      alias: "development"
+      budget:
+        monthly_limit: 5000
+      responsible_party: "dev-team@example.com"
+
+  # 跨账号成本分摊
+  cross_account_allocation:
+    enabled: true
+    shared_services:
+      - service: log_archive
+        accounts: all
+        allocation: equal
+
+      - service: security_hub
+        accounts: all
+        allocation: proportional
+        based_on: resource_count
+
+  # 账号级预算汇总
+  consolidated_budget:
+    enabled: true
+    total_budget: 65000
+    alert_thresholds:
+      - percentage: 80
+        notify: ["finance@example.com"]
+      - percentage: 100
+        notify: ["cfo@example.com", "cto@example.com"]
+```
+
+## 7. API 集成示例
+
+```python
+#!/usr/bin/env python3
+"""
+成本预算 API 集成示例
+"""
+from typing import Dict, List, Optional
+import yaml
+
+
+class CostBudgetManager:
+    """成本预算管理器"""
+
+    def __init__(self, config_path: str):
+        with open(config_path, 'r', encoding='utf-8') as f:
+            self.config = yaml.safe_load(f)
+
+    def validate_budget(self) -> Dict:
+        """验证预算配置"""
+        budget = self.config.get('budget', {})
+        errors = []
+
+        # 验证金额
+        amount = budget.get('amount', {})
+        if not amount.get('limit'):
+            errors.append("预算金额限制不能为空")
+
+        if amount.get('limit', 0) <= 0:
+            errors.append("预算金额必须大于0")
+
+        # 验证告警阈值
+        thresholds = amount.get('alert_thresholds', [])
+        if not thresholds:
+            errors.append("至少需要配置一个告警阈值")
+
+        percentages = [t.get('percentage', 0) for t in thresholds]
+        if len(percentages) != len(set(percentages)):
+            errors.append("告警阈值百分比不能重复")
+
+        return {
+            'valid': len(errors) == 0,
+            'errors': errors
+        }
+
+    def check_threshold_status(self, current_spend: float) -> List[Dict]:
+        """检查当前花费的阈值状态"""
+        budget = self.config.get('budget', {})
+        limit = budget.get('amount', {}).get('limit', 0)
+        thresholds = budget.get('amount', {}).get('alert_thresholds', [])
+
+        usage_percentage = (current_spend / limit) * 100 if limit > 0 else 0
+
+        triggered = []
+        for threshold in thresholds:
+            pct = threshold.get('percentage', 0)
+            if usage_percentage >= pct:
+                triggered.append({
+                    'threshold': pct,
+                    'severity': threshold.get('severity', 'info'),
+                    'action': threshold.get('action', 'notify'),
+                    'current_usage': usage_percentage
+                })
+
+        return triggered
+
+    def generate_alert_message(self, current_spend: float,
+                              forecast: Optional[float] = None) -> str:
+        """生成告警消息"""
+        budget = self.config.get('budget', {})
+        limit = budget.get('amount', {}).get('limit', 0)
+        currency = budget.get('amount', {}).get('currency', 'CNY')
+
+        usage_percentage = (current_spend / limit) * 100 if limit > 0 else 0
+        remaining = limit - current_spend
+
+        template = self.config.get('alerts', {}).get('templates', {}).get('body', '')
+
+        # 替换变量
+        message = template.replace('${budget_name}', self.config.get('metadata', {}).get('name', ''))
+        message = message.replace('${usage_percentage}', f'{usage_percentage:.1f}')
+        message = message.replace('${budget_limit}', f'{limit:,.2f}')
+        message = message.replace('${current_spend}', f'{current_spend:,.2f}')
+        message = message.replace('${remaining}', f'{remaining:,.2f}')
+        message = message.replace('${currency}', currency)
+
+        if forecast:
+            message = message.replace('${forecast}', f'{forecast:,.2f}')
+
+        return message
+
+    def should_block_resources(self, current_spend: float) -> bool:
+        """判断是否应阻止新资源创建"""
+        budget = self.config.get('budget', {})
+        limit = budget.get('amount', {}).get('limit', 0)
+
+        if limit <= 0:
+            return False
+
+        usage_percentage = (current_spend / limit) * 100
+
+        # 检查是否有 100% 阈值配置了 block 动作
+        thresholds = budget.get('amount', {}).get('alert_thresholds', [])
+        for t in thresholds:
+            if t.get('percentage') >= 100 and 'block' in t.get('action', ''):
+                return usage_percentage >= 100
+
+        return False
+
+
+# 使用示例
+if __name__ == "__main__":
+    manager = CostBudgetManager('cost-budget.yaml')
+
+    # 验证配置
+    validation = manager.validate_budget()
+    print(f"配置验证: {'通过' if validation['valid'] else '失败'}")
+    if not validation['valid']:
+        for error in validation['errors']:
+            print(f"  - {error}")
+
+    # 检查阈值
+    current_spend = 45000
+    triggered = manager.check_threshold_status(current_spend)
+    print(f"\n已触发阈值: {len(triggered)} 个")
+    for t in triggered:
+        print(f"  - {t['threshold']}% ({t['severity']})")
+```
+
+## 8. 命令行工具配置
+
+```bash
+#!/bin/bash
+# cost-budget-cli.sh - 成本预算 CLI 工具
+
+BUDGET_CONFIG="${BUDGET_CONFIG:-./cost-budget.yaml}"
+
+# 命令: 检查预算状态
+cmd_check() {
+    echo "检查预算状态..."
+    python3 -c "
+from cost_budget_manager import CostBudgetManager
+import sys
+
+manager = CostBudgetManager('${BUDGET_CONFIG}')
+validation = manager.validate_budget()
+
+if not validation['valid']:
+    print('配置无效:')
+    for error in validation['errors']:
+        print(f'  - {error}')
+    sys.exit(1)
+
+print('配置有效')
+    "
+}
+
+# 命令: 模拟消费
+cmd_simulate() {
+    local spend=$1
+    echo "模拟消费: ${spend} CNY"
+    python3 -c "
+from cost_budget_manager import CostBudgetManager
+
+manager = CostBudgetManager('${BUDGET_CONFIG}')
+triggered = manager.check_threshold_status(${spend})
+
+if triggered:
+    print(f'已触发 {len(triggered)} 个阈值告警:')
+    for t in triggered:
+        print(f'  [{t[\"severity\"].upper()}] {t[\"threshold\"]}% - {t[\"action\"]}')
+else:
+    print('未触发任何阈值')
+
+# 检查是否需要阻止
+if manager.should_block_resources(${spend}):
+    print('警告: 应阻止新资源创建')
+    "
+}
+
+# 命令: 生成告警消息
+cmd_alert() {
+    local spend=$1
+    local forecast=${2:-0}
+    echo "生成告警消息..."
+    python3 -c "
+from cost_budget_manager import CostBudgetManager
+
+manager = CostBudgetManager('${BUDGET_CONFIG}')
+message = manager.generate_alert_message(${spend}, ${forecast})
+print(message)
+    "
+}
+
+# 主命令
+case "$1" in
+    check)
+        cmd_check
+        ;;
+    simulate)
+        cmd_simulate "$2"
+        ;;
+    alert)
+        cmd_alert "$2" "$3"
+        ;;
+    *)
+        echo "用法: $0 {check|simulate <spend>|alert <spend> [forecast]}"
+        exit 1
+        ;;
+esac
+```
+
+## 使用指南
+
+1. **定义预算范围**: 编辑 scope 部分指定账号/产品/区域
+2. **设置预算金额**: 配置 amount.limit 和 alert_thresholds
+3. **配置通知渠道**: 设置 alerts.channels
+4. **启用自动治理**: 配置 governance.rules
+5. **部署配置**: 将 YAML 提交到成本管理平台

@@ -1,0 +1,47 @@
+# Example Configuration — PTS
+
+x-common-load: &common-load
+  agent_count: 2
+  max_running_time_min: 10
+  test_mode: "tps_mode"
+  rps_begin: 10
+  rps_limit: 200
+
+x-staging-target: &staging-target
+  region: "cn-hangzhou"
+  target_url: "https://staging.example.com/health"
+  confirm_production_load_test: "no"
+
+x-prod-guard: &prod-guard
+  confirm_production_load_test: "yes"
+  max_running_time_min: 5
+  rps_limit: 50
+
+# Staging smoke scene
+staging-smoke-scene:
+  <<: [*staging-target, *common-load]
+  scene_name: "staging-api-smoke"
+  relation_name: "health-check"
+  method: "GET"
+
+# Production guarded (requires explicit approval)
+prod-limited-scene:
+  <<: *prod-guard
+  region: "cn-hangzhou"
+  scene_name: "prod-api-limited"
+  target_url: "https://api.example.com/v1/status"
+  agent_count: 1
+  rps_begin: 5
+  rps_limit: 30
+
+# JMeter reference
+jmeter-batch-scene:
+  region: "cn-shanghai"
+  open_jmeter_scene_name: "order-flow-jmeter"
+  env_name: "staging-env"
+
+# Report baseline workflow
+baseline-config:
+  scene_id: "SDR3CX"
+  report_id: "RPT123456"
+  regression_p99_threshold_pct: 20

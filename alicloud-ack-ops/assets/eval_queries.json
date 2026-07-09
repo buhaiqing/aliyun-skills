@@ -1,0 +1,29 @@
+{
+  "queries": [
+    {
+      "query": "创建 Kubernetes 集群",
+      "expected_skill": "alicloud-ack-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "扩容 ACK 节点",
+      "expected_skill": "alicloud-ack-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "部署应用到 ACK",
+      "expected_skill": "alicloud-ack-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 Pod 日志",
+      "expected_skill": "alicloud-ack-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "配置 ACK 自动伸缩",
+      "expected_skill": "alicloud-ack-ops",
+      "priority": "P2"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "query": "Create a new CLB instance in cn-hangzhou for my web application",
+    "should_trigger": true
+  },
+  {
+    "query": "Add an HTTP listener to my SLB with port 80 and health check on /healthz",
+    "should_trigger": true
+  },
+  {
+    "query": "My load balancer is dropping connections — can you check the backend health?",
+    "should_trigger": true
+  },
+  {
+    "query": "Configure a virtual server group for the existing SLB, adding two ECS instances",
+    "should_trigger": true
+  },
+  {
+    "query": "Upload a new SSL certificate and bind it to the HTTPS listener on port 443",
+    "should_trigger": true
+  },
+  {
+    "query": "The SLB backend servers keep showing as Unhealthy, need to troubleshoot",
+    "should_trigger": true
+  },
+  {
+    "query": "Update the access control list for my SLB to block traffic from specific IPs",
+    "should_trigger": true
+  },
+  {
+    "query": "Delete the SLB instance lb-abc123 — it's no longer needed",
+    "should_trigger": true
+  },
+  {
+    "query": "List all load balancers in my account and show their status",
+    "should_trigger": true
+  },
+  {
+    "query": "My 负载均衡 is having issues with session persistence, can you help?",
+    "should_trigger": true
+  },
+  {
+    "query": "Create an ECS instance with 4 vCPUs in cn-hangzhou",
+    "should_trigger": false
+  },
+  {
+    "query": "What's my total bill for this month?",
+    "should_trigger": false
+  },
+  {
+    "query": "Check the CPU and memory usage of my RDS database",
+    "should_trigger": false
+  },
+  {
+    "query": "Add a RAM user with read-only access to OSS buckets",
+    "should_trigger": false
+  },
+  {
+    "query": "How does Alibaba Cloud VPC peering work?",
+    "should_trigger": false
+  },
+  {
+    "query": "Write a Python script to take daily snapshots of ECS disks",
+    "should_trigger": false
+  },
+  {
+    "query": "Configure an alarm for CPU > 90% on my production instances",
+    "should_trigger": false
+  },
+  {
+    "query": "Create an Application Load Balancer (ALB) for my container service",
+    "should_trigger": false
+  },
+  {
+    "query": "Generate a new ops skill for alicloud-slb based on the OpenAPI spec",
+    "should_trigger": false
+  },
+  {
+    "query": "Check the Redis memory usage and key count for instance r-abc123",
+    "should_trigger": false
+  }
+]

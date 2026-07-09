@@ -1,0 +1,95 @@
+{
+  "skill": "alicloud-sls-ops",
+  "version": "1.0.0",
+  "generated_at": "2026-06-05",
+  "queries": [
+    {
+      "id": "SLQ-001",
+      "category": "project",
+      "difficulty": "easy",
+      "query": "Create SLS project",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves project management'"
+    },
+    {
+      "id": "SLQ-002",
+      "category": "logstore",
+      "difficulty": "easy",
+      "query": "Create logstore in SLS",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves logstore management'"
+    },
+    {
+      "id": "SLQ-003",
+      "category": "index",
+      "difficulty": "medium",
+      "query": "Configure index for logstore",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves index configuration'"
+    },
+    {
+      "id": "SLQ-004",
+      "category": "query",
+      "difficulty": "easy",
+      "query": "Query logs from logstore",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves log querying'"
+    },
+    {
+      "id": "SLQ-005",
+      "category": "alert",
+      "difficulty": "medium",
+      "query": "Create alert rule for error logs",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves alerting'"
+    },
+    {
+      "id": "SLQ-006",
+      "category": "dashboard",
+      "difficulty": "medium",
+      "query": "Create dashboard for log visualization",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves dashboards'"
+    },
+    {
+      "id": "SLQ-007",
+      "category": "logtail",
+      "difficulty": "medium",
+      "query": "Configure logtail for log collection",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves log collection'"
+    },
+    {
+      "id": "SLQ-008",
+      "category": "consumer",
+      "difficulty": "hard",
+      "query": "Create consumer group for real-time processing",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Directly matches SHOULD trigger 'Task involves consumer groups'"
+    },
+    {
+      "id": "SLQ-011",
+      "category": "analytics",
+      "difficulty": "medium",
+      "query": "SLB 反馈流量大，找出绑定在该 SLB IP 上访问量/流量最高的几个子域名",
+      "expected_trigger": "alicloud-sls-ops",
+      "rationale": "Matches AnalyzeSlbPerHostTraffic Runbook: cross-skill pattern with alicloud-slb-ops, ranks hosts in SLB access logs via SLS group-by query"
+    },
+    {
+      "id": "SLQ-009",
+      "category": "negative",
+      "difficulty": "easy",
+      "query": "Create ECS instance",
+      "expected_trigger": "alicloud-ecs-ops",
+      "rationale": "Negative case: ECS lifecycle management, not SLS"
+    },
+    {
+      "id": "SLQ-010",
+      "category": "negative",
+      "difficulty": "easy",
+      "query": "Configure SLB load balancer",
+      "expected_trigger": "alicloud-slb-ops",
+      "rationale": "Negative case: SLB lifecycle management, not SLS"
+    }
+  ]
+}

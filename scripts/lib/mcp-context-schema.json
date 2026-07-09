@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aliyun-skills.local/schemas/mcp-context-metadata.json",
+  "title": "context_metadata.mcp segment (TEL Phase 4.5)",
+  "type": "object",
+  "required": [
+    "mcp_tools_loaded",
+    "mcp_tools_invoked",
+    "mcp_tool_utilization",
+    "mcp_schema_waste_tokens",
+    "attribution_confidence"
+  ],
+  "properties": {
+    "mcp_tools_loaded": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "mcp_tools_invoked": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "mcp_tool_utilization": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "mcp_schema_waste_tokens": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "attribution_confidence": {
+      "type": "string",
+      "enum": ["estimated", "observed", "mixed"]
+    },
+    "platform": { "type": "string" },
+    "capability_flags": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

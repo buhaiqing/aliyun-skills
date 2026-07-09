@@ -1,0 +1,142 @@
+# Alibaba Cloud Advisor Ops — Example Configuration
+#
+# This file shows the typical configuration for the
+# alicloud-advisor-ops skill in interactive (CLI) and CI usage.
+#
+# All values below are EXAMPLES — replace with your own.
+# Credentials go in environment variables, NOT in this file.
+
+# --- Skill-level metadata ---
+skill:
+  name: alicloud-advisor-ops
+  version: "1.0.0"
+  runtime: cli-first
+  gcl_classification: recommended
+  gcl_max_iter: 3
+
+# --- Execution environment (set as env vars, do NOT put in YAML) ---
+# ALIBABA_CLOUD_ACCESS_KEY_ID=LTAI5xxxxxxxxxxxx
+# ALIBABA_CLOUD_ACCESS_KEY_SECRET=********************************
+# ALIBABA_CLOUD_REGION_ID=cn-hangzhou
+# ALIBABA_CLOUD_STS_TOKEN=                  # only for cross-account
+
+# --- Read operation defaults ---
+defaults:
+  region: cn-hangzhou
+  biz_language: en              # 'en' | 'zh'
+  page_size: 50
+  page_number: 1
+  history_date_range_max_days: 90
+
+# --- Filter presets ---
+# These are passed to the relevant CLI flags.
+filters:
+  severity_critical_only: Critical
+  severity_warning_or_above: Warning
+  product_ecs: Ecs
+  product_rds: Rds
+  product_slb: Slb
+  product_oss: Oss
+  product_ack: Ack
+  category_security: Security
+  category_stability: Stability
+  category_cost: Cost
+  category_performance: Performance
+
+# --- Side-effect operation policies ---
+side_effects:
+  refresh_advisor_check:
+    require_user_confirmation: true
+    # SAF-RAC-02: dimension enums
+    allowed_dimensions: [Cost, Performance, Security, Stability]
+    # SAF-RAC-03: poll timeout
+    poll_interval_seconds: 30
+    poll_max_attempts: 20
+  refresh_advisor_cost_check:
+    require_user_confirmation: true
+    poll_interval_seconds: 30
+    poll_max_attempts: 20
+  refresh_advisor_resource:
+    require_user_confirmation: false   # implicit if user named the resource
+    require_product: true              # SAF-RAR-01
+
+# --- Throttling and retry ---
+throttling:
+  max_retries: 3
+  backoff: exponential
+  initial_backoff_ms: 2000
+  max_backoff_ms: 8000
+
+# --- RAM permission policy (informational; apply via alicloud-ram-ops) ---
+ram_policy:
+  read_only:
+    version: "1"
+    statement:
+      - effect: Allow
+        action:
+          - advisor:DescribeAdvices
+          - advisor:DescribeAdvicesPage
+          - advisor:DescribeAdvicesFlatPage
+          - advisor:DescribeAdvisorChecks
+          - advisor:DescribeAdvisorChecksFoPages
+          - advisor:DescribeAdvisorResources
+          - advisor:DescribeCostCheckAdvices
+          - advisor:DescribeCostCheckResults
+          - advisor:DescribeCostOptimizationOverview
+          - advisor:GetHistoryAdvices
+          - advisor:GetInspectProgress
+          - advisor:GetProductList
+          - advisor:GetTaskStatusById
+        resource: "*"
+  with_refresh:  # add to read_only
+    additional_actions:
+      - advisor:RefreshAdvisorCheck
+      - advisor:RefreshAdvisorCostCheck
+      - advisor:RefreshAdvisorResource
+
+# --- Cross-skill delegation routing ---
+delegation:
+  - advice_pattern: "Ecs.*"
+    delegate_to: alicloud-ecs-ops
+    intent: remediation
+  - advice_pattern: "Rds.*"
+    delegate_to: alicloud-rds-ops
+    intent: remediation
+  - advice_pattern: "Slb.*"
+    delegate_to: alicloud-slb-ops
+    intent: remediation
+  - advice_pattern: "Ack.*"
+    delegate_to: alicloud-ack-ops
+    intent: remediation
+  - advice_pattern: "Cost.*"
+    delegate_to: alicloud-billing-ops
+    intent: cost-analysis
+  - advice_pattern: "*"   # generic metric lookup
+    metric_source: alicloud-cms-ops
+    intent: drill-into-metric
+
+# --- Output conventions (for downstream skills) ---
+output:
+  format: markdown
+  include_json_summary: true
+  fields:
+    - advice_summary        # Markdown table
+    - critical_count        # int
+    - warning_count         # int
+    - info_count            # int
+    - total_savings         # number (cost API)
+    - cost_by_category      # dict
+    - task_id               # int (refresh ops)
+
+# --- Reporting schedule (for CI) ---
+schedule:
+  health_report:
+    cron: "0 8 * * 1"        # Monday 08:00 UTC
+    operations:
+      - DescribeAdvices
+      - DescribeCostOptimizationOverview
+  cost_trend:
+    cron: "0 8 * * 1"
+    operations:
+      - GetHistoryAdvices
+      - DescribeCostCheckResults

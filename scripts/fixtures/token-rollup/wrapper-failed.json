@@ -1,0 +1,17 @@
+{
+  "trace_id": "trace-fixture-wrapper-fail",
+  "session_id": "sess-token-rollup-2",
+  "skill": "alicloud-cms-ops",
+  "coding_agent": "unknown",
+  "product": "cms",
+  "action": "DescribeMetricList",
+  "status": "failed",
+  "error_code": "MissingParameter",
+  "end_time": "2026-06-22T11:00:00+0000",
+  "llm_usage": {
+    "prompt_tokens": 100,
+    "completion_tokens": 50,
+    "total_tokens": 150
+  },
+  "llm_generations": []
+}

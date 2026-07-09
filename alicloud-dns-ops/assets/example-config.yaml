@@ -1,0 +1,260 @@
+# Alibaba Cloud DNS Configuration Example
+# This file demonstrates DNS configuration patterns for common scenarios
+
+# Public Authoritative DNS Configuration
+public_dns:
+  # Domain configuration
+  domain: "example.com"
+  description: "Production website domain"
+  
+  # DNS records
+  records:
+    # A record for main website
+    - name: "www"
+      type: "A"
+      value: "1.2.3.4"
+      ttl: 600
+      line: "default"
+      weight: 100
+    
+    # CNAME record for application
+    - name: "app"
+      type: "CNAME"
+      value: "example.slb.aliyuncs.com"
+      ttl: 300
+      line: "default"
+    
+    # MX record for email
+    - name: "@"
+      type: "MX"
+      value: "10 mx1.example.com"
+      ttl: 3600
+      line: "default"
+    
+    # TXT record for verification
+    - name: "@"
+      type: "TXT"
+      value: "v=spf1 include:spf.example.com -all"
+      ttl: 3600
+      line: "default"
+    
+    # CAA record for certificate authority
+    - name: "@"
+      type: "CAA"
+      value: '0 issue "letsencrypt.org"'
+      ttl: 3600
+      line: "default"
+  
+  # Line-based routing
+  line_routing:
+    # ISP-specific routing
+    - line: "telecom"
+      records:
+        - name: "www"
+          type: "A"
+          value: "1.2.3.5"
+          ttl: 600
+    
+    - line: "unicom"
+      records:
+        - name: "www"
+          type: "A"
+          value: "1.2.3.6"
+          ttl: 600
+    
+    # Geographic routing
+    - line: "oversea"
+      records:
+        - name: "www"
+          type: "A"
+          value: "2.3.4.5"
+          ttl: 600
+  
+  # Weighted routing
+  weighted_routing:
+    - name: "api"
+      type: "A"
+      records:
+        - value: "10.0.0.1"
+          weight: 70
+          ttl: 300
+        - value: "10.0.0.2"
+          weight: 30
+          ttl: 300
+
+# Private DNS (PrivateZone) Configuration
+private_dns:
+  # PrivateZone for internal services
+  zones:
+    - name: "internal.example.com"
+      description: "Internal DNS zone for VPC resources"
+      vpc_bindings:
+        - vpc_id: "vpc_123"
+          region_id: "cn-hangzhou"
+        - vpc_id: "vpc_456"
+          region_id: "cn-shanghai"
+      
+      records:
+        # Internal API server
+        - name: "api.internal"
+          type: "A"
+          value: "10.0.0.1"
+          ttl: 300
+        
+        # Internal database
+        - name: "db.internal"
+          type: "A"
+          value: "10.0.0.2"
+          ttl: 300
+        
+        # Internal cache
+        - name: "cache.internal"
+          type: "A"
+          value: "10.0.0.3"
+          ttl: 300
+        
+        # Internal load balancer
+        - name: "lb.internal"
+          type: "A"
+          value: "10.0.0.4"
+          ttl: 300
+    
+    # PrivateZone for development environment
+    - name: "dev.internal.example.com"
+      description: "Development environment DNS zone"
+      vpc_bindings:
+        - vpc_id: "vpc_789"
+          region_id: "cn-hangzhou"
+      
+      records:
+        - name: "api.dev"
+          type: "A"
+          value: "10.1.0.1"
+          ttl: 60
+        
+        - name: "db.dev"
+          type: "A"
+          value: "10.1.0.2"
+          ttl: 60
+
+# GTM (Global Traffic Manager) Configuration
+gtm:
+  # Primary address pool
+  primary_pool:
+    name: "primary-pool"
+    type: "IPv4"
+    addresses:
+      - "1.2.3.4"
+      - "5.6.7.8"
+    health_check:
+      enabled: true
+      type: "HTTP"
+      port: 80
+      path: "/health"
+      interval: 60
+      threshold: 3
+      timeout: 5
+  
+  # Backup address pool
+  backup_pool:
+    name: "backup-pool"
+    type: "IPv4"
+    addresses:
+      - "2.3.4.5"
+      - "6.7.8.9"
+    health_check:
+      enabled: true
+      type: "HTTP"
+      port: 80
+      path: "/health"
+      interval: 60
+      threshold: 3
+      timeout: 5
+  
+  # Failover configuration
+  failover:
+    strategy: "AUTO"
+    trigger_threshold: 3
+    recovery_threshold: 2
+    manual_override: true
+
+# DNS Security Configuration
+dns_security:
+  # DNSSEC configuration
+  dnssec:
+    enabled: true
+    key_rollover_interval: 90
+  
+  # Access control
+  access_control:
+    enable_ram_policies: true
+    enable_audit_logging: true
+    enable_mfa: true
+  
+  # Monitoring and alerting
+  monitoring:
+    query_volume_alert: true
+    health_check_alert: true
+    failover_alert: true
+    dnssec_alert: true
+
+# Integration Configuration
+integrations:
+  # SLB integration
+  slb:
+    - domain: "www.example.com"
+      slb_dns: "example.slb.aliyuncs.com"
+      record_type: "CNAME"
+      ttl: 300
+  
+  # CDN integration
+  cdn:
+    - domain: "static.example.com"
+      cdn_dns: "static.example.com.kunlun.com"
+      record_type: "CNAME"
+      ttl: 300
+  
+  # WAF integration
+  waf:
+    - domain: "www.example.com"
+      waf_dns: "www.example.com.waf.aliyuncs.com"
+      record_type: "CNAME"
+      ttl: 300
+
+# Validation Configuration
+validation:
+  # Pre-flight checks
+  preflight:
+    - check_domain_ownership: true
+    - check_ns_status: true
+    - check_record_conflicts: true
+    - check_permissions: true
+  
+  # Post-change validation
+  post_change:
+    - verify_record_status: true
+    - test_dns_resolution: true
+    - check_propagation: true
+    - validate_health_checks: true
+  
+  # Rollback procedures
+  rollback:
+    - backup_before_change: true
+    - test_rollback_procedure: true
+    - document_rollback_steps: true
+
+# Compliance Configuration
+compliance:
+  # Audit requirements
+  audit:
+    - log_all_changes: true
+    - retain_logs_days: 90
+    - monthly_review: true
+    - quarterly_audit: true
+  
+  # Change management
+  change_management:
+    - require_approval: true
+    - require_documentation: true
+    - require_testing: true
+    - require_post_change_verification: true
