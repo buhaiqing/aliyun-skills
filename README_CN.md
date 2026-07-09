@@ -231,6 +231,7 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 |------|------|
 | [REQUIREMENTS.md](REQUIREMENTS.md) | **需求开发文档** — 所有 Skill 的功能需求详情、架构设计、技术规范与开发指南 |
 | [alicloud-skill-generator/SKILL.md](alicloud-skill-generator/SKILL.md) | Skill 生成器完整使用说明 |
+| [README.md](README.md) | English version（英文版） |
 
 ---
 
