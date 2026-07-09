@@ -1,1 +1,86 @@
-.omc
+# ===== Go (Primary Runtime) =====
+
+# JIT Go workspace (temporary, generated on-demand)
+/tmp/go-runtime/
+/tmp/go-workspace/
+/tmp/go-cache/
+/tmp/go-modcache/
+/tmp/aliyun-sdk-workspace/
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.sum
+
+# Go workspace files (project-level, keep go.mod if exists)
+# go.mod  # Keep if we add project-level go.mod
+
+# ===== Credentials (CRITICAL) =====
+
+# Alibaba Cloud CLI config
+.aliyun/
+
+# JD Cloud CLI config
+.jdc/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.*
+!.env.example
+
+# ===== Python (Development tools only) =====
+
+# Virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution
+dist/
+build/
+*.egg-info/
+*.egg
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== OS Generated =====
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+
+# Linux
+*~
+
+# ===== Logs & Temporary =====
+
+*.log
+*.tmp
+*.temp
+.cache/
+
+# ===== Project Specific =====
+
+# Compiled skill binaries (future distribution)
+# *.aliyun-sdk-*  # Keep pre-compiled binaries if we distribute them
+
+.trae/
+.agents/
