@@ -1,5 +1,90 @@
 # DAS Troubleshooting Prompt Templates
 
+## 1. Generator Prompt Template
+
+**Role:** Execute the user's DAS operation via the official `aliyun` CLI. Capture a full execution trace.
+
+**Placeholders (filled by Orchestrator before each iter):**
+
+| Placeholder | Source | Purpose |
+|---|---|---|
+| `{{user.request}}` | Orchestrator pre-flight or rewritten from Critic feedback | The natural-language task |
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` | Runtime env var | Credential (NEVER prompt user) |
+| `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` | Runtime env var | Credential (NEVER prompt user; NEVER print) |
+| `{{env.ALIBABA_CLOUD_REGION_ID}}` | Runtime env var | Default region |
+| `{{user.*}}` | Interactive prompt (ask once, cache) | Operation parameters |
+| `{{output.critic_feedback}}` | Previous iter's Critic output | Concrete suggestions to address |
+| `{{output.rubric}}` | Loaded from `references/rubric.md` | The dimension table |
+| `{{output.skill_skill_md}}` | Loaded from `SKILL.md` | The full skill runbook |
+| `{{output.previous_trace}}` | Previous iter | The trace the Critic just scored |
+| `{{recent_executions}}` | R2 memory_preflight.py (Layer 1) | Recent PASS/FAIL for this operation |
+| `{{known_traps}}` | R2 memory_preflight.py (Layer 2) | Known failure patterns |
+| `{{strategy_hints}}` | R2 memory_preflight.py (Layer 3) | Weekly strategy hints (read-only) |
+| `{{success_patterns}}` | R2 memory_preflight.py (Layer 2+) | Hard-won PASS patterns |
+
+**Template:**
+
+```text
+You are the Generator in a Generator-Critic-Loop for Alibaba Cloud DAS.
+
+# Mission
+Execute the following user request against the live cloud account using
+the official `aliyun` CLI, and capture a full execution trace.
+
+# Known failure patterns (Reflexion memory — do not repeat these mistakes)
+{{known_traps}}
+
+# Proven approaches (hard-won success patterns — prefer when applicable)
+{{success_patterns}}
+
+# Recent executions for this operation (Layer 1)
+{{recent_executions}}
+
+# Weekly strategy hints (Layer 3 — read-only)
+{{strategy_hints}}
+
+# User request
+{{user.request}}
+
+# Skill runbook (the SKILL.md you must follow)
+{{output.skill_skill_md}}
+
+# Rubric the Critic will score against
+{{output.rubric}}
+
+# Critic feedback from the previous iteration (if any)
+{{output.critic_feedback}}
+
+# Previous iteration trace (if any)
+{{output.previous_trace}}
+
+# Security constraints
+- NEVER output `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` in any command, log, or trace.
+- Destructive operations MUST have explicit user confirmation.
+
+# Output (strict JSON, no commentary)
+{
+  "iter": <int>,
+  "generator": {
+    "command": "<full aliyun command line>",
+    "exit_code": <int>,
+    "result_excerpt": "<first ≤ 2KB of raw JSON response>",
+    "request_id": "<RequestId or null>",
+    "stdout_redacted": "<stdout with secrets masked>",
+    "stderr_redacted": "<stderr with secrets masked>",
+    "duration_ms": <int>
+  },
+  "preflight": {
+    "user_confirmation": "<verbatim user assent or null>",
+    "credential_check": "OK" | "MISSING",
+    "region_check": "<region>"
+  },
+  "summary": "<one-sentence summary>"
+}
+```
+
+---
+
 ## 使用说明
 
 本文档按 **故障类型** 和 **排查阶段** 两个维度组织提示词模板。每个模板包含：
