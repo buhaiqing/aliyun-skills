@@ -28,10 +28,11 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -805,6 +806,9 @@ def reflexion_extract(trace: dict[str, Any]) -> dict[str, Any] | None:
             "missing_dimensions": bool(rd.get("missing_dimensions", True)),
         }
 
+    # Propagate git_commit from trace if present, else capture current HEAD
+    pattern["git_commit"] = trace.get("git_commit") or _get_git_head()
+
     return pattern
 
 
@@ -873,6 +877,7 @@ def reflexion_extract_wrapper_lite(
             "missing_dimensions": bool(missing_dimensions),
         }
 
+    pattern["git_commit"] = _get_git_head()
     return pattern
 
 
@@ -1026,6 +1031,23 @@ def reflexion_promote_from_memory(
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _get_git_head() -> str:
+    """Return the current git HEAD commit hash, or empty string on failure."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()[:40]
+    except Exception:
+        pass
+    return ""
 
 
 def _time_weighted_score(
@@ -2007,11 +2029,11 @@ def reflexion_maintain(
                     max_window = 365  # Never retain patterns longer than 1 year regardless of frequency
                     effective_window = min(base_window, max_window)
                     adaptive_window = 86400.0 * effective_window
-                    
+
                     if effective_window < base_window:
                         _log("event=adaptive_window_capped cat={} skill={} count={} base_window={}d capped_to={}d",
                              cat, p.get("skill", "?"), count, base_window, effective_window)
-                    
+
                     if age_seconds >= adaptive_window:
                         _log("event=decay_prune cat={} skill={} count={} age={:.0f}d window={:.0f}d",
                              cat, p.get("skill", "?"), count,
@@ -2047,6 +2069,60 @@ def reflexion_maintain(
         _save_store(store, root)
 
     return result
+
+
+def success_maintain(
+    root: Path | None = None,
+    decay_days: int = 90,
+    apply: bool = False,
+) -> dict[str, Any]:
+    """Prune success patterns not seen in ``decay_days`` days.
+
+    In dry-run mode (default), reports what would be pruned.
+    """
+    try:
+        store = _load_success_store(root)
+        patterns: list[dict[str, Any]] = store.get("patterns", [])
+        now = datetime.now(timezone.utc)
+
+        before = len(patterns)
+        kept: list[dict[str, Any]] = []
+        window_seconds = float(decay_days) * 86400.0
+
+        for pat in patterns:
+            last_seen_str = pat.get("last_seen", "")
+            if not last_seen_str:
+                kept.append(pat)
+                continue
+            try:
+                last_seen_dt = datetime.fromisoformat(last_seen_str.replace("Z", "+00:00"))
+                age = (now - last_seen_dt).total_seconds()
+                if age >= window_seconds:
+                    _log("event=success_maintain_prune skill={} op={} age={:.0f}d window={}d",
+                         pat.get("skill", "?"), pat.get("operation", "?"),
+                         age / 86400.0, decay_days)
+                    continue
+            except (ValueError, TypeError):
+                pass
+            kept.append(pat)
+
+        pruned = before - len(kept)
+        if apply:
+            store["patterns"] = kept
+            _save_success_store(store, root)
+
+        result: dict[str, Any] = {
+            "status": "ok",
+            "applied": apply,
+            "before": before,
+            "pruned": pruned,
+            "after": len(kept),
+            "decay_days": decay_days,
+        }
+        return result
+    except Exception as exc:
+        _log("event=success_maintain result=error exception={}", exc)
+        return {"status": "error", "applied": apply, "error": str(exc)}
 
 
 # ---------------------------------------------------------------------------
@@ -2107,8 +2183,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
                          help=f"Minimum count threshold (default: {MIN_PATTERN_COUNT})")
     maint_p.add_argument("--decay-days", type=int, default=0,
                          help="Prune patterns not seen in this many days (0=disable time-based pruning)")
+    maint_p.add_argument("--success-decay-days", type=int, default=0,
+                         help="Prune success patterns not seen in this many days (0=disable)")
     maint_p.add_argument("--apply", action="store_true", help="Actually prune (default: dry-run)")
     maint_p.add_argument("--reflexion-root", help="Override reflexion root")
+
+    # success-store (A1.4)
+    ss_p = sub.add_parser("success-store", help="Store a hard-won PASS success pattern")
+    ss_p.add_argument("--trace", required=True, help="Path to GCL trace JSON file")
+    ss_p.add_argument("--reflexion-root", help="Override reflexion root")
 
     agg_p = sub.add_parser(
         "aggregate-generalized",
@@ -2201,6 +2284,22 @@ def main(argv: list[str] | None = None) -> int:
             _log("event=seed_store result=success")
         return rc
 
+    elif args.command == "success-store":
+        # Load trace, extract _success_pattern_payload, store it
+        try:
+            trace = json.loads(Path(args.trace).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"[ERROR] failed to load trace: {e}", file=sys.stderr)
+            return 1
+        success_payload = trace.get("_success_pattern_payload")
+        if not success_payload:
+            _log("event=success_store result=skipped reason=no_payload")
+            return 0
+        rc = success_store(success_payload, root=root)
+        if rc == 0:
+            _log("event=success_store result=success")
+        return rc
+
     elif args.command == "report":
         return reflexion_report(root=root, sort_by=args.sort_by)
 
@@ -2250,6 +2349,19 @@ def main(argv: list[str] | None = None) -> int:
                 elif info.get("pruned_by_count", 0) > 0:
                     tag = f" (low-count={info['pruned_by_count']})"
                 print(f"  {cat}: {info['before']} → {info['after']} (pruned {info['pruned']}){tag}")
+
+        # A3.1 extend: success pattern TTL
+        success_decay = args.success_decay_days
+        if success_decay > 0:
+            s_result = success_maintain(
+                root=root,
+                decay_days=success_decay,
+                apply=args.apply,
+            )
+            s_mode = "APPLY" if args.apply else "DRY-RUN"
+            print(f"[REFLEXION] success-maintain ({s_mode}): "
+                  f"{s_result.get('before', 0)} → {s_result.get('after', 0)} "
+                  f"(pruned {s_result.get('pruned', 0)}, decay_days={success_decay})")
         return 0
 
     elif args.command == "aggregate-generalized":

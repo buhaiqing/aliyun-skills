@@ -199,3 +199,81 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 - ✅ **TEL X-14** (2026-06-22): Cursor native `tokenUsage` → sidecar；pre-tool 跳过 usage env
 - ✅ **TEL X-15** (2026-06-22): `agent-turn-by-turn/` + `HARNESS_AGENT_TURN_ID` + rollup `by_turn`
 - 📋 **TEL X-7 RFC** (2026-06-22): GCL Critic 降级/恢复成对设计 — 见 `docs/token-efficiency-runtime.md` §6.7；**暂不实现**
+
+---
+
+## Level 3 → 4 智能进化计划 (Gartner AI Maturity)
+
+> 完整计划: [`docs/intelligence-evolution-plan.md`](docs/intelligence-evolution-plan.md)
+
+### Phase A — 反馈闭环从"空壳"变"引擎"
+
+#### A1 — Reflexion 自动填充管道
+- [ ] **A1.1** GCL trace failure_pattern 在 SAFETY_FAIL / HALLUCINATION_ABORT / MAX_ITER / near-miss PASS 时自动填充
+- [ ] **A1.2** `gcl_runner.py` 退出前自动调用 `reflexion_extract()` + `reflexion_store()`
+- [ ] **A1.3** wrapper 失败（非 GCL 路径）通过 `store-wrapper-lite` 写入失败模式
+- [ ] **A1.4** `gcl_reflexion.py success-store` 子命令：hard-won PASS → 成功模式
+- [ ] **A1.5** `gcl_reflexion.py report` 双输出：`docs/failure-patterns.md` + `docs/success-patterns.md`
+- [ ] **A1.6** pattern 添加 `git_commit` 字段
+
+#### A2 — Pre-flight 强制注入
+- [ ] **A2.1** `gcl_runner.py --preflight` 自动注入已知失败/成功模式到 Generator prompt
+- [ ] **A2.2** 注入预算 ≤ 2KB（top 5 失败 + top 3 成功，单条 ≤ 200 字符）
+- [ ] **A2.3** `--dry-run-preflight` 标志审查注入质量
+
+#### A3 — TTL 维护自动化
+- [ ] **A3.1** `make memory-maintain-apply` 正确 prune count < 3 失败模式 + 90 天前成功模式
+- [ ] **A3.2** `git_collect.py --dry-run` 展示待清理 pattern
+- [ ] **A3.3** GHA weekly maintain（dry-run 不 commit）
+
+### Phase B — 从"事后检查"到"事前预判"
+
+#### B1 — 操作风险预评分
+- [ ] **B1.1** Risk Score (0.0–1.0) = w1*fatal + w2*irreversible + w3*fail_rate + w4*scope
+- [ ] **B1.2** 四因子来源可追踪（fatal/irreversible/fail_rate/scope）
+- [ ] **B1.3** risk_score 写入 GCL trace 字段
+
+#### B2 — 动态 max_iter
+- [ ] **B2.1** Risk ≥ 0.7 → iter=5；0.3–0.7 → iter=3；< 0.3 → iter=1
+- [ ] **B2.2** 连续 3 次 PASS → 降一级 max_iter
+- [ ] **B2.3** 最近 1 次 FAIL → 升一级 max_iter
+
+#### B3 — Pass-Rate 异常检测告警
+- [ ] **B3.1** 3σ 或 50% 相对下降检测
+- [ ] **B3.2** 异常报告输出到 `.runtime/anomaly/`
+- [ ] **B3.3** GHA 集成：报告提交为 PR comment
+
+### Phase C — 跨维度智能融合
+
+#### C1 — AIOps 巡检报告融合层
+- [ ] **C1.1** `scripts/agents/fusion/fusion_report.sh` — 收集 7 感知 Agent 输出
+- [ ] **C1.2** 统一 schema：`{findings: [{domain, severity, resource_id, description}]}`
+- [ ] **C1.3** 严重级别归一化（CRITICAL / HIGH / MEDIUM / LOW / INFO）
+- [ ] **C1.4** 重复发现去重（相同 resource_id + description 合并）
+
+#### C2 — 跨维度根因推理
+- [ ] **C2.1** 预定义关联规则引擎（初始 5 条规则：闲置暴露/漂移致健康下降/高频变配/大流量前容量不足/策略冲突）
+- [ ] **C2.2** 推理输出：{root_cause, trigger_finding, correlated_findings, confidence, suggestion}
+- [ ] **C2.3** `--reload-rules` 热加载
+
+#### C3 — 行动建议自动编排
+- [ ] **C3.1** ops skill 映射表（ECS→ecs-ops, SLB→slb-ops, RDS→rds-ops 等）
+- [ ] **C3.2** 输出格式：{suggestion, target_skill, target_operation, estimated_risk}
+- [ ] **C3.3** 高风险建议标记 `requires_confirmation: true`
+
+### Phase D — 从"被动响应"到"主动运营"
+
+#### D1 — 自动化资源优化巡航
+- [ ] **D1.1** `scripts/cruise/scheduler.sh` — 每周自动全链路巡检
+- [ ] **D1.2** high/critical findings 自动生成 Markdown 摘要
+- [ ] **D1.3** `docs/cruise-reports/` 保留最近 4 周，TTL 滚动清理
+
+#### D2 — 变配预检自动触发
+- [ ] **D2.1** GCL pre-flight Risk ≥ 0.5 时自动触发 AIOps 目标链路健康检查
+- [ ] **D2.2** 预检结果注入 Generator prompt 作为 `{{preflight_health}}`
+- [ ] **D2.3** pre-flight 发现 CRITICAL/HIGH 问题 → 输出警告但不强制阻止
+
+#### D3 — 风险预警自动工单化
+- [ ] **D3.1** CRITICAL 发现 + pass-rate 异常 → 自动生成工单 JSON
+- [ ] **D3.2** 工单 schema：{severity, skill, finding, suggested_action, timestamp, git_commit}
+- [ ] **D3.3** `references/ticket-integration.md` — Jira 集成示例文档

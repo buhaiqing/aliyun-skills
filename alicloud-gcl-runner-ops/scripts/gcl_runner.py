@@ -112,7 +112,7 @@ from typing import Any
 
 # gcl_memory import (Layer 1 — non‑fatal)
 try:
-    from gcl_memory import memory_store, memory_purge_unknown
+    from gcl_memory import memory_purge_unknown, memory_store
 except ImportError:
     def memory_store(*args: Any, **kwargs: Any) -> int:  # type: ignore[misc]
         return 0
@@ -163,6 +163,28 @@ except ImportError:
             "success_patterns": [],
             "strategy_hints": {},
         }
+
+# ---------------------------------------------------------------------------
+# Git helpers
+# ---------------------------------------------------------------------------
+
+
+def _get_git_head() -> str:
+    """Return the current git HEAD commit hash, or empty string on failure."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()[:40]
+    except Exception:
+        pass
+    return ""
+
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -2214,7 +2236,7 @@ def extract_failure_pattern(
     if status == "MAX_ITER":
         all_scores = scores or critic_result.get("scores", {})
         failing = [k for k, v in all_scores.items() if v < 0.5]
-        
+
         if not failing:
             # Check if any dimension is below 0.8 (near-miss threshold)
             low_dims = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
@@ -2232,7 +2254,7 @@ def extract_failure_pattern(
                     "fix": "All dimensions pass minimum threshold but some are below optimal; consider parameter refinement",
                 }
             return None  # Truly no issue to record
-        
+
         low = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
         best_score = f"{sum(all_scores.values()):.1f}"
         return {
@@ -2472,6 +2494,7 @@ def extract_success_pattern(
         "trap_count": trap_count,
         "hint": hint,
         "source": "gcl-runner",
+        "git_commit": _get_git_head(),
         "execution_path": path_info.get("path"),
     }
     categories = sorted(
@@ -2644,6 +2667,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", type=Path, default=DEFAULT_AUDIT_DIR, help=f"Trace output directory; default: {DEFAULT_AUDIT_DIR}")
     p.add_argument("--timeout", type=int, default=300, help="Per-iteration subprocess timeout in seconds; default: 300")
     p.add_argument("--dry-run", action="store_true", help="Skip the actual subprocess; useful for Critic-only regression tests")
+    p.add_argument("--dry-run-preflight", action="store_true",
+                    help="Run pre-flight + H detection + memory injection preview, print injected content, then exit without executing (A2.3)")
     p.add_argument("--enable-hallucination-check", action="store_true", help="Enable the pre-execution Hallucination Detection (H) gate (§14)")
     p.add_argument(
         "--test-assessment",
@@ -2738,6 +2763,28 @@ def main(argv: list[str] | None = None) -> int:
             )
         except Exception as exc:
             _log("event=memory_preflight result=error exception={}", exc)
+
+    # A2.3: dry-run preflight — show injection preview then exit
+    if args.dry_run_preflight:
+        slots = memory_preflight_data.get("slots") or {}
+        print("=== DRY-RUN PREFLIGHT ===")
+        print(f"skill={args.skill} op={args.op}")
+        print(f"command={args.command}")
+        if args.enable_hallucination_check:
+            h = hallucination_detect(args.command)
+            print(f"H detection: status={h['status']} report={h['report']}")
+        print(f"memory_preflight: empty={memory_preflight_data.get('empty', True)}")
+        print(f"  recent_executions: {len(memory_preflight_data.get('recent_executions', []))}")
+        print(f"  known_traps ({len(memory_preflight_data.get('known_traps', []))}):")
+        for t in memory_preflight_data.get("known_traps", []):
+            print(f"    - [{t.get('category', '?')}] count={t.get('count', 1)} error={str(t.get('error', ''))[:80]}")
+        print(f"  success_patterns: {len(memory_preflight_data.get('success_patterns', []))}")
+        print("--- injection slots ---")
+        for key in ("recent_executions", "known_traps", "success_patterns", "strategy_hints"):
+            val = slots.get(key, "")
+            print(f"  {key}: ({len(val)} chars) {val[:200]}")
+        print("=== END DRY-RUN PREFLIGHT ===")
+        return EXIT_PASS
 
     # Optional test accuracy / regression assessment (skill-change workflows)
     test_assessment: dict[str, Any] | None = None

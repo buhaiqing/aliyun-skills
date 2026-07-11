@@ -1,0 +1,73 @@
+# Weekly reflexion memory maintain (dry-run)
+#
+# Runs memory maintain in dry-run mode every Monday.
+# Generates a maintain report in the job log but does NOT commit changes.
+# Per AGENTS.md §16 + docs/memory-strategy.md (Local-first principle),
+# runtime data lives on the maintainer machine — this GHA only does
+# governance-level checks and reporting.
+
+name: Reflexion Maintain (Weekly)
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC
+    - cron: "7 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Actually prune (default: dry-run)"
+        required: false
+        default: "false"
+
+jobs:
+  maintain-dry-run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Check gcl_reflexion.py health
+        run: |
+          python3 -c "import py_compile; py_compile.compile('alicloud-gcl-runner-ops/scripts/gcl_reflexion.py', doraise=True); print('gcl_reflexion.py: OK')"
+          python3 -c "import py_compile; py_compile.compile('scripts/runtime_cleanup.py', doraise=True); print('runtime_cleanup.py: OK')"
+
+      - name: Layer 2 maintain (dry-run)
+        run: |
+          echo "=== Reflexion Maintain (DRY-RUN) ==="
+          echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo ""
+
+          if [ -f "alicloud-gcl-runner-ops/scripts/gcl_reflexion.py" ]; then
+            python3 alicloud-gcl-runner-ops/scripts/gcl_reflexion.py maintain \
+              --decay-days 90 \
+              --success-decay-days 90 \
+              --reflexion-root .runtime/reflexion 2>&1 || true
+          else
+            echo "gcl_reflexion.py not found — skip"
+          fi
+
+      - name: Layer 2 report status
+        run: |
+          echo "=== Reflexion Report Status ==="
+          if [ -f "docs/failure-patterns.md" ]; then
+            echo "failure-patterns.md: $(wc -l < docs/failure-patterns.md) lines"
+          else
+            echo "failure-patterns.md: MISSING"
+          fi
+          if [ -f "docs/success-patterns.md" ]; then
+            echo "success-patterns.md: $(wc -l < docs/success-patterns.md) lines"
+          else
+            echo "success-patterns.md: MISSING"
+          fi
+          echo ""
+          echo "NOTE: This is a read-only dry-run. No changes are committed."

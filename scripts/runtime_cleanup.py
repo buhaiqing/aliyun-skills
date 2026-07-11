@@ -290,6 +290,8 @@ def run_memory_layer_maintain(skills_dir: Path, apply: bool) -> int:
             "maintain",
             "--decay-days",
             str(decay_days),
+            "--success-decay-days",
+            str(decay_days),
             "--reflexion-root",
             str(skills_dir / ".runtime" / "reflexion"),
         ]
