@@ -84,3 +84,6 @@ ehthumbs.db
 
 .trae/
 .agents/
+
+# CodeGraph index (generated, user-local)
+.codegraph/
