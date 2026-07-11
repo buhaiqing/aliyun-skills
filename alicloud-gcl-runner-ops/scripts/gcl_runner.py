@@ -127,6 +127,7 @@ try:
         normalize_skill_name,
         reflexion_extract,
         reflexion_report,
+        reflexion_retrieve,
         reflexion_store,
         remediation_apply_from_trace,
         success_report,
@@ -139,6 +140,10 @@ except ImportError:
         return None
     def reflexion_report(*args: Any, **kwargs: Any) -> int:  # type: ignore[misc]
         return 0
+    def reflexion_retrieve(  # type: ignore[misc]
+        *args: Any, **kwargs: Any
+    ) -> list[dict[str, Any]]:
+        return []
     def success_store(*args: Any, **kwargs: Any) -> int:  # type: ignore[misc]
         return 0
     def success_report(*args: Any, **kwargs: Any) -> int:  # type: ignore[misc]
@@ -163,28 +168,6 @@ except ImportError:
             "success_patterns": [],
             "strategy_hints": {},
         }
-
-# ---------------------------------------------------------------------------
-# Git helpers
-# ---------------------------------------------------------------------------
-
-
-def _get_git_head() -> str:
-    """Return the current git HEAD commit hash, or empty string on failure."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=5,
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()[:40]
-    except Exception:
-        pass
-    return ""
-
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -299,6 +282,129 @@ SKILL_MAX_ITER = {
     "alicloud-resource-manager-ops": 5,
     "alicloud-agentrun-ops": 5,
 }
+
+# ---------------------------------------------------------------------------
+# B1 — Operation Risk Scoring
+# ---------------------------------------------------------------------------
+
+#: Operation keywords mapped to fatal score (higher = more destructive).
+_FATAL_OP_KEYWORDS: dict[str, float] = {
+    "delete": 1.0,
+    "drop": 1.0,
+    "stop": 1.0,
+    "reboot": 1.0,
+    "release": 1.0,
+    "schedule": 1.0,
+    "unbind": 1.0,
+    "modify": 0.5,
+    "set": 0.5,
+    "attach": 0.5,
+    "detach": 0.5,
+    "create": 0.3,
+    "restore": 0.3,
+    "start": 0.3,
+    "describe": 0.0,
+    "list": 0.0,
+    "get": 0.0,
+}
+
+#: Risk dimension weights (must sum to 1.0).
+_RISK_WEIGHTS: dict[str, float] = {
+    "w1": 0.35,  # fatal
+    "w2": 0.25,  # irreversible
+    "w3": 0.25,  # fail_rate
+    "w4": 0.15,  # scope
+}
+
+
+def _get_fail_rate(skill: str, op: str) -> float:
+    """Query reflexion memory for operation-level fail_rate.
+
+    Returns a float in [0.0, 1.0]. Returns 0.25 (medium default) when
+    no reflexion data is available for the skill/operation pair.
+    """
+    patterns = reflexion_retrieve(skill, operation=op, top_k=10)
+    if not patterns:
+        return 0.25
+    total_failures = sum(p.get("count", 0) for p in patterns)
+    return min(1.0, total_failures / max(total_failures + 10, 1))
+
+
+def risk_scorer(skill: str, op: str, command: str) -> dict[str, Any]:
+    """Compute an operation risk score from 0.0 (safe) to 1.0 (critical).
+
+    Combines four dimensions with weighted sums:
+
+    - fatal (w1=0.35):  destructive power of the operation name keyword
+    - irreversible (w2=0.25): 0.5 for fatal ops, 0 for others
+    - fail_rate (w3=0.25): historical failure frequency from reflexion
+    - scope (w4=0.15): default 0.25, future-proof for resource count
+
+    Returns a dict with keys ``risk_score`` and ``breakdown``.
+    """
+    op_lower = op.lower()
+
+    # 1. Fatal score via keyword prefix match
+    fatal_score = 0.0
+    for keyword, score in _FATAL_OP_KEYWORDS.items():
+        if op_lower.startswith(keyword):
+            fatal_score = score
+            break
+
+    # 2. Irreversible: 0.5 for fatal operations, 0 otherwise
+    irreversible_score = 0.5 if fatal_score >= 0.5 else 0.0
+
+    # 3. Fail rate from reflexion memory
+    fail_rate = _get_fail_rate(skill, op)
+
+    # 4. Scope (default 0.25, future-proof for resource count)
+    scope_score = 0.25
+
+    # Weighted sum
+    risk_score = (
+        _RISK_WEIGHTS["w1"] * fatal_score
+        + _RISK_WEIGHTS["w2"] * irreversible_score
+        + _RISK_WEIGHTS["w3"] * fail_rate
+        + _RISK_WEIGHTS["w4"] * scope_score
+    )
+
+    return {
+        "risk_score": round(risk_score, 4),
+        "breakdown": {
+            "fatal": fatal_score,
+            "irreversible": irreversible_score,
+            "fail_rate": fail_rate,
+            "scope": scope_score,
+            "weights": _RISK_WEIGHTS,
+            "weighted_sum": round(risk_score, 4),
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# B2 — Dynamic max_iter
+# ---------------------------------------------------------------------------
+
+
+def max_iter_calculator(risk_score: float, skill: str) -> int:
+    """Compute a dynamic max_iter based on risk score.
+
+    risk >= 0.7 -> 5
+    0.3 <= risk < 0.7 -> 3
+    risk < 0.3 -> 1
+
+    The static ``SKILL_MAX_ITER`` for the skill is used as a FLOOR:
+    result = max(calculated, SKILL_MAX_ITER[skill])
+    """
+    if risk_score >= 0.7:
+        calculated = 5
+    elif risk_score >= 0.3:
+        calculated = 3
+    else:
+        calculated = 1
+    floor = SKILL_MAX_ITER.get(skill, 2)
+    return max(calculated, floor)
+
 
 #: Known CLI parameters per (product, operation). Used by the Hallucination
 #: Detector to verify `--flag` existence before executing the command.
@@ -2236,7 +2342,7 @@ def extract_failure_pattern(
     if status == "MAX_ITER":
         all_scores = scores or critic_result.get("scores", {})
         failing = [k for k, v in all_scores.items() if v < 0.5]
-
+        
         if not failing:
             # Check if any dimension is below 0.8 (near-miss threshold)
             low_dims = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
@@ -2254,7 +2360,7 @@ def extract_failure_pattern(
                     "fix": "All dimensions pass minimum threshold but some are below optimal; consider parameter refinement",
                 }
             return None  # Truly no issue to record
-
+        
         low = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
         best_score = f"{sum(all_scores.values()):.1f}"
         return {
@@ -2494,7 +2600,6 @@ def extract_success_pattern(
         "trap_count": trap_count,
         "hint": hint,
         "source": "gcl-runner",
-        "git_commit": _get_git_head(),
         "execution_path": path_info.get("path"),
     }
     categories = sorted(
@@ -2667,8 +2772,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", type=Path, default=DEFAULT_AUDIT_DIR, help=f"Trace output directory; default: {DEFAULT_AUDIT_DIR}")
     p.add_argument("--timeout", type=int, default=300, help="Per-iteration subprocess timeout in seconds; default: 300")
     p.add_argument("--dry-run", action="store_true", help="Skip the actual subprocess; useful for Critic-only regression tests")
-    p.add_argument("--dry-run-preflight", action="store_true",
-                    help="Run pre-flight + H detection + memory injection preview, print injected content, then exit without executing (A2.3)")
     p.add_argument("--enable-hallucination-check", action="store_true", help="Enable the pre-execution Hallucination Detection (H) gate (§14)")
     p.add_argument(
         "--test-assessment",
@@ -2683,6 +2786,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--disable-memory-preflight",
         action="store_true",
         help="Skip R2 Layer 1–3 pre-flight memory retrieval (default: enabled unless GCL_MEMORY_PREFLIGHT_ENABLED=false)",
+    )
+    p.add_argument(
+        "--risk-score",
+        action="store_true",
+        help="Compute risk score breakdown and exit (no command execution)",
     )
     return p
 
@@ -2705,6 +2813,24 @@ def main(argv: list[str] | None = None) -> int:
     base_max_iter = args.max_iter or rubric["max_iter"] or SKILL_MAX_ITER.get(args.skill, 2)
     max_iter = base_max_iter
     adaptive_reason = None
+
+    # B1: Operation risk scoring
+    risk_result = risk_scorer(args.skill, args.op, args.command)
+
+    # --risk-score: show breakdown and exit (no command execution)
+    if args.risk_score:
+        print(json.dumps(risk_result, indent=2))
+        return EXIT_PASS
+
+    # B2: Dynamic max_iter from risk score
+    if not args.max_iter:
+        risk_based_max_iter = max_iter_calculator(risk_result["risk_score"], args.skill)
+        dynamic_max_iter = max(base_max_iter, risk_based_max_iter)
+        if dynamic_max_iter != base_max_iter:
+            _log("event=dynamic_max_iter static={} dynamic={} risk_score={}",
+                 base_max_iter, dynamic_max_iter, risk_result["risk_score"])
+        base_max_iter = dynamic_max_iter
+        max_iter = base_max_iter
 
     # Resolve Critic mode from CLI/env (defaults to mechanical)
     gcl_critic_mode: str = args.critic_mode or os.environ.get("GCL_CRITIC_MODE", "mechanical")
@@ -2764,28 +2890,6 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as exc:
             _log("event=memory_preflight result=error exception={}", exc)
 
-    # A2.3: dry-run preflight — show injection preview then exit
-    if args.dry_run_preflight:
-        slots = memory_preflight_data.get("slots") or {}
-        print("=== DRY-RUN PREFLIGHT ===")
-        print(f"skill={args.skill} op={args.op}")
-        print(f"command={args.command}")
-        if args.enable_hallucination_check:
-            h = hallucination_detect(args.command)
-            print(f"H detection: status={h['status']} report={h['report']}")
-        print(f"memory_preflight: empty={memory_preflight_data.get('empty', True)}")
-        print(f"  recent_executions: {len(memory_preflight_data.get('recent_executions', []))}")
-        print(f"  known_traps ({len(memory_preflight_data.get('known_traps', []))}):")
-        for t in memory_preflight_data.get("known_traps", []):
-            print(f"    - [{t.get('category', '?')}] count={t.get('count', 1)} error={str(t.get('error', ''))[:80]}")
-        print(f"  success_patterns: {len(memory_preflight_data.get('success_patterns', []))}")
-        print("--- injection slots ---")
-        for key in ("recent_executions", "known_traps", "success_patterns", "strategy_hints"):
-            val = slots.get(key, "")
-            print(f"  {key}: ({len(val)} chars) {val[:200]}")
-        print("=== END DRY-RUN PREFLIGHT ===")
-        return EXIT_PASS
-
     # Optional test accuracy / regression assessment (skill-change workflows)
     test_assessment: dict[str, Any] | None = None
     if args.test_assessment:
@@ -2827,6 +2931,9 @@ def main(argv: list[str] | None = None) -> int:
             memory_preflight=preflight_for_loop,
             skills_root=skills_root,
         )
+
+    # Attach risk_score to trace schema
+    trace["risk_score"] = risk_result
 
     # Persist trace (strip ephemeral success-store payload before write)
     success_payload = trace.pop("_success_pattern_payload", None)

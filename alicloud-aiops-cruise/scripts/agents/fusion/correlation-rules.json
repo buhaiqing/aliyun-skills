@@ -1,0 +1,84 @@
+{
+  "rules": [
+    {
+      "rule_id": "R1",
+      "description": "Security exposed idle resources",
+      "trigger": {
+        "domain": "security",
+        "severity_min": "HIGH",
+        "message_pattern": "port open"
+      },
+      "correlated": {
+        "domain": "cost",
+        "message_pattern": "idle|unused"
+      },
+      "root_cause": "闲置资源有安全暴露风险",
+      "suggestion": "下线或绑定WAF",
+      "confidence": 0.85
+    },
+    {
+      "rule_id": "R2",
+      "description": "Config drift -> health degradation",
+      "trigger": {
+        "domain": "config",
+        "severity_min": "",
+        "message_pattern": "drift|changed"
+      },
+      "correlated": {
+        "domain": "health",
+        "severity_min": "MEDIUM"
+      },
+      "root_cause": "配置漂移引发健康状态劣化",
+      "suggestion": "回滚最近配置变更或重新应用基线",
+      "confidence": 0.75
+    },
+    {
+      "rule_id": "R3",
+      "description": "Frequent API + audit anomaly",
+      "trigger": {
+        "domain": "audit",
+        "severity_min": "HIGH",
+        "message_pattern": "frequent|rate"
+      },
+      "correlated": {
+        "domain": "security",
+        "severity_min": "MEDIUM"
+      },
+      "root_cause": "异常API调用频率可能表明攻击或配置错误",
+      "suggestion": "检查ActionTrail中的调用来源IP和身份，启用RAM访问控制",
+      "confidence": 0.80
+    },
+    {
+      "rule_id": "R4",
+      "description": "High traffic before capacity shortage",
+      "trigger": {
+        "domain": "health",
+        "severity_min": "HIGH",
+        "message_pattern": "CPU|memory"
+      },
+      "correlated": {
+        "domain": "cost",
+        "message_pattern": "reserved|预留"
+      },
+      "root_cause": "高负载流量导致资源预留不足",
+      "suggestion": "扩缩容或调整预留实例券覆盖范围",
+      "confidence": 0.70
+    },
+    {
+      "rule_id": "R5",
+      "description": "Security group and CFW policy conflict",
+      "trigger": {
+        "domain": "security",
+        "severity_min": "MEDIUM",
+        "message_pattern": "security group|安全组"
+      },
+      "correlated": {
+        "domain": "audit",
+        "message_pattern": "cloud firewall|CFW|云防火墙"
+      },
+      "root_cause": "安全组与云防火墙策略冲突",
+      "suggestion": "统一安全策略至CFW，安全组仅做最小化白名单",
+      "confidence": 0.80
+    }
+  ]
+}

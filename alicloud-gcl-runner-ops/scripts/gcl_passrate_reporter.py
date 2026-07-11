@@ -40,8 +40,9 @@ import re
 import subprocess
 import sys
 import textwrap
+import statistics
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -352,6 +353,243 @@ def push_custom_metrics(
 
 
 # ---------------------------------------------------------------------------
+# Phase B3: Pass-rate anomaly detection from Layer-1 memory traces
+# ---------------------------------------------------------------------------
+
+
+def load_memory_entries(memory_root: Path, window_days: int = 90) -> List[Dict[str, Any]]:
+    """Load Layer-1 memory trace entries from ``.runtime/memory/`` JSONL files.
+
+    Returns entries whose ``timestamp`` is within *window_days* of now.
+    Damaged or unparseable files are skipped with a warning.
+    """
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=window_days)
+    entries: List[Dict[str, Any]] = []
+
+    if not memory_root.is_dir():
+        print(f"[WARN] memory-root not found: {memory_root}")
+        return entries
+
+    for jsonl_path in sorted(memory_root.rglob("*.jsonl")):
+        try:
+            with open(jsonl_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        entry: Dict[str, Any] = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    ts_str = entry.get("timestamp")
+                    if ts_str:
+                        ts = parse_iso_timestamp(ts_str)
+                        if ts is None or ts < cutoff:
+                            continue
+                    entries.append(entry)
+        except OSError as exc:
+            print(f"[WARN] skipping {jsonl_path}: {exc}")
+            continue
+
+    return entries
+
+
+def _iso_year_week(dt: datetime) -> str:
+    """Return ISO year-week string, e.g. ``2026-W28``."""
+    iso = dt.isocalendar()
+    return f"{iso[0]}-W{iso[1]:02d}"
+
+
+def compute_weekly_pass_rates(
+    entries: List[Dict[str, Any]],
+) -> Dict[str, Dict[str, Dict[str, float]]]:
+    """Group memory entries by skill and ISO week, compute pass-rate per group.
+
+    Returns ``{skill: {week_key: {"pass": int, "total": int, "rate": float}}}``.
+    Entries without a parseable timestamp are skipped.
+    """
+    # skill -> week -> {pass, total}
+    data: Dict[str, Dict[str, Dict[str, float]]] = defaultdict(
+        lambda: defaultdict(lambda: {"pass": 0, "total": 0})
+    )
+
+    for entry in entries:
+        skill: str = entry.get("skill", "unknown")
+        rubric_pass: bool = bool(entry.get("rubric_pass", False))
+        ts_str: str = entry.get("timestamp", "")
+        ts = parse_iso_timestamp(ts_str)
+        if ts is None:
+            continue
+        week = _iso_year_week(ts)
+        data[skill][week]["total"] += 1
+        if rubric_pass:
+            data[skill][week]["pass"] += 1
+
+    result: Dict[str, Dict[str, Dict[str, float]]] = {}
+    for skill, weeks in data.items():
+        result[skill] = {}
+        for week, counts in weeks.items():
+            total = counts["total"]
+            result[skill][week] = {
+                "pass": counts["pass"],
+                "total": total,
+                "rate": round(counts["pass"] / total * 100, 2) if total > 0 else 0.0,
+            }
+
+    return result
+
+
+def _week_date_range(week_key: str) -> Tuple[datetime, datetime]:
+    """Return (start, end) datetimes for an ISO week key like ``2026-W28``.
+
+    Start = Monday 00:00:00 UTC, End = Sunday 23:59:59 UTC.
+    """
+    year_str, week_str = week_key.split("-W")
+    year = int(year_str)
+    week = int(week_str)
+    jan4 = date(year, 1, 4)
+    # Monday of ISO week 1
+    start = jan4 - timedelta(days=jan4.isocalendar()[2] - 1)
+    # Offset to the requested week
+    start_of_week = start + timedelta(weeks=week - 1)
+    end_of_week = start_of_week + timedelta(days=6)
+    return (
+        datetime.combine(start_of_week, datetime.min.time(), tzinfo=timezone.utc),
+        datetime.combine(end_of_week, datetime.max.time(), tzinfo=timezone.utc),
+    )
+
+
+def _collect_affected_operations(
+    entries: List[Dict[str, Any]], skill: str, week_key: str
+) -> List[str]:
+    """Collect unique operation names for a (skill, week) group."""
+    ops: set[str] = set()
+    for entry in entries:
+        if entry.get("skill") != skill:
+            continue
+        ts_str = entry.get("timestamp", "")
+        ts = parse_iso_timestamp(ts_str)
+        if ts is None:
+            continue
+        if _iso_year_week(ts) == week_key:
+            op = entry.get("operation", "unknown")
+            ops.add(op)
+    return sorted(ops)
+
+
+def detect_anomaly(
+    memory_root: Path,
+    output_dir: Path,
+    window_days: int = 90,
+    threshold_stddev: float = 3.0,
+    threshold_relative: float = 0.5,
+) -> List[Dict[str, Any]]:
+    """Detect pass-rate anomalies per skill from Layer-1 memory traces.
+
+    Groups entries by skill and ISO week.  For each skill's most recent
+    completed week, compares the observed pass-rate against the rolling
+    baseline of all previous weeks.
+
+    Anomaly triggers (first matching criterion wins):
+    - **3sigma**: current rate < baseline mean - (threshold_stddev * stddev)
+    - **Relative 50%%**: current rate < baseline mean * threshold_relative
+
+    Args:
+        memory_root: Path to the ``.runtime/memory/`` directory (or parent).
+        output_dir: Directory for per-skill anomaly JSON reports.
+        window_days: Maximum age of entries to consider (default 90).
+        threshold_stddev: Sigma multiplier for the 3sigma test (default 3.0).
+        threshold_relative: Relative decline factor (default 0.5 = 50%%).
+
+    Returns:
+        List of anomaly report dicts (one per anomalous skill).  Each report
+        is also written to ``{output_dir}/{skill}-{timestamp}.json``.
+    """
+    output_dir = Path(output_dir)
+    entries = load_memory_entries(memory_root, window_days)
+    if not entries:
+        print(f"[INFO] No memory entries found in {memory_root}")
+        return []
+
+    weekly = compute_weekly_pass_rates(entries)
+    anomalies: List[Dict[str, Any]] = []
+    now = datetime.now(timezone.utc)
+    ts_file = now.strftime("%Y%m%dT%H%M%S")
+
+    for skill, weeks in weekly.items():
+        sorted_weeks = sorted(weeks.keys())  # lexicographic sort matches ISO order
+        if len(sorted_weeks) < 2:
+            continue  # need at least 2 weeks for a baseline
+
+        current_week = sorted_weeks[-1]
+        current = weeks[current_week]
+        current_rate: float = current["rate"]
+
+        # Baseline = all completed weeks before the current one
+        baseline_weeks = sorted_weeks[:-1]
+        baseline_rates: List[float] = [weeks[w]["rate"] for w in baseline_weeks]
+
+        if len(baseline_rates) < 2:
+            continue  # need at least 2 baseline weeks for a meaningful stddev
+
+        baseline_mean: float = statistics.mean(baseline_rates)
+        baseline_stddev: float = statistics.pstdev(baseline_rates)
+
+        # Check 3sigma trigger
+        sigma_threshold = baseline_mean - threshold_stddev * baseline_stddev
+        is_3sigma = baseline_stddev > 0 and current_rate < sigma_threshold
+
+        # Check relative decline trigger
+        relative_threshold = baseline_mean * threshold_relative
+        is_relative = current_rate < relative_threshold
+
+        if not is_3sigma and not is_relative:
+            continue
+
+        decline_type: str
+        severity: str
+        if is_3sigma:
+            decline_type = "3sigma"
+            severity = "HIGH"
+        else:
+            decline_type = "relative_50pct"
+            severity = "MEDIUM"
+
+        window_start, window_end = _week_date_range(current_week)
+        affected_ops = _collect_affected_operations(entries, skill, current_week)
+
+        report: Dict[str, Any] = {
+            "skill": skill,
+            "current_week_pass_rate": current_rate,
+            "baseline_pass_rate": round(baseline_mean, 2),
+            "baseline_stddev": round(baseline_stddev, 4),
+            "decline_type": decline_type,
+            "severity": severity,
+            "sample_size": current["total"],
+            "window_start": window_start.isoformat(),
+            "window_end": window_end.isoformat(),
+            "affected_operations": affected_ops,
+            "generated_at": now.isoformat(),
+        }
+
+        safe_skill = skill.replace("/", "_")
+        out_path = output_dir / f"{safe_skill}-{ts_file}.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        print(f"[ANOMALY] {skill}: {decline_type} drop (rate={current_rate}, baseline={round(baseline_mean, 2)}), written to {out_path}")
+
+        anomalies.append(report)
+
+    if not anomalies:
+        print("[INFO] No anomalies detected.")
+
+    return anomalies
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -361,7 +599,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         prog="gcl_passrate_reporter.py",
         description=(
             "Phase 4: Aggregate GCL trace pass-rates and report to CMS"
-            " custom metrics."
+            " custom metrics.  Phase B3: detect pass-rate anomalies from"
+            " Layer-1 memory traces."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent(
@@ -375,9 +614,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
               python3 scripts/gcl_passrate_reporter.py \\
                 --trace-dir audit-results/ --since 7d --dry-run
 
-              # Custom output (save JSON report)
+              # Detect anomaly (default 90d window)
               python3 scripts/gcl_passrate_reporter.py \\
-                --trace-dir audit-results/ --output passrate-report.json
+                --detect-anomaly --memory-root .runtime/memory/ \\
+                --output-dir .runtime/anomaly/
+
+              # Detect anomaly, custom thresholds
+              python3 scripts/gcl_passrate_reporter.py \\
+                --detect-anomaly \\
+                --anomaly-threshold-stddev 2.5 \\
+                --anomaly-threshold-relative 0.4
             """
         ),
     )
@@ -402,6 +648,30 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true",
         help="Show intended metrics without calling CMS API",
     )
+    # ---- Phase B3 anomaly detection args ----
+    p.add_argument(
+        "--detect-anomaly", action="store_true",
+        help="Run pass-rate anomaly detection from Layer-1 memory traces",
+    )
+    p.add_argument(
+        "--memory-root", type=Path, default=None,
+        help=(
+            "Path to .runtime/memory/ for anomaly detection"
+            " (default: <repo-root>/.runtime/memory/)"
+        ),
+    )
+    p.add_argument(
+        "--output-dir", type=Path, default=None,
+        help="Directory for anomaly report JSON files (default: <repo-root>/.runtime/anomaly/)",
+    )
+    p.add_argument(
+        "--anomaly-threshold-stddev", type=float, default=3.0,
+        help="Sigma multiplier for 3sigma anomaly detection (default: 3.0)",
+    )
+    p.add_argument(
+        "--anomaly-threshold-relative", type=float, default=0.5,
+        help="Relative decline factor for 50%% anomaly detection (default: 0.5)",
+    )
     return p
 
 
@@ -414,8 +684,38 @@ def parse_since(since_str: str) -> int:
     return 24
 
 
+def _resolve_runtime_root() -> Path:
+    """Resolve the repo root path for default runtime directories."""
+    return Path(os.environ.get(
+        "ALIYUN_SKILLS_RUNTIME_ROOT",
+        Path(__file__).resolve().parent.parent.parent / ".runtime",
+    ))
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     args = build_arg_parser().parse_args(argv)
+
+    # ---- Phase B3: anomaly detection mode ----
+    if args.detect_anomaly:
+        runtime_root = _resolve_runtime_root()
+        memory_root: Path = args.memory_root or (runtime_root / "memory")
+        output_dir: Path = args.output_dir or (runtime_root / "anomaly")
+
+        anomalies = detect_anomaly(
+            memory_root=memory_root,
+            output_dir=output_dir,
+            threshold_stddev=args.anomaly_threshold_stddev,
+            threshold_relative=args.anomaly_threshold_relative,
+        )
+
+        if anomalies:
+            print(
+                f"[RESULT] Detected {len(anomalies)} anomalous skill(s):"
+                f" {[a['skill'] for a in anomalies]}"
+            )
+        return EXIT_CLEAN
+
+    # ---- Normal pass-rate reporting mode ----
     since_hours = parse_since(args.since)
 
     traces = load_traces(args.trace_dir, since_hours)

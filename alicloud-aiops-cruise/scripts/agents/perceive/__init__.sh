@@ -15,6 +15,7 @@
 #   bash __init__.sh --mode healthcruise      # 仅全链路巡检
 #   bash __init__.sh --describe               # 描述结构
 #   bash __init__.sh --output-dir ./reports   # 指定报告输出目录
+#   bash __init__.sh --fusion                  # 执行后自动融合报告
 #
 # 输出:
 #   JSON 报告持久化到 output-dir/perceive-{timestamp}.json
@@ -36,6 +37,7 @@ REPORTS_DIR="${RUNTIME_AUDIT_DIR}/perceive"  # 修复 BUF-003: 原 ${SCRIPT_DIR}
 OUTPUT_DIR=""
 MODE="all"
 DESCRIBE=false
+FUSION=false
 
 # ── 解析参数 ──
 while [[ $# -gt 0 ]]; do
@@ -43,6 +45,7 @@ while [[ $# -gt 0 ]]; do
         --mode) MODE="$2"; shift 2 ;;
         --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
         --describe) DESCRIBE=true; shift ;;
+        --fusion) FUSION=true; shift ;;
         *) echo "[ERROR] 未知参数: $1"; exit 2 ;;
     esac
 done
@@ -224,3 +227,17 @@ echo "=========================================="
 echo "  感知层执行完成"
 echo "  摘要: ${OUTPUT_DIR}/perceive-summary.json"
 echo "=========================================="
+
+# ── 融合报告 (C1) ──
+if $FUSION; then
+    FUSION_SCRIPT="${SCRIPT_DIR}/../fusion/fusion_report.sh"
+    if [[ -f "$FUSION_SCRIPT" ]]; then
+        echo ""
+        echo "=========================================="
+        echo "  融合报告 (--fusion)"
+        echo "=========================================="
+        bash "$FUSION_SCRIPT" --input-dir "${OUTPUT_DIR}"
+    else
+        echo "[WARN] 融合报告脚本不存在: ${FUSION_SCRIPT}"
+    fi
+fi

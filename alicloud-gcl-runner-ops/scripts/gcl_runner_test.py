@@ -2220,5 +2220,168 @@ class CritiqueLlmUsageTests(unittest.TestCase):
         self.assertIn("critic_meta", payload)
 
 
+# ---------------------------------------------------------------------------
+# Risk Scoring Tests (B1)
+# ---------------------------------------------------------------------------
+
+
+class RiskScorerTests(unittest.TestCase):
+    """B1: risk_scorer() — operation risk classification."""
+
+    def _default_risk(self, skill: str = "alicloud-ecs-ops", op: str = "DescribeInstances", command: str = "aliyun ecs DescribeInstances") -> dict:
+        return gcl_runner.risk_scorer(skill, op, command)
+
+    def test_delete_op_max_fatal(self):
+        """DeleteInstance gets fatal_score=1.0."""
+        r = self._default_risk(op="DeleteInstance", command="aliyun ecs DeleteInstance --InstanceId i-1")
+        self.assertEqual(r["breakdown"]["fatal"], 1.0)
+        self.assertEqual(r["breakdown"]["irreversible"], 0.5)
+
+    def test_create_op_medium_fatal(self):
+        """CreateInstance gets fatal_score=0.3."""
+        r = self._default_risk(op="CreateInstance", command="aliyun ecs CreateInstance --ImageId ami-1")
+        self.assertEqual(r["breakdown"]["fatal"], 0.3)
+
+    def test_describe_op_zero_fatal(self):
+        """DescribeInstances gets fatal_score=0.0."""
+        r = self._default_risk()
+        self.assertEqual(r["breakdown"]["fatal"], 0.0)
+        self.assertEqual(r["breakdown"]["irreversible"], 0.0)
+
+    def test_unknown_op_defaults_to_zero(self):
+        """An operation with no keyword match defaults fatality to 0."""
+        r = gcl_runner.risk_scorer("alicloud-ecs-ops", "UnknownOp123", "aliyun ecs UnknownOp123")
+        self.assertEqual(r["breakdown"]["fatal"], 0.0)
+
+    def test_modify_op_score(self):
+        """SetLoadBalancer gets fatal_score=0.5 (from 'set' keyword)."""
+        r = gcl_runner.risk_scorer("alicloud-slb-ops", "SetLoadBalancerStatus", "aliyun slb SetLoadBalancerStatus --LoadBalancerId lb-1 --LoadBalancerStatus inactive")
+        self.assertEqual(r["breakdown"]["fatal"], 0.5)
+        self.assertEqual(r["breakdown"]["irreversible"], 0.5)
+
+    def test_risk_score_in_zero_one_range(self):
+        """Risk score is always between 0.0 and 1.0."""
+        for op in ("DescribeInstances", "CreateInstance", "DeleteInstance", "RebootInstance", "StopInstance"):
+            r = self._default_risk(op=op)
+            self.assertGreaterEqual(r["risk_score"], 0.0)
+            self.assertLessEqual(r["risk_score"], 1.0)
+
+    def test_irreversible_only_fatal_ops(self):
+        """Irreversible is 0.5 for fatal ops (score >= 0.5), 0 otherwise."""
+        fatal_op = self._default_risk(op="DeleteInstance")["breakdown"]
+        read_op = self._default_risk(op="DescribeInstances")["breakdown"]
+        self.assertEqual(fatal_op["irreversible"], 0.5)
+        self.assertEqual(read_op["irreversible"], 0.0)
+
+    def test_stop_op_fatal(self):
+        """StopInstance is a fatal operation."""
+        r = self._default_risk(op="StopInstance", command="aliyun ecs StopInstance --InstanceId i-1")
+        self.assertEqual(r["breakdown"]["fatal"], 1.0)
+        self.assertEqual(r["breakdown"]["irreversible"], 0.5)
+
+    def test_risk_score_breakdown_keys(self):
+        """risk_scorer returns expected breakdown keys."""
+        r = self._default_risk()
+        self.assertIn("risk_score", r)
+        self.assertIn("breakdown", r)
+        for key in ("fatal", "irreversible", "fail_rate", "scope", "weights", "weighted_sum"):
+            self.assertIn(key, r["breakdown"])
+
+    def test_fail_rate_default_when_no_reflexion(self):
+        """When reflexion_retrieve is unavailable, fail_rate defaults to 0.25."""
+        r = self._default_risk()
+        self.assertEqual(r["breakdown"]["fail_rate"], 0.25)
+
+    def test_get_fail_rate_import_fallback(self):
+        """_get_fail_rate uses import fallback when reflexion_retrieve fails."""
+        rate = gcl_runner._get_fail_rate("alicloud-ecs-ops", "DeleteInstance")
+        self.assertIsInstance(rate, float)
+        self.assertGreaterEqual(rate, 0.0)
+        self.assertLessEqual(rate, 1.0)
+
+    def test_risk_score_delete_higher_than_describe(self):
+        """DeleteInstance risk_score is higher than DescribeInstances."""
+        delete_r = self._default_risk(op="DeleteInstance")
+        describe_r = self._default_risk(op="DescribeInstances")
+        self.assertGreater(delete_r["risk_score"], describe_r["risk_score"])
+
+    def test_create_vs_delete_distinct(self):
+        """CreateInstance and DeleteInstance have different risk scores."""
+        create_r = self._default_risk(op="CreateInstance")
+        delete_r = self._default_risk(op="DeleteInstance")
+        self.assertNotEqual(create_r["risk_score"], delete_r["risk_score"])
+
+    def test_risk_score_is_deterministic(self):
+        """Same inputs always yield the same risk score."""
+        r1 = self._default_risk(op="DeleteInstance")
+        r2 = self._default_risk(op="DeleteInstance")
+        self.assertEqual(r1["risk_score"], r2["risk_score"])
+
+
+# ---------------------------------------------------------------------------
+# max_iter_calculator Tests (B2)
+# ---------------------------------------------------------------------------
+
+
+class MaxIterCalculatorTests(unittest.TestCase):
+    """B2: max_iter_calculator() — dynamic max_iter from risk score."""
+
+    def test_high_risk_returns_5(self):
+        """risk >= 0.7 returns max_iter=5 for ecs."""
+        result = gcl_runner.max_iter_calculator(0.8, "alicloud-ecs-ops")
+        self.assertEqual(result, 5)
+
+    def test_medium_risk_returns_3(self):
+        """0.3 <= risk < 0.7 returns max_iter=3 for ecs."""
+        result = gcl_runner.max_iter_calculator(0.5, "alicloud-ecs-ops")
+        self.assertEqual(result, 3)
+
+    def test_low_risk_returns_1(self):
+        """risk < 0.3 returns calculated=1, but SKILL_MAX_ITER floor=2 for ecs."""
+        result = gcl_runner.max_iter_calculator(0.1, "alicloud-ecs-ops")
+        self.assertEqual(result, 2)
+
+    def test_skill_floor_applied_when_risk_low(self):
+        """SKILL_MAX_ITER floor applies: ecs floor=2 trumps calculated=1."""
+        result = gcl_runner.max_iter_calculator(0.1, "alicloud-ecs-ops")
+        self.assertEqual(result, 2)
+
+    def test_skill_floor_applied_for_readonly_skill(self):
+        """actiontrail floor=5 trumps calculated values for low risk."""
+        result = gcl_runner.max_iter_calculator(0.1, "alicloud-actiontrail-ops")
+        self.assertGreaterEqual(result, 5)
+
+    def test_high_risk_above_all_floors(self):
+        """High risk (5) is always >= any SKILL_MAX_ITER floor."""
+        for skill in ("alicloud-ecs-ops", "alicloud-slb-ops", "alicloud-actiontrail-ops"):
+            result = gcl_runner.max_iter_calculator(0.9, skill)
+            self.assertEqual(result, 5)
+
+    def test_medium_risk_on_high_floor_skill(self):
+        """When risk=0.5 (calculated=3) but floor=5, floor wins."""
+        result = gcl_runner.max_iter_calculator(0.5, "alicloud-actiontrail-ops")
+        self.assertEqual(result, 5)
+
+    def test_unknown_skill_floor_defaults_to_2(self):
+        """Unknown skill gets floor=2."""
+        result = gcl_runner.max_iter_calculator(0.0, "alicloud-unknown-ops")
+        self.assertEqual(result, 2)
+
+    def test_risk_score_0_7_boundary(self):
+        """Exactly 0.7 maps to >= 0.7 bucket -> 5."""
+        result = gcl_runner.max_iter_calculator(0.7, "alicloud-ecs-ops")
+        self.assertEqual(result, 5)
+
+    def test_risk_score_0_3_boundary(self):
+        """Exactly 0.3 maps to >= 0.3 bucket -> 3."""
+        result = gcl_runner.max_iter_calculator(0.3, "alicloud-ecs-ops")
+        self.assertEqual(result, 3)
+
+    def test_risk_score_just_below_0_3(self):
+        """0.299 < 0.3 -> low bucket, floor=2."""
+        result = gcl_runner.max_iter_calculator(0.299, "alicloud-ecs-ops")
+        self.assertEqual(result, 2)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
