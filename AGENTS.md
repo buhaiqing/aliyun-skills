@@ -38,6 +38,22 @@ Canonical skill: `karpathy-guidelines`.
 
 **Banned**: "while I'm here I'll refactor…", "tests can come later", "this needs a general framework…"
 
+### 0.3 CodeGraph Integration (MANDATORY)
+
+> CodeGraph (https://github.com/colbymchenry/codegraph) 是本仓库的符号知识图谱，
+> 通过 SQLite 索引了所有 symbol、边和文件关系。
+
+| # | Rule | Detail |
+|---|------|--------|
+| **CG1** | **CodeGraph first for code understanding** | 需要理解代码时，优先使用 CodeGraph MCP 工具 (`codegraph_explore`)，而非 grep/Read 循环 — 一次调用即返回符号源码 + 调用链 + 影响半径 |
+| **CG2** | **Sync after every change** | 每次代码变更（新增/修改/删除文件）后，必须运行 `codegraph sync` 重新索引，确保知识图谱反映最新代码 |
+| **CG3** | **Pass projectPath for sub-projects** | 当需要查询有独立 `.codegraph/` 的子项目（如 monorepo 下的某个 service）时，通过 `projectPath` 参数指定 |
+
+```bash
+# Sync 命令
+codegraph sync
+```
+
 ### 0.3 Product Skill Mission
 
 Each `alicloud-*-ops` skill is a **domain colleague** delivering through **Harness Engineering** — not a memory or learning subsystem.
