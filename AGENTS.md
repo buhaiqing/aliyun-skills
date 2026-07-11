@@ -38,7 +38,7 @@ Canonical skill: `karpathy-guidelines`.
 
 **Banned**: "while I'm here I'll refactor…", "tests can come later", "this needs a general framework…"
 
-### 0.3 CodeGraph Integration (MANDATORY)
+### 0.4 CodeGraph Integration (MANDATORY)
 
 > CodeGraph (https://github.com/colbymchenry/codegraph) 是本仓库的符号知识图谱，
 > 通过 SQLite 索引了所有 symbol、边和文件关系。
@@ -54,7 +54,7 @@ Canonical skill: `karpathy-guidelines`.
 codegraph sync
 ```
 
-### 0.3 Product Skill Mission
+### 0.4 Product Skill Mission
 
 Each `alicloud-*-ops` skill is a **domain colleague** delivering through **Harness Engineering** — not a memory or learning subsystem.
 

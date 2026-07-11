@@ -7,7 +7,7 @@
 #   输出根因分析结果.
 #
 # 用法:
-#   bash root_cause_engine.sh --report <fusion-report.json> [--rules <rules.json>] [--reload-rules]
+#   bash root_cause_engine.sh --report <fusion-report.json>
 #
 # 输出:
 #   root-cause-{timestamp}.json 到输出目录 / STDOUT
@@ -40,7 +40,6 @@ mkdir -p "${AUDIT_DIR}"
 DEFAULT_RULES="${SCRIPT_DIR}/correlation-rules.json"
 RULES_FILE="${DEFAULT_RULES}"
 REPORT_FILE=""
-RELOAD_RULES=false
 OUTPUT_FILE=""
 
 # ── severity 数值映射 (用于比较) ──
@@ -61,7 +60,6 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --report)      REPORT_FILE="$2";    shift 2 ;;
         --rules)       RULES_FILE="$2";     shift 2 ;;
-        --reload-rules) RELOAD_RULES=true;  shift ;;
         --output-file) OUTPUT_FILE="$2";    shift 2 ;;
         --output-dir)  AUDIT_DIR="$2";      shift 2 ;;
         *) echo "[ERROR] 未知参数: $1"; exit 2 ;;
@@ -97,16 +95,6 @@ fi
 
 # 规则计数 (仅在 reload 时输出)
 RULE_COUNT="$(jq '.rules | length' "${RULES_FILE}")"
-
-# C2.3 --reload-rules: 在后续重复调用场景中, 标记重新读取
-# 目前每次调用都重新读取, flag 保留作为 API 契约
-RELOAD_MSG=""
-if $RELOAD_RULES; then
-    RELOAD_MSG=" (强制重新加载)"
-fi
-
-echo "[RootCause] 加载 ${RULE_COUNT} 条规则${RELOAD_MSG}: ${RULES_FILE}"
-echo "[RootCause] 分析报告: ${REPORT_FILE}"
 
 # ── 读取 findings (兼容多种结构) ──
 # 格式1: {"findings": [...]}
@@ -174,11 +162,11 @@ while [[ $RULE_INDEX -lt $RULE_COUNT ]]; do
         TS="$(severity_level "$TRIGGER_SEV")"
         TRIGGER_CLAUSES="${TRIGGER_CLAUSES} and ((.severity | severity_level) >= ${TS})"
     fi
-    [[ -n "$TRIGGER_PATTERN" ]] && TRIGGER_CLAUSES="${TRIGGER_CLAUSES} and (.message | test(\"${TRIGGER_PATTERN}\"; \"i\"))"
+    [[ -n "$TRIGGER_PATTERN" ]] && TRIGGER_CLAUSES="${TRIGGER_CLAUSES} and (.message | test(\$pat; \"i\"))"
     TRIGGER_CLAUSES="${TRIGGER_CLAUSES# and }"
     TRIGGER_JQFILTER="${TRIGGER_JQFILTER}${TRIGGER_CLAUSES})]"
 
-    TRIGGER_MATCHES="$(echo "${FINDINGS_JSON}" | jq -c "${TRIGGER_JQFILTER}")"
+    TRIGGER_MATCHES="$(echo "${FINDINGS_JSON}" | jq -c --arg pat "${TRIGGER_PATTERN}" "${TRIGGER_JQFILTER}")"
     TRIGGER_COUNT="$(echo "${TRIGGER_MATCHES}" | jq 'length')"
 
     if [[ "$TRIGGER_COUNT" -eq 0 ]]; then
@@ -194,11 +182,11 @@ while [[ $RULE_INDEX -lt $RULE_COUNT ]]; do
         CS="$(severity_level "$CORR_SEV")"
         CORR_CLAUSES="${CORR_CLAUSES} and ((.severity | severity_level) >= ${CS})"
     fi
-    [[ -n "$CORR_PATTERN" ]] && CORR_CLAUSES="${CORR_CLAUSES} and (.message | test(\"${CORR_PATTERN}\"; \"i\"))"
+    [[ -n "$CORR_PATTERN" ]] && CORR_CLAUSES="${CORR_CLAUSES} and (.message | test(\$cpat; \"i\"))"
     CORR_CLAUSES="${CORR_CLAUSES# and }"
     CORR_JQFILTER="${CORR_JQFILTER}${CORR_CLAUSES})]"
 
-    CORR_MATCHES="$(echo "${FINDINGS_JSON}" | jq -c "${CORR_JQFILTER}")"
+    CORR_MATCHES="$(echo "${FINDINGS_JSON}" | jq -c --arg cpat "${CORR_PATTERN}" "${CORR_JQFILTER}")"
     CORR_COUNT="$(echo "${CORR_MATCHES}" | jq 'length')"
 
     # ── 产出根因 (trigger 找到 且 correlated 找到) ──

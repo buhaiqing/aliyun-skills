@@ -2290,7 +2290,7 @@ class RiskScorerTests(unittest.TestCase):
     def test_fail_rate_default_when_no_reflexion(self):
         """When reflexion_retrieve is unavailable, fail_rate defaults to 0.25."""
         r = self._default_risk()
-        self.assertEqual(r["breakdown"]["fail_rate"], 0.25)
+        self.assertEqual(r["breakdown"]["fail_rate"], 0.10)
 
     def test_get_fail_rate_import_fallback(self):
         """_get_fail_rate uses import fallback when reflexion_retrieve fails."""

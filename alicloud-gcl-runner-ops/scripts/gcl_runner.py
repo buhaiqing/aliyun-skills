@@ -325,7 +325,7 @@ def _get_fail_rate(skill: str, op: str) -> float:
     """
     patterns = reflexion_retrieve(skill, operation=op, top_k=10)
     if not patterns:
-        return 0.25
+        return 0.10
     total_failures = sum(p.get("count", 0) for p in patterns)
     return min(1.0, total_failures / max(total_failures + 10, 1))
 
@@ -2342,7 +2342,7 @@ def extract_failure_pattern(
     if status == "MAX_ITER":
         all_scores = scores or critic_result.get("scores", {})
         failing = [k for k, v in all_scores.items() if v < 0.5]
-        
+
         if not failing:
             # Check if any dimension is below 0.8 (near-miss threshold)
             low_dims = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
@@ -2360,7 +2360,7 @@ def extract_failure_pattern(
                     "fix": "All dimensions pass minimum threshold but some are below optimal; consider parameter refinement",
                 }
             return None  # Truly no issue to record
-        
+
         low = [f"{k}={v}" for k, v in all_scores.items() if v < 0.8]
         best_score = f"{sum(all_scores.values()):.1f}"
         return {

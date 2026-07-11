@@ -87,3 +87,8 @@ ehthumbs.db
 
 # CodeGraph index (generated, user-local)
 .codegraph/
+# Claude Code worktrees (auto-generated)
+.claude/worktrees/
+.claude/plans/
+.omc/
+.omo/
