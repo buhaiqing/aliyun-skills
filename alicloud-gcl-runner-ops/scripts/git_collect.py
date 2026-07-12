@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -19,6 +20,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
 
 GIT_FIELD_SEP = "\x1f"
 """Field separator for git log pretty-format (must not appear in commit metadata)."""
@@ -216,6 +219,70 @@ def collect_git_signals(
     }
 
 
+def _load_reflexion_cleanup_preview(reflexion_root: Path) -> dict[str, Any]:
+    """Dry-run preview of reflexion patterns that would be pruned.
+
+    ponytail: delegates to reflexion_maintain(apply=False) — single source of truth.
+    """
+    from gcl_reflexion import reflexion_maintain
+    try:
+        result = reflexion_maintain(root=reflexion_root, apply=False, decay_days=90)
+    except Exception as exc:
+        return {"reflexion_root": str(reflexion_root), "load_error": str(exc)}
+    return {
+        "reflexion_root": str(reflexion_root),
+        "store_present": result.get("total_before", 0) > 0 or result.get("pruned_by_count", 0) > 0,
+        "min_count": result.get("min_count", 3),
+        "decay_days": result.get("decay_days", 90),
+        "total_before": result.get("total_before", 0),
+        "total_after": result.get("total_after", 0),
+        "pruned_by_count": result.get("pruned_by_count", 0),
+        "pruned_by_decay": result.get("pruned_by_decay", 0),
+        "categories": result.get("categories", {}),
+    }
+
+
+def _print_dry_run_summary(signals: dict[str, Any], reflexion_root: Path) -> None:
+    print("=== git_collect.py --dry-run summary ===")
+    print(f"collected_at: {signals.get('collected_at', '?')}")
+    print(f"since_days:   {signals.get('since_days', '?')}")
+    print(f"commit_count: {signals.get('commit_count', 0)}")
+    print(f"bugfix_commits: {len(signals.get('bugfix_commits', []))}")
+    hot = signals.get("hot_skills") or []
+    print(f"hot_skills:   {len(hot)}")
+    for h in hot[:5]:
+        print(f"  - {h.get('skill')}: commits={h.get('commit_count')} bugfixes={h.get('bugfix_count')}")
+    err = signals.get("error")
+    if err:
+        print(f"error:        {err}")
+    print()
+    print("=== pending cleanup (reflexion store) ===")
+    preview = _load_reflexion_cleanup_preview(reflexion_root)
+    print(f"reflexion_root: {preview['reflexion_root']}")
+    print(f"store_present:  {preview['store_present']}")
+    if not preview["store_present"]:
+        print("  (no reflexion store on disk — nothing to clean up)")
+    elif "load_error" in preview:
+        print(f"  load_error: {preview['load_error']}")
+    else:
+        print(
+            f"total_before:   {preview['total_before']}\n"
+            f"pruned_by_count: {preview['pruned_by_count']} (count < {preview['min_count']})\n"
+            f"pruned_by_decay: {preview['pruned_by_decay']} (last_seen >= {preview['decay_days']}d)"
+        )
+        cats = preview.get("categories") or {}
+        if cats:
+            print("  by category:")
+            for cat, c in cats.items():
+                print(
+                    f"    - {cat}: before={c['before']} "
+                    f"pruned_by_count={c['pruned_by_count']} "
+                    f"pruned_by_decay={c['pruned_by_decay']}"
+                )
+        else:
+            print("  (nothing pending)")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect Git signals for Layer 3 WSR")
     parser.add_argument("--since-days", type=int, default=7)
@@ -225,14 +292,43 @@ def main() -> int:
         type=Path,
         default=None,
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print a summary (git signals + pending reflexion cleanup) "
+             "without writing the output file.",
+    )
+    parser.add_argument(
+        "--reflexion-root",
+        type=Path,
+        default=None,
+        help="Override reflexion store location for the cleanup preview. "
+             "Defaults to <skills-root>/.runtime/reflexion.",
+    )
     args = parser.parse_args()
 
-    if args.output is None:
+    if args.output is None and not args.dry_run:
         from gcl_strategy import WORK_DIR  # noqa: E402
 
         args.output = WORK_DIR / "git_signals.json"
 
     signals = collect_git_signals(since_days=args.since_days, repo_root=args.repo_root)
+
+    if args.dry_run:
+        reflexion_root = args.reflexion_root
+        if reflexion_root is None:
+            env = os.environ.get("GCL_REFLEXION_ROOT") or os.environ.get("ALIYUN_SKILLS_ROOT")
+            if env:
+                reflexion_root = Path(env) / ".runtime" / "reflexion"
+            else:
+                reflexion_root = args.repo_root / ".runtime" / "reflexion"
+        _print_dry_run_summary(signals, reflexion_root)
+        _log(
+            f"event=git_collect result=dry_run commits={signals['commit_count']} "
+            f"bugfixes={len(signals['bugfix_commits'])}"
+        )
+        return 0
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(signals, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     _log(
