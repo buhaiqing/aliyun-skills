@@ -95,4 +95,5 @@ ehthumbs.db
 .runtime/
 # ===== AI Agent runtime (pi / orchestrator) =====
 .pi/
+.pi-subagents/
 audit-results/
