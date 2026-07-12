@@ -170,6 +170,46 @@ except ImportError:
         }
 
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# D2 — Pre-change health check auto-trigger
+# ---------------------------------------------------------------------------
+
+
+def aiopscruise_health_check(
+    skill: str,
+    op: str,
+    command: str,
+) -> dict[str, Any]:
+    """Run alicloud-aiops-cruise health check for the target resource type.
+
+    Non-fatal: returns empty findings when the script is unavailable or errors.
+    """
+    resource_type = _SKILL_RESOURCE_TYPES.get(skill)
+    if not resource_type:
+        return {"findings": [], "total": 0, "critical_count": 0}
+
+    skills_root = resolve_skills_root()
+    script = skills_root / "alicloud-aiops-cruise" / "scripts" / "agents" / "perceive" / "__init__.sh"
+    if not script.is_file():
+        _log("event=aiopscruise_health_check result=skipped reason=script_not_found skill={}", skill)
+        return {"findings": [], "total": 0, "critical_count": 0}
+
+    try:
+        proc = subprocess.run(
+            ["bash", str(script), "--mode", "healthcruise", "--resource", resource_type],
+            capture_output=True, text=True, timeout=30,
+        )
+        if proc.returncode != 0:
+            return {"findings": [], "total": 0, "critical_count": 0}
+        data = json.loads(proc.stdout)
+        findings = data.get("findings", [])
+        critical = sum(1 for f in findings if f.get("severity") in ("CRITICAL", "HIGH"))
+        return {"findings": findings, "total": len(findings), "critical_count": critical}
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
+        _log("event=aiopscruise_health_check result=error exception={}", exc)
+        return {"findings": [], "total": 0, "critical_count": 0}
+
 # Logging
 # ---------------------------------------------------------------------------
 
@@ -573,6 +613,36 @@ SECRET_PATTERNS: list[tuple[str, str, str]] = [
 ]
 
 #: Exit code mapping (per AGENTS.md §4 + §14.3 + this script's CLI).
+#: Skill name to resource type mapping for D2 pre-flight health checks.
+_SKILL_RESOURCE_TYPES: dict[str, str] = {
+    "alicloud-ecs-ops": "ecs",
+    "alicloud-rds-ops": "rds",
+    "alicloud-redis-ops": "redis",
+    "alicloud-slb-ops": "slb",
+    "alicloud-mongodb-ops": "mongodb",
+    "alicloud-elasticsearch-ops": "elasticsearch",
+    "alicloud-polar-mysql-ops": "polar-mysql",
+    "alicloud-polar-postgresql-ops": "polar-postgresql",
+    "alicloud-polar-oracle-ops": "polar-oracle",
+    "alicloud-vpc-ops": "vpc",
+    "alicloud-nat-ops": "nat",
+    "alicloud-eip-ops": "eip",
+    "alicloud-ack-ops": "ack",
+    "alicloud-ask-ops": "ask",
+    "alicloud-fc-ops": "fc",
+    "alicloud-eci-ops": "eci",
+    "alicloud-cms-ops": "cms",
+    "alicloud-ram-ops": "ram",
+    "alicloud-kms-ops": "kms",
+    "alicloud-das-ops": "das",
+    "alicloud-dts-ops": "dts",
+    "alicloud-waf-ops": "waf",
+    "alicloud-sls-ops": "sls",
+    "alicloud-terraform-ops": "terraform",
+    "alicloud-actiontrail-ops": "actiontrail",
+    "alicloud-billing-ops": "billing",
+}
+
 EXIT_PASS = 0
 EXIT_MAX_ITER = 1
 EXIT_SAFETY_FAIL = 2
@@ -1450,7 +1520,7 @@ def _extract_text_fence_block(lines: list[str]) -> str:
 def apply_memory_preflight_slots(text: str, slots: dict[str, str]) -> str:
     """Replace R2 memory placeholders in a Generator prompt template."""
     result = text
-    for key in ("recent_executions", "known_traps", "success_patterns", "strategy_hints"):
+    for key in ("recent_executions", "known_traps", "success_patterns", "strategy_hints", "preflight_health"):
         result = result.replace("{{" + key + "}}", slots.get(key, ""))
     return result
 
@@ -2817,6 +2887,21 @@ def main(argv: list[str] | None = None) -> int:
     # B1: Operation risk scoring
     risk_result = risk_scorer(args.skill, args.op, args.command)
 
+    # D2: Pre-change health check when risk >= 0.5 (non-blocking)
+    _d2_health: dict[str, Any] = {"findings": [], "total": 0, "critical_count": 0}
+    if risk_result["risk_score"] >= 0.5:
+        _d2_health = aiopscruise_health_check(args.skill, args.op, args.command)
+        if _d2_health["total"] > 0:
+            _log(
+                "event=preflight_health status=notice resource={} total={} critical={}",
+                _SKILL_RESOURCE_TYPES.get(args.skill, "unknown"),
+                _d2_health["total"],
+                _d2_health["critical_count"],
+            )
+        if _d2_health["critical_count"] > 0:
+            _log("event=preflight_health status=warn resource={} critical_count={}",
+                 _SKILL_RESOURCE_TYPES.get(args.skill, "unknown"), _d2_health["critical_count"])
+
     # --risk-score: show breakdown and exit (no command execution)
     if args.risk_score:
         print(json.dumps(risk_result, indent=2))
@@ -2872,7 +2957,7 @@ def main(argv: list[str] | None = None) -> int:
         not args.disable_memory_preflight
         and os.environ.get("GCL_MEMORY_PREFLIGHT_ENABLED", "true").lower() != "false"
     )
-    memory_preflight_data: dict[str, Any] = {"empty": True, "slots": {}}
+    memory_preflight_data: dict[str, Any] = {"empty": True, "slots": {}, "preflight_health": {"findings": [], "total": 0, "critical_count": 0}}
     if memory_preflight_enabled:
         try:
             memory_preflight_data = preflight_retrieve(
@@ -2889,6 +2974,9 @@ def main(argv: list[str] | None = None) -> int:
             )
         except Exception as exc:
             _log("event=memory_preflight result=error exception={}", exc)
+
+    # Attach D2 preflight health check (even if memory_preflight errored)
+    memory_preflight_data["preflight_health"] = _d2_health
 
     # Optional test accuracy / regression assessment (skill-change workflows)
     test_assessment: dict[str, Any] | None = None

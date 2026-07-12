@@ -14,7 +14,32 @@
 
 |Skill|Command|Error Pattern|Root Cause|Fix|Count|Last Seen|
 |---|---|---|---|---|---|---|
-|ecs-ops|test|E1|RC|F1||2026-06-22T21:44:44.325877Z|
+|alicloud-ecs-ops|aliyun ecs DeleteInstance --InstanceId i-bp1xxxxxxxxxxxx|MissingParameter: The parameter InstanceId is required|Missing required parameter InstanceId (.N suffix needed for RepeatList)|Add .N suffix: --InstanceId.1 i-bp1xxxxxxxxxxxx; RepeatList params need numbered suffix|5|2026-07-08T16:30:00Z|
+|alicloud-ecs-ops|aliyun ecs CreateInstance --InstanceType ecs.g6.large --RegionId cn-hangzhou|InvalidParameterValue: The specified InstanceType is not available in this region|InvalidParameterValue -- InstanceType not available in the target region|Run aliyun ecs DescribeInstanceTypes --RegionId to list available types; choose a valid type for the region|4|2026-07-10T08:00:00Z|
+|alicloud-rds-ops|aliyun rds DeleteDBInstance --DBInstanceId mydb|InvalidParameter: The specified parameter DBInstanceId is not valid|InvalidParameter -- DBInstanceId must follow 'rm-xxxxx' or 'rr-xxxxx' format|Verify DBInstanceId format via aliyun rds DescribeDBInstances; IDs start with rm-/rr-/pgm-/rdm- etc.|3|2026-07-09T09:45:00Z|
+|alicloud-vpc-ops|aliyun vpc DeleteVpc --VpcId vpc-unknown|ResourceNotFound: The specified VpcId does not exist in this region|ResourceNotFound -- VpcId not found; may be in a different region or already deleted|Verify VpcId via aliyun vpc DescribeVpcs --RegionId; check cross-region resource references|3|2026-07-06T11:10:00Z|
+|alicloud-slb-ops|aliyun slb SetBackendServers --LoadBalancerId lb-xxx --BackendServers [{}]|MissingParam: The parameter BackendServers is missing or invalid|MissingParam -- BackendServers JSON array format is incorrect|Wrap BackendServers as JSON string array: --BackendServers '[{"ServerId":"i-xxx","Weight":100}]'|2|2026-07-05T13:20:00Z|
+|alicloud-kms-ops|aliyun kms ScheduleKeyDeletion --KeyId mk-xxx --PendingWindowInDays 7|QuotaExceeded: Maximum number of scheduled key deletions exceeded|QuotaExceeded -- too many KMS keys pending deletion simultaneously|Cancel pending deletions with CancelKeyDeletion, or request quota increase from Alibaba Cloud|2|2026-07-07T15:50:00Z|
+
+---
+
+## Runtime Execution Patterns
+
+> GCL 执行中发现的运行时失败模式。
+
+|Skill|Operation|Failure Pattern|Root Cause|Prevention|Last Seen|
+|---|---|---|---|---|---|
+|alicloud-redis-ops|FlushInstance|safety=0 during FlushInstance|Destructive operation flushed all keys without pre-flight confirmation|Add pre-flight guard: prompt user confirmation before FlushInstance; require --Force flag|2026-06-28T10:15:00Z|
+
+---
+
+## Max Iterations Exceeded
+
+> GCL 执行达到最大迭代次数仍无法通过 Critic 评审。通常是由于参数、环境或配置问题。
+
+|Skill|Operation|Failing Dimensions|Best Score|Fix|Count|Last Seen|
+|---|---|---|---|---|---|---|
+|alicloud-ecs-ops|DescribeInstances|correctness|4.0|Review failing dimensions; increase --max-iter or refine operation parameters|3|2026-07-10T06:40:00Z|
 
 ---
 

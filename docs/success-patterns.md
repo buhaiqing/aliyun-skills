@@ -8,6 +8,31 @@
 
 ---
 
+## Multi-Iteration Recovery
+
+|Skill|Operation|Command|Hint|Count|Scores Min|Last Seen|
+|---|---|---|---|---|---|---|
+|alicloud-ecs-ops|DeleteInstance|aliyun ecs DeleteInstance --InstanceId.1 i-bp1xxxxxxxxxxxx -|PASS after 3 iterations: InstanceId .N suffix after MissingParameter fix; added |1|0.7|2026-07-12T00:20:29|
+|alicloud-ecs-ops|CreateSnapshot|aliyun ecs CreateSnapshot --DiskId d-xxx --SnapshotName dail|PASS after 2 iterations: DiskId format validated; --Description length under lim|1|0.8|2026-07-12T00:20:29|
+
+---
+
+## Score Recovery
+
+|Skill|Operation|Command|Hint|Count|Scores Min|Last Seen|
+|---|---|---|---|---|---|---|
+|alicloud-rds-ops|CreateDBInstance|aliyun rds CreateDBInstance --Engine MySQL --EngineVersion 8|Score recovery 0.5 -> 1.0: Added DBInstanceNetType and SecurityIPList params aft|1|0.5|2026-07-12T00:20:29|
+
+---
+
+## Trap-Informed Pass
+
+|Skill|Operation|Command|Hint|Count|Scores Min|Last Seen|
+|---|---|---|---|---|---|---|
+|alicloud-slb-ops|AddBackendServers|aliyun slb AddBackendServers --LoadBalancerId lb-xxx --Backe|Single-iteration PASS with trap: BackendServers JSON format hint from known trap|1|1.0|2026-07-12T00:20:29|
+
+---
+
 ## Usage Guidelines
 
 ### For Agents (Pre-flight)
