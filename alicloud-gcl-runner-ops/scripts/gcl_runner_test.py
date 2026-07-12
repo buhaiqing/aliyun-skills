@@ -2325,8 +2325,8 @@ class RiskScorerTests(unittest.TestCase):
             self.assertIn(key, r["breakdown"])
 
     def test_fail_rate_default_when_no_reflexion(self):
-        """When reflexion_retrieve is unavailable, fail_rate defaults to 0.25."""
-        r = self._default_risk()
+        """When no reflexion data exists for a skill/op, fail_rate defaults to 0.10."""
+        r = gcl_runner.risk_scorer("alicloud-fake-ops", "FakeOp", "aliyun fake FakeOp")
         self.assertEqual(r["breakdown"]["fail_rate"], 0.10)
 
     def test_get_fail_rate_import_fallback(self):

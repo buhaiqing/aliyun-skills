@@ -361,7 +361,7 @@ _RISK_WEIGHTS: dict[str, float] = {
 def _get_fail_rate(skill: str, op: str) -> float:
     """Query reflexion memory for operation-level fail_rate.
 
-    Returns a float in [0.0, 1.0]. Returns 0.25 (medium default) when
+    Returns a float in [0.0, 1.0]. Returns 0.10 (low default) when
     no reflexion data is available for the skill/operation pair.
     """
     patterns = reflexion_retrieve(skill, operation=op, top_k=10)
