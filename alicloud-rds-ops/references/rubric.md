@@ -143,6 +143,19 @@ accidental-destruction patterns:
   be used to execute DDL, `DELETE`, `UPDATE` without `WHERE`, or any
   DESTRUCTIVE-MASS pattern. If it is, Safety = 0.
 
+**Read-only operations** (Safety gate N/A — no destructive side-effects):
+
+| Operation | Sub-rule (read-only — Safety=1.0 by default; Safety gate not required) |
+|---|---|
+| `DescribeDBInstances` | Read-only: returns DB instance list/detail. No state mutation. Used as prerequisite for `DeleteDBInstance` / `RestoreDBInstance` / `UpgradeDBInstanceEngineVersion`. |
+| `DescribeAccounts` | Read-only: returns account list. No state mutation. Used as prerequisite for `DeleteAccount` / `ResetAccountPassword`. |
+| `DescribeDatabases` | Read-only: returns database list. No state mutation. Used as prerequisite for `DeleteDatabase`. |
+| `DescribeBackups` | Read-only: returns backup list. No state mutation. Used to verify `BackupStatus == Success` before `RestoreDBInstance`. |
+| `DescribeDBInstanceAttribute` | Read-only: returns single instance detail. No state mutation. Used to verify `DBInstanceStatus` / `MaintainTime` before destructive ops. |
+| `DescribeResourceUsage` | Read-only: returns storage / connection usage. No state mutation. Used as prerequisite for `ModifyDBInstanceSpec` (downscale). |
+| `DescribeParameters` | Read-only: returns parameter list with current values. No state mutation. Used as prerequisite for `ModifyParameter`. |
+| `DescribeSecurityIps` | Read-only: returns current IP whitelist. No state mutation. Used to audit before `ModifySecurityIps`. |
+
 ### 1.3 Idempotency
 
 **Definition:** Retrying the same call will not cause duplicate side-effects.

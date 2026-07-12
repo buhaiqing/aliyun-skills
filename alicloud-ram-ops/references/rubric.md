@@ -132,6 +132,19 @@ just those listed in §1.2:
 | Trust policy with `Principal: {"RAM": ["acs:ram::*:*"]}` (wildcard account) | Any `CreateRole` / `UpdateRole` | Allows any Alibaba Cloud account to assume — Safety = 0 |
 | Policy with `"NotAction"` or `"NotResource"` (inverse) | Any custom policy | Hard to audit; require justification |
 
+**Read-only operations** (Safety gate N/A — no destructive side-effects):
+
+| Operation | Sub-rule (read-only — Safety=1.0 by default; Safety gate not required) |
+|---|---|
+| `ListUsers` | Read-only: returns user list. No state mutation. Used as prerequisite for `DeleteUser` / dependency-cascade lookups. |
+| `ListGroups` | Read-only: returns group list. No state mutation. Used as prerequisite for `DeleteUserGroup`. |
+| `ListRoles` | Read-only: returns role list. No state mutation. Used as prerequisite for `DeleteRole`. |
+| `ListPolicies` | Read-only: returns policy list. No state mutation. Used to inspect available policies before `AttachPolicy`. |
+| `ListAccessKeys` | Read-only: returns access key list per user. No state mutation. Used as prerequisite for `DeleteAccessKey` / `CreateAccessKey`. |
+| `GetUser` | Read-only: returns single user detail. No state mutation. Used as prerequisite for `DeleteUser`. |
+| `GetPolicy` | Read-only: returns single policy document. No state mutation. |
+| `ListEntitiesForPolicy` | Read-only: returns entities attached to a policy. No state mutation. |
+
 ### 1.3 Idempotency
 
 **Definition:** Retrying the same call will not cause duplicate side-effects.

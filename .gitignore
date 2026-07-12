@@ -93,3 +93,6 @@ ehthumbs.db
 .omc/
 .omo/
 .runtime/
+# ===== AI Agent runtime (pi / orchestrator) =====
+.pi/
+audit-results/

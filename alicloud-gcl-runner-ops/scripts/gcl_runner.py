@@ -286,6 +286,7 @@ PRODUCT_CLI = {
     "alicloud-das-ops": "das",
     "alicloud-resource-manager-ops": "resourcemanager",
     "alicloud-agentrun-ops": "agentrun",
+    "alicloud-oss-ops": "oss",
 }
 
 #: Default `max_iter` per skill class (AGENTS.md §12.8).

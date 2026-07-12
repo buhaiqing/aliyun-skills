@@ -57,6 +57,19 @@ ops** (multi-node, RW/RO splitting, distributed transactions).
 | `Start / Stop Cluster` | (a) user confirmation; (b) **warn that cluster is unavailable during stop**; (c) no active writes pending |
 | `SQL Execution` (data-plane) | See §2 — inherits RDS WHERE-clause rule + 6-class classification |
 
+**Read-only operations** (Safety gate N/A — no destructive side-effects):
+
+| Operation | Sub-rule (read-only — Safety=1.0 by default; Safety gate not required) |
+|---|---|
+| `DescribeDBClusters` | Read-only: returns PolarDB cluster list. No state mutation. Used as prerequisite for `DeleteDBCluster` / `ModifyDBCluster`. |
+| `DescribeDBClusterAttribute` | Read-only: returns single cluster detail. No state mutation. |
+| `DescribeAccounts` | Read-only: returns account list. No state mutation. Used as prerequisite for `DeleteAccount` / `ResetAccountPassword`. |
+| `DescribeBackups` | Read-only: returns backup list. No state mutation. Used as prerequisite for `RestoreDBCluster`. |
+| `DescribeDBClusterEndpoints` | Read-only: returns endpoint list. No state mutation. Used as prerequisite for `Manage Endpoints`. |
+| `DescribeDBClusterNodes` | Read-only: returns node list. No state mutation. Used as prerequisite for node management. |
+| `DescribeDBClusterParameters` | Read-only: returns parameter list. No state mutation. |
+| `DescribeRegions` / `DescribeZones` | Read-only: returns accessible regions/zones. No state mutation. |
+
 ## 2. SQL Execution (data-plane) — inherits from `alicloud-rds-ops` rubric
 
 PolarDB SQL execution uses `mysql` / `psql` / `sqlplus` client via
@@ -104,29 +117,76 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 - **Credential Hygiene**: 8 patterns from RDS + new: `DBClusterName` is not a secret. `polardb-AccountPassword` is a secret.
 - **Well-Architected**: stability (≥ 2 nodes for prod); cost (right-sized node spec); performance (PolarDB MySQL uses parallel query for > 1TB).
 
-## 4. Worked Example
+## 4. Worked Examples
 
-`DeleteDBCluster` PASS (with final backup):
+> **Per AGENTS.md §8.2: all Examples below use read-only or safe-write ops only.**
+> No `DeleteDBCluster` / `RestoreDBCluster` / `Manage Endpoints` (delete) in any Example.
+
+### Example 1: `DescribeDBClusters` PASS (read-only listing)
+
+Use case: User asks "list all PolarDB-MySQL clusters in cn-hangzhou".
 
 ```json
 {
   "iter": 1,
   "generator": {
-    "command": "aliyun polardb DeleteDBCluster --DBClusterId pc-bp1...",
-    "exit_code": 0
+    "command": "aliyun polardb DescribeDBClusters --RegionId cn-hangzhou --PageSize 10",
+    "exit_code": 0,
+    "result_excerpt": "{\"Items\":{\"DBCluster\":[{\"DBClusterId\":\"pc-bp1xxxx\",\"DBClusterStatus\":\"Running\",\"Engine\":\"MySQL\"}]}}",
+    "request_id": "D5E6..."
   },
-  "preflight": {
-    "user_confirmation": "User confirmed: 'delete pc-bp1... (legacy-mysql-cluster), backup pc-bp1-final created at 2026-06-04T13:50Z.'",
-    "backup_trace": [
-      {"command": "CreateBackup --DBClusterId pc-bp1...", "result": "BackupId pc-bp1-final", "status": "Success"}
-    ]
+  "critic": {
+    "scores": {
+      "correctness": 1.0, "safety": 1.0, "idempotency": 1.0,
+      "traceability": 1.0, "spec_compliance": 1.0,
+      "region_compliance": 1.0, "credential_hygiene": 1.0,
+      "well_architected": 1.0, "wrapper_compliance": 1.0
+    },
+    "blocking": false
   },
-  "critic": { "scores": { "correctness": 1, "safety": 1, "idempotency": 1,
-    "traceability": 1, "spec_compliance": 1, "region_compliance": 1,
-    "credential_hygiene": 1, "well_architected": 1 }, "blocking": false },
   "decision": "PASS"
 }
 ```
+
+**Why it passes:** `DescribeDBClusters` is read-only; region matches; response includes `DBClusterId` + `DBClusterStatus`; command routed through wrapper; `RequestId` present.
+
+### Example 2: `CreateAccount` PASS (safe-write with env-var password)
+
+Use case: User asks "create a PolarDB-MySQL account for the app".
+
+**Cost / safety guardrails (mandatory):**
+- `AccountName = app_service` (NOT in {root, admin} reserved set)
+- `AccountPassword` delivered via `$MYSQL_NEW_PASSWORD` env var (NOT CLI flag)
+- `AccountType = Normal` (NOT Super — least privilege)
+- Password complexity met (engine-specific)
+
+```json
+{
+  "iter": 1,
+  "generator": {
+    "command": "aliyun polardb CreateAccount --DBClusterId pc-bp1xxxx --AccountName app_service --AccountPassword $MYSQL_NEW_PASSWORD --AccountType Normal",
+    "exit_code": 0,
+    "result_excerpt": "{\"RequestId\":\"X9Y8...\"}",
+    "request_id": "X9Y8..."
+  },
+  "preflight": {
+    "uniqueness_check": "DescribeAccounts --AccountName app_service → empty (name available)",
+    "user_confirmation": "User confirmed: 'create account app_service on pc-bp1xxxx'"
+  },
+  "critic": {
+    "scores": {
+      "correctness": 1.0, "safety": 1.0, "idempotency": 1.0,
+      "traceability": 1.0, "spec_compliance": 1.0,
+      "region_compliance": 1.0, "credential_hygiene": 1.0,
+      "well_architected": 1.0, "wrapper_compliance": 1.0
+    },
+    "blocking": false
+  },
+  "decision": "PASS"
+}
+```
+
+**Why it passes:** `DescribeAccounts` called first to verify name uniqueness; `AccountName` not in reserved set; password via env var (Credential Hygiene = 1.0); `AccountType = Normal` (least privilege).
 
 ## 5. Anti-Patterns
 - ❌ `DeleteDBCluster` without final backup (no waiver)

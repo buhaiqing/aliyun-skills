@@ -112,6 +112,19 @@ expressions below (case-insensitive):
 | `^keys?\s+\*\b` | DESTRUCTIVE-MASS (when chained to DEL) | `KEYS *` followed by `DEL ...` |
 | `^eval\b.*del\b.*keys\b` | DESTRUCTIVE-MASS | `EVAL "return redis.call('DEL', unpack(redis.call('KEYS', ARGV[1])))" 0 'cache:temp:*'` (per `references/redis-cli-execution.md` line 649) |
 
+**Read-only operations** (Safety gate N/A — no destructive side-effects):
+
+| Operation | Sub-rule (read-only — Safety=1.0 by default; Safety gate not required) |
+|---|---|
+| `DescribeInstances` | Read-only: returns Redis/Tair instance list/detail. No state mutation. Used as prerequisite for `DeleteInstance` / `RestoreInstance` / `FlushInstance`. |
+| `DescribeAccounts` | Read-only: returns account list. No state mutation. Used as prerequisite for `DeleteAccount` / `ResetAccountPassword`. |
+| `DescribeBackups` | Read-only: returns backup list. No state mutation. Used to verify `BackupStatus == Success` before `RestoreInstance`. |
+| `DescribeInstanceAttribute` | Read-only: returns single instance detail. No state mutation. Used to verify `InstanceStatus` before destructive ops. |
+| `DescribeSecurityIps` | Read-only: returns current IP whitelist. No state mutation. Used to audit before `ModifySecurityIps`. |
+| `DescribeParameter` / `DescribeParameterTemplates` / `DescribeParameters` | Read-only: returns parameter list with current values. No state mutation. Used as prerequisite for `ModifyParameter`. |
+| `DescribeDBInstanceNetInfo` | Read-only: returns network info. No state mutation. |
+| `DescribeAvailableResource` | Read-only: returns available resource/zone info. No state mutation. Used for capacity planning. |
+
 ### 1.3 Idempotency
 
 **Definition:** Retrying the same call will not cause duplicate side-effects.

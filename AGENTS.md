@@ -171,6 +171,32 @@ Data-plane gap: `redis-ops` → `ecs-ops RunCommand` → target ECS executes `re
 - **Passwords via env vars**: `REDISCLI_AUTH` instead of `-a <password>`.
 - **Delete ops**: MUST obtain explicit user confirmation. Include a confirmation row in Pre-flight Checks.
 
+### 8.1 Destructive Ops Hard Rule (MANDATORY — no exceptions)
+
+> **任何破坏性 op 的执行都必须得到人工显式确认才能执行。这是强规则，要严格遵守。**
+
+| 项 | 要求 |
+|---|---|
+| **范围** | 所有 `Delete*` / `Remove*` / `drop*` / `Release*` / `Flush*` / `TRUNCATE` / `destroy` / `shutdown*` / `deleteMany({})` / `updateMany({})` / `_delete_by_query` with `match_all` / `ossutil rm` / `ResetAccountPassword` 等可写不可逆或破坏数据的 op |
+| **确认方式** | 必须**用户在当前会话中明确说**「同意执行 XX」/「确认」/「go」等，不能依赖上下文推断、过去会话状态、或任何间接信号 |
+| **Trace 要求** | 必须在 trace 中包含 `user_confirmation` 字段，含用户原话或金句摘要 |
+| **默认值** | **默认拒绝**——未拿到确认时 GCL 必须 ABORT，不允许静默执行 |
+| **Agent 自主决断** | **禁止**：Agent 不得自主跳过确认步骤；不得用 "log as warning" 代替确认；不得用 dry-run 结果代替真实执行的确认 |
+
+### 8.2 Worked Examples & Documentation Safety (MANDATORY)
+
+> **任何 skill 的 Worked Examples / Usage Examples / 代码演示片段都不得包含破坏性 op 作为演示。** 这是文档层面的安全约束。
+
+| 项 | 要求 |
+|---|---|
+| **Example 1（默认）** | 必须是**只读操作**（`Describe*` / `List*` / `Get*` / `GetBucket*`） |
+| **Example 2（可选）** | 必须是**安全写操作**（`CreateAccount` / `CreateUser` / `CreateLoginProfile` / `CreateKey` / `AllocateEipAddress` 1Mbps 按量 / `CreateInstance` 最小 spec 立即释放） |
+| **禁止** | Example 中出现 `Delete*` / `Remove*` / `drop*` / `Release*` / `Flush*` / `TRUNCATE` / `destroy` 等任何破坏性 op |
+| **成本警示** | 任何"创建"类 Example 必须明确标注 spec / 计费方式 / 释放方法，避免默认规格产生高额账单 |
+| **适用范围** | 所有 skill 的 SKILL.md / references/*.md / examples / snippets / test fixtures |
+| **检測** | pre-merge self-review (R2 / F5) 必须扫所有 Example 段是否含破坏性 op；发现即 FAIL |
+| **迁移成本** | 现有 Example 含破坏性 op 的 skill 列入 backlog，逐一迁移到「只读 + 安全写」二例结构
+
 ---
 
 ## 9. Quick Reference
@@ -255,6 +281,69 @@ Full spec + check tables: [docs/post-update-self-review.md](docs/post-update-sel
 | `SKILL.md` only (substantive) | `npx markdownlint-cli2 "alicloud-<product>-ops/SKILL.md"` |
 
 Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.md §11.1](docs/post-update-self-review.md#111-regression-testing-mandatory)
+
+### 11.2 Dual-Track Testing (MANDATORY)
+
+> **原则**：每个涉及云操作 / GCL / Reflexion / Memory 的功能点交付前，**必须**完成双轨测试，缺一不可。
+
+| 轨道 | 目标 | 工具 | 通过条件 |
+|------|------|------|----------|
+| **Track 1: dry-run / 机制层** | 用最小代价跑通整个功能逻辑（路径、分支、store、注入） | `--dry-run` / unit test / 单元 fixture | 链路全绿，无路径分支跳过 |
+| **Track 2: 真实环境 / 集成层** | 在真实凭证 + 真实 `aliyun` CLI 调用下，跑一次端到端集成 | 真实云账号 + `aliyun <product> <action>` + GCL runner | trace 落盘、memory_store / reflexion_store 真实触发 |
+
+**禁止**：
+- ❌ 只跑 dry-run 就宣称交付（机制 ≠ 集成）
+- ❌ 只跑真实环境就宣称交付（路径覆盖 ≠ 真实数据）
+- ❌ 跳过任一轨道（违反双轨原则，回归风险翻倍）
+
+**优先级**：真实环境出现破坏性风险时，**先 Track 1 跑通，再 Track 2 用只读操作集成**（如 `Describe*` / `List*` / `Get*`），避免误删资源。
+
+**典型场景举例**：
+| 功能 | Track 1 | Track 2 |
+|------|---------|---------|
+| GCL pre-flight 注入 | `gcl_runner.py --dry-run --user-request "..."` 验链路 | 任意产品 skill 跑一次非 dry-run GCL，trace 中 `generator_prompt_with_memory` 含真实替换文本 |
+| Reflexion memory 落盘 | `--dry-run` 验 `memory_store result=success` | 非 dry-run 跑失败命令（如 MAX_ITER）验 `reflexion_store result=success` |
+| memory_preflight retrieval | `memory_preflight_test.py` 单测 | 跑一次 GCL，trace 含真实 `slots.known_traps` 内容 |
+
+**例外**（仅以下情况可单轨）：
+- 纯静态文档改动（不涉及代码）→ 只跑 lint
+- 仅 stub / fixture 改动 → Track 1 即可
+
+#### 11.2.1 凭证不可用时的处理（`[BLOCKED:no-credentials]`）
+
+> **场景**：真实环境集成（Track 2）需要 `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET`，但当前会话拿不到有效凭证（例如离线开发、CI 无 secret、临时租户切换等）。
+
+**判定凭证不可用的标准**（任一满足即触发）：
+
+| # | 检查 | 命令 | 失败信号 |
+|---|------|------|----------|
+| 1 | 环境变量缺失 | `env \| grep -E '^ALIBABA_CLOUD_ACCESS_KEY_(ID\|SECRET)='` | 空输出 |
+| 2 | CLI 未配置 profile | `aliyun configure list` | Profile 列表为空 / 标记 `Invalid` |
+| 3 | CLI 探测调用失败 | `aliyun ecs DescribeRegions --RegionId cn-hangzhou` | exit code 非 0 / `InvalidAccessKeyId.NotFound` 等鉴权错误 |
+
+**处理流程**：
+
+1. **Track 1 必须全绿**——dry-run / 单测 / 路径分支全部覆盖。
+2. **在交付物 / PR 描述 / trace 注释中显式标注**：
+   ```
+   [BLOCKED:no-credentials] Track 2 skipped — see env check output.
+   Track 1 status: PASS (5/5 dry-run traces, all stores verified)
+   ```
+3. **列出 Track 2 待办**（让接手人知道怎么补）：
+   ```bash
+   # 恢复 Track 2 的最小复现步骤：
+   export ALIBABA_CLOUD_ACCESS_KEY_ID=<valid_ak>
+   export ALIBABA_CLOUD_ACCESS_KEY_SECRET=<valid_sk>
+   aliyun configure set --profile default --region cn-hangzhou
+   # 重跑任意一个 GCL dry-run 改为非 dry-run
+   python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py \
+     --skill alicloud-ecs-ops --op DescribeInstances \
+     --command "aliyun ecs DescribeInstances --RegionId cn-hangzhou" \
+     --output-dir .runtime/audit/gcl-runner-ops
+   ```
+4. **禁止掩盖**：不得在凭证缺失时编造"已集成验证"或伪造 trace。
+
+**回退**：一旦凭证恢复，立即补 Track 2，并把 `[BLOCKED:no-credentials]` 标记替换为 `[INTEGRATED:verified <date>]`。
 
 ---
 

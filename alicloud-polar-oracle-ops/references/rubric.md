@@ -73,29 +73,76 @@ metadata:
 | `sqlplus user/pass@//host:1521/service` | CLI | `(sqlplus\s+\S+/)\S+(@)` → `$1<masked>$2` |
 | `tnsnames.ora` content | Connection descriptor | Not a secret, but may contain host/port enumeration |
 
-## Worked Example
+## Worked Examples
 
-`DROP USER ... CASCADE` PASS (with backup):
+> **Per AGENTS.md §8.2: all Examples below use read-only or safe-write ops only.**
+> No `DROP USER` / `DROP TABLESPACE` / `ALTER SYSTEM` in any Example.
+
+### Example 1: `DescribeDBClusters` PASS (read-only listing)
+
+Use case: User asks "list all PolarDB-Oracle clusters in cn-hangzhou".
 
 ```json
 {
   "iter": 1,
   "generator": {
-    "command": "sqlplus sys/<masked>@//pc-bp1...:1521/PDB1 as sysdba -c 'DROP USER legacy_app CASCADE;'",
-    "exit_code": 0
+    "command": "aliyun polardb DescribeDBClusters --RegionId cn-hangzhou --PageSize 10",
+    "exit_code": 0,
+    "result_excerpt": "{\"Items\":{\"DBCluster\":[{\"DBClusterId\":\"pc-bp1xxxx\",\"DBClusterStatus\":\"Running\",\"Engine\":\"Oracle\"}]}}",
+    "request_id": "F3E4..."
   },
-  "preflight": {
-    "user_confirmation": "User confirmed: 'drop user legacy_app CASCADE, expdp backup completed at /backup/legacy_app-20260604.dmp'",
-    "backup_trace": [
-      {"command": "expdp system/<masked>@//pc-bp1...:1521/PDB1 schemas=legacy_app dumpfile=legacy_app-20260604.dmp", "result": "1.2GB written", "exit_code": 0}
-    ]
+  "critic": {
+    "scores": {
+      "correctness": 1.0, "safety": 1.0, "idempotency": 1.0,
+      "traceability": 1.0, "spec_compliance": 1.0,
+      "region_compliance": 1.0, "credential_hygiene": 1.0,
+      "well_architected": 1.0, "wrapper_compliance": 1.0
+    },
+    "blocking": false
   },
-  "critic": { "scores": { "correctness": 1, "safety": 1, "idempotency": 1,
-    "traceability": 1, "spec_compliance": 1, "region_compliance": 1,
-    "credential_hygiene": 1, "well_architected": 1 }, "blocking": false },
   "decision": "PASS"
 }
 ```
+
+**Why it passes:** `DescribeDBClusters` is read-only; engine filter confirms Oracle; region matches; response includes `DBClusterId` + `DBClusterStatus`; `RequestId` present.
+
+### Example 2: `CreateAccount` PASS (safe-write with env-var password)
+
+Use case: User asks "create a PolarDB-Oracle account for the app".
+
+**Cost / safety guardrails (mandatory):**
+- `AccountName = app_service` (NOT in {sys, system, oracle} reserved set)
+- `AccountPassword` delivered via `$ORACLE_PASSWORD` env var (NOT CLI flag)
+- `AccountType = Normal` (NOT Super — least privilege)
+- Password complexity met (Oracle-specific)
+
+```json
+{
+  "iter": 1,
+  "generator": {
+    "command": "aliyun polardb CreateAccount --DBClusterId pc-bp1xxxx --AccountName app_service --AccountPassword $ORACLE_PASSWORD --AccountType Normal",
+    "exit_code": 0,
+    "result_excerpt": "{\"RequestId\":\"Z5X6...\"}",
+    "request_id": "Z5X6..."
+  },
+  "preflight": {
+    "uniqueness_check": "DescribeAccounts --AccountName app_service → empty (name available)",
+    "user_confirmation": "User confirmed: 'create account app_service on pc-bp1xxxx'"
+  },
+  "critic": {
+    "scores": {
+      "correctness": 1.0, "safety": 1.0, "idempotency": 1.0,
+      "traceability": 1.0, "spec_compliance": 1.0,
+      "region_compliance": 1.0, "credential_hygiene": 1.0,
+      "well_architected": 1.0, "wrapper_compliance": 1.0
+    },
+    "blocking": false
+  },
+  "decision": "PASS"
+}
+```
+
+**Why it passes:** `DescribeAccounts` called first to verify name uniqueness; `AccountName` not in reserved set; password via env var (`$ORACLE_PASSWORD` per Polar-Oracle convention); `AccountType = Normal`.
 
 ## Anti-Patterns (Oracle-specific additions)
 - ❌ `DROP USER ... CASCADE` without `expdp` backup
@@ -123,3 +170,4 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 ## Changelog
 1.0.0 | 2026-06-04 | PolarDB Oracle GCL rubric (Phase 1, thirteenth skill). Inherits canonical from polar-mysql-ops; adds 9 Oracle-specific regex hot-spots and 4 Oracle-specific credential patterns. PL/SQL DDL-in-block risk noted.
+1.1.0 | 2026-07-12 | Per AGENTS.md §8.2: Worked Example rewritten to use read-only `DescribeDBClusters` + safe-write `CreateAccount` (previously demonstrated `DROP USER ... CASCADE` which violates §8.2).

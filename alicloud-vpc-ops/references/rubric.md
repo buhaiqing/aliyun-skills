@@ -45,6 +45,19 @@ the 5+3-dim structure from `AGENTS.md` §12.3 and the prior pilots.
 | `Create SNAT Entry` / `Create DNAT Entry` | (a) user confirmation; (b) NAT Gateway is `Available`; (c) EIP is `Available`; (d) `SourceCIDR` / `DestinationCIDR` does NOT overlap with existing entries (overlap causes `InvalidSnatEntry.Duplicate`); (e) for DNAT: `InternalPort` / `ExternalPort` not in use by another entry on same NAT |
 | `CreateVpc` / `CreateVSwitch` | (a) user confirmation; (b) `CidrBlock` is RFC1918 (10/8, 172.16/12, 192.168/16) for private VPC; (c) vSwitch `CidrBlock` is a subnet of the VPC's `CidrBlock` and does NOT overlap with existing vSwitches; (d) quota not exceeded |
 
+**Read-only operations** (Safety gate N/A — no destructive side-effects):
+
+| Operation | Sub-rule (read-only — Safety=1.0 by default; Safety gate not required) |
+|---|---|
+| `DescribeVpcs` | Read-only: returns VPC list/detail. No state mutation. Used as prerequisite for `DeleteVpc` / `CreateVSwitch` cross-validation. |
+| `DescribeVSwitches` | Read-only: returns VSwitch list/detail. No state mutation. Used as prerequisite for `DeleteVSwitch` / ECS ENI placement. |
+| `DescribeNatGateways` | Read-only: returns NAT Gateway list/detail. No state mutation. Used as prerequisite for `DeleteNatGateway` and SNAT/DNAT entry work. |
+| `DescribeEipAddresses` | Read-only: returns EIP list/detail. No state mutation. Used to verify EIP status before `AssociateEipAddress` / `ReleaseEipAddress`. |
+| `DescribeSnatTableEntries` | Read-only: returns SNAT entries. No state mutation. |
+| `DescribeForwardTableEntries` | Read-only: returns DNAT/forward entries. No state mutation. |
+| `DescribeRouteTables` | Read-only: returns route table list/detail. No state mutation. |
+| `DescribeHaVips` | Read-only: returns HAVIP list/detail. No state mutation. |
+
 ### 1.3 Idempotency — `CreateVpc` must check `DescribeVpcs --VpcName` first (VpcName is unique per region). `Delete*` ops are natural idempotent.
 
 ### 1.4 Traceability — mandatory `dependency_cascade_trace` for `DeleteVpc` / `DeleteNatGateway` (the 4-5 `Describe*` calls before the destructive op).
