@@ -304,6 +304,100 @@ def wrapper_error_eligible(error_code: str | None) -> bool:
     return code in WRAPPER_L2_ALLOWLIST
 
 
+# ---------------------------------------------------------------------------
+# Repair-table coverage (Phase 1 of "case-table self-evolution")
+# ---------------------------------------------------------------------------
+# Static ``skillopt_repair_error()`` case tables live in each product's
+# ``scripts/harness-lib.sh``. Errors whose code does not appear in that table
+# fall through to the generic "failed" branch and never auto-retry.
+#
+# ``parse_repair_table_codes()`` extracts the literal codes from the case
+# interval so we can flag L2 patterns whose code is unmapped. Pattern matches
+# the single-line glob form only:
+#     TokenA|TokenB|TokenC)
+# Anything fancier (multi-line, extglob, character classes) is intentionally
+# ignored — losing <5% of edge globs is cheaper than a 50-line parser.
+
+_CASE_BRANCH_RE = re.compile(r"^\s*([A-Za-z0-9_.|]+)\)\s*(?:#.*)?$")
+
+
+def parse_repair_table_codes(harness_lib_path: Path | str) -> set[str]:
+    """Return the set of error codes handled by a product's ``skillopt_repair_error`` case table.
+
+    Reads ``harness_lib_path``, locates the ``case "$error_code" in`` ... ``esac``
+    interval, and collects every literal token appearing in glob branches like
+    ``Throttling|Throttling.User)``.
+
+    Returns an empty set if the file is missing or the case interval is absent.
+    Fail-open: callers must treat an empty set as "unknown coverage" rather than
+    "no coverage".
+    """
+    p = Path(harness_lib_path)
+    if not p.is_file():
+        return set()
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError:
+        return set()
+
+    in_case = False
+    codes: set[str] = set()
+    for line in text.splitlines():
+        if not in_case:
+            if line.startswith('case "$error_code" in'):
+                in_case = True
+            continue
+        stripped = line.strip()
+        if stripped.startswith("esac"):
+            break
+        m = _CASE_BRANCH_RE.match(line)
+        if not m:
+            continue
+        for token in m.group(1).split("|"):
+            t = token.strip()
+            if t:
+                codes.add(t)
+    return codes
+
+
+# Skill name → relative harness-lib.sh path (relative to repo root).
+_REPAIR_TABLE_PATH = {
+    "alicloud-ecs-ops": "alicloud-ecs-ops/scripts/harness-lib.sh",
+    "alicloud-rds-ops": "alicloud-rds-ops/scripts/harness-lib.sh",
+    "alicloud-redis-ops": "alicloud-redis-ops/scripts/harness-lib.sh",
+    "alicloud-slb-ops": "alicloud-slb-ops/scripts/harness-lib.sh",
+    "alicloud-vpc-ops": "alicloud-vpc-ops/scripts/harness-lib.sh",
+    "alicloud-oss-ops": "alicloud-oss-ops/scripts/harness-lib.sh",
+    "alicloud-mongodb-ops": "alicloud-mongodb-ops/scripts/harness-lib.sh",
+    "alicloud-elasticsearch-ops": "alicloud-elasticsearch-ops/scripts/harness-lib.sh",
+    "alicloud-ack-ops": "alicloud-ack-ops/scripts/harness-lib.sh",
+    "alicloud-cms-ops": "alicloud-cms-ops/scripts/harness-lib.sh",
+    # ponytail: not enumerated here on purpose. Add as overlays gain coverage.
+}
+
+
+def is_mapped_in_repair_table(skill: str, error_code: str, skills_root: Path | None = None) -> bool:
+    """True if ``error_code`` appears in the ``skillopt_repair_error`` case table for ``skill``.
+
+    Fail-open semantics:
+    - Unknown skill (not in ``_REPAIR_TABLE_PATH``) → True (assume covered to avoid
+      false-positive unmapped warnings).
+    - Missing harness-lib.sh file → True (same reason).
+    - Empty parse result → True (parser failed, do not assert).
+    """
+    if not error_code:
+        return True
+    rel = _REPAIR_TABLE_PATH.get(skill)
+    if not rel:
+        return True
+    root = Path(skills_root) if skills_root else Path.cwd()
+    codes = parse_repair_table_codes(root / rel)
+    if not codes:
+        # Parser found nothing → fail-open.
+        return True
+    return error_code in codes
+
+
 def _find_cli_pattern(store: dict[str, list[dict[str, Any]]], pattern: dict[str, Any]) -> dict[str, Any] | None:
     dedup_keys = CATEGORY_CONFIG["cli_parameter"]["dedup_keys"]
     for existing in store.get("cli_parameter", []):
@@ -856,11 +950,19 @@ def reflexion_extract_wrapper_lite(
         "skill": normalize_skill_name(skill),
         "command": _sanitize_wrapper_text(command.strip()[:200], 200),
         "error": _sanitize_wrapper_text(error_field, 120),
+        "error_code": code,
         "fix": _sanitize_wrapper_text(fix, 200),
         "count": 1,
         "first_seen": _now_iso(),
         "source": "wrapper-lite",
     }
+    # Phase 1 repair-coverage: flag if the error code is not in the product's
+    # ``skillopt_repair_error`` case table. ``is_mapped_in_repair_table`` is
+    # fail-open (unknown skill / missing file → True), so unmapped_in_repair
+    # only flips to True when we *know* the code is unmapped.
+    pattern["unmapped_in_repair"] = not is_mapped_in_repair_table(
+        normalize_skill_name(skill), code
+    )
 
     # Attach RG/Tags context only when at least one dimension is explicitly passed.
     has_rg = resource_group_id is not None
@@ -2148,8 +2250,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     store_p.add_argument("--json", help="Pattern as JSON string")
     store_p.add_argument("--reflexion-root", help="Override reflexion root")
 
-    # report
-    report_p = sub.add_parser("report", help="Regenerate docs/failure-patterns.md")
+    # report (A1.5: dual output — failure + success)
+    report_p = sub.add_parser("report", help="Regenerate docs/failure-patterns.md AND docs/success-patterns.md")
     report_p.add_argument("--reflexion-root", help="Override reflexion root")
     report_p.add_argument("--sort-by", choices=["weighted", "count"], default="weighted",
                           help="Sort order: 'weighted' (time-decayed, default) or 'count' (raw frequency)")
@@ -2301,7 +2403,11 @@ def main(argv: list[str] | None = None) -> int:
         return rc
 
     elif args.command == "report":
-        return reflexion_report(root=root, sort_by=args.sort_by)
+        # A1.5: dual output — failure patterns + success patterns in one call
+        rc = reflexion_report(root=root, sort_by=args.sort_by)
+        if rc == 0:
+            rc = success_report(root=root)
+        return rc
 
     elif args.command == "success-report":
         out = Path(args.output) if getattr(args, "output", None) else None

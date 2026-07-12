@@ -209,11 +209,11 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 ### Phase A — 反馈闭环从"空壳"变"引擎"
 
 #### A1 — Reflexion 自动填充管道
-- [ ] **A1.1** GCL trace failure_pattern 在 SAFETY_FAIL / HALLUCINATION_ABORT / MAX_ITER / near-miss PASS 时自动填充
-- [ ] **A1.2** `gcl_runner.py` 退出前自动调用 `reflexion_extract()` + `reflexion_store()`
-- [ ] **A1.3** wrapper 失败（非 GCL 路径）通过 `store-wrapper-lite` 写入失败模式
+- [x] **A1.1** GCL trace failure_pattern 在 SAFETY_FAIL / HALLUCINATION_ABORT / MAX_ITER / near-miss PASS 时自动填充
+- [x] **A1.2** `gcl_runner.py` 退出前自动调用 `reflexion_extract()` + `reflexion_store()`
+- [x] **A1.3** wrapper 失败（非 GCL 路径）通过 `store-wrapper-lite` 写入失败模式
 - [x] **A1.4** `gcl_reflexion.py success-store` 子命令：hard-won PASS → 成功模式
-- [ ] **A1.5** `gcl_reflexion.py report` 双输出：`docs/failure-patterns.md` + `docs/success-patterns.md`
+- [x] **A1.5** `gcl_reflexion.py report` 双输出：`docs/failure-patterns.md` + `docs/success-patterns.md`
 - [x] **A1.6** pattern 添加 `git_commit` 字段
 
 #### A2 — Pre-flight 强制注入

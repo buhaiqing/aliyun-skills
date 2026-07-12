@@ -1100,6 +1100,43 @@ class ExtractFailurePatternTests(unittest.TestCase):
         )
         self.assertLessEqual(len(result["command"]), 200)
 
+    def test_hallucination_abort_returns_runtime_pattern(self):
+        """A1.1: HALLUCINATION_ABORT → runtime category with hallucination report as fix."""
+        critic_result = {
+            "scores": {k: 0.0 for k in ("correctness", "safety", "idempotency",
+                                        "traceability", "spec_compliance")},
+            "suggestions": ["HALLUCINATION_ABORT: missing API parameter --InstanceId"],
+            "matched_regexes": [],
+        }
+        result = gcl_runner.extract_failure_pattern(
+            critic_result, "alicloud-ecs-ops", "DeleteInstance",
+            "aliyun ecs DeleteInstance",
+            status="HALLUCINATION_ABORT",
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(result["category"], "runtime")
+        self.assertEqual(result["skill"], "alicloud-ecs-ops")
+        self.assertIn("HALLUCINATION_ABORT", result["error"])
+        self.assertIn("missing API parameter", result["fix"])
+        self.assertEqual(result["root_cause"], "hallucination detected and unresolvable")
+
+    def test_hallucination_abort_handles_empty_suggestions(self):
+        """A1.1: HALLUCINATION_ABORT with empty suggestions → returns safe default pattern."""
+        critic_result = {
+            "scores": {k: 0.0 for k in ("correctness", "safety", "idempotency",
+                                        "traceability", "spec_compliance")},
+            "suggestions": [],
+            "matched_regexes": [],
+        }
+        result = gcl_runner.extract_failure_pattern(
+            critic_result, "alicloud-ecs-ops", "DeleteInstance",
+            "aliyun ecs DeleteInstance",
+            status="HALLUCINATION_ABORT",
+        )
+        self.assertIsNotNone(result)
+        self.assertEqual(result["category"], "runtime")
+        self.assertEqual(result["error"], "HALLUCINATION_ABORT")
+
 
 # ---------------------------------------------------------------------------
 # T16b: extract_success_pattern() — R4 hard-won PASS extraction

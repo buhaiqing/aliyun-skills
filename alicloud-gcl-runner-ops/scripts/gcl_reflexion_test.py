@@ -1007,21 +1007,80 @@ class CLITests(unittest.TestCase):
         self.assertEqual(len(store["cli_parameter"]), 1)
 
     def test_report_and_maintain(self):
-        # Seed via store, then report
+        # Seed via store, then report (in tmpdir to avoid cwd pollution)
         pat = {"category": "cli_parameter", "skill": "ecs-ops", "command": "test",
                "error": "E1", "fix": "F1", "root_cause": "RC"}
         reflexion_store(pat, root=self.root)
         from gcl_reflexion import main as reflexion_main
         output = self.root / "report.md"
-        rc = reflexion_main(["report", "--reflexion-root", str(self.root)])
-        # report without --output-path won't use our path, but shouldn't crash
-        self.assertEqual(rc, 0)
+        # Override SKILLS_DIR so report writes inside tmpdir, not cwd
+        old_env = os.environ.get("SKILLS_DIR")
+        os.environ["SKILLS_DIR"] = str(self.root)
+        try:
+            rc = reflexion_main(["report", "--reflexion-root", str(self.root)])
+            # report without --output-path won't use our path, but shouldn't crash
+            self.assertEqual(rc, 0)
+        finally:
+            if old_env is None:
+                os.environ.pop("SKILLS_DIR", None)
+            else:
+                os.environ["SKILLS_DIR"] = old_env
         # maintain dry-run
         rc2 = reflexion_main(["maintain", "--reflexion-root", str(self.root)])
         self.assertEqual(rc2, 0)
         # maintain apply
         rc3 = reflexion_main(["maintain", "--apply", "--reflexion-root", str(self.root)])
         self.assertEqual(rc3, 0)
+
+    def test_report_writes_both_failure_and_success_files(self):
+        """A1.5: `report` subcommand writes both docs/failure-patterns.md AND docs/success-patterns.md."""
+        # Seed both stores
+        reflexion_store(
+            {"category": "cli_parameter", "skill": "ecs-ops", "command": "test",
+             "error": "E1", "fix": "F1", "root_cause": "RC"},
+            root=self.root,
+        )
+        success_store(
+            {
+                "skill": "ecs-ops",
+                "operation": "DescribeInstances",
+                "command_excerpt": "aliyun ecs DescribeInstances --RegionId cn-hangzhou",
+                "command_hash": "sha256:" + "0" * 64,
+                "capture_reason": "multi_iter",
+                "iterations": 2,
+                "scores_summary": "correctness=1.0,safety=1.0",
+                "scores_min": 1.0,
+                "preflight_had_traps": False,
+                "trap_count": 0,
+                "hint": "Used --RegionId explicitly to skip pre-flight prompt",
+                "source": "test",
+            },
+            root=self.root,
+        )
+        # Redirect SKILLS_DIR to tmpdir so report writes inside our root
+        import os
+        old_env = os.environ.get("SKILLS_DIR")
+        os.environ["SKILLS_DIR"] = str(self.root)
+        try:
+            from gcl_reflexion import main as reflexion_main
+            rc = reflexion_main(["report", "--reflexion-root", str(self.root)])
+            self.assertEqual(rc, 0)
+            self.assertTrue(
+                (self.root / "docs/failure-patterns.md").exists(),
+                "docs/failure-patterns.md should be written by `report`",
+            )
+            self.assertTrue(
+                (self.root / "docs/success-patterns.md").exists(),
+                "docs/success-patterns.md should be written by `report`",
+            )
+            # Verify success-patterns.md actually contains our seeded pattern
+            success_content = (self.root / "docs/success-patterns.md").read_text(encoding="utf-8")
+            self.assertIn("DescribeInstances", success_content)
+        finally:
+            if old_env is None:
+                os.environ.pop("SKILLS_DIR", None)
+            else:
+                os.environ["SKILLS_DIR"] = old_env
 
 
 class WrapperLiteL2Tests(unittest.TestCase):

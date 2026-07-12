@@ -2255,6 +2255,15 @@ def run_loop(
                     "iter": len(trace["iterations"]),
                     "output": f"HALLUCINATION_ABORT: {h_result['report']}",
                 }
+                # A1.1: extract failure pattern on HALLUCINATION_ABORT (early return path)
+                h_fp = extract_failure_pattern(
+                    iter_record["critic"], skill, op, command,
+                    status="HALLUCINATION_ABORT",
+                    scores=iter_record["critic"].get("scores"),
+                )
+                trace["failure_pattern"] = h_fp
+                _log("event=reflexion_extract decision=HALLUCINATION_ABORT skill={} op={} pattern={}",
+                     skill, op, "found" if h_fp else "skipped")
                 return trace
 
         # [1] Generate
@@ -2459,6 +2468,25 @@ def extract_failure_pattern(
             "low_dimensions": ", ".join(k.split("=")[0] for k in low),
             "scores": scores_summary,
             "fix": "Monitor low-scoring dimensions; consider pre-flight validation improvements",
+        }
+
+    if status == "HALLUCINATION_ABORT":
+        # H detected unresolved hallucinations after regeneration.
+        # Categorize as runtime (structural detection failure, not a CLI param issue).
+        suggestions = critic_result.get("suggestions", []) or []
+        error_msg = (suggestions[0] if suggestions else "HALLUCINATION_ABORT")[:120]
+        fix_raw = suggestions[0] if suggestions else ""
+        fix = fix_raw.replace("HALLUCINATION_ABORT:", "").strip()[:200] if fix_raw else ""
+        return {
+            "category": "runtime",
+            "skill": skill,
+            "operation": op,
+            "command": command[:200],
+            "error": error_msg,
+            "failure_pattern": error_msg,
+            "root_cause": "hallucination detected and unresolvable",
+            "prevention": fix,
+            "fix": fix,
         }
 
     return None
