@@ -118,6 +118,7 @@
 - [x] **B+C 文档同步**: `gcl-spec.md` §15/§16、`memory-strategy.md`、`AGENTS.md` §16/§17、SkillOpt references、Makefile、`scripts/README.md`
 - [x] **maintain 后可选 report**: `GCL_REFLEXION_REPORT_ON_MAINTAIN` + `scripts/test_runtime_cleanup_memory.py`
 - [x] **R2 非试点验证**: vpc-ops + slb-ops wrapper-lite → `preflight_retrieve` `{{known_traps}}` 单测
+- [x] **Case-table coverage suggest (Phase 1)**: `parse_repair_table_codes` + `is_mapped_in_repair_table` + `unmapped_in_repair` 标记 + `scan_repair_coverage.py scan|show` (suggest-only, threshold 5, never touches overlay). Phase 2 (GitHub Issue) and Phase 3 (weekly workflow) deferred.
 
 ## Blocked / Parking Lot
 
