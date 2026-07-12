@@ -568,8 +568,8 @@ def _collect_ack(clusters: list, region: str) -> dict:
         if not has_node_monitoring:
             log("WARN", "ags-metrics-collector not installed on cluster=%s -> skip node-level CMS backtrack (~70s saved)" % cname)
 
-        for metric, mk in [("cluster.cpu.utilization", "cpu_util"), ("cluster.memory.utilization", "mem_util")]:
-            data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s", "--MetricName", metric,
+        for metric, mk in [("CpuUsage", "cpu_util"), ("MemoryUsage", "mem_util")]:
+            data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s_dashboard", "--MetricName", metric,
                       "--Dimensions", cl_dims, "--Period", "300", "--StartTime", d7s, "--EndTime", end])
             if not data: continue
             dps = data.get("Datapoints", "[]")

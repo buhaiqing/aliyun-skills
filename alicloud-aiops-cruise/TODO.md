@@ -77,6 +77,7 @@
 | [**19**](TODO/sprint-19-runtime-cleanup.md) | **Runtime 清理 + 路径迁移收尾** | **P1** | **消除所有硬编码 audit-results; 提供 cleanup 工具; 防止 .runtime/ 膨胀** | Sprint 18 | PASS **6/6** + P0-2 补漏 6 shell agent |
 | [**20**](TODO/sprint-20-gitignore-complete.md) | **.gitignore 完整性补齐 (P0-4)** | **P0** | **凭证/缓存/报告 三类缺口修复; 36 项跨 skill 验证** | 无 | PASS **4/4** |
 | [**21**](TODO/sprint-21-risk-ml-gray.md) | **统一风险模型 + ML 灰度增强** | **P1** | **阈值+持续时间+趋势+动态基线+ML shadow 证据链** | Sprint 3+9+11 | PASS **5/5** |
+| **22** | **ACK Cruise Agent** | **P1** | **拓扑发现K8S集群后自动调用ACK智能巡检(5维评分+Addon)；并行执行于infra层；引用alicloud-ack-ops** | 无 | IN REVIEW |
 
 ---
 
@@ -92,6 +93,7 @@ P0 (基座工程)
 │                                                            UP
 ├── Sprint 7 (Schema) ───────-> Sprint 9 (Incident) ───────────┘
 ├── Sprint 11 (ML 调研) ───────> Sprint 21 (风险模型 + ML 灰度)
+├── Sprint 5 (ACK超分) ───────> Sprint 22 (ACK Cruise 深度巡检)
 └── Sprint 20 (.gitignore 补齐) 无依赖，独立推进 (跨 Sprint 18/19 路径迁移)
 
 P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓存)

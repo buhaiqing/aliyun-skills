@@ -1,11 +1,11 @@
 ---
 name: alicloud-aiops-cruise
-version: "1.5.2"
+version: "1.6.0"
 metadata:
   description: >-
-    阿里云全链路 AIOps 巡检 + 感知 Agent 层 — 内置 7 个感知 Agent（HealthCruise/TopoScan/
-    ConfigDrift/CostWatch/SecurityScan/AuditTrail/AdvisorScan），实现从 EIP->SLB->ECS->
-    RDS/Redis->NAT->安全组的端到端健康巡检、故障排查、容量规划和预检。
+    阿里云全链路 AIOps 巡检 + 感知 Agent 层 — 内置 8 个感知 Agent（HealthCruise/TopoScan/
+    ConfigDrift/CostWatch/SecurityScan/AuditTrail/AdvisorScan/ACKCruise），实现从 EIP->SLB->ECS->
+    RDS/Redis->NAT->安全组的端到端健康巡检，含 ACK 集群深度巡检（5维评分+组件健康）。
     Agent 通过 aliyun CLI 编排阿里云原生服务
     (CloudMonitor / DAS / CloudAssistant / ResourceCenter / ActionTrail / CloudFirewall)
     完成拓扑发现、指标采集、深度诊断和链路关联推理。
@@ -60,13 +60,27 @@ metadata:
 | ECS 详细诊断 | `alicloud-ecs-ops` | 引用 `references/network-troubleshooting-and-tuning.md` 进行网络带宽瓶颈排查、NIC 调优、sysctl 基线 |
 | ECS 计算/存储诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
 | SLB 详细诊断 | `alicloud-slb-ops` | 引用 Describe* 命令模式 |
+| ACK 集群深度巡检 | `alicloud-ack-ops` | 拓扑发现 K8S 集群后，由 ackcruise Agent 自动调用 Intelligent Inspection（5维评分+组件健康）|
 
 ## Perceive Layer — 感知 Agent
-
-本 Skill 内置了 **7 个感知 Agent**，统一放在 `scripts/agents/perceive/` 下，按领域分层组织：
+本 Skill 内置了 **8 个感知 Agent**，统一放在 `scripts/agents/perceive/` 下，按领域分层组织：
 
 ```
 scripts/agents/perceive/       # 感知层统一入口
+├── __init__.sh                # 统一调度入口，支持 --mode 子集选择
+├── infra/                     # 基础设施巡检（AIOps 核心链路）
+│   ├── ackcruise.sh           # ACK 集群深度巡检 5维评分+组件健康     | 每6h (与healthcruise并行)
+│   ├── healthcruise.sh        # 全链路巡检 EIP->SLB->ECS->RDS/Redis->NAT->安全组 | 每6h
+│   ├── toposcan.sh            # 拓扑发现 VPC/ECS/RDS/SLB 资源清单 | 每日/按需
+│   └── configdrift.sh         # 配置漂移检测 对比 Topo baseline | 按需
+├── cost/                      # 成本监察
+│   └── costwatch.sh           # 费用/到期预警/RI覆盖率/预算跟踪 | 每日
+├── security/                  # 安全监控
+│   ├── securityscan.sh        # 漏洞扫描/AK泄漏/基线检查 | 每日
+│   └── audittrail.sh          # 操作事件监控/异常API调用检测 | 实时/每日
+└── advisor/                   # 顾问建议
+    └── advisorscan.sh         # 健康报告 + 成本优化建议 | 每日
+```scripts/agents/perceive/       # 感知层统一入口
 ├── __init__.sh                # 统一调度入口，支持 --mode 子集选择
 ├── infra/                     # 基础设施巡检（AIOps 核心链路）
 │   ├── healthcruise.sh        # 全链路巡检 EIP->SLB->ECS->RDS/Redis->NAT->安全组 | 每6h
@@ -259,6 +273,7 @@ GCL Prompt 见 `references/prompt-templates.md`。
 
 | 版本 | 日期 | 变更 |
 |---|---|---|
+| 1.6.0 | 2026-07-12 | 新增 ACK Cruise Agent (`ackcruise.sh`)：拓扑发现 K8S 集群后自动调用 ACK Intelligent Inspection（5维评分：集群状态+节点健康+CPU+内存+Addon），并行执行于 infra 层，输出结构化 JSON 报告；引用 `alicloud-ack-ops` 巡检流程；`__init__.sh` 更新感知 Agent 数量 7→8 |
 | 1.5.2 | 2026-06-12 | Sprint 21: 新增统一风险模型与 ML 灰度增强；`daily-health-check.py` 输出 `risk_evidence[]` / `ml_policy`，Incident metadata 追加风险证据；ML 默认 off，支持 shadow/advisory/active 环境变量灰度 |
 | 1.5.0 | 2026-06-08 | P0-2 补漏 Sprint 19: 6 个 perceive shell Agent 路径迁移 (advisorscan / costwatch / healthcruise / toposcan / audittrail / securityscan) 全部从 `${AIOPS_DIR}/audit-results` 改为 `${RUNTIME_AUDIT_DIR}/perceive`; 修复 healthcruise.sh BUF-003 同类 bug (AIOPS_DIR 误指 runbooks/scripts); 6 个脚本均通过 bash 语法检查 + 路径解析验证; F8 同步 (TODO.md 索引 + Sprint 19 状态) |
 | 1.5.1 | 2026-06-08 | P0-4 补齐仓库根 `.gitignore`: 补漏凭证类 (`*.env` `credentials.json` `*.key` `*.pem` `*credentials*` `*secrets*`); 补漏 Python 工具链缓存 (`.ruff_cache/` `.mypy_cache/` `.tox/` `.coverage/` `htmlcov/`); 补漏 Node.js (`node_modules/` `package-lock.json`); 补漏 skill 报告目录 (`alicloud-*/reports/*` 排除 `reports/templates/`); 36 项 `git check-ignore` 跨 skill 验证通过 |

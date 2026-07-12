@@ -3,7 +3,7 @@
 # perceive/__init__.sh — 感知层统一入口
 #
 # 职责:
-#   作为 7 个感知 Agent 的调度入口，支持按子集执行。
+#   作为 8 个感知 Agent 的调度入口，支持按子集执行。
 #   接收 cron/Orchestrator 触发，分发到对应子 Agent。
 #
 # 用法:
@@ -53,12 +53,13 @@ done
 # ── 描述模式 ──
 if $DESCRIBE; then
     cat <<'STRUCTURE'
-Perceive Layer — 感知 Agent (7个)
+Perceive Layer — 感知 Agent (8个)
 ===================================
 
 位于: scripts/agents/perceive/
 ├── __init__.sh         # 统一入口 (本文件)
 ├── infra/              # 基础设施巡检 (AIOps 核心链路)
+│   ├── ackcruise.sh    # ACK 集群深度巡检 5维评分+组件健康             | 每6h
 │   ├── healthcruise.sh # 全链路巡检 EIP->SLB->ECS->RDS/Redis->NAT->安全组 | 每6h
 │   ├── toposcan.sh     # 拓扑发现 VPC/ECS/RDS/SLB 资源清单              | 每日/按需
 │   └── configdrift.sh  # 配置漂移检测 对比 Topo baseline               | 按需
@@ -124,6 +125,7 @@ declare -a AGENTS=()
 case "$MODE" in
     all)
         AGENTS=(
+            "infra/ackcruise.sh:ackcruise"
             "infra/healthcruise.sh:healthcruise"
             "infra/toposcan.sh:toposcan"
             "infra/configdrift.sh:configdrift"
@@ -135,6 +137,7 @@ case "$MODE" in
         ;;
     infra)
         AGENTS=(
+            "infra/ackcruise.sh:ackcruise"
             "infra/healthcruise.sh:healthcruise"
             "infra/toposcan.sh:toposcan"
             "infra/configdrift.sh:configdrift"
@@ -152,13 +155,13 @@ case "$MODE" in
     advisor)
         AGENTS=("advisor/advisorscan.sh:advisorscan")
         ;;
-    healthcruise|toposcan|configdrift|costwatch|securityscan|audittrail|advisorscan)
+    ackcruise|healthcruise|toposcan|configdrift|costwatch|securityscan|audittrail|advisorscan)
         # 修复 BUG-003: 单 agent 模式按 agent 所在的子目录分类 (修复原假设 ${MODE}/${MODE}.sh)
         # set +u 临时关闭 unset 检查, 避免关联数组在 case 分支内的边界问题
         set +u
         category="infra"  # default
         case "${MODE}" in
-            healthcruise|toposcan|configdrift) category="infra" ;;
+            ackcruise|healthcruise|toposcan|configdrift) category="infra" ;;
             costwatch)                          category="cost" ;;
             securityscan|audittrail)            category="security" ;;
             advisorscan)                        category="advisor" ;;
@@ -168,7 +171,7 @@ case "$MODE" in
         ;;
     *)
         echo "[ERROR] 未知模式: ${MODE}"
-        echo "可用模式: all, infra, cost, security, advisor, healthcruise, toposcan, configdrift, costwatch, securityscan, audittrail, advisorscan"
+        echo "可用模式: all, infra, cost, security, advisor, ackcruise, healthcruise, toposcan, configdrift, costwatch, securityscan, audittrail, advisorscan"
         exit 2
         ;;
 esac
@@ -177,6 +180,8 @@ esac
 if [[ "$MODE" == "all" || "$MODE" == "infra" ]]; then
     echo "▶ 并行执行基础设施巡检..."
     pids=()
+    run_agent "${SCRIPT_DIR}/infra/ackcruise.sh" "ackcruise" &
+    pids+=($!)
     run_agent "${SCRIPT_DIR}/infra/healthcruise.sh" "healthcruise" &
     pids+=($!)
     run_agent "${SCRIPT_DIR}/infra/toposcan.sh" "toposcan" &
@@ -193,7 +198,7 @@ for agent_entry in "${AGENTS[@]}"; do
     agent_name="${agent_entry##*:}"
     # 跳过已在 infra 并行块中执行过的
     case "$agent_name" in
-        healthcruise|toposcan|configdrift)
+        ackcruise|healthcruise|toposcan|configdrift)
             [[ "$MODE" == "all" || "$MODE" == "infra" ]] && continue
             ;;
     esac
