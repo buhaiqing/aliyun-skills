@@ -11,6 +11,7 @@ Tests:
 """
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -26,6 +27,8 @@ from gcl_reflexion import (
     _save_success_store,
     _store_path,
     _success_patterns_path,
+    is_mapped_in_repair_table,
+    parse_repair_table_codes,
     reflexion_extract,
     reflexion_extract_wrapper_lite,
     reflexion_retrieve,
@@ -369,6 +372,108 @@ class ReflexionExtractWrapperLiteNoContextRegression(unittest.TestCase):
             resource_group_id="rg-x",
         )
         self.assertIsNone(pattern)
+
+
+_FAKE_OVERLAY_TXT = """\
+#!/bin/bash
+skillopt_repair_error() {
+    local error_code="$1"
+    case "$error_code" in
+        Throttling.User|InvalidParameter|ResourceNotFound)
+            ;;
+        esac
+}
+"""
+
+
+class RepairTableCoverageTests(unittest.TestCase):
+    """Phase 1: parse_repair_table_codes / is_mapped_in_repair_table / unmapped_in_repair flag."""
+
+    def _write_overlay(self, root: Path) -> None:
+        skill_dir = root / "alicloud-ecs-ops" / "scripts"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "harness-lib.sh").write_text(_FAKE_OVERLAY_TXT, encoding="utf-8")
+
+    def test_parse_repair_table_codes_extracts_set(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "harness-lib.sh"
+            path.write_text(_FAKE_OVERLAY_TXT, encoding="utf-8")
+            codes = parse_repair_table_codes(path)
+            self.assertEqual(
+                codes,
+                {"Throttling.User", "InvalidParameter", "ResourceNotFound"},
+            )
+
+    def test_is_mapped_in_repair_table_known(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_overlay(Path(tmp))
+            self.assertTrue(
+                is_mapped_in_repair_table(
+                    "alicloud-ecs-ops", "Throttling.User", skills_root=Path(tmp)
+                )
+            )
+
+    def test_is_mapped_in_repair_table_unknown(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_overlay(Path(tmp))
+            self.assertFalse(
+                is_mapped_in_repair_table(
+                    "alicloud-ecs-ops",
+                    "IdempotentProcessingInProgress",
+                    skills_root=Path(tmp),
+                )
+            )
+
+    def test_is_mapped_in_repair_table_unknown_skill_fails_open(self):
+        # Skill not in the registry must NOT throw or false-positive.
+        self.assertTrue(is_mapped_in_repair_table("alicloud-foo-ops", "Any.Code"))
+
+    def test_extract_wrapper_lite_sets_unmapped_in_repair_true_for_unknown_code(self):
+        """Pattern for a code absent from the overlay must carry unmapped_in_repair=True.
+
+        Uses ``NoPermission`` because it sits in ``WRAPPER_L2_ALLOWLIST`` (so
+        ``wrapper_error_eligible`` passes) but is not present in the fake
+        overlay (so ``is_mapped_in_repair_table`` returns False).
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_overlay(Path(tmp))
+            # Run from the temp skills_root so _REPAIR_TABLE_PATH resolves.
+            cwd = Path.cwd()
+            try:
+                os.chdir(tmp)
+                pattern = reflexion_extract_wrapper_lite(
+                    skill="alicloud-ecs-ops",
+                    product="ecs",
+                    action="DescribeInstances",
+                    command="aliyun ecs DescribeInstances",
+                    error_code="NoPermission",
+                    output='{"Code":"NoPermission"}',
+                )
+            finally:
+                os.chdir(cwd)
+        self.assertIsNotNone(pattern)
+        self.assertTrue(pattern["unmapped_in_repair"])
+        self.assertEqual(pattern["error_code"], "NoPermission")
+
+    def test_extract_wrapper_lite_sets_unmapped_in_repair_false_for_known_code(self):
+        """Pattern for a code present in the overlay must carry unmapped_in_repair=False."""
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_overlay(Path(tmp))
+            cwd = Path.cwd()
+            try:
+                os.chdir(tmp)
+                pattern = reflexion_extract_wrapper_lite(
+                    skill="alicloud-ecs-ops",
+                    product="ecs",
+                    action="DescribeInstances",
+                    command="aliyun ecs DescribeInstances",
+                    error_code="InvalidParameter",
+                    output='{"Code":"InvalidParameter"}',
+                )
+            finally:
+                os.chdir(cwd)
+        self.assertIsNotNone(pattern)
+        self.assertFalse(pattern["unmapped_in_repair"])
 
 
 if __name__ == "__main__":

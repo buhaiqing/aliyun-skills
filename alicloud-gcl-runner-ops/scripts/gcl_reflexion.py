@@ -343,11 +343,11 @@ def parse_repair_table_codes(harness_lib_path: Path | str) -> set[str]:
     in_case = False
     codes: set[str] = set()
     for line in text.splitlines():
+        stripped = line.strip()
         if not in_case:
-            if line.startswith('case "$error_code" in'):
+            if stripped.startswith('case "$error_code" in'):
                 in_case = True
             continue
-        stripped = line.strip()
         if stripped.startswith("esac"):
             break
         m = _CASE_BRANCH_RE.match(line)
