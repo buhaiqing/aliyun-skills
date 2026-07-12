@@ -217,13 +217,13 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 - [x] **A1.6** pattern 添加 `git_commit` 字段
 
 #### A2 — Pre-flight 强制注入
-- [ ] **A2.1** `gcl_runner.py --preflight` 自动注入已知失败/成功模式到 Generator prompt
-- [ ] **A2.2** 注入预算 ≤ 2KB（top 5 失败 + top 3 成功，单条 ≤ 200 字符）
+- [x] **A2.1** `gcl_runner.py --preflight` 自动注入已知失败/成功模式到 Generator prompt
+- [x] **A2.2** 注入预算 ≤ 2KB（top 5 失败 + top 3 成功，单条 ≤ 200 字符）
 - [x] **A2.3** `--dry-run-preflight` 标志审查注入质量
 
 #### A3 — TTL 维护自动化
 - [x] **A3.1** `make memory-maintain-apply` 正确 prune count < 3 失败模式 + 90 天前成功模式
-- [ ] **A3.2** `git_collect.py --dry-run` 展示待清理 pattern
+- [x] **A3.2** `git_collect.py --dry-run` 展示待清理 pattern
 - [x] **A3.3** GHA weekly maintain（dry-run 不 commit）
 
 ### Phase B — 从"事后检查"到"事前预判"

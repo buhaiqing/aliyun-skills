@@ -288,9 +288,11 @@ def preflight_retrieve(
     )
 
     slots = {
-        "known_traps": format_known_traps(traps, max_chars=traps_max_chars),
+        "known_traps": format_known_traps(
+            traps, max_chars=traps_max_chars, item_max_chars=200
+        ),
         "success_patterns": format_success_patterns(
-            successes, max_chars=success_max_chars
+            successes, max_chars=success_max_chars, item_max_chars=200
         ),
         "strategy_hints": format_strategy_hints(
             strategy, max_chars=strategy_max_chars,

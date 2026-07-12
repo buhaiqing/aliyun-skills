@@ -1071,5 +1071,167 @@ class RunnerIntegrationTests(unittest.TestCase):
             self.assertEqual(rc, 0)
 
 
+class FormatPerItemTruncationTests(unittest.TestCase):
+    """A2.2 — per-item truncation to item_max_chars (default 200) before joining."""
+
+    def test_known_traps_truncates_single_long_row(self) -> None:
+        from gcl_reflexion import format_known_traps
+
+        # Combine multiple fields whose per-field slices still exceed 200 chars
+        # after concatenation — guarantees the row triggers item-level truncation.
+        long_error = "E_" + ("x" * 200)
+        long_cmd = "aliyun ecs " + ("a" * 200)
+        long_fix = ("f" * 200)
+        patterns = [
+            {
+                "category": "cli_parameter",
+                "error": long_error,
+                "command": long_cmd,
+                "fix": long_fix,
+                "root_cause": "RC",
+                "count": 5,
+            },
+        ]
+        text = format_known_traps(patterns)
+        rows = [ln for ln in text.splitlines() if ln.startswith("- ")]
+        self.assertEqual(len(rows), 1)
+        self.assertLessEqual(len(rows[0]), 200)
+        self.assertTrue(rows[0].endswith("..."))
+
+    def test_known_traps_truncates_each_row_independently(self) -> None:
+        from gcl_reflexion import format_known_traps
+
+        patterns = [
+            {
+                "category": "cli_parameter",
+                "error": "E1",
+                "fix": "x" * 500,
+                "root_cause": "RC",
+                "count": 5,
+            },
+            {
+                "category": "runtime",
+                "error": "E2",
+                "fix": "y" * 500,
+                "root_cause": "RC",
+                "count": 7,
+            },
+            {
+                "category": "skill_generation",
+                "error": "E3",
+                "fix": "z" * 500,
+                "root_cause": "RC",
+                "count": 9,
+            },
+        ]
+        text = format_known_traps(patterns)
+        rows = [ln for ln in text.splitlines() if ln.startswith("- ")]
+        self.assertEqual(len(rows), 3)
+        for row in rows:
+            self.assertLessEqual(len(row), 200, f"row exceeds 200 chars: {row[:60]}...")
+
+    def test_success_patterns_truncates_single_long_row(self) -> None:
+        from gcl_reflexion import format_success_patterns
+
+        long_hint = "y" * 400
+        patterns = [
+            {
+                "capture_reason": "max_iter_pass",
+                "count": 4,
+                "hint": long_hint,
+            },
+        ]
+        text = format_success_patterns(patterns)
+        rows = [ln for ln in text.splitlines() if ln.startswith("- ")]
+        self.assertEqual(len(rows), 1)
+        self.assertLessEqual(len(rows[0]), 200)
+
+    def test_success_patterns_truncates_each_row_independently(self) -> None:
+        from gcl_reflexion import format_success_patterns
+
+        patterns = [
+            {"capture_reason": "a", "count": 1, "hint": "x" * 400},
+            {"capture_reason": "b", "count": 2, "hint": "y" * 400},
+            {"capture_reason": "c", "count": 3, "hint": "z" * 400},
+        ]
+        text = format_success_patterns(patterns)
+        rows = [ln for ln in text.splitlines() if ln.startswith("- ")]
+        self.assertEqual(len(rows), 3)
+        for row in rows:
+            self.assertLessEqual(len(row), 200)
+
+    def test_preflight_retrieve_clamps_per_item(self) -> None:
+        """preflight_retrieve() must pass item_max_chars=200 through to formatters."""
+        from memory_preflight import preflight_retrieve
+
+        # Build a temp reflexion root with one overflowing trap and one
+        # overflowing success pattern.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "reflexion.json").write_text(
+                json.dumps(
+                    {
+                        "cli_parameter": [
+                            {
+                                "skill": "alicloud-ecs-ops",
+                                "category": "cli_parameter",
+                                "error": "E_LONG",
+                                "fix": "x" * 500,
+                                "root_cause": "RC",
+                                "count": 5,
+                                "last_seen": "2026-07-01T00:00:00Z",
+                            }
+                        ],
+                        "skill_generation": [],
+                        "cross_skill": [],
+                        "runtime": [],
+                        "token_efficiency": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "success_patterns.json").write_text(
+                json.dumps(
+                    {
+                        "patterns": [
+                            {
+                                "capture_reason": "max_iter_pass",
+                                "skill": "alicloud-ecs-ops",
+                                "count": 4,
+                                "hint": "y" * 500,
+                                "last_seen": "2026-07-01T00:00:00Z",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = preflight_retrieve(
+                skill="alicloud-ecs-ops",
+                skills_root=root.parent,
+                reflexion_root=root,
+                baseline_path=root / "missing.json",
+                traps_top_k=5,
+                success_top_k=3,
+                traps_max_chars=800,
+                success_max_chars=600,
+            )
+
+            trap_rows = [
+                ln for ln in result["slots"]["known_traps"].splitlines()
+                if ln.startswith("- ")
+            ]
+            success_rows = [
+                ln for ln in result["slots"]["success_patterns"].splitlines()
+                if ln.startswith("- ")
+            ]
+            for row in trap_rows + success_rows:
+                self.assertLessEqual(
+                    len(row), 200,
+                    f"preflight slot row exceeded 200 chars: {row[:60]}...",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

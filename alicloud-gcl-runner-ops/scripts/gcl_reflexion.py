@@ -1707,8 +1707,15 @@ def success_retrieve(
 def format_success_patterns(
     patterns: list[dict[str, Any]],
     max_chars: int = 600,
+    item_max_chars: int = 200,
 ) -> str:
-    """Format patterns as prompt-ready ``{{success_patterns}}`` text."""
+    """Format patterns as prompt-ready ``{{success_patterns}}`` text.
+
+    Each per-pattern row is truncated to ``item_max_chars`` chars (default 200)
+    BEFORE joining, so no single row can blow the per-item budget even if the
+    underlying ``hint``/``command_excerpt`` is long. The overall joined text
+    is then truncated to ``max_chars`` as a final guard.
+    """
     if not patterns:
         return "(none — no hard-won success patterns for this skill/operation)"
 
@@ -1720,6 +1727,8 @@ def format_success_patterns(
         line = f"- [{reason}] count={count}"
         if hint:
             line += f" {str(hint)[:160]}"
+        if len(line) > item_max_chars:
+            line = line[: item_max_chars - 3] + "..."
         lines.append(line)
 
     text = "\n".join(lines)
@@ -1732,8 +1741,15 @@ def format_success_patterns(
 def format_known_traps(
     patterns: list[dict[str, Any]],
     max_chars: int = 800,
+    item_max_chars: int = 200,
 ) -> str:
-    """Format patterns as prompt-ready ``{{known_traps}}`` text."""
+    """Format patterns as prompt-ready ``{{known_traps}}`` text.
+
+    Each per-pattern row is truncated to ``item_max_chars`` chars (default 200)
+    BEFORE joining, so no single row can blow the per-item budget even when
+    the underlying ``fix``/``command``/``error`` fields are long. The overall
+    joined text is then truncated to ``max_chars`` as a final guard.
+    """
     filtered: list[dict[str, Any]] = []
     for p in patterns:
         count = p.get("count", 1)
@@ -1773,6 +1789,8 @@ def format_known_traps(
             line += f" cmd={str(cmd)[:60]}"
         if fix:
             line += f" fix={str(fix)[:100]}"
+        if len(line) > item_max_chars:
+            line = line[: item_max_chars - 3] + "..."
         lines.append(line)
 
     text = "\n".join(lines)
