@@ -32,7 +32,7 @@ P = [
         "acs_ecs_dashboard",
         "InstanceId",
         "Instances.Instance",
-        {"CPUUtilization": {W: 70, C: 85}, "memory_usage": {W: 80, C: 90}, "DiskUsage": {W: 75, C: 90}},
+        {"CPUUtilization": {W: 70, C: 85}, "memory_usedutilization": {W: 80, C: 90}, "DiskUsage": {W: 75, C: 90}},
     ),
     ("compute", "ACK", "cs", "DescribeClustersV1", RG_YES, TAG_YES, "", "cluster_id", "clusters", {}),
     (
@@ -102,7 +102,7 @@ P = [
         "DescribeInstances",
         RG_YES,
         TAG_YES,
-        "acs_elasticsearch_dashboard",
+        "acs_elasticsearch",
         "instanceId",
         "Instances",
         {"NodeCPUUtilization": {W: 70, C: 85}, "NodeDiskUtilization": {W: 75, C: 90}},
@@ -390,7 +390,7 @@ def _preflight_check(selected, region: str, h6: str, end: str) -> dict:
     unavailable = [k for k, v in probes.items()
                    if v["result"] in ("UNAVAILABLE", "DEGRADED")]
     confidence = "DEGRADED" if unavailable else "FULL"
-    confidence_reason = "; ".join(f"{k}={v['result']}" for k in unavailable) if unavailable else "所有探针 PASS"
+    confidence_reason = "; ".join(f"{k}={probes[k]['result']}" for k in unavailable) if unavailable else "所有探针 PASS"
 
     result = {
         "phase": "0.5",
@@ -1099,9 +1099,9 @@ def _main_locked():
         sys.exit(0)
     # Phase 0.5: 数据可用性预检
     now = datetime.now(UTC)
-    end_ts = normalize_time_to_bucket(now.replace(tzinfo=None), 5)
+    end_ts = normalize_time_to_bucket(now.replace(tzinfo=None), 5)  # already formatted string
     h6_ts = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    preflight_data = _preflight_check(selected, region, h6_ts, end_ts.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    preflight_data = _preflight_check(selected, region, h6_ts, end_ts)
     metrics, anomalies, baseline_data, ack_data = collect_and_score(selected, region)
     md, js, rpt = report(selected, metrics, anomalies, args, ack_data, baseline_data, preflight_data)
     # Phase 4: 拓扑渲染（非阻塞）

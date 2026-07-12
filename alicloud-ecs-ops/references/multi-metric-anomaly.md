@@ -17,7 +17,7 @@ START_TIME="$(date -u -d '10 minutes ago' +%Y-%m-%dT%H:%MZ 2>/dev/null || date -
 END_TIME="$(date -u +%Y-%m-%dT%H:%MZ)"
 
 aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard --MetricName CPUUtilization --Dimensions '[{"instanceId":"'$INSTANCE_ID'"}]' --StartTime "$START_TIME" --EndTime "$END_TIME" --Period 60
-aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard --MetricName MemoryUsage --Dimensions '[{"instanceId":"'$INSTANCE_ID'"}]' --StartTime "$START_TIME" --EndTime "$END_TIME" --Period 60
+aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard --MetricName memory_usedutilization --Dimensions '[{"instanceId":"'$INSTANCE_ID'"}]' --StartTime "$START_TIME" --EndTime "$END_TIME" --Period 60
 aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard --MetricName DiskUsage --Dimensions '[{"instanceId":"'$INSTANCE_ID'"}]' --StartTime "$START_TIME" --EndTime "$END_TIME" --Period 60
 ```
 

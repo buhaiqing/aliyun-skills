@@ -185,7 +185,7 @@ visualization.
 | Alarm Namespace | Alarm Metric | Primary Diagnosis Skill | Secondary Diagnosis Skill | DAS Delegation |
 |----------------|--------------|------------------------|--------------------------|----------------|
 | `acs_ecs_dashboard` | CPUUtilization | `alicloud-ecs-ops` | `alicloud-vpc-ops` (network) | Optional |
-| `acs_ecs_dashboard` | MemoryUsage | `alicloud-ecs-ops` | — | Optional |
+| `acs_ecs_dashboard` | memory_usedutilization | `alicloud-ecs-ops` | — | Optional |
 | `acs_ecs_dashboard` | DiskUsage | `alicloud-ecs-ops` | — | Optional |
 | `acs_ecs_dashboard` | LoadAverage | `alicloud-ecs-ops` | — | Optional |
 | `acs_ecs_dashboard` | InternetInRate / InternetOutRate | `alicloud-ecs-ops` | `alicloud-vpc-ops` | Optional |

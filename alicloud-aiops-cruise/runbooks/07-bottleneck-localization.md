@@ -269,7 +269,7 @@ for INST_ID in $ECS_IDS; do
   # 内存使用率
   MEM_PEAK=$(aliyun cms DescribeMetricList \
     --Namespace acs_ecs_dashboard \
-    --MetricName memory_usage \
+    --MetricName memory_usedutilization \
     --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
     --Period 60 \
     --StartTime "$WINDOW_START" --EndTime "$WINDOW_END" \

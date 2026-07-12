@@ -13,7 +13,7 @@
 | **触发指标** | CPUUtilization |
 | **触发阈值** | >= 95% |
 | **典型时间** | 业务高峰期、定时任务执行时段 |
-| **关联指标** | LoadAverage 同步升高，MemoryUsage 可能正常或略高 |
+| **关联指标** | LoadAverage 同步升高，memory_usedutilization 可能正常或略高 |
 | **根因** | 1. 应用突发流量 2. 定时任务 3. 恶意请求/攻击 |
 | **诊断步骤** | 1. 检查网络流量是否同步增加 2. 通过 ECS Cloud Assistant 查看 top 进程 3. 检查安全组是否有异常来源 IP |
 | **修复方案** | 1. 临时升配 2. 增加 SLB 后端扩容 3. 优化慢查询或定时任务调度 |
@@ -36,14 +36,14 @@
 
 | 属性 | 内容 |
 |------|------|
-| **触发指标** | MemoryUsage |
+| **触发指标** | memory_usedutilization |
 | **触发阈值** | >= 90% |
-| **典型特征** | MemoryUsage 持续单调上升，重启后恢复正常 |
+| **典型特征** | memory_usedutilization 持续单调上升，重启后恢复正常 |
 | **关联指标** | CPUUtilization 可能正常或略高 |
 | **根因** | 1. 应用内存泄漏 2. 缓存未设置过期时间 3. 大对象未释放 |
-| **诊断步骤** | 1. 检查 MemoryUsage 趋势（是否单调上升）2. 通过 Cloud Assistant 查看内存占用 top 进程 3. 检查应用日志是否有 OOM |
+| **诊断步骤** | 1. 检查 memory_usedutilization 趋势（是否单调上升）2. 通过 Cloud Assistant 查看内存占用 top 进程 3. 检查应用日志是否有 OOM |
 | **修复方案** | 1. 重启应用（临时）2. 修复内存泄漏代码 3. 增加内存或优化缓存策略 |
-| **预防措施** | 1. 配置 MemoryUsage 趋势告警 2. 配置 OOM 自动重启 3. 代码审查内存管理 |
+| **预防措施** | 1. 配置 memory_usedutilization 趋势告警 2. 配置 OOM 自动重启 3. 代码审查内存管理 |
 
 ---
 

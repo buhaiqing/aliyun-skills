@@ -216,7 +216,7 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
 | 指标 | Namespace | 推荐方法 | 基线窗口 | 备注 |
 |---|---|---|---|---|
 | CPUUtilization | acs_ecs_dashboard | Z-Score / STL | 7d / 30d | 推荐 STL 分桶，CPU 有日周期 |
-| memory_usage | acs_ecs_dashboard | Z-Score | 7d | 需安装 CloudMonitor Agent |
+| memory_usedutilization | acs_ecs_dashboard | Z-Score | 7d | 需安装 CloudMonitor Agent |
 | DiskReadIOPS | acs_ecs_dashboard | 分位数(P95/P99) | 7d | 突刺特征，不适用 STL |
 | DiskWriteIOPS | acs_ecs_dashboard | 分位数(P95/P99) | 7d | 突刺特征 |
 | InternetInRate | acs_ecs_dashboard | STL 分解 | 30d | 带宽有强烈日周期 |

@@ -85,7 +85,7 @@ This document evaluates the ECS skill's operations against Alibaba Cloud's
 | Metric | Namespace | Optimization Action |
 |--------|-----------|---------------------|
 | CPUUtilization | acs_alicloud_ecs | Threshold |
-| MemoryUsage | acs_alicloud_ecs | Threshold |
+| memory_usedutilization | acs_alicloud_ecs | Threshold |
 | DiskUsage | acs_alicloud_ecs | Threshold |
 | NetworkIn/Out | acs_alicloud_ecs | Threshold |
 

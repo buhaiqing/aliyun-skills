@@ -70,7 +70,7 @@ ANOMALY_METHOD_PROPHET = "prophet"  # Sprint 11.5: Prophet 节假日感知预测
 METRIC_ANOMALY_METHOD = {
     # ECS
     "acs_ecs_dashboard.CPUUtilization": ANOMALY_METHOD_PROPHET,  # Sprint 11.5: 节假日 + 趋势 + 周期
-    "acs_ecs_dashboard.memory_usage": ANOMALY_METHOD_ZSCORE,
+    "acs_ecs_dashboard.memory_usedutilization": ANOMALY_METHOD_ZSCORE,
     "acs_ecs_dashboard.DiskReadIOPS": ANOMALY_METHOD_PERCENTILE,
     "acs_ecs_dashboard.DiskWriteIOPS": ANOMALY_METHOD_PERCENTILE,
     "acs_ecs_dashboard.DiskUsage": ANOMALY_METHOD_DUAL,
@@ -1706,7 +1706,7 @@ RULE_ID_MAP = {
     ("RDS", "ConnectionUsage"): "RDS-02",
     ("RDS", "SlowQueryCount"): "RDS-03",
     ("ECS", "CPUUtilization"): "ECS-01",
-    ("ECS", "memory_usage"): "ECS-02",
+    ("ECS", "memory_usedutilization"): "ECS-02",
     ("ECS", "DiskUsage"): "ECS-03",
     ("SLB", "ActiveConnection"): "SLB-ECS-03",
     ("Redis", "memory_usage"): "REDIS-01",

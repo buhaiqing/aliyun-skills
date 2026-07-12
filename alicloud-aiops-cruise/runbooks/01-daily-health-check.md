@@ -321,7 +321,7 @@ for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId'); do
   # 内存
   MEM_CUR=$(aliyun cms DescribeMetricList \
     --Namespace acs_ecs_dashboard \
-    --MetricName memory_usage \
+    --MetricName memory_usedutilization \
     --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
     --Period 300 \
     --StartTime "$START_TIME" --EndTime "$END_TIME" \

@@ -56,7 +56,7 @@ echo -e "\n=== Check Complete ==="
 | Metric | Namespace | Description | Typical Threshold |
 |--------|-----------|-------------|-------------------|
 | CPUUtilization | acs_ecs_dashboard | CPU usage % | > 80% warning, > 95% critical |
-| MemoryUsage | acs_ecs_dashboard | Memory usage % | > 80% warning |
+| memory_usedutilization | acs_ecs_dashboard | Memory usage % | > 80% warning |
 | DiskUsage | acs_ecs_dashboard | Disk usage % | > 80% warning, > 90% critical |
 | InternetInRate | acs_ecs_dashboard | Network in bps | Baseline + 3σ |
 | InternetOutRate | acs_ecs_dashboard | Network out bps | Baseline + 3σ |

@@ -225,7 +225,7 @@ aliyun cms DescribeMetricList \
   | jq '.Datapoints | fromjson | [{"timestamp": .Timestamp, "average": .Average, "maximum": .Maximum}]'
 
 # CloudMonitor 常用 Namespace 速查
-# ECS:      acs_ecs_dashboard       (CPUUtilization, memory_usage(需agent), DiskReadIOPS, DiskWriteIOPS, InternetInRate, InternetOutRate, TcpConnection)
+# ECS:      acs_ecs_dashboard       (CPUUtilization, memory_usedutilization(需agent), DiskReadIOPS, DiskWriteIOPS, InternetInRate, InternetOutRate, TcpConnection)
 # SLB:      acs_slb_dashboard       (UnhealthyServerCount, ActiveConnection, NewConnection)
 # RDS:      acs_rds_dashboard       (CpuUsage, ConnectionUsage, DiskUsage, IOPSUsage, SlowQueryCount)
 # Redis:    acs_redis_dashboard     (memory_usage, UsedConnection, IntranetInRatio, CpuUsage)

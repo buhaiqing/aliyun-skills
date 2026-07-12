@@ -85,7 +85,7 @@ Step 5: 验证
 
 | 属性 | 内容 |
 |---|---|
-| **现象** | CPU > 70% AND MemoryUsage(需agent) > 80% |
+| **现象** | CPU > 70% AND memory_usedutilization(需agent) > 80% |
 | **推理** | ECS 资源双重瓶颈，需定位消耗资源的进程 |
 | **级别** | Warning（>70%）/ Critical（>85%） |
 
@@ -322,7 +322,7 @@ Step 4: 验证
 
 | 属性 | 内容 |
 |---|---|
-| **现象** | SwapUsed > 0 AND kswapd0 进程 IO 高 AND MemoryUsage > 90% |
+| **现象** | SwapUsed > 0 AND kswapd0 进程 IO 高 AND memory_usedutilization > 90% |
 | **推理** | 内存不足触发 swap 换入换出，IO wait 飙升 |
 | **级别** | Warning（SwapUsed > 100MB）/ Critical（SwapUsed > 500MB） |
 | **适用场景** | 普通应用服务器（Java/Node.js 内存密集型应用） |

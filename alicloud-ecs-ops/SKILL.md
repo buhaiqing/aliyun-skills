@@ -1027,7 +1027,7 @@ aliyun ecs DescribeSecurityGroupAttribute \
 
 | Trigger | Purpose | CLI | Key Thresholds |
 |---------|---------|-----|----------------|
-| "异常检测", "告警分析" | 跨指标复合异常（CPU+Memory, Disk+IOPS） | `aliyun cms DescribeMetricList` — `CPUUtilization`, `MemoryUsage`, `DiskUsage` | CPU>90% AND Mem>85% 5min → Critical |
+| "异常检测", "告警分析" | 跨指标复合异常（CPU+Memory, Disk+IOPS） | `aliyun cms DescribeMetricList` — `CPUUtilization`, `memory_usedutilization`, `DiskUsage` | CPU>90% AND Mem>85% 5min → Critical |
 
 **Auto-Actions:** CPU-Memory 双高 → Auto-scale; 磁盘-IO 瓶颈 → 扩容 SSD.  
 **Full runbook:** [多指标异常巡检](references/multi-metric-anomaly.md)

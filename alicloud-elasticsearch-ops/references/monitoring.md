@@ -27,32 +27,31 @@ Namespace: `acs_elasticsearch`
 
 | Metric Name | Unit | Description | Threshold Recommendation |
 |-------------|------|-------------|--------------------------|
-| `InstanceCpuUtilization` | % | CPU usage | > 80% → alert; > 90% → critical |
-| `InstanceMemoryUtilization` | % | Memory usage | > 85% → alert; > 95% → critical |
-| `InstanceDiskUtilization` | % | Disk usage | > 80% → alert; > 95% → urgent expand |
-| `InstanceStatus` | - | Instance health state | != Normal → alert |
-| `ClusterHealth` | - | Elasticsearch cluster status | != green → alert |
-| `NodeCount` | - | Active node count | < expected → alert |
-| `SearchQps` | count/s | Query rate | Monitor trend |
-| `IndexingQps` | count/s | Write rate | Monitor trend |
-| `SearchLatency` | ms | Query latency | > 100ms → warn; > 500ms → alert |
-| `IndexingLatency` | ms | Write latency | > 50ms → warn; > 200ms → alert |
+| `NodeCPUUtilization` | % | CPU usage | > 80% → alert; > 90% → critical |
+| `NodeStatsSystemMemoryUtilization` | % | System memory usage | > 85% → alert; > 95% → critical |
+| `NodeDiskUtilization` | % | Disk usage | > 80% → alert; > 95% → urgent expand |
+| `ClusterStatus` | - | Cluster health (0=normal) | != 0 → alert |
+| `ClusterNodeCount` | - | Active node count | < expected → alert |
+| `ClusterQueryQPS` | count/s | Query rate | Monitor trend |
+| `ClusterIndexQPS` | count/s | Write rate | Monitor trend |
+| `ClusterSearchLatency` | ms | Query latency | > 100ms → warn; > 500ms → alert |
+| `ClusterIndexingLatency` | ms | Write latency | > 50ms → warn; > 200ms → alert |
 
 ### JVM Metrics
 
 | Metric Name | Unit | Description | Threshold |
 |-------------|------|-------------|-----------|
-| `JVMHeapMemoryUsedPercent` | % | JVM heap usage | > 80% → warn; > 95% → critical |
-| `JVMGcCollectionCount` | count | GC frequency | High frequency → warn |
-| `JVMGcCollectionTime` | ms | GC pause time | > 500ms → warn |
+| `NodeHeapMemoryUtilization` | % | JVM heap usage | > 80% → warn; > 95% → critical |
+| `NodeStatsFullGcCollectionCount` | count | GC frequency (total) | High frequency → warn |
+| `JVMGCOldCollectionDuration` | ms | Old GC pause time | > 500ms → warn |
 
 ### Storage Metrics
 
 | Metric Name | Unit | Description | Threshold |
 |-------------|------|-------------|-----------|
-| `DiskUsedPercent` | % | Disk usage percentage | > 80% → alert |
-| `DiskFreeSpace` | GB | Available disk space | < 10GB → alert |
-| `ShardCount` | - | Total shards | Monitor for imbalance |
+| `NodeDiskUtilization` | % | Disk usage percentage | > 80% → alert |
+| `NodeFreeStorageSpace` | MiB | Available disk space | < 10240 MiB → alert |
+| `ClusterShardCount` | - | Total shards | Monitor for imbalance |
 
 ---
 
@@ -119,16 +118,15 @@ Key metrics:
 
 | Alert Name | Metric | Condition | Severity | Action |
 |------------|--------|-----------|----------|--------|
-| `ES-Instance-CPU-High` | InstanceCpuUtilization | > 80% for 5min | Warning | Check query load |
-| `ES-Instance-CPU-Critical` | InstanceCpuUtilization | > 90% for 3min | Critical | Scale up or optimize |
-| `ES-Memory-High` | InstanceMemoryUtilization | > 85% for 5min | Warning | Check cache config |
-| `ES-Disk-High` | InstanceDiskUtilization | > 80% for 10min | Warning | Clean indices or expand |
-| `ES-Disk-Critical` | InstanceDiskUtilization | > 95% for 5min | Critical | Immediate expand |
-| `ES-Cluster-Yellow` | ClusterHealth | = yellow | Warning | Check unassigned shards |
-| `ES-Cluster-Red` | ClusterHealth | = red | Critical | Node failure investigation |
-| `ES-JVM-GC-High` | JVMHeapMemoryUsedPercent | > 85% for 5min | Warning | Tune JVM |
-| `ES-Node-Down` | NodeCount | < expected | Critical | Node failure check |
-| `ES-Slow-Query` | SearchLatency | > 500ms for 5min | Warning | Analyze slow queries |
+| `ES-Node-CPU-High` | NodeCPUUtilization | > 80% for 5min | Warning | Check query load |
+| `ES-Node-CPU-Critical` | NodeCPUUtilization | > 90% for 3min | Critical | Scale up or optimize |
+| `ES-Memory-High` | NodeStatsSystemMemoryUtilization | > 85% for 5min | Warning | Check cache config |
+| `ES-Disk-High` | NodeDiskUtilization | > 80% for 10min | Warning | Clean indices or expand |
+| `ES-Disk-Critical` | NodeDiskUtilization | > 95% for 5min | Critical | Immediate expand |
+| `ES-Cluster-Unhealthy` | ClusterStatus | != 0 | Warning | Check cluster health |
+| `ES-JVM-GC-High` | NodeHeapMemoryUtilization | > 85% for 5min | Warning | Tune JVM |
+| `ES-Node-Down` | ClusterNodeCount | < expected | Critical | Node failure check |
+| `ES-Slow-Query` | ClusterSearchLatency | > 500ms for 5min | Warning | Analyze slow queries |
 
 ### Create Alert Rule via CMS API
 
@@ -139,7 +137,7 @@ import cms "github.com/alibabacloud-go/cms-20190101/v8/client"
 request := &cms.CreateAlertRuleRequest{
     RuleName: tea.String("ES-Instance-CPU-High"),
     Namespace: tea.String("acs_elasticsearch"),
-    MetricName: tea.String("InstanceCpuUtilization"),
+    MetricName: tea.String("NodeCPUUtilization"),
     Dimensions: tea.String("{\"instanceId\":\"es-cn-xxx\"}"),
     Evaluations: tea.String("[{\"threshold\":\"80\",\"comparisonOperator\":\"GreaterThan\",\"times\":\"3\"}]"),
     AlertActionConfig: tea.String("{\"webhook\":\"https://alert-webhook.url\"}"),
@@ -360,24 +358,24 @@ type MetricsSnapshot struct {
 # Grafana/PromQL queries for anomaly detection
 
 CPU-JVM-Heap Correlation:
-  - acs_elasticsearch:InstanceCpuUtilization{instanceId="*"} > 80
-  - acs_elasticsearch:JVMHeapMemoryUsedPercent{instanceId="*"} > 85
-  - acs_elasticsearch:SearchLatency{instanceId="*"} > 200
+  - acs_elasticsearch:NodeCPUUtilization{instanceId="*"} > 80
+  - acs_elasticsearch:NodeHeapMemoryUtilization{instanceId="*"} > 85
+  - acs_elasticsearch:ClusterSearchLatency{instanceId="*"} > 200
 
 Disk-Indexing Correlation:
-  - acs_elasticsearch:InstanceDiskUtilization{instanceId="*"} > 80
-  - acs_elasticsearch:IndexingLatency{instanceId="*"} > 100
+  - acs_elasticsearch:NodeDiskUtilization{instanceId="*"} > 80
+  - acs_elasticsearch:ClusterIndexingLatency{instanceId="*"} > 100
   - Custom metric: MergeOpsCount > threshold
 
 Cluster-Shard Anomaly:
-  - acs_elasticsearch:ClusterHealth{instanceId="*"} != "green"
-  - acs_elasticsearch:UnassignedShards{instanceId="*"} > 0
-  - acs_elasticsearch:NodeCount{instanceId="*"} < expected
+  - acs_elasticsearch:ClusterStatus{instanceId="*"} != 0
+  - acs_elasticsearch:ClusterShardCount{instanceId="*"} > expected
+  - acs_elasticsearch:ClusterNodeCount{instanceId="*"} < expected
 
 JVM-GC-Latency Correlation:
-  - acs_elasticsearch:JVMGcCollectionCount{instanceId="*",gcType="Full"} > 10
-  - acs_elasticsearch:JVMGcCollectionTime{instanceId="*"} > 500
-  - acs_elasticsearch:SearchLatency{instanceId="*",percentile="P95"} > 1000
+  - acs_elasticsearch:NodeStatsFullGcCollectionCount{instanceId="*"} > 10
+  - acs_elasticsearch:JVMGCOldCollectionDuration{instanceId="*"} > 500
+  - acs_elasticsearch:ClusterSearchLatency{instanceId="*"} > 1000
 ```
 
 ---
@@ -399,9 +397,9 @@ JVM-GC-Latency Correlation:
   "rule_name": "Multi-Metric-Anomaly-P1-CPU-JVM-Heap",
   "namespace": "acs_elasticsearch",
   "conditions": [
-    {"metric": "InstanceCpuUtilization", "operator": "GreaterThan", "threshold": 80, "period": 5},
-    {"metric": "JVMHeapMemoryUsedPercent", "operator": "GreaterThan", "threshold": 85, "period": 5},
-    {"metric": "SearchLatency", "operator": "GreaterThan", "threshold": 200, "period": 5}
+    {"metric": "NodeCPUUtilization", "operator": "GreaterThan", "threshold": 80, "period": 5},
+    {"metric": "NodeHeapMemoryUtilization", "operator": "GreaterThan", "threshold": 85, "period": 5},
+    {"metric": "ClusterSearchLatency", "operator": "GreaterThan", "threshold": 200, "period": 5}
   ],
   "correlation_type": "AND",
   "severity": "Warning",

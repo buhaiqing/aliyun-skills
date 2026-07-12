@@ -667,7 +667,7 @@ aliyun ecs DescribeInstances \
 
 #### Step 3: Multi-Metric Correlation
 ```bash
-for metric in MemoryUsage DiskUsage LoadAverage InternetInRate InternetOutRate; do
+for metric in memory_usedutilization DiskUsage LoadAverage InternetInRate InternetOutRate; do
   aliyun cms DescribeMetricList \
     --RegionId {{user.region}} \
     --Namespace acs_ecs_dashboard \

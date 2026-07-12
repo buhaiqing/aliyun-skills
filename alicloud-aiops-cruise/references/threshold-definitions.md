@@ -160,7 +160,7 @@
 | 命名空间 | 指标 | 方法 | 说明 |
 |----------|------|------|------|
 | acs_ecs_dashboard | CPUUtilization | Z-Score | CPU 呈日周期，推荐 STL 分桶 |
-| acs_ecs_dashboard | memory_usage | Z-Score | 内存使用平稳 |
+| acs_ecs_dashboard | memory_usedutilization | Z-Score | 内存使用平稳 |
 | acs_ecs_dashboard | DiskReadIOPS | Percentile | IOPS 突刺特征 |
 | acs_ecs_dashboard | DiskWriteIOPS | Percentile | IOPS 突刺特征 |
 | acs_ecs_dashboard | InternetInRate | Percentile | 带宽突刺特征 |

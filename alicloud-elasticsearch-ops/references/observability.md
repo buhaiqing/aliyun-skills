@@ -73,18 +73,18 @@
 func setupMetricsCollection(instanceId string) {
     // CMS namespace: acs_elasticsearch
     metrics := []string{
-        "InstanceCpuUtilization",
-        "InstanceMemoryUtilization",
-        "InstanceDiskUtilization",
-        "JVMHeapMemoryUsedPercent",
-        "JVMGcCollectionCount",
-        "JVMGcCollectionTime",
-        "SearchLatency",
-        "IndexingLatency",
-        "SearchQps",
-        "IndexingQps",
-        "ClusterHealth",
-        "NodeCount",
+        "NodeCPUUtilization",
+        "NodeStatsSystemMemoryUtilization",
+        "NodeDiskUtilization",
+        "NodeHeapMemoryUtilization",
+        "JVMGCOldCollectionCount",
+        "JVMGCOldCollectionDuration",
+        "ClusterSearchLatency",
+        "ClusterIndexingLatency",
+        "ClusterQueryQPS",
+        "ClusterIndexQPS",
+        "ClusterStatus",
+        "ClusterNodeCount",
     }
     
     for _, metric := range metrics {
@@ -261,7 +261,7 @@ Panel Group: Node Distribution
         "type": "graph",
         "targets": [
           {
-            "expr": "acs_elasticsearch_InstanceCpuUtilization{instanceId=\"$instance_id\"}",
+            "expr": "acs_elasticsearch_NodeCPUUtilization{instanceId=\"$instance_id\"}",
             "legendFormat": "CPU %"
           }
         ],
@@ -275,7 +275,7 @@ Panel Group: Node Distribution
         "type": "graph",
         "targets": [
           {
-            "expr": "acs_elasticsearch_JVMHeapMemoryUsedPercent{instanceId=\"$instance_id\"}",
+            "expr": "acs_elasticsearch_NodeHeapMemoryUtilization{instanceId=\"$instance_id\"}",
             "legendFormat": "Heap %"
           }
         ],
@@ -337,27 +337,27 @@ Cluster Health:
 
 Resource Alerts:
   - ES-CPU-High:
-      condition: InstanceCpuUtilization > 80% for 5 min
+      condition: NodeCPUUtilization > 80% for 5 min
       severity: Warning
       actions: [Notify, OptimizeQueries]
       
   - ES-CPU-Critical:
-      condition: InstanceCpuUtilization > 90% for 3 min
+      condition: NodeCPUUtilization > 90% for 3 min
       severity: Critical
       actions: [Notify, ScaleUp]
       
   - ES-Disk-High:
-      condition: InstanceDiskUtilization > 80% for 10 min
+      condition: NodeDiskUtilization > 80% for 10 min
       severity: Warning
       actions: [Notify, CleanupOrExpand]
       
   - ES-Disk-Critical:
-      condition: InstanceDiskUtilization > 95% for 5 min
+      condition: NodeDiskUtilization > 95% for 5 min
       severity: Critical
       actions: [Notify, ImmediateExpand]
       
   - ES-JVM-High:
-      condition: JVMHeapMemoryUsedPercent > 85% for 5 min
+      condition: NodeHeapMemoryUtilization > 85% for 5 min
       severity: Warning
       actions: [Notify, TuneJVM]
 
@@ -368,7 +368,7 @@ Performance Alerts:
       actions: [Notify, AnalyzeSlowQueries]
       
   - ES-Qps-Anomaly:
-      condition: SearchQps change > 50% from baseline
+      condition: ClusterQueryQPS change > 50% from baseline
       severity: Warning
       actions: [Notify, AnalyzeWorkload]
 

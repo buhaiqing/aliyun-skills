@@ -393,7 +393,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         """
         fake, counter = _make_dim_aware_fake_run(latency_s=0)
         rids = [f"i-{i}" for i in range(100)]
-        metrics_def = ["CPUUtilization", "memory_usage", "DiskUsage"]  # 3 个指标
+        metrics_def = ["CPUUtilization", "memory_usedutilization", "DiskUsage"]  # 3 个指标
         periods = [("300", "h6", "end"), ("3600", "d7", "end")]  # 2 个 period
 
         with patch.object(_shared.subprocess, "run", side_effect=fake):

@@ -12,12 +12,12 @@ Execute joint multi-metric inspection on a target resource to identify composite
 
 | Pattern | Metrics Involved | Detection Logic | Severity |
 |---------|-----------------|-----------------|----------|
-| CPU-Memory Pressure | CPUUtilization, MemoryUsage | Both >= 80% for >= 10min | Critical |
+| CPU-Memory Pressure | CPUUtilization, memory_usedutilization | Both >= 80% for >= 10min | Critical |
 | Disk-IO Bottleneck | DiskUsage, IOPSUsage | DiskUsage >= 85% AND IOPSUsage >= 90% | Critical |
 | Network Saturation | InternetInRate, InternetOutRate | Either > baseline + 3σ for >= 5min | Warning |
 | Load-CPU Mismatch | LoadAverage, CPUUtilization | LoadAverage > vCPU*2 AND CPUUtilization < 50% (indicates IO wait) | Warning |
 | Connection Exhaustion | ConnectionUsage, CpuUsage | ConnectionUsage >= 90% AND CPUUsage < 30% (sleeping connections) | Critical |
-| Memory Leak Trend | MemoryUsage | Monotonic increase over 30min with slope > 5%/10min | Warning |
+| Memory Leak Trend | memory_usedutilization | Monotonic increase over 30min with slope > 5%/10min | Warning |
 | CPU Spike | CPUUtilization | Sudden increase > 50 percentage points within 5min | Warning |
 
 ### Pre-flight Checks
@@ -45,7 +45,7 @@ DIMENSIONS="[{\"instanceId\":\"${INSTANCE_ID}\"}]"
 METRICS=()
 case "$NAMESPACE" in
   acs_ecs_dashboard)
-    METRICS=(CPUUtilization MemoryUsage DiskUsage LoadAverage InternetInRate InternetOutRate)
+    METRICS=(CPUUtilization memory_usedutilization DiskUsage LoadAverage InternetInRate InternetOutRate)
     ;;
   acs_rds_dashboard)
     METRICS=(CpuUsage MemoryUsage DiskUsage ConnectionUsage IOPSUsage)
@@ -140,7 +140,7 @@ func detectAnomalyPattern(metrics map[string][]DataPoint, vCPU int) []string {
 	var patterns []string
 
 	cpu := metrics["CPUUtilization"]
-	mem := metrics["MemoryUsage"]
+	mem := metrics["memory_usedutilization"]
 	disk := metrics["DiskUsage"]
 	iops := metrics["IOPSUsage"]
 	load := metrics["LoadAverage"]
@@ -228,7 +228,7 @@ func main() {
 	dimensions := fmt.Sprintf(`{"instanceId":"%s"}`, instanceID)
 
 	metrics := map[string][]DataPoint{}
-	metricNames := []string{"CPUUtilization", "MemoryUsage", "DiskUsage", "LoadAverage", "IOPSUsage", "ConnectionUsage", "InternetInRate", "InternetOutRate"}
+	metricNames := []string{"CPUUtilization", "memory_usedutilization", "DiskUsage", "LoadAverage", "IOPSUsage", "ConnectionUsage", "InternetInRate", "InternetOutRate"}
 
 	for _, name := range metricNames {
 		dp, err := queryMetric(client, namespace, name, dimensions, startTime, endTime)

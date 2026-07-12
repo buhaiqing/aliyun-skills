@@ -319,7 +319,7 @@ pattern:
   name: memory_leak
   detection:
     namespace: acs_ecs_dashboard
-    metric_name: MemoryUsage
+    metric_name: memory_usedutilization
     threshold: 90
     trend: increasing
     

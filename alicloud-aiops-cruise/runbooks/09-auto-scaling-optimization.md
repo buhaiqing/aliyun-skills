@@ -135,7 +135,7 @@ for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId // empty'); do
   # 内存 7 天平均
   MEM_7D_AVG=$(aliyun cms DescribeMetricList \
     --Namespace acs_ecs_dashboard \
-    --MetricName memory_usage \
+    --MetricName memory_usedutilization \
     --Dimensions "[{\"instanceId\":\"$INST_ID\"}]" \
     --Period 3600 \
     --StartTime "$D7_START" --EndTime "$END_TIME" \
