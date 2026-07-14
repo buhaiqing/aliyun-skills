@@ -1,0 +1,56 @@
+# DMS Enterprise Example Configuration
+
+x-dev-env: &dev
+  endpoint: "dms-enterprise.aliyuncs.com"
+  region: "cn-hangzhou"
+  owner_user_id: ""
+  approval_auto: false  # manual approval required
+
+x-prod-env: &prod
+  endpoint: "dms-enterprise.aliyuncs.com"
+  region: "cn-hangzhou"
+  owner_user_id: ""
+  approval_auto: false  # explicit approval required
+  high_risk_check: true
+
+workflow:
+  dev-read:
+    <<: *dev
+    database_id: "db-xxx"
+    sql_comment: "Dev read-only query"
+    permission_type: "READ"
+
+  dev-write:
+    <<: *dev
+    database_id: "db-xxx"
+    sql_comment: "Dev schema update - needs approval"
+    approval_required: true
+    high_risk_warn: true
+
+  prod-migration:
+    <<: *prod
+    database_id: "db-yyy"
+    sql_comment: "Prod migration - requires explicit approval"
+    approval_required: true
+    backup_check: true
+    max_affected_rows: 1000
+
+nl2sql:
+  dev:
+    <<: *dev
+    auto_execute: false  # show SQL first for confirmation
+    knowledge_base_enabled: true
+  prod:
+    <<: *prod
+    auto_execute: false
+    knowledge_base_enabled: true
+
+permission:
+  read_only:
+    permission_type: "READ"
+  read_write:
+    permission_type: "READWRITE"
+  ddl_only:
+    permission_type: "DDL"
+  dml_only:
+    permission_type: "DML"
