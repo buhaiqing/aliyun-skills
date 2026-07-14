@@ -24,6 +24,13 @@
   {"query": "Group cost results by check item", "should_trigger": true},
   {"query": "RefreshAdvisorCostCheck for Ecs and Rds products", "should_trigger": true},
   {"query": "Show me the latest 5 critical security advices on ECS", "should_trigger": true},
+  {"query": "帮我把账号里最严重的风险按产品排个序，先修哪个", "should_trigger": true},
+  {"query": "把所有 Critical 风险按产品汇总一下，给我一份健康分诊", "should_trigger": true},
+  {"query": "成本优化从概览到明细，给我一个可执行的降本报告", "should_trigger": true},
+  {"query": "我先改完了 RDS，帮我确认 Advisor 的建议是不是消失了", "should_trigger": true},
+  {"query": "跑一次全量巡检，等它结束再把新结果读给我", "should_trigger": true},
+  {"query": "这周账号健康比上周好了吗，做个趋势对比", "should_trigger": true},
+  {"query": "对所有托管的子账号做一次健康与成本聚合巡检", "should_trigger": true},
 
   {"query": "Show me the CPU usage of instance i-bp1xxxxxxxxxx in the last hour", "should_trigger": false},
   {"query": "Query CMS for RDS QPS metrics", "should_trigger": false},

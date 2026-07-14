@@ -1,4 +1,4 @@
-# TODO — alicloud-aiops-cruise 行动追踪清单（主索引）
+复核# TODO — alicloud-aiops-cruise 行动追踪清单（主索引）
 
 > [WARN] **强制规则**：
 > 1. 每次新增/修改功能后，必须同步更新对应的 Sprint 文件中的状态标记
@@ -116,6 +116,20 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
 ---
 
 ## Hotfix 记录
+
+### ✅ HF-2026-07-14-01 — AdvisorScan CLI 形式 + 成本数据源修复
+
+> **发现时间**: 2026-07-14 (alicloud-advisor-ops 联动审查)
+> **修复时间**: 2026-07-14
+> **优先级**: P0 (AdvisorScan 实际调用失败)
+> **关联文件**: `scripts/agents/perceive/advisor/advisorscan.sh`
+
+| 问题 | 严重度 | 描述 | 修复 |
+|------|:-----:|------|------|
+| **CLI-1** | **P0** | `aliyun advisor DescribeAdvices --Language zh --PageNumber 1` 使用 PascalCase 子命令和参数，`aliyun-cli-advisor` 插件只接受 kebab-case | 改为 `describe-advices --biz-language zh --page-number 1` |
+| **CLI-2** | **P0** | `--Product alicloud` 传入无效 product 值 | 移除；成本数据改用 `describe-cost-optimization-overview` + `describe-cost-check-results` |
+| **CLI-3** | P1 | 成本优化实际调了 `DescribeAdvisorChecks`（检查定义表），不是成本数据 | 改为 `describe-cost-optimization-overview` + `describe-cost-check-results --group-by Product` |
+| **CLI-4** | P1 | 输出未过滤 Critical/Warning，未对齐 advisor-ops JSON path | 输出加 severity breakdown，JSON 结构对齐 `$.Advices[].Severity` / `$.Overview.TotalSavings` / `$.Results[].TotalSavings` |
 
 ### ✅ HF-2026-06-21-01 — P0/P1 级代码质量问题修复 (F-001 ~ F-004)
 

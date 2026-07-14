@@ -146,6 +146,11 @@ CLI keyword hints: `DescribeAdvices`, `RefreshAdvisorCheck`,
   a batch report, not a real-time diagnosis engine
 - Task is **triggering a fix / remediation** → Advisor only reports;
   remediation is delegated to per-product ops skills
+- Task is **full-chain AIOps cruise (全链路巡航)** covering EIP→SLB→
+  ECS→RDS/Redis→NAT→SecurityGroup with topology discovery, metrics
+  correlation, and link inference → delegate to: `alicloud-aiops-cruise`
+  (AIOps Cruise has its own AdvisorScan agent that wraps this skill's
+  data into its cross-product inference pipeline)
 - User wants **console-only flows with no API** → state the limitation;
   do not invent undocumented HTTP steps
 
@@ -154,6 +159,7 @@ CLI keyword hints: `DescribeAdvices`, `RefreshAdvisorCheck`,
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| 全链路 AIOps 巡航巡检 | `alicloud-aiops-cruise` | 需要跨产品链路推理（EIP→SLB→ECS→RDS→NAT→安全组）、拓扑发现、监控指标关联推理时，委托 aiops-cruise；该 skill 内置 AdvisorScan Agent 消费本 skill 数据 |
 
 ## Variable Convention (Agent-Readable)
 
@@ -480,6 +486,307 @@ See [`references/cli-usage.md#refreshadvisorresource`](references/cli-usage.md).
 See [`references/cli-usage.md#refreshadvisorcostcheck`](references/cli-usage.md).
 Returns `$.TaskId`; poll with `GetInspectProgress` (30s interval, max 20 attempts).
 
+## Common Runbooks (End-to-End Scenarios)
+
+The individual operations above are single-API. The runbooks below chain
+them into **real operator workflows** (the core value of Advisor as a
+*domain colleague*). Each still follows
+**Pre-flight → Execute → Validate → Recover**; the `Execute` phase chains
+2–3 operations and passes state via `{{output.*}}` placeholders.
+
+> All `aliyun advisor ...` commands below are executed through the
+> SkillOpt wrapper per the **EXECUTION MANDATORY RULE** (§Execution Flows).
+> `RefreshAdvisor*` steps require explicit user confirmation (Safety Gates).
+
+### Runbook 1 — Account-Wide Health Triage (全账号健康分诊)
+
+**Intent:** "What's wrong with my account, and what should I fix first?"
+
+**Chain:** `describe-advices` → filter `Critical` → group by `Product` →
+rank → delegate per-product remediation.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Plugin / creds | `aliyun advisor version` + env grep | Pass | HALT |
+| Account size | `describe-advices-page --page-number 1 --page-size 1` → `$.TotalCount` | Known count | Use pagination if > 1000 |
+
+#### CLI Execution
+
+```bash
+# 1. Pull current advices (paginate for large accounts)
+aliyun advisor describe-advices-page --page-number 1 --page-size 100 \
+  | jq -r '.Advices[] | {id:.AdviceId, sev:.Severity, prod:.Product, res:.ResourceId, name:.AdviceName}'
+
+# 2. Rank: Critical first, then Warning; group by product
+aliyun advisor describe-advices \
+  | jq -r '.Advices[]
+      | select(.Severity=="Critical" or .Severity=="Warning")
+      | [.Product, .Severity, (.AdviceId|tostring), .ResourceId]
+      | @tsv' \
+  | sort | awk -F'\t' '{c[$1]++} END {for (p in c) print c[p], p}' | sort -rn
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Pulled | `$.Advices` | Array (empty = account clean) |
+| Ranked | TSV output groups by `Product` | Non-empty for non-clean accounts |
+
+#### Recover / Delegate
+
+- Confirmation not required (read-only). Throttling → backoff.
+- **Delegate**: for each product in the top group (e.g. `Ecs`, `Rds`),
+  hand the `{{output.advice_id}}` / `{{user.resource_id}}` to the matching
+  per-product skill (`alicloud-ecs-ops`, `alicloud-rds-ops`, ...) for the
+  actual fix. Advisor only reports; it never remediates.
+
+---
+
+### Runbook 2 — Cost Optimization Closed Loop (成本优化闭环)
+
+**Intent:** "Give me an actionable cost-reduction plan with savings."
+
+**Chain:** `describe-cost-optimization-overview` →
+`describe-cost-check-results --group-by Product` →
+`describe-cost-check-advices` (savings/spec) → delegate per-product resize.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Plugin / creds | `aliyun advisor version` | Pass | HALT |
+
+#### CLI Execution
+
+```bash
+# 1. Headline savings
+aliyun advisor describe-cost-optimization-overview \
+  | jq '{total_savings: .Overview.TotalSavings, items: .Overview.Items[]}'
+
+# 2. Group savings by product to find the biggest lever
+aliyun advisor describe-cost-check-results --group-by Product \
+  | jq -r '.Results[] | [.GroupKey, (.TotalSavings|tostring), (.ResourceCount|tostring)] | @tsv' \
+  | sort -t$'\t' -k2 -rn
+
+# 3. Drill into the top product for concrete spec changes
+aliyun advisor describe-cost-check-advices \
+  --product {{user.product}} --severity Critical --page-number 1 --page-size 50 \
+  | jq -r '.Advices[] | {id:.AdviceId, save:.EstimatedSavings, cur:.CurrentSpec, rec:.RecommendedSpec, res:.ResourceId}'
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Overview present | `$.Overview.TotalSavings` | Number (0 if no opportunity) |
+| Groups present | `$.Results[]` | Array, sorted by savings |
+
+#### Recover / Delegate
+
+- Empty results → inform user: no current cost-optimization opportunity.
+- **Delegate**: pass `{{output.advice_id}}` + `CurrentSpec`/`RecommendedSpec`
+  to the per-product skill for the resize (e.g. `alicloud-ecs-ops` downsize).
+
+---
+
+### Runbook 3 — Post-Remediation Verification (修复后验证闭环)
+
+**Intent:** "I fixed the resource — confirm Advisor's advice is gone."
+
+**Chain:** `refresh-advisor-resource` → `describe-advices --resource-id`
+(confirm advice cleared). `RefreshAdvisorResource` is **synchronous**
+(no `TaskId`); confirmation is implicit if the user named the resource.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Plugin / creds | `aliyun advisor version` | Pass | HALT |
+| Resource named | User gave `{{user.resource_id}}` + `{{user.product}}` | Present | Ask; `--product` required (SAF-RAR-01) |
+
+#### CLI Execution
+
+```bash
+# 1. Refresh Advisor's view of the fixed resource (side effect, synchronous)
+aliyun advisor refresh-advisor-resource \
+  --product {{user.product}} --resource-id {{user.resource_id}}
+
+# 2. Confirm the advice no longer appears
+aliyun advisor describe-advices \
+  --product {{user.product}} --resource-id {{user.resource_id}} \
+  | jq -r '.Advices[] | select(.ResourceId=="{{user.resource_id}}") | .AdviceId'
+# Expected: empty output = advice cleared
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Refresh OK | `$.RequestId` | Non-empty |
+| Advice cleared | Filtered `$.Advices[]` for resource | Empty (advice gone) |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| Advice persists | Resource still in `$.Advices[]` | Report to user: fix may be incomplete; suggest re-check via per-product skill |
+| `Forbidden.RAM` | `advisor:RefreshAdvisorResource` missing | HALT; grant permission |
+
+---
+
+### Runbook 4 — Trigger Full Inspection and Wait (触发全量巡检并等待)
+
+**Intent:** "Run a fresh full inspection and show me the new findings."
+
+**Chain:** `refresh-advisor-check` → `get-inspect-progress` poll loop →
+`describe-advices` (read new results). **Requires explicit user
+confirmation** (SAF-RAC-01) before the trigger.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Plugin / creds | `aliyun advisor version` | Pass | HALT |
+| **User confirmation** | User explicitly said "run inspection" | Confirmed | **HALT — do not trigger** |
+| Scope | Full / product / resource | Clear | Ask |
+
+#### CLI Execution
+
+```bash
+# 1. Trigger (SIDE EFFECT — confirmation already obtained)
+aliyun advisor refresh-advisor-check --product {{user.product}}
+# capture $.TaskId -> {{output.task_id}}
+
+# 2. Poll until Finished (30s x 20)
+for i in {1..20}; do
+  status=$(aliyun advisor get-inspect-progress --task-id {{output.task_id}} | jq -r '.Status')
+  echo "[$i] $status"
+  [ "$status" = "Finished" ] || [ "$status" = "Failed" ] && break
+  sleep 30
+done
+
+# 3. Read new findings
+aliyun advisor describe-advices --product {{user.product}} \
+  | jq -r '.Advices[] | {id:.AdviceId, sev:.Severity, name:.AdviceName}'
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Task returned | `$.TaskId` | Positive int |
+| Finished | `get-inspect-progress` → `Status: Finished` | Within 600s |
+| New advices | `describe-advices` | Entries reflect post-scan state |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| `Status: Failed` | `InspectFailed` | Do NOT mark PASS; report; retry once |
+| Quota exceeded | `QuotaExceeded.Inspection` | HALT; wait until next day |
+| Stuck Pending > 600s | `Status: Pending` | Report; suggest console check |
+
+---
+
+### Runbook 5 — Weekly Health Trend Comparison (周度健康趋势对比)
+
+**Intent:** "Is my account healthier this week than last week?"
+
+**Chain:** `get-history-advices` (window A: last week) →
+`get-history-advices` (window B: this week) → compare `Critical` counts.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Date range ≤ 90d | `end - start` per window | ≤ 90 days | HALT; shorten window |
+| Both dates present | `--start-date` / `--end-date` | Provided | Ask user |
+
+#### CLI Execution
+
+```bash
+# Window A (previous week)
+aliyun advisor get-history-advices \
+  --start-date {{user.prev_start}} --end-date {{user.prev_end}} --severity Critical \
+  | jq '.TotalCount'   # -> A_count
+
+# Window B (current week)
+aliyun advisor get-history-advices \
+  --start-date {{user.cur_start}} --end-date {{user.cur_end}} --severity Critical \
+  | jq '.TotalCount'   # -> B_count
+# Compare A_count vs B_count: down = improving, up = worsening
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Both windows returned | `$.TotalCount` | Integer per window |
+| Range valid | `end - start` | ≤ 90 days each |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| `InvalidParameter.DateRange` | Range > 90d | HALT; split into ≤90d windows |
+| Sparse history | Empty windows | Inform: insufficient data for trend |
+
+---
+
+### Runbook 6 — Multi-Account Aggregation (多账号 / MSP 聚合)
+
+**Intent:** "Aggregate health risks and savings across all my managed accounts."
+
+**Chain:** loop `assume-aliyun-id` (or `--assume-aliyun-id-list`) over
+account IDs → `describe-advices` (Critical) + `describe-cost-check-results`
+(savings) → aggregate per account.
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Plugin / creds (mgmt acct) | `aliyun advisor version` | Pass | HALT |
+| Account IDs | `{{user.account_ids}}` list | Provided | Ask user |
+| AssumeRole trust | One `describe-advices --assume-aliyun-id X` | Succeeds | HALT; fix RAM trust |
+
+#### CLI Execution
+
+```bash
+# Per-account Critical count + savings (read-only, no confirmation needed)
+for acct in {{user.account_ids}}; do
+  crit=$(aliyun advisor describe-advices --assume-aliyun-id $acct --biz-language en \
+    | jq '[.Advices[] | select(.Severity=="Critical")] | length')
+  save=$(aliyun advisor describe-cost-optimization-overview --assume-aliyun-id $acct \
+    | jq '.Overview.TotalSavings // 0')
+  echo -e "acct=$acct\tcritical=$crit\tsavings=$save"
+done
+# For cost-only bulk pull, use --assume-aliyun-id-list in a single call:
+aliyun advisor describe-cost-check-results --group-by Product --assume-aliyun-id-list {{user.account_ids}}
+```
+
+#### Validation
+
+| Check | Method | Expected |
+|-------|--------|----------|
+| Per-account success | Each loop iteration returns `$.Advices` / `$.Overview` | Non-error |
+| Aggregated | Tabular output per `acct` | One row per account |
+
+#### Recovery
+
+| Error | Pattern | Action |
+|-------|---------|--------|
+| `AssumeRoleFailed` | AssumeRole trust broken | HALT; fix RAM cross-account role |
+| Throttling | `Throttling.User` | Add sleep between iterations; backoff |
+
+> **AIOps 联动**: 对于大规模多账号场景（MSP），也可委托
+> `alicloud-aiops-cruise` 的 costwatch/securityscan/audittrail Agent 做
+> 跨账号聚合巡检，本 Runbook 的 advisor 数据作为其数据源之一。
+
+---
+
 ## Failure Recovery Reference
 
 ### Error Taxonomy
@@ -599,6 +906,12 @@ resource operations).
 1.0.0 | 2026-06-06 | Initial release. 16 operations covered; CLI-first
 path with JIT Go SDK fallback; full read+side-effect flow documentation;
 GCL rubric and prompt templates.
+1.1.0 | 2026-07-14 | Added "Common Runbooks (End-to-End Scenarios)"
+section with 6 composite workflows: health triage, cost closed loop,
+post-remediation verification, trigger-and-wait, weekly trend, and
+multi-account aggregation. Added composite trigger examples to
+`assets/eval_queries.json`. Added cross-reference to `alicloud-aiops-cruise`
+in Delegation Rules, SHOULD NOT Use, and Runbook 6.
 
 ---
 
