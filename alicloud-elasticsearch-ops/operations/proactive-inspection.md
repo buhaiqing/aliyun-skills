@@ -572,7 +572,7 @@ Remediation Delegation Matrix:
 | **Diagnostic Report** | Inspection generates report | `reports/diagnostic-report-schema.md` |
 | **Cross-Skill Diagnosis** | Dependency delegation | `references/integration.md#6` |
 | **Self-Reflection** | Multi-round analysis | `references/troubleshooting.md#6` |
-| **Standardized Prompts** | Inspection prompt templates | `references/prompts.md#4` |
+| **Standardized Prompts** | Inspection prompt templates | `references/prompt-examples.md#4` |
 
 ---
 

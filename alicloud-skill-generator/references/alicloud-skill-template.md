@@ -623,7 +623,7 @@ request := &[product].Restore[Resource]Request{
 - [Integration](references/integration.md)
 - [Knowledge Base](references/knowledge-base.md) — fault pattern library (AIOps diagnostic skills)
 - [Observability Integration](references/observability.md) — Metrics/Logs/Traces linkage (AIOps diagnostic skills)
-- [Prompts Handbook](references/prompts.md) — common prompt templates (AIOps diagnostic skills)
+- [Prompts Handbook](references/prompt-examples.md) — common prompt templates (AIOps diagnostic skills)
 - [User Experience Specification](references/user-experience-spec.md) — mandatory UX compliance reference
 - [AIOps Best Practices](references/aiops-best-practices.md) — mandatory AIOps patterns for monitoring/diagnosis skills
 - [Optimization Analysis](references/optimization-analysis.md) — three-dimensional optimization framework

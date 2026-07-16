@@ -148,7 +148,7 @@ Full RCA/self-healing: [Troubleshooting](references/troubleshooting.md),
 | SecOps | [SecOps](references/secops-monitoring.md) |
 | GCL scoring/prompts | [Rubric](references/rubric.md), [Prompt Templates](references/prompt-templates.md) |
 | SkillOpt integration | [SkillOpt](references/skillopt-integration.md) |
-| Prompt snippets (historical reference) | [Prompts](references/prompts.md) |
+| Prompt snippets (historical reference) | [Prompts](references/prompt-examples.md) |
 
 ## Advanced Analytics
 

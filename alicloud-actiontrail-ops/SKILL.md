@@ -1114,7 +1114,7 @@ Destructive trail operations SHOULD run through GCL before returning results.
 - [Knowledge Base](references/knowledge-base.md) — Fault patterns (5 AT patterns + 2 cross-product scenarios)
 - [Integration](references/integration.md) — JIT Go SDK integration
 - [Monitoring](references/monitoring.md) — Monitoring and observability
-- [Prompts](references/prompts.md) — AIOps prompt templates
+- [Prompts](references/prompt-examples.md) — AIOps prompt templates
 
 ## See Also — Meta-Skill Rules
 

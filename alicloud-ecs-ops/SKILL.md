@@ -1019,7 +1019,7 @@ aliyun ecs DescribeSecurityGroupAttribute \
 - 冲突检测：重复规则、包含冲突、矛盾规则  
 - 合规评估：SOC/等保合规检查，生成0-100分评分报告  
 
-**Full runbook:** [SecOps安全组巡检与分析](references/sg-secops巡检.md)
+**Full runbook:** [SecOps安全组巡检与分析](references/sg-secops-inspection.md)
 
 ---
 

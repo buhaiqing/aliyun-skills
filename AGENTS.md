@@ -87,6 +87,7 @@ aliyun-[product]-ops/
 │   ├── troubleshooting.md           # ≥10 error codes, diagnostics, recovery
 │   ├── rubric.md                    # MANDATORY if GCL required/recommended
 │   ├── prompt-templates.md          # MANDATORY if GCL required/recommended
+│   ├── prompt-examples.md            # User-facing NL prompt examples (copy-paste)
 │   ├── monitoring.md                # CMS metrics, dashboards, alarms
 │   ├── well-architected-assessment.md
 │   └── advanced/                    # Lazy-loaded: AIOps, FinOps, SQL execution
@@ -106,6 +107,14 @@ aliyun-[product]-ops/
 |------|---------------|
 | `SKILL.md` | What — triggers, pre-flight, variables, execution overview, links |
 | `references/*.md` | How — full commands, exit codes, log interpretation, failure recovery |
+
+## 2.1 references/ Naming & Placeholder Conventions (MANDATORY)
+
+| Rule | Requirement |
+|------|-------------|
+| **R-N1 Prompt docs** | Two distinct files, do **not** mix them: `prompt-templates.md` = GCL Generator/Critic/Orchestrator templates (engine-internal); `prompt-examples.md` = user-facing natural-language prompt examples users can copy-paste. Never name a user doc `prompts.md`. |
+| **R-N2 ASCII filenames** | `references/` filenames MUST be ASCII (no Chinese / full-width chars), e.g. `sg-secops-inspection.md` NOT `sg-secops巡检.md`. Non-ASCII names break Agent reads and script references. |
+| **R-N3 Placeholder integrity** | Every `{{user.*}}` / `{{env.*}}` / `{{output.*}}` MUST have both braces. Pre-merge MUST `grep -nE '\{\{[^}]*$|\{\{[^}]*\}?[^}]*$'` (or visually scan) to catch unclosed `{{user.check_id}` style typos — they produce broken commands at execution. |
 
 ---
 
@@ -268,6 +277,15 @@ After every skill update, auto-run 2 rounds of self-review and fix all issues.
 | **F9** | 回归测试 | 行为/脚本变更后跑对应用例且通过；重构须先补测试再改代码 |
 
 Full spec + check tables: [docs/post-update-self-review.md](docs/post-update-self-review.md)
+
+### 11.0 Skill Capability Matrix Sync (MANDATORY)
+
+`SKILL-MATRIX.md` (repo root) is the single source of truth for "what each skill can do, by capability dimension". On **any** of the following, the matrix MUST be updated in the same commit:
+
+- Add / remove / rename an `alicloud-*` skill directory
+- A skill gains or loses a major capability dimension (lifecycle / monitoring / diagnosis / security / governance)
+
+The matrix is the first thing a user reads to pick a skill — staleness there is a user-facing defect, not a doc nit.
 
 ### 11.1 Regression Testing (MANDATORY)
 

@@ -84,7 +84,7 @@ and failure recovery.
 不知道从哪里开始？按需选一个：
 
 - **"怎么把 SQL 文件跑进 RDS"** → [SQL Execution Runbook](references/advanced/sql-execution.md)（含 `mysql` 客户端和 RDS Data API 两种路径）
-- **"我需要 1 条自然语言提示词"** → [Prompts Handbook](references/prompts.md)（34 条分类示例）
+- **"我需要 1 条自然语言提示词"** → [Prompts Handbook](references/prompt-examples.md)（34 条分类示例）
 - **"实例有异常，帮我巡检一下"** → [RDS Cruise 巡检工作流](references/cruise.md) + [Alert Diagnosis](references/alert-diagnosis.md)
 - **"我想看核心概念/术语"** → [Core Concepts](references/core-concepts.md)
 - **"出错码对应什么"** → [Troubleshooting Guide](references/troubleshooting.md)
@@ -1267,7 +1267,7 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 - [Observability (Metrics/Logs/Traces 联动)](references/observability.md)
 - [RDS Cruise (巡检工作流)](references/cruise.md)
 - [Fault Pattern Knowledge Base](references/knowledge-base.md)
-- [Prompts Handbook (提示词示例)](references/prompts.md)
+- [Prompts Handbook (提示词示例)](references/prompt-examples.md)
 - [Integration](references/integration.md)
 - [GCL Rubric](references/rubric.md) — **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, per-op Safety sub-rules, 6-class / 12-regex SQL classification, 4 worked examples)
 - [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 rollout** Generator & Critic prompt templates (3-path: control-plane CLI / SDK / data-plane SQL aware)

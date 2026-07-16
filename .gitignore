@@ -96,4 +96,5 @@ ehthumbs.db
 # ===== AI Agent runtime (pi / orchestrator) =====
 .pi/
 .pi-subagents/
+.deepeval/
 audit-results/

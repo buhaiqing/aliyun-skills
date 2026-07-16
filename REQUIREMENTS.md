@@ -336,7 +336,7 @@ alicloud-<product>-ops/
 - [references/monitoring.md](alicloud-redis-ops/references/monitoring.md)
 - [references/integration.md](alicloud-redis-ops/references/integration.md)
 - [references/troubleshooting.md](alicloud-redis-ops/references/troubleshooting.md)
-- [references/prompts.md](alicloud-redis-ops/references/prompts.md)
+- [references/prompt-examples.md](alicloud-redis-ops/references/prompt-examples.md)
 - [references/ci-compatibility.md](alicloud-redis-ops/references/ci-compatibility.md)
 - [scripts/preflight-check.sh](alicloud-redis-ops/scripts/preflight-check.sh)
 - [scripts/sdk-fallback.go](alicloud-redis-ops/scripts/sdk-fallback.go)
@@ -540,7 +540,7 @@ CMS Skill 内置了 **4 层异常检测框架**，用于 CLI 安装问题的诊�
 - [references/cli-install-diagnosis.md](alicloud-cms-ops/references/cli-install-diagnosis.md)
 - [references/knowledge-base.md](alicloud-cms-ops/references/knowledge-base.md)
 - [references/observability.md](alicloud-cms-ops/references/observability.md)
-- [references/prompts.md](alicloud-cms-ops/references/prompts.md)
+- [references/prompt-examples.md](alicloud-cms-ops/references/prompt-examples.md)
 
 ---
 

@@ -488,7 +488,7 @@ Poll until upgrade completes (status transitions through upgrade phases)
 - [Stability Enhancement](references/stability-enhancement.md) — **NEW: Recovery runbooks, change window management, fault classification**
 - [Knowledge Base](references/knowledge-base.md) — **NEW: Common issues, version behaviors, troubleshooting trees**
 - [Observability Configuration](references/observability.md) — **NEW: Three-pillar observability stack, Grafana dashboards, alert rules**
-- [Prompt Templates](references/prompts.md) — **NEW: Standardized AIOps prompt templates for operations, diagnosis, inspection, reports**
+- [Prompt Templates](references/prompt-examples.md) — **NEW: Standardized AIOps prompt templates for operations, diagnosis, inspection, reports**
 - [User Experience Specification](../alicloud-skill-generator/references/user-experience-spec.md)
 - [Execution Environment Setup](../alicloud-skill-generator/references/execution-environment.md)
 - [Enhanced Self-Healing Framework](../alicloud-skill-generator/references/enhanced-self-healing-framework.md)

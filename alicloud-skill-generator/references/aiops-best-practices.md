@@ -423,7 +423,7 @@ func calculateSlope(points []DataPoint) float64 {
 
 ### 10.3 提示词存放位置
 
-所有提示词统一存放在 `references/prompts.md` 中。
+所有提示词统一存放在 `references/prompt-examples.md` 中。
 
 ---
 
@@ -524,7 +524,7 @@ Agent 在每轮反思时必须回答以下问题：
 - [ ] **故障模式知识库**：`references/knowledge-base.md` 包含 ≥ 5 个产品故障 Pattern
 - [ ] **级联故障模式**：包含 ≥ 2 个跨产品级联故障 Pattern
 - [ ] **可观测性联动**：`references/observability.md` 定义 Metrics→Logs→Traces 联动规则
-- [ ] **提示词手册**：`references/prompts.md` 包含 ≥ 20 个分类提示词
+- [ ] **提示词手册**：`references/prompt-examples.md` 包含 ≥ 20 个分类提示词
 - [ ] **多轮复盘流程**：在 `troubleshooting.md` 或 `SKILL.md` 中定义复盘规范
 
 ### 12.3 P2 — 建议通过（持续优化）

@@ -1287,7 +1287,7 @@ fi
 - [`scripts/redis-cli-install.sh`](scripts/redis-cli-install.sh) — **可执行权威实现**（344 行 bash）：`bash redis-cli-install.sh` 直接跑，或 `source` 后调用 `ensure_redis_cli`，或在云助手脚本里 `cat` 拼装
 - [Troubleshooting Guide](references/troubleshooting.md) — Symptom-based decision tree, diagnostic commands, error code reference, and support escalation
 - [Monitoring & Alerts](references/monitoring.md) — Key metrics, KPI thresholds, automated monitoring flows, and CloudMonitor integration
-- [Prompts Guide](references/prompts.md) — Ready-to-use prompt templates for 40+ operational scenarios (lifecycle, security, diagnostics, batch ops, advanced analytics)
+- [Prompts Guide](references/prompt-examples.md) — Ready-to-use prompt templates for 40+ operational scenarios (lifecycle, security, diagnostics, batch ops, advanced analytics)
 - [Integration](references/integration.md) — VPC, RAM, CI/CD, Terraform/Pulumi/Ansible integration patterns
 - [GCL Rubric](references/rubric.md) — **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, per-op Safety sub-rules, 5-class data-plane command classification, 4 worked examples)
 - [GCL Prompt Templates](references/prompt-templates.md) — **Phase 1 rollout** Generator & Critic prompt templates (dual-path CLI/SDK aware)

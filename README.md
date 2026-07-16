@@ -27,37 +27,80 @@ This project is a collection of Alibaba Cloud operations Agent Skills, providing
 
 ## Project Structure
 
+> **Note**: There is no root-level `go.mod` — Go is used via the JIT SDK setup (`alicloud-jit-setup.sh`) and per-skill `scripts/` only. There is also no committed `.env.example`; credentials are configured via `aliyun configure` or by exporting env vars (see [Credential Configuration](#credential-configuration)).
+
 ```
 aliyun-skills/
 ├── README.md                          # English version
 ├── README_CN.md                       # Chinese version
 ├── REQUIREMENTS.md                    # Requirements & development docs (functional details, architecture design, technical specs)
-├── go.mod                              # Go module configuration (optional)
-├── .env.example                       # Environment variable template
+├── AGENTS.md                          # Agent behavior guide & repo conventions
 ├── .gitignore                         # Git exclusion rules
+├── Makefile                           # Lint / test / validate / runtime cleanup
 ├── alicloud-jit-setup.sh              # JIT Go SDK one-click setup script
-├── alicloud-skill-generator/          # Skill Generator (Meta Skill)
-│   ├── SKILL.md
-│   ├── assets/
-│   └── references/
-│       ├── alicloud-skill-template.md   # Skill template
-│       └── governance-and-adversarial-review.md
-├── alicloud-ecs-ops/                  # Elastic Compute Service (ECS)
-├── alicloud-rds-ops/                  # ApsaraDB RDS
-├── alicloud-redis-ops/                # ApsaraDB for Redis/Tair
+├── scripts/                           # Repo-level tooling (validation, token rollup, harness discovery)
+├── docs/                              # GCL spec, harness guide, token-efficiency & memory strategy
+│
+├── # ── Meta / Cross-cutting Skills ──
+├── alicloud-skill-generator/          # Skill Generator (Meta Skill) — scaffold new Skills from OpenAPI spec
+├── alicloud-skillopt-ops/             # Legacy SkillOpt compatibility layer (shared lib)
+├── alicloud-gcl-runner-ops/           # Generator-Critic-Loop runner + memory/reflexion/strategy engine
+├── alicloud-runtime-harness-ops/      # Runtime Harness shared capability (wrapper-first, tracing)
+│
+├── # ── Discovery / Advisory / Orchestration Skills ──
+├── alicloud-topo-discovery/           # Network topology & resource inventory discovery
+├── alicloud-aiops-cruise/             # Full-link AIOps inspection (perception agents)
+├── alicloud-arch-advisor/             # Architecture review framework
+├── alicloud-auto-scaling-orch/        # Elastic scaling orchestration
+├── alicloud-sandbox-dev/              # Sandbox development (sidecar mode)
+├── alicloud-aiyun-skills/             # (reserved / migration placeholder)
+│
+├── # ── Product Skills (45 × -ops) ──
 ├── alicloud-ack-ops/                  # Container Service for Kubernetes (ACK)
-├── alicloud-slb-ops/                  # Server Load Balancer (SLB/CLB)
-├── alicloud-ram-ops/                  # Resource Access Management (RAM)
+├── alicloud-actiontrail-ops/          # ActionTrail
+├── alicloud-advisor-ops/              # Advisor (best-practice recommendations)
+├── alicloud-agentrun-ops/             # AgentRun
+├── alicloud-alb-ops/                  # Application Load Balancer (ALB)
+├── alicloud-ask-ops/                  # ASK (Serverless Kubernetes)
+├── alicloud-bailian-ops/              # Bailian (百炼) GenAI Platform — LLM, Agent, RAG, Prompt
+├── alicloud-billing-ops/              # Billing
+├── alicloud-cen-ops/                  # Cloud Enterprise Network (CEN)
 ├── alicloud-cms-ops/                  # Cloud Monitor Service (CMS)
 ├── alicloud-das-ops/                  # Database Autonomy Service (DAS)
+├── alicloud-dms-ops/                  # Data Management Service (DMS)
+├── alicloud-dns-ops/                  # DNS (Alibaba Cloud DNS)
+├── alicloud-dts-ops/                  # Data Transmission Service (DTS)
+├── alicloud-eci-ops/                  # Elastic Container Instance (ECI)
+├── alicloud-ecs-ops/                  # Elastic Compute Service (ECS)
+├── alicloud-eip-ops/                  # Elastic IP Address (EIP)
+├── alicloud-elasticsearch-ops/        # Elasticsearch
+├── alicloud-ess-ops/                  # Auto Scaling (ESS)
+├── alicloud-fc-ops/                   # Function Compute (FC)
 ├── alicloud-kms-ops/                  # Key Management Service (KMS)
-├── alicloud-sas-ops/                  # Security Center (SAS)
+├── alicloud-mongodb-ops/              # ApsaraDB for MongoDB
+├── alicloud-nas-ops/                  # File Storage NAS
+├── alicloud-nat-ops/                  # NAT Gateway
+├── alicloud-oss-ops/                  # Object Storage Service (OSS)
 ├── alicloud-polar-mysql-ops/          # PolarDB for MySQL
-├── alicloud-polar-postgresql-ops/      # PolarDB for PostgreSQL
 ├── alicloud-polar-oracle-ops/         # PolarDB for Oracle (compatible)
-├── alicloud-bailian-ops/              # Bailian (百炼) GenAI Platform - LLM, Agent, RAG, Prompt
-└── alicloud-topo-discovery/          # [Discovery Skill] Network topology & resource inventory
+├── alicloud-polar-pg-ops/             # PolarDB for PostgreSQL (compact)
+├── alicloud-polar-postgresql-ops/     # PolarDB for PostgreSQL
+├── alicloud-pts-ops/                  # Performance Testing Service (PTS)
+├── alicloud-ram-ops/                  # Resource Access Management (RAM)
+├── alicloud-rds-ops/                  # ApsaraDB RDS
+├── alicloud-redis-ops/                # ApsaraDB for Redis/Tair
+├── alicloud-resourcemanager-ops/      # Resource Manager
+├── alicloud-sas-ops/                  # Security Center (SAS)
+├── alicloud-slb-ops/                  # Server Load Balancer (SLB/CLB)
+├── alicloud-sls-ops/                  # Simple Log Service (SLS)
+├── alicloud-sms-ops/                  # Short Message Service (SMS)
+├── alicloud-terraform-ops/            # Terraform / IaC
+├── alicloud-voice-ops/                # Voice / Intelligent Speech Interaction
+├── alicloud-vpc-ops/                  # Virtual Private Cloud (VPC)
+└── alicloud-waf-ops/                  # Web Application Firewall (WAF)
 ```
+
+> A standard product Skill (`alicloud-<product>-ops/`) contains: `SKILL.md`, `references/` (`core-concepts.md`, `cli-usage.md`, `api-sdk-usage.md`, `troubleshooting.md`, `rubric.md`, `prompt-templates.md`, `monitoring.md`, etc.), `assets/` (`example-config.yaml`, `eval_queries.json`), and per-skill `scripts/` + `test-*.sh` where applicable.
 
 ## Quick Start
 
@@ -233,6 +276,7 @@ Verify: CLI commands are executable, links are valid, examples are correct.
 |----------|-------------|
 | [REQUIREMENTS.md](REQUIREMENTS.md) | **Requirements & Development Documentation** — functional details, architecture design, technical specs, and development guides for all Skills |
 | [alicloud-skill-generator/SKILL.md](alicloud-skill-generator/SKILL.md) | Complete usage guide for the Skill Generator |
+| [SKILL-MATRIX.md](SKILL-MATRIX.md) | Skill capability matrix — what each skill can do, by capability dimension |
 | [README_CN.md](README_CN.md) | Chinese version of this document |
 
 ---
