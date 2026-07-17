@@ -982,6 +982,19 @@ alicloud-<product>-ops/
 npx markdownlint-cli2 "alicloud-*/SKILL.md"
 ```
 
+### 7.5 复利工程原则（🔴 最高优先级）
+
+> **⛔ 复利工程是本仓库最重要的工程原则，优先级等同于安全红线。**
+> 详见 [AGENTS.md §0.3 复利工程](AGENTS.md#03-复利工程--compound-engineering-最高优先级)。
+
+每次开发完成后，必须完成以下检查：
+
+- [ ] **决策记录**：关键设计决策已记录到 `docs/ARCHITECTURE.md` 决策表中
+- [ ] **模板沉淀**：可复用的方法/模板已更新到 AGENTS.md §18.4
+- [ ] **废弃清理**：被替代的文档/代码已删除（不标记 deprecated 堆积）
+- [ ] **统一入口**：新文档从 `docs/ARCHITECTURE.md` 可追溯
+- [ ] **文档结构**：遵循 ARCHITECTURE → SPEC → PLAN 三层结构
+
 ### 7.5 质量标准（P0/P1）
 
 | 级别 | 必须包含 |

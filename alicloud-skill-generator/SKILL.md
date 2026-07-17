@@ -209,6 +209,12 @@ C1-C6 全通过？
 | C4 | Well-Architected | `grep -c "Well-Architected Framework" SKILL.md` | ≥ 1 match | Add Well-Architected Framework table |
 | C5 | Variables | `grep -c "^## Variables" SKILL.md` | ≥ 1 match | Add Variables section with `{{env.*}}`/`{{user.*}}`/`{{output.*}}` |
 | **C6** | **Token Efficiency** | See §Token Efficiency Requirements in meta-skill | All 6 TE rules applied | Fix per TE guidelines below |
+| **C7** | **Compound Engineering**（复利工程） | 检查决策是否已记录、废弃文档是否已清理、模板是否可复用 | CE1-CE6 全部确认 | 见 [AGENTS.md §0.3 复利工程](../AGENTS.md#03-复利工程--compound-engineering-最高优先级) 和 [§18.5 检查清单](../AGENTS.md#185-复利检查清单-每次完成任务后强制执行) |
+
+> **C7 说明**：生成新 Skill 或更新现有 Skill 后，必须自问：
+> - 这次有没有产生废弃文档需要清理？
+> - 这次的设计决策有没有记录到 `docs/ARCHITECTURE.md`？
+> - 这次用到的模板/方法能不能复用到下次？
 
 ### Self-Remediation Template (自动修复模板)
 

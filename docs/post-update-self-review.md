@@ -88,6 +88,39 @@ C6 is a **MUST PASS** gate, not a suggestion. Verify each rule:
 
 ---
 
+## Round 4: Compound Engineering Check（复利工程检查 — MANDATORY）
+
+> **来源**: [AGENTS.md §0.3 复利工程](../AGENTS.md#03-复利工程--compound-engineering-最高优先级)
+>
+> **⛔ 这不是"建议"——是"交付完成"的定义。未通过复利检查的变更不算完成。**
+
+每次完成功能点/设计后，必须逐项确认：
+
+| # | Check | Content |
+|---|-------|---------|
+| **CE1** | 决策记录 | 这次做的关键决策有没有记录到 `docs/ARCHITECTURE.md` 的决策表中？含：选了什么、为什么、不选什么 |
+| **CE2** | 模板沉淀 | 这次用的方法/模板有没有可复用价值？有的话是否更新了 AGENTS.md §18.4？ |
+| **CE3** | 废弃清理 | 有没有产生应该清理的废弃文档/代码？删掉，不要堆积（git 历史可回溯） |
+| **CE4** | 决策一致性 | 有没有违反已记录的决策？如果有，必须更新决策记录说明原因 |
+| **CE5** | 可追溯性 | 新产生的文档是否从 `docs/ARCHITECTURE.md` 可追溯？ |
+| **CE6** | 下一次更快 | 如果有人要做类似的事，能不能通过 `ARCHITECTURE.md` → SPEC → PLAN 这条链路快速找到所有上下文？ |
+
+### Self-Review Record（追加到现有记录）
+
+```
+### Round 4: Compound Engineering
+- [confirmed/skip] CE1: {decision recorded in ARCHITECTURE.md / no new decisions}
+- [confirmed/skip] CE2: {template updated in AGENTS.md §18.4 / no reusable pattern}
+- [confirmed/skip] CE3: {deprecated files deleted / no deprecated files}
+- [confirmed/skip] CE4: {no decision violations / violation documented with reason}
+- [confirmed/skip] CE5: {traceable from ARCHITECTURE.md}
+- [confirmed/skip] CE6: {next person can follow ARCHITECTURE → SPEC → PLAN}
+```
+
+**违规处理**：CE1-CE6 任一项未通过 → 变更**不得提交**，必须补充完成后再提交。
+
+---
+
 ## Self-Review Record
 
 After each review, output a brief record in the current session:
@@ -118,6 +151,18 @@ After each review, output a brief record in the current session:
 ```
 
 This record is session-only (no file write), but MUST be visible as evidence of completed review.
+
+### Post-Review Commitment
+
+After all 4 rounds pass, output:
+
+```
+✅ Post-Update Self-Review — 4/4 rounds clean
+   R1 Structural: PASS
+   R2 Content:    PASS
+   R3 Lessons:    PASS (or skipped with rationale)
+   R4 Compound:   PASS — decisions recorded, no deprecated artifacts
+```
 
 ---
 

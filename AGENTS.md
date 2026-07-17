@@ -23,7 +23,7 @@ description: >-
 | 4 | **Loaded SKILL.md + references/** | Domain runbook |
 | 5 | Default agent heuristics | Lowest |
 
-**Non-overridable floors**: §8 Security, §12 Safety=0 → ABORT, destructive confirmation, credential non-leakage.
+**Non-overridable floors**: §0.3 复利工程（Compound Engineering — 每次交付必须沉淀可复用模式）, §4 Development Workflow (Spec→Plan→Implement+TDD+GCL), §8 Security, §12 Safety=0 → ABORT, destructive confirmation, credential non-leakage.
 
 ### 0.2 Karpathy Guidelines (MANDATORY)
 
@@ -37,6 +37,32 @@ description: >-
 Canonical skill: `karpathy-guidelines`.
 
 **Banned**: "while I'm here I'll refactor…", "tests can come later", "this needs a general framework…"
+
+### 0.3 复利工程 — Compound Engineering（🔴 最高优先级）
+
+> **⛔ 这是本仓库最重要的工程原则，优先级等同于安全红线。**
+>
+> **核心理念**：每一次工作不是在"完成一个任务"，而是在"让整个系统变得更强"。当前任务的交付物是副产品，可复用的模式、模板、决策记录才是真正的产出。
+>
+> **为什么是最高优先级**：没有复利，团队永远在做重复劳动——每个新人从头摸索、每个类似问题从头讨论、每个架构决策丢失上下文。复利工程让每一次工作都为下一次工作铺路。
+
+| 模式 | 做法 | 反模式 |
+|------|------|--------|
+| **场景驱动设计** | 从用户接入场景出发（告警/工单/对话/CI），先定义"做完后的效果" | 从技术分层出发，先画架构图再想用户怎么用 |
+| **价值量化** | 每个阶段用"一句话 + 具体数字"描述效果 | 模糊描述（"提升效率"、"优化体验"） |
+| **场景对比** | 用"现在 vs 做完后"表格让价值一目了然 | 只描述目标状态 |
+| **统一入口** | `docs/ARCHITECTURE.md` 是唯一权威架构入口 | 多个文档各自描述架构，互相矛盾 |
+| **废弃即删除** | 被替代的文档直接删除，git 历史可回溯 | 标记 deprecated 堆积，越来越乱 |
+| **三层文档** | ARCHITECTURE → SPEC → PLAN，每层有明确读者 | 一个文档包罗万象 |
+| **决策记录** | 关键设计决策记录在 ARCHITECTURE.md 中，含理由 | 凭记忆做决策，换人就丢失上下文 |
+
+**每完成一个任务，必须自问**：
+- 这次的方法/模板能不能下次直接复用？
+- 这次的决策有没有记录在 ARCHITECTURE.md 的决策表中？
+- 有没有废弃文档该删没删？
+- 下次有人做类似的事，能不能通过 ARCHITECTURE.md 快速找到所有上下文？
+
+详细规范见 [§18 复利工程](#18-compound-engineering复利工程)。
 
 ### 0.4 CodeGraph Integration (MANDATORY)
 
@@ -137,6 +163,76 @@ Every operation needs: **Pre-flight Checks → Execute → Validate → Recover*
 | `{{output.xxx}}` | Previous step output | Parse from API response |
 
 **Diagnostic logs**: `[HH:MM:SS] [PHASE] key=value` with phases `DIAG`/`INSTALL`/`EXEC`/`RESULT`/`WARN`/`ERROR`/`SUMMARY`. Spec: [docs/diagnostic-logging-standard.md](docs/diagnostic-logging-standard.md).
+
+---
+
+## 4. Mandatory Development Workflow (STRICT — NON-NEGOTIABLE)
+
+> **⛔ 最高优先级开发规范。所有 task 的开发都必须严格遵守以下流程，无例外。**
+>
+> 任何直接跳过 Spec / Plan 阶段的代码开发都是违规行为，必须中止并重来。
+
+### 4.1 The Iron Rule: Spec → Plan → Implement
+
+Every development task in this repo MUST proceed in exactly this order:
+
+```text
+┌─────────┐     ┌─────────┐     ┌──────────────┐
+│   SPEC  │ ──▶ │  PLAN   │ ──▶ │  IMPLEMENT   │
+│ (What & │     │ (How &  │     │ (TDD + GCL)  │
+│  Why)   │     │  Steps) │     │              │
+└─────────┘     └─────────┘     └──────────────┘
+   MUST            MUST              ONLY HERE
+  EXIST            EXIST            write code
+```
+
+**禁止项（Banned）：**
+- ❌ 没有 Spec 就写 Plan
+- ❌ 没有 Plan 就写实现代码（"先写代码再说" / "边写边想"）
+- ❌ 把 Plan 和 Implement 合并跳过 Plan
+- ❌ 用代码反推 Spec / Plan（事后补文档不算 Spec）
+
+### 4.2 Phase Definitions
+
+| Phase | Artifact | Must Answer | Gate |
+|-------|----------|------------|------|
+| **SPEC** | `SPEC.md` (or `.omo/plans/*` spec block) | What are we building & why? What problem? Success criteria? Scope boundaries (in/out)? | No artifact → no Plan |
+| **PLAN** | `PLAN.md` (or `.omo/plans/*` plan block) | How? Step-by-step tasks, dependencies, verification checkpoints per step, risk assessment | No artifact → no code |
+| **IMPLEMENT** | Code + tests | Execute the plan under TDD + GCL discipline | Tests green + GCL pass |
+
+### 4.3 TDD During Implement (MANDATORY)
+
+In the Implement phase, **TDD is non-negotiable** — see the Iron Law:
+
+- **RED** → write a failing test first; run it; MUST fail.
+- **GREEN** → write minimal code to pass; run; MUST pass.
+- **REFACTOR** → clean up; tests stay green.
+- Any production code written before its failing test MUST be deleted and restarted.
+
+Combined with GCL (§12), every cloud operation also runs through the Generator ↔ Critic adversarial loop.
+
+### 4.4 Superpowers Skill Binding
+
+This workflow is realized through the Superpowers skill suite:
+
+| Phase | Superpowers Skill |
+|-------|-------------------|
+| SPEC | `superpowers:writing-plans` (spec mode) / `superpowers:brainstorming` |
+| PLAN | `superpowers:writing-plans` (plan mode) |
+| IMPLEMENT | `superpowers:subagent-driven-development` + `superpowers:test-driven-development` + `superpowers:executing-plans` |
+
+> When a task arrives, the default reflex is **NOT** "open the editor". It is **"write the Spec, get alignment, then Plan"**.
+
+### 4.5 Enforcement
+
+| If You See | Action |
+|------------|--------|
+| Task starts with code, no Spec/Plan | STOP. Return to SPEC. Do not proceed. |
+| Spec exists but Plan skipped | STOP. Write PLAN. Do not write code. |
+| "This is small, no need for Spec/Plan" | Still required. Exceptions only: < 5 line typo/comment fixes (see §git-worktree exception). |
+| Test written after code | Delete code. TDD restart. |
+
+**This rule overrides default agent heuristics (priority tier 5) and any "just do it" impulse. Only explicit user waiver in-session can bypass it, and the waiver MUST be logged in the task trace.**
 
 ---
 
@@ -369,6 +465,7 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 
 | Document | Description |
 |----------|-------------|
+| **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** | **统一架构入口** — Agent Runtime 演进路线图、Phase 1/2/3 规划 |
 | `alicloud-skill-generator/SKILL.md` | Meta Skill generator — full workflow, P0/P1 checklist, Token Efficiency rules |
 | `alicloud-skill-generator/references/alicloud-skill-template.md` | Canonical SKILL.md template |
 | [`docs/gcl-spec.md`](docs/gcl-spec.md) | **GCL full spec** — roles, rubric, loop flow, trace schema, anti-patterns, §8 Per-Skill Defaults |
@@ -667,3 +764,78 @@ Extracts structured failure patterns from GCL traces into a deduped JSON store. 
 **Non-fatal guarantee**: Same as Layer 1.
 
 **Line budget**: `docs/failure-patterns.md` ≤ 200 lines.
+
+---
+
+## 18. Compound Engineering（复利工程）
+
+> **核心原则**：每次设计/开发不只解决当前问题，还要沉淀可复用的模式、模板和决策记录，让下一次同类工作更快更好。
+
+### 18.1 架构设计模式
+
+当进行架构设计（新系统、重大重构）时，遵循以下可复用模式：
+
+| 模式 | 做法 | 反模式 |
+|------|------|--------|
+| **场景驱动** | 从用户接入场景出发（告警、工单、对话、CI/CD），先定义"做完后的效果"，再设计架构 | 从技术分层出发，先画架构图再想用户怎么用 |
+| **价值量化** | 每个阶段用"一句话 + 一个具体数字"描述效果：MTTD 30分钟 → 3分钟 | "提升效率"、"优化体验"等模糊描述 |
+| **场景对比** | 用"现在 vs 做完后"表格，让价值一目了然 | 只描述目标状态，不对比现状 |
+| **双模式架构** | 对外服务同时提供 REST API（系统集成）和 MCP Server（LLM Agent），共享核心引擎 | 只做一种接入方式，后续再补 |
+| **向后兼容** | 新系统在现有基础上新增编排层，不替代任何现有组件 | 推倒重来 |
+
+### 18.2 文档治理模式
+
+| 模式 | 做法 |
+|------|------|
+| **统一入口** | 架构设计以 `docs/ARCHITECTURE.md` 为唯一权威入口，子文档从它链接出去 |
+| **废弃即删除** | 被替代的文档直接删除（不是标记 deprecated 然后堆积），git 历史可回溯 |
+| **三层文档结构** | ARCHITECTURE.md（总览）→ SPEC（详细规格）→ PLAN（任务分解），每层有明确的读者和目的 |
+| **引用而非重复** | AGENTS.md 引用 ARCHITECTURE.md，不重复架构内容；SPEC 引用 GCL spec，不重复 GCL 规范 |
+
+### 18.3 关键设计决策记录
+
+以下是本次架构设计中做出的关键决策，后续设计应参考：
+
+| 决策 | 选择 | 理由 | 来源 |
+|------|------|------|------|
+| Agent 编排模式 | Supervisor（单 Agent 调度多 Skill） | 70% 生产采用率；多 Agent token 消耗是单 Agent 的 15x | [研究报告](docs/ARCHITECTURE.md) |
+| 接入方式 | REST API + MCP Server 双模式 | REST 给系统用（告警/工单/CI），MCP 给 LLM Agent 用（对话） | [架构总览](docs/ARCHITECTURE.md) |
+| 根因分析 | Phase 1 用规则引擎，不用 LLM | 确定性高、延迟低、成本可控；LLM 推理留给 Phase 2+ | [Phase 1 SPEC](docs/specs/phase-1-core-engine.md) |
+| 意图解析 | 规则 + 正则 + 关键词词典，不用 LLM | 告警/工单输入结构化程度高，不需要 LLM；成本更低、延迟 < 100ms | [Phase 1 SPEC §2.2](docs/specs/phase-1-core-engine.md) |
+| 开发顺序 | 先 REST API 再 MCP Server | REST API 用 curl 就能测，能独立验证核心引擎；MCP 本质是 REST 的协议适配层 | [Phase 1 PLAN](docs/plans/phase-1-plan.md) |
+| 不做什么 | Phase 1 不做多 Agent、不做 HITL、不做沙箱 | 单 Agent + 多 Skill 覆盖 80% 场景；复杂特性留到 Phase 2/3 | [架构总览](docs/ARCHITECTURE.md) |
+
+### 18.4 可复用的文档模板
+
+以下模板已在实际设计过程中验证，可直接复用：
+
+**SPEC 文档结构**（参考 `docs/specs/phase-1-core-engine.md`）：
+```
+1. 目标与成功标准（可验证的 S1-S8）
+2. 核心引擎设计（数据流图 + 每个组件的输入/输出/策略）
+3. 接口规格（REST API 端点 + MCP tools）
+4. 集成方式（与现有系统的关系）
+5. 非功能需求（性能/安全/可观测性）
+```
+
+**PLAN 文档结构**（参考 `docs/plans/phase-1-plan.md`）：
+```
+1. 任务总览（清单 + 工时 + 依赖 + 优先级）
+2. 任务详细分解（每个任务的子任务 + 验证标准 + 涉及文件）
+3. 依赖关系图（ASCII art 或 Mermaid）
+4. 风险与缓解
+5. 里程碑（时间 + 交付物 + 验证方式）
+```
+
+### 18.5 复利检查清单（🔴 每次完成任务后强制执行）
+
+> **⛔ 这个检查清单不是"建议"——是"交付完成"的定义。未通过检查清单的任务不算完成。**
+
+每次完成一个功能点/设计后，必须逐项确认：
+
+- [ ] **决策记录**：这次做的关键决策有没有记录到 `docs/ARCHITECTURE.md` 的决策表中？含：选了什么、为什么、不选什么
+- [ ] **模板沉淀**：这次用的方法/模板有没有可复用价值？有的话是否更新了 §18.4？
+- [ ] **废弃清理**：有没有产生应该清理的废弃文档/代码？删掉，不要堆积（git 历史可回溯）
+- [ ] **决策一致性**：有没有违反已记录的决策？如果有，必须更新决策记录说明原因
+- [ ] **可追溯性**：新产生的文档是否从 `docs/ARCHITECTURE.md` 可追溯？
+- [ ] **下一次更快**：如果有人要做类似的事，能不能通过 `ARCHITECTURE.md` → SPEC → PLAN 这条链路快速找到所有上下文？

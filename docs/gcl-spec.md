@@ -1,6 +1,8 @@
 # Generator-Critic-Loop (GCL) — Implementation Spec
 
 > 本文档是 `AGENTS.md` §12 的完整实现规范。AGENTS.md 只保留摘要和入口。
+>
+> **复利工程要求**：GCL 执行完成后，必须遵守 [AGENTS.md §0.3 复利工程](../AGENTS.md#03-复利工程--compound-engineering-最高优先级) 原则——提取可复用模式、记录设计决策、清理废弃产物。详见 [AGENTS.md §18.5 复利检查清单](../AGENTS.md#185-复利检查清单-每次完成任务后强制执行)。
 
 ---
 

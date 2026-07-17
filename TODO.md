@@ -204,7 +204,7 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 
 ## Level 3 → 4 智能进化计划 (Gartner AI Maturity)
 
-> 完整计划: [`docs/intelligence-evolution-plan.md`](docs/intelligence-evolution-plan.md)
+> 完整计划: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ### Phase A — 反馈闭环从"空壳"变"引擎"
 
