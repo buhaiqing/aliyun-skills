@@ -6,6 +6,9 @@ description: >-
   multi-environment management, remote state storage, NL2HCL (natural language to
   HCL), and reverse engineering from existing resources.
 license: MIT
+metadata:
+  author: alicloud
+  version: "1.0.0"
 triggers:
   - terraform
   - iac
@@ -44,8 +47,8 @@ should:
   - 使用模块化设计提高可复用性
   - 集成 GitOps 流程，实现基础设施版本化管理
   - 定期销毁和重建临时环境
-  - **NL2HCL: 将自然语言描述转换为 Terraform HCL 配置**
-  - **Reverse Engineering: 从现有阿里云资源逆向生成 Terraform 配置和导入脚本**
+  - "NL2HCL: 将自然语言描述转换为 Terraform HCL 配置"
+  - "Reverse Engineering: 从现有阿里云资源逆向生成 Terraform 配置和导入脚本"
 should_not:
   - 执行数据平面操作（SQL 执行、Redis 命令等）
   - 替代日常运维诊断和故障排查（使用对应 product-ops skills）

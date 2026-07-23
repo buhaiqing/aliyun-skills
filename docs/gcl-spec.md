@@ -162,6 +162,8 @@ Every GCL run MUST persist a JSON trace under `./audit-results/gcl-trace-YYYYMMD
   "skill": "alicloud-ecs-ops",
   "request": "<sanitized user request>",
   "rubric_version": "v1",
+  "skill_version": "2.2.1",
+  "version_source": "skill_md",
   "iterations": [
     {
       "iter": 1,

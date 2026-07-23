@@ -1,23 +1,23 @@
 ---
 name: alicloud-dms-ops
 description: >-
-Use when the user needs to manage Alibaba Cloud DMS (Data Management Service) —
-AI-powered data security
-access gateway with NL2SQL, SQL audit, fine-grained permission control
-(instance/DB/table/column/row level),
-multi-source data governance, and DevOps workflow automation. User mentions DMS,
-Data Management, data
-security access, SQL review, intelligent query, NL2SQL, data governance, or
-describes scenarios involving
-database SQL execution, permission control, audit trails, or
-natural-language-to-SQL queries even without
-naming DMS directly. Not for billing, RAM, or specific database product
-operations (RDS, PolarDB) that
+  Use when the user needs to manage Alibaba Cloud DMS (Data Management Service) —
+  AI-powered data security
+  access gateway with NL2SQL, SQL audit, fine-grained permission control
+  (instance/DB/table/column/row level),
+  multi-source data governance, and DevOps workflow automation. User mentions DMS,
+  Data Management, data
+  security access, SQL review, intelligent query, NL2SQL, data governance, or
+  describes scenarios involving
+  database SQL execution, permission control, audit trails, or
+  natural-language-to-SQL queries even without
+  naming DMS directly. Not for billing, RAM, or specific database product
+  operations (RDS, PolarDB) that
   have their own ops skills.
 license: MIT
 compatibility: >-
-Official Alibaba Cloud CLI (`aliyun`, with dms plugin), Go 1.21+ runtime (for
-JIT SDK fallback),
+  Official Alibaba Cloud CLI (`aliyun`, with dms plugin), Go 1.21+ runtime (for
+  JIT SDK fallback),
   valid API credentials, network access to Alibaba Cloud endpoints.
 metadata:
   author: alicloud
@@ -30,13 +30,13 @@ metadata:
   cli_applicability: "dual-path"
   cli_support_evidence: >-
     DMS CLI requires plugin: `aliyun plugin install --names aliyun-cli-dms`.
-Base CLI: `aliyun dms <ApiName>` API-style invocation. SDK path available as
-fallback.
+    Base CLI: `aliyun dms <ApiName>` API-style invocation. SDK path available as
+    fallback.
   environment:
- - ALIBABA_CLOUD_ACCESS_KEY_ID
- - ALIBABA_CLOUD_ACCESS_KEY_SECRET
- - ALIBABA_CLOUD_REGION_ID
- - ALIBABA_CLOUD_DMS_ENDPOINT
+    - ALIBABA_CLOUD_ACCESS_KEY_ID
+    - ALIBABA_CLOUD_ACCESS_KEY_SECRET
+    - ALIBABA_CLOUD_REGION_ID
+    - ALIBABA_CLOUD_DMS_ENDPOINT
 ---
 
 # Alibaba Cloud DMS (Data Management Service) Operations Skill

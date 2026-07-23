@@ -110,6 +110,8 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 # gcl_memory import (Layer 1 — non‑fatal)
 try:
     from gcl_memory import memory_purge_unknown, memory_store
@@ -2206,9 +2208,12 @@ def run_loop(
 
     Returns the trace dict (will be persisted to disk by the caller).
     """
+    version, source = resolve_skill_version(skill, skills_root)
     trace: dict[str, Any] = {
         "skill": skill,
         "request": _sanitize_user_request(user_request),
+        "skill_version": version,
+        "version_source": source,
         "rubric_version": rubric["version"],
         "iterations": [],
         "failure_pattern": None,  # populated by extract_failure_pattern() if SAFETY_FAIL
@@ -2770,9 +2775,12 @@ def _synthesize_dry_run(
     if h_result is not None:
         iter_record["hallucination_detector"] = h_result
 
+    version, source = resolve_skill_version(skill, skills_root)
     trace: dict[str, Any] = {
         "skill": skill,
         "request": _sanitize_user_request(user_request),
+        "skill_version": version,
+        "version_source": source,
         "rubric_version": rubric["version"],
         "iterations": [iter_record],
         "dry_run": True,
@@ -2807,6 +2815,78 @@ def _summarize_output(iter_record: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 # Persistence
 # ---------------------------------------------------------------------------
+
+
+_FRONTMATTER_END = re.compile(r"\n---\s*($|\n)")
+_LEADING_HTML_COMMENT = re.compile(r"^\s*<!--.*?-->\s*", re.DOTALL)
+
+
+def _find_frontmatter(text: str) -> tuple[int, int] | None:
+    """Return (body_start, body_end) char offsets of the YAML frontmatter block.
+
+    Tolerates a leading HTML comment (e.g. `<!-- markdownlint-disable -->`)
+    and blank lines before the opening `---` delimiter, which some skills emit.
+    The closing delimiter must be a line that is exactly `---`.
+    """
+    # Strip any leading HTML comment(s) and blank lines.
+    stripped = _LEADING_HTML_COMMENT.sub("", text)
+    if not stripped.lstrip().startswith("---"):
+        return None
+    body_start = stripped.index("---") + 3
+    match = _FRONTMATTER_END.search(stripped, body_start)
+    if match is None:
+        return None
+    return body_start, match.start()
+
+
+def _load_skill_md_frontmatter(skill: str, skills_root: Path | None) -> dict:
+    """Parse the YAML frontmatter of <skills_root>/<skill>/SKILL.md (best-effort)."""
+    root = skills_root or resolve_skills_root()
+    path = root / skill / "SKILL.md"
+    if not path.exists():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    offsets = _find_frontmatter(text)
+    if offsets is None:
+        return {}
+    body_start, body_end = offsets
+    # _find_frontmatter works on the comment-stripped text, so slice that.
+    stripped = _LEADING_HTML_COMMENT.sub("", text)
+    block = stripped[body_start:body_end].strip()
+    try:
+        return yaml.safe_load(block) or {}
+    except yaml.YAMLError:
+        return {}
+
+
+def resolve_skill_version(skill: str, skills_root: Path | None = None) -> tuple[str, str]:
+    """Return (version, source) for a skill.
+
+    Source is "skill_md" when read from <skill>/SKILL.md frontmatter (accepts
+    both `metadata.version` and a top-level `version:` key), "git" when falling
+    back to a short commit hash, "unknown" if both fail.
+    """
+    fm = _load_skill_md_frontmatter(skill, skills_root)
+    if isinstance(fm, dict):
+        metadata = fm.get("metadata")
+        v = fm.get("version") or (
+            metadata.get("version") if isinstance(metadata, dict) else None
+        )
+        if v is not None:
+            return str(v).strip(), "skill_md"
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=str(skills_root or resolve_skills_root()),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip(), "git"
+    except (subprocess.SubprocessError, OSError):
+        pass
+    return "", "unknown"
 
 
 def persist_trace(trace: dict[str, Any], output_dir: Path) -> Path:
