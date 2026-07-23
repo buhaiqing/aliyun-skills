@@ -1,5 +1,6 @@
 """Tests for manifest.json builder."""
 import re
+
 from scripts.lib.manifest_builder import ManifestBuilder
 
 

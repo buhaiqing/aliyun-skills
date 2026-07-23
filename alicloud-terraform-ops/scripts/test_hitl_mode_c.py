@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import sys
 import tempfile
 import unittest
@@ -13,9 +12,13 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+from hitl_common import AuditLogger, HITLConfig
 from hitl_mode_a import (
-    Checkpoint, CheckpointStatus, CheckpointType, Environment,
-    HITLMode, ResourceInfo, Step, StepType, create_checkpoint,
+    CheckpointStatus,
+    CheckpointType,
+    Environment,
+    ResourceInfo,
+    create_checkpoint,
 )
 from hitl_mode_c import (
     BatchSelector,
@@ -26,7 +29,6 @@ from hitl_mode_c import (
     ResourceClassifier,
     SessionRecovery,
 )
-from hitl_common import AuditLogger, HITLConfig
 
 
 class TestResourceClassifier(unittest.TestCase):

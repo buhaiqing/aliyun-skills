@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_smart_alarm_engine.py — GCL 智能告警闭环引擎 (Smart Alert Loop)
 
@@ -47,11 +46,11 @@ import textwrap
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 #: 资源ID提取模式（按skill）
 # 支持引号包围的值（单引号、双引号）
-RESOURCE_PATTERNS: Dict[str, str] = {
+RESOURCE_PATTERNS: dict[str, str] = {
     "alicloud-ecs-ops": r"--InstanceId\s+['\"]?(i-[a-z0-9]+)['\"]?",
     "alicloud-rds-ops": r"--DBInstanceId\s+['\"]?(rm-[a-z0-9]+)['\"]?",
     "alicloud-redis-ops": r"--InstanceId\s+['\"]?(r-[a-z0-9]+)['\"]?",
@@ -75,9 +74,9 @@ RESOURCE_PATTERNS: Dict[str, str] = {
 REGION_PATTERN = r"--RegionId\s+['\"]?(cn-[a-z0-9-]+|ap-[a-z0-9-]+|eu-[a-z0-9-]+|us-[a-z0-9-]+)['\"]?"
 
 #: 风险模式定义
-RiskPattern = Dict[str, Any]
+RiskPattern = dict[str, Any]
 
-DEFAULT_RISK_PATTERNS: List[RiskPattern] = [
+DEFAULT_RISK_PATTERNS: list[RiskPattern] = [
     {
         "id": "resource_safety_repeated",
         "name": "资源级Safety反复失败",
@@ -177,7 +176,7 @@ def get_degradation_state_path() -> Path:
     return script_dir.parent / ".runtime" / "gcl-degradation-state.json"
 
 
-def load_degradation_state() -> Dict[str, Any]:
+def load_degradation_state() -> dict[str, Any]:
     """加载当前降级状态。"""
     path = get_degradation_state_path()
     if path.is_file():
@@ -193,7 +192,7 @@ def load_degradation_state() -> Dict[str, Any]:
     }
 
 
-def save_degradation_state(state: Dict[str, Any]) -> None:
+def save_degradation_state(state: dict[str, Any]) -> None:
     """保存降级状态。"""
     path = get_degradation_state_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -201,7 +200,7 @@ def save_degradation_state(state: Dict[str, Any]) -> None:
     path.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def extract_resource_id(skill: str, command: str) -> Optional[str]:
+def extract_resource_id(skill: str, command: str) -> str | None:
     """从命令中提取资源唯一标识。"""
     pattern = RESOURCE_PATTERNS.get(skill)
     if not pattern:
@@ -210,13 +209,13 @@ def extract_resource_id(skill: str, command: str) -> Optional[str]:
     return m.group(1) if m else None
 
 
-def extract_region(command: str) -> Optional[str]:
+def extract_region(command: str) -> str | None:
     """从命令中提取Region。"""
     m = re.search(REGION_PATTERN, command)
     return m.group(1) if m else None
 
 
-def parse_trace_file(path: Path) -> Optional[Dict[str, Any]]:
+def parse_trace_file(path: Path) -> dict[str, Any] | None:
     """解析单个trace文件，提取关键字段。"""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -263,7 +262,7 @@ def parse_trace_file(path: Path) -> Optional[Dict[str, Any]]:
     }
 
 
-def load_traces(trace_dir: Path, window_minutes: int) -> List[Dict[str, Any]]:
+def load_traces(trace_dir: Path, window_minutes: int) -> list[dict[str, Any]]:
     """加载指定时间窗口内的所有trace。"""
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(minutes=window_minutes)
@@ -281,8 +280,8 @@ def load_traces(trace_dir: Path, window_minutes: int) -> List[Dict[str, Any]]:
 
 
 def match_risk_pattern(
-    traces: List[Dict[str, Any]], pattern: RiskPattern
-) -> List[Dict[str, Any]]:
+    traces: list[dict[str, Any]], pattern: RiskPattern
+) -> list[dict[str, Any]]:
     """
     检测是否匹配风险模式。
     返回匹配该模式的资源组列表，每组包含触发告警的详细信息。
@@ -303,7 +302,7 @@ def match_risk_pattern(
 
     # 按group_by分组
     group_by = pattern["group_by"]
-    groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
     for t in filtered_traces:
         key = t.get(group_by) or "unknown"
@@ -341,8 +340,8 @@ def match_risk_pattern(
 
 
 def apply_degradation(
-    match: Dict[str, Any], state: Dict[str, Any], dry_run: bool = False
-) -> Dict[str, Any]:
+    match: dict[str, Any], state: dict[str, Any], dry_run: bool = False
+) -> dict[str, Any]:
     """
     执行降级动作。
     返回执行结果描述。
@@ -428,7 +427,7 @@ def apply_degradation(
     return result
 
 
-def restore_expired_degradations(state: Dict[str, Any], dry_run: bool = False) -> List[str]:
+def restore_expired_degradations(state: dict[str, Any], dry_run: bool = False) -> list[str]:
     """
     检查并恢复已过期的降级。
     返回已恢复的资源ID列表。
@@ -468,7 +467,7 @@ def restore_expired_degradations(state: Dict[str, Any], dry_run: bool = False) -
     return restored
 
 
-def format_alert_output(findings: List[Dict[str, Any]], restored: List[str]) -> str:
+def format_alert_output(findings: list[dict[str, Any]], restored: list[str]) -> str:
     """格式化告警输出。"""
     lines = []
     lines.append("=" * 70)
@@ -593,7 +592,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
 
     # 仅检查降级状态模式

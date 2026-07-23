@@ -35,9 +35,7 @@ import hashlib
 import hmac
 import sys
 from pathlib import Path
-from typing import Dict, Optional
 from urllib.parse import quote as _urllib_quote
-
 
 # Headers that always participate in the signature. Aligned with
 # references/api-signing.md §2.1 — adding extra headers here is a
@@ -117,8 +115,8 @@ def sign(
     service: str = "agentrun",
     content_type: str = "application/json",
     query: str = "",
-    session_token: Optional[str] = None,
-) -> Dict[str, str]:
+    session_token: str | None = None,
+) -> dict[str, str]:
     """Build ACS3-HMAC-SHA256 signed headers for an AgentRun request.
 
     Args:
@@ -181,7 +179,7 @@ def sign(
     signing_key = _derive_signing_key(sk, date, region, service)
     signature = _hmac_sha256(signing_key, string_to_sign).hex()
 
-    headers: Dict[str, str] = {
+    headers: dict[str, str] = {
         "Authorization": (
             f"ACS3-HMAC-SHA256 "
             f"Credential={ak}/{credential_scope}, "
@@ -231,7 +229,7 @@ def _build_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         headers = sign(

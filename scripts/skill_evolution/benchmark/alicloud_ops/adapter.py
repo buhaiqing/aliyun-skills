@@ -9,10 +9,9 @@ from pathlib import Path
 from dataloader import build_skillopt_dataloader_class, materialize_skillopt_splits
 from reflect import run_reflect
 from rollout import resolve_skills_root, run_batch
-from trajectories import resolve_trajectories_path
-
 from skillopt.datasets.base import BatchSpec
 from skillopt.envs.base import EnvAdapter
+from trajectories import resolve_trajectories_path
 
 
 class AliCloudOpsAdapter(EnvAdapter):

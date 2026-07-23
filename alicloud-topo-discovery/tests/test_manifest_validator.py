@@ -1,8 +1,9 @@
 """Tests for manifest.json schema validation."""
 import copy
-import pytest
-from scripts.lib.manifest_validator import ManifestValidator, ManifestValidationError
 
+import pytest
+
+from scripts.lib.manifest_validator import ManifestValidationError, ManifestValidator
 
 # A complete, valid manifest used as the base for "mutate one field" tests
 VALID_MANIFEST = {

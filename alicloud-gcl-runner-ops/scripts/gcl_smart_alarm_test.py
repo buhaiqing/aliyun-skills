@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_smart_alarm_test.py — unit tests for `gcl_smart_alarm_engine.py`.
 
@@ -23,7 +22,6 @@ Test coverage:
 from __future__ import annotations
 
 import json
-import os
 import sys
 import tempfile
 import unittest
@@ -306,7 +304,7 @@ class TraceParsingTests(unittest.TestCase):
             "final": {"status": "PASS", "iter": 1}
         }
         path = self._create_gcl_trace_file("gcl-trace-test.json", trace)
-        
+
         result = engine.parse_trace_file(path)
         self.assertIsNotNone(result)
         self.assertEqual(result["skill"], "alicloud-ecs-ops")
@@ -334,7 +332,7 @@ class TraceParsingTests(unittest.TestCase):
             "final": {"status": "SAFETY_FAIL", "iter": 1}
         }
         path = self._create_gcl_trace_file("gcl-trace-safety.json", trace)
-        
+
         result = engine.parse_trace_file(path)
         self.assertIsNotNone(result)
         self.assertEqual(result["decision"], "SAFETY_FAIL")
@@ -344,7 +342,7 @@ class TraceParsingTests(unittest.TestCase):
         """解析无效JSON返回None."""
         path = self.trace_dir / "invalid.json"
         path.write_text("not valid json", encoding="utf-8")
-        
+
         result = engine.parse_trace_file(path)
         self.assertIsNone(result)
 
@@ -356,7 +354,7 @@ class TraceParsingTests(unittest.TestCase):
             # 缺少iterations
         }
         path = self._create_gcl_trace_file("no-iterations.json", trace)
-        
+
         result = engine.parse_trace_file(path)
         self.assertIsNone(result)
 
@@ -369,7 +367,7 @@ class TraceParsingTests(unittest.TestCase):
 class RiskPatternDetectionTests(unittest.TestCase):
     """T4: Detection of all 4 risk patterns."""
 
-    def _create_trace(self, skill: str, decision: str, resource_id: str = None, 
+    def _create_trace(self, skill: str, decision: str, resource_id: str = None,
                       region: str = None, minutes_ago: int = 0) -> dict:
         now = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
         trace = {
@@ -389,10 +387,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", "i-bp1xxxxxxxxxx", "cn-hangzhou", 10),
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", "i-bp1xxxxxxxxxx", "cn-hangzhou", 20),
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[0]  # resource_safety_repeated
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["pattern_id"], "resource_safety_repeated")
         self.assertEqual(matches[0]["severity"], "P1")
@@ -404,10 +402,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "HALLUCINATION_ABORT", "i-bp1xxxxxxxxxx", "cn-hangzhou", 15),
             self._create_trace("alicloud-ecs-ops", "HALLUCINATION_ABORT", "i-bp1xxxxxxxxxx", "cn-hangzhou", 30),
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[1]  # resource_hallucination_repeated
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["pattern_id"], "resource_hallucination_repeated")
         self.assertEqual(matches[0]["severity"], "P2")
@@ -418,10 +416,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", f"i-bp{i}", "cn-hangzhou", i*2)
             for i in range(5)
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[2]  # region_safety_burst
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["pattern_id"], "region_safety_burst")
         self.assertEqual(matches[0]["severity"], "P0")
@@ -433,10 +431,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", f"i-bp{i}", "cn-hangzhou", i*2)
             for i in range(10)
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[3]  # skill_wide_failure
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["pattern_id"], "skill_wide_failure")
         self.assertEqual(matches[0]["severity"], "P0")
@@ -447,7 +445,7 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "PASS", f"i-bp{i}", "cn-hangzhou", i*2)
             for i in range(20)
         ]
-        
+
         for pattern in engine.DEFAULT_RISK_PATTERNS:
             matches = engine.match_risk_pattern(traces, pattern)
             self.assertEqual(len(matches), 0, f"Pattern {pattern['id']} should not match PASS traces")
@@ -458,10 +456,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", f"i-bp{i}", "cn-hangzhou", i*5)
             for i in range(5)
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[0]  # resource_safety_repeated
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         # 不同资源，不应该匹配resource_safety_repeated
         self.assertEqual(len(matches), 0)
 
@@ -473,10 +471,10 @@ class RiskPatternDetectionTests(unittest.TestCase):
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", "i-bp1xxxxxxxxxx", "cn-hangzhou", 20),
             self._create_trace("alicloud-ecs-ops", "SAFETY_FAIL", "i-bp1xxxxxxxxxx", "cn-hangzhou", 90),  # 超过60分钟窗口
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[0]  # resource_safety_repeated (30分钟窗口)
         matches = engine.match_risk_pattern(traces, pattern)
-        
+
         # 只有2次在30分钟窗口内
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0]["occurrence_count"], 2)
@@ -529,7 +527,7 @@ class DegradationStateTests(unittest.TestCase):
             "version": "1.0.0"
         }
         engine.save_degradation_state(state)
-        
+
         loaded = engine.load_degradation_state()
         self.assertEqual(loaded["downgraded_resources"]["i-bp1xxxxxxxxxx"]["resource_id"], "i-bp1xxxxxxxxxx")
         self.assertEqual(loaded["downgraded_resources"]["i-bp1xxxxxxxxxx"]["current_max_iter"], 1)
@@ -545,11 +543,11 @@ class DegradationStateTests(unittest.TestCase):
             "action": "downgrade_resource_max_iter",
             "action_params": {"target_max_iter": 1, "restore_after_minutes": 60}
         }
-        
+
         initial_state = {"downgraded_resources": {}, "hot_regions": {}, "version": "1.0.0"}
-        
+
         result = engine.apply_degradation(match, initial_state, dry_run=True)
-        
+
         self.assertTrue(result["applied"])
         self.assertFalse(result["state_changed"])
         self.assertIn("downgraded", result["message"].lower())
@@ -566,14 +564,14 @@ class DegradationStateTests(unittest.TestCase):
             "action": "downgrade_resource_max_iter",
             "action_params": {"target_max_iter": 1, "restore_after_minutes": 60}
         }
-        
+
         initial_state = {"downgraded_resources": {}, "hot_regions": {}, "version": "1.0.0"}
-        
+
         result = engine.apply_degradation(match, initial_state, dry_run=False)
-        
+
         self.assertTrue(result["applied"])
         self.assertTrue(result["state_changed"])
-        
+
         # 验证state已保存
         loaded = engine.load_degradation_state()
         self.assertIn("i-bp1xxxxxxxxxx", loaded["downgraded_resources"])
@@ -583,13 +581,13 @@ class DegradationStateTests(unittest.TestCase):
         # Create temp state file manually for this test
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             temp_path = Path(f.name)
-        
+
         try:
             with mock.patch.object(engine, 'get_degradation_state_path', return_value=temp_path):
                 now = datetime.now(timezone.utc)
                 expired_time = now - timedelta(minutes=1)
                 future_time = now + timedelta(hours=1)
-                
+
                 state = {
                     "downgraded_resources": {
                         "i-expired": {
@@ -607,14 +605,14 @@ class DegradationStateTests(unittest.TestCase):
                     "version": "1.0.0"
                 }
                 engine.save_degradation_state(state)
-                
+
                 current_state = engine.load_degradation_state()
                 restored = engine.restore_expired_degradations(current_state, dry_run=False)
-                
+
                 # Engine returns both resource_id and message string
                 self.assertTrue(any("i-expired" in r for r in restored))
                 self.assertTrue(any("restored" in r.lower() for r in restored))
-                
+
                 # 验证state已更新
                 engine.save_degradation_state(current_state)
                 new_state = engine.load_degradation_state()
@@ -804,7 +802,7 @@ class EdgeCaseTests(unittest.TestCase):
                 "command": "aliyun ecs DescribeRegions"
             }
         ]
-        
+
         pattern = engine.DEFAULT_RISK_PATTERNS[0]  # resource_safety_repeated
         matches = engine.match_risk_pattern(traces, pattern)
         # 不会匹配，因为只有1次且group_key会是unknown
@@ -945,7 +943,7 @@ class EdgeCaseTests(unittest.TestCase):
                 "region": "cn-hangzhou",
                 "command": f"aliyun ecs TestOp --InstanceId i-bp{i:04d} --RegionId cn-hangzhou"
             })
-        
+
         # 应该能正常处理不崩溃
         for pattern in engine.DEFAULT_RISK_PATTERNS:
             matches = engine.match_risk_pattern(traces, pattern)
@@ -1049,9 +1047,9 @@ class EdgeCaseTests(unittest.TestCase):
         """模拟并发访问状态文件应该不抛出异常."""
         import threading
         import time
-        
+
         errors = []
-        
+
         def read_state():
             try:
                 for _ in range(10):
@@ -1059,13 +1057,13 @@ class EdgeCaseTests(unittest.TestCase):
                     time.sleep(0.001)
             except Exception as e:
                 errors.append(str(e))
-        
+
         threads = [threading.Thread(target=read_state) for _ in range(5)]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
-        
+
         # 不应该有错误
         self.assertEqual(errors, [], f"Concurrent access errors: {errors}")
 
@@ -1083,7 +1081,7 @@ class EdgeCaseTests(unittest.TestCase):
                 "command": "aliyun ecs TestOp --InstanceId i-bp1xxxxxxxxxx --RegionId cn-hangzhou"
             }
         ]
-        
+
         # 创建0分钟窗口的模式
         zero_window_pattern = {
             "id": "test_zero_window",
@@ -1094,7 +1092,7 @@ class EdgeCaseTests(unittest.TestCase):
             "window_minutes": 0,
             "severity": "P1",
         }
-        
+
         matches = engine.match_risk_pattern(traces, zero_window_pattern)
         # 窗口为0时，应该没有匹配（因为cutoff = now - 0 = now）
         # 除非trace的timestamp >= now，这取决于执行时机
@@ -1103,7 +1101,7 @@ class EdgeCaseTests(unittest.TestCase):
     def test_risk_pattern_with_multiple_decision_types(self):
         """多种decision类型的模式应该正确匹配."""
         now = datetime.now(timezone.utc)
-        traces = [
+        [
             {
                 "trace_file": "safety.json",
                 "skill": "alicloud-ecs-ops",
@@ -1123,7 +1121,7 @@ class EdgeCaseTests(unittest.TestCase):
                 "command": "aliyun ecs TestOp --InstanceId i-bp1xxxxxxxxxx --RegionId cn-hangzhou"
             }
         ]
-        
+
         # 使用skill_wide_failure模式（它接受多种decision类型）
         pattern = engine.DEFAULT_RISK_PATTERNS[3]  # skill_wide_failure
         # 需要有10次失败才会触发
@@ -1141,7 +1139,7 @@ class EdgeCaseTests(unittest.TestCase):
         # 5次不够触发skill_wide_failure（需要10次）
         matches = engine.match_risk_pattern(many_traces, pattern)
         self.assertEqual(len(matches), 0)
-        
+
         # 再添加5次达到10次
         for i in range(5, 10):
             many_traces.append({
@@ -1160,12 +1158,12 @@ class EdgeCaseTests(unittest.TestCase):
         """降级信息缺少original_max_iter应该使用默认值."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             temp_path = Path(f.name)
-        
+
         try:
             with mock.patch.object(engine, 'get_degradation_state_path', return_value=temp_path):
                 now = datetime.now(timezone.utc)
                 future_time = now + timedelta(hours=1)
-                
+
                 state = {
                     "downgraded_resources": {
                         "i-test": {
@@ -1179,7 +1177,7 @@ class EdgeCaseTests(unittest.TestCase):
                     "version": "1.0.0"
                 }
                 engine.save_degradation_state(state)
-                
+
                 # 直接加载状态验证
                 loaded = engine.load_degradation_state()
                 downgraded = loaded.get("downgraded_resources", {})
@@ -1209,12 +1207,12 @@ class EdgeCaseTests(unittest.TestCase):
             ],
             "final": {"status": "PASS", "iter": 1}
         }
-        
+
         with tempfile.TemporaryDirectory() as tmpdir:
             trace_dir = Path(tmpdir)
             trace_file = trace_dir / "gcl-trace-nested.json"
             trace_file.write_text(json.dumps(trace), encoding="utf-8")
-            
+
             result = engine.parse_trace_file(trace_file)
             self.assertIsNotNone(result)
             self.assertEqual(result["resource_id"], "i-bp1xxxxxxxxxx")

@@ -19,7 +19,6 @@ import re
 import sys
 from pathlib import Path
 
-
 # emoji -> ASCII 替换映射
 # 仅放真正的 emoji 字符, 不放 ASCII 标识词
 # 格式: (源, 目标)

@@ -151,7 +151,7 @@ def format_recent_executions(
         line = f"- {ts} op={op} status={status} pass={passed} iter={iters}"
         scores = e.get("scores") or {}
         if scores:
-            low = [k for k, v in scores.items() if isinstance(v, (int, float)) and v < 0.8]
+            low = [k for k, v in scores.items() if isinstance(v, int | float) and v < 0.8]
             if low:
                 line += f" low_dims={','.join(low)}"
         lines.append(line)

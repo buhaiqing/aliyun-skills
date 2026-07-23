@@ -5,13 +5,13 @@ HITL Mode A 使用示例
 """
 
 from hitl_mode_a import (
-    create_checkpoint,
-    CLIController,
     CheckpointStore,
     CheckpointType,
+    CLIController,
     Environment,
+    create_checkpoint,
+    list_checkpoints,
     resume_checkpoint,
-    list_checkpoints
 )
 
 
@@ -20,7 +20,7 @@ def example_1_basic_nl2hcl():
     print("=" * 60)
     print("示例1: NL2HCL 工作流 (dev 环境)")
     print("=" * 60)
-    
+
     # 创建检查点
     checkpoint = create_checkpoint(
         checkpoint_type=CheckpointType.NL2HCL,
@@ -48,7 +48,7 @@ def example_1_basic_nl2hcl():
             }
         ]
     )
-    
+
     # 添加生成的配置文件（模拟）
     checkpoint.generated_files = {
         "main.tf": '''
@@ -70,21 +70,21 @@ variable "region" {
 }
 '''
     }
-    
+
     print(f"检查点已创建: {checkpoint.id}")
     print(f"环境: {checkpoint.environment.value}")
     print(f"资源数量: {len(checkpoint.resources)}")
     print(f"步骤: {[s.type.value for s in checkpoint.steps]}")
     print()
-    
+
     # 运行 CLI 控制器
     print("启动交互式 CLI...")
     print("(按 Ctrl+C 保存并退出，或使用 --resume 恢复)")
     print()
-    
+
     store = CheckpointStore()
     controller = CLIController(checkpoint, store)
-    
+
     try:
         completed = controller.run()
         print(f"\n完成! 状态: {completed.status.value}")
@@ -97,7 +97,7 @@ def example_2_import_with_selection():
     print("=" * 60)
     print("示例2: 逆向导入工作流 (uat 环境)")
     print("=" * 60)
-    
+
     checkpoint = create_checkpoint(
         checkpoint_type=CheckpointType.IMPORT,
         environment=Environment.UAT,
@@ -123,17 +123,17 @@ def example_2_import_with_selection():
             }
         ]
     )
-    
+
     print(f"检查点已创建: {checkpoint.id}")
     print(f"发现资源: {len(checkpoint.resources)}")
     for r in checkpoint.resources:
         warning = f" ⚠️ {r.warnings[0]}" if r.warnings else ""
         print(f"  - {r.name} ({r.id}){warning}")
     print()
-    
+
     store = CheckpointStore()
     controller = CLIController(checkpoint, store)
-    
+
     try:
         completed = controller.run()
         print(f"\n完成! 状态: {completed.status.value}")
@@ -148,7 +148,7 @@ def example_3_destroy_production():
     print("=" * 60)
     print("注意: 此示例展示最高安全级别的确认流程")
     print()
-    
+
     checkpoint = create_checkpoint(
         checkpoint_type=CheckpointType.DESTROY,
         environment=Environment.PRODUCTION,
@@ -157,9 +157,9 @@ def example_3_destroy_production():
             {"type": "alicloud_instance", "name": "test-server-2", "id": "i-bp1xxxx2"},
         ]
     )
-    
+
     print(f"检查点已创建: {checkpoint.id}")
-    print(f"⚠️ 将要销毁的资源:")
+    print("⚠️ 将要销毁的资源:")
     for r in checkpoint.resources:
         print(f"  - {r.name} ({r.id})")
     print()
@@ -169,10 +169,10 @@ def example_3_destroy_production():
     print("  3. 30秒冷却期")
     print("  4. 双重确认")
     print()
-    
+
     store = CheckpointStore()
     controller = CLIController(checkpoint, store)
-    
+
     try:
         completed = controller.run()
         print(f"\n完成! 状态: {completed.status.value}")
@@ -185,30 +185,30 @@ def example_4_resume_checkpoint():
     print("=" * 60)
     print("示例4: 恢复检查点")
     print("=" * 60)
-    
+
     # 先列出活跃检查点
     store = CheckpointStore()
     checkpoints = list_checkpoints(store)
-    
+
     if not checkpoints:
         print("当前没有活跃检查点")
         print("请先运行其他示例创建检查点")
         return
-    
+
     print("活跃检查点:")
     for i, cp in enumerate(checkpoints, 1):
         print(f"  {i}. {cp.id}")
         print(f"     类型: {cp.type.value}, 环境: {cp.environment.value}")
         print(f"     状态: {cp.status.value}")
         print(f"     当前步骤: {cp.current_step_index + 1}/{len(cp.steps)}")
-    
+
     # 恢复第一个检查点
     cp = checkpoints[0]
     print(f"\n恢复检查点: {cp.id}")
-    
+
     resumed = resume_checkpoint(cp.id, store)
     controller = CLIController(resumed, store)
-    
+
     try:
         completed = controller.run()
         print(f"\n完成! 状态: {completed.status.value}")
@@ -218,7 +218,7 @@ def example_4_resume_checkpoint():
 
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) < 2:
         print("用法: python3 example_usage.py <example_number>")
         print()
@@ -230,16 +230,16 @@ if __name__ == "__main__":
         print()
         print("例如: python3 example_usage.py 1")
         sys.exit(1)
-    
+
     example_num = sys.argv[1]
-    
+
     examples = {
         "1": example_1_basic_nl2hcl,
         "2": example_2_import_with_selection,
         "3": example_3_destroy_production,
         "4": example_4_resume_checkpoint,
     }
-    
+
     example_func = examples.get(example_num)
     if example_func:
         example_func()

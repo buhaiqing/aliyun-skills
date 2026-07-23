@@ -18,15 +18,13 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-import gcl_memory  # noqa: E402
-import gcl_reflexion  # noqa: E402
+from gcl_memory import memory_retrieve, memory_store  # noqa: E402
 from gcl_reflexion import (  # noqa: E402
     reflexion_extract,
     reflexion_report,
     reflexion_retrieve,
     reflexion_store,
 )
-from gcl_memory import memory_retrieve, memory_store  # noqa: E402
 from memory_preflight import preflight_retrieve  # noqa: E402
 
 

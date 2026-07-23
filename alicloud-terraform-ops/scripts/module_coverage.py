@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Module coverage manifest — NL2HCL gap detection + developer verification.
 
 Manifest: assets/module-coverage.json (single source of truth).
@@ -13,7 +12,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SKILL_DIR = SCRIPT_DIR.parent
@@ -26,22 +25,22 @@ class CoverageGap:
     tf_type: str
     reason: str
     detected_by: str  # intent | keyword
-    remediation: List[str] = field(default_factory=list)
+    remediation: list[str] = field(default_factory=list)
 
 
 @dataclass
 class CoverageReport:
-    intent_resources: List[str]
-    keyword_hits: List[str]
-    gaps: List[CoverageGap] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    intent_resources: list[str]
+    keyword_hits: list[str]
+    gaps: list[CoverageGap] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def must_halt(self) -> bool:
         return bool(self.gaps)
 
 
-def load_manifest(path: Path | None = None) -> Dict[str, Any]:
+def load_manifest(path: Path | None = None) -> dict[str, Any]:
     manifest_path = path or MANIFEST_PATH
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
     if "resources" not in data:
@@ -49,15 +48,15 @@ def load_manifest(path: Path | None = None) -> Dict[str, Any]:
     return data
 
 
-def manifest_resources(manifest: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
+def manifest_resources(manifest: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
     manifest = manifest or load_manifest()
     return manifest["resources"]
 
 
 def _compile_keyword_patterns(
-    resources: Dict[str, Dict[str, Any]],
-) -> List[tuple[re.Pattern[str], str]]:
-    patterns: List[tuple[re.Pattern[str], str]] = []
+    resources: dict[str, dict[str, Any]],
+) -> list[tuple[re.Pattern[str], str]]:
+    patterns: list[tuple[re.Pattern[str], str]] = []
     for tf_type, meta in resources.items():
         for kw in meta.get("keywords", []):
             if not kw:
@@ -68,19 +67,19 @@ def _compile_keyword_patterns(
 
 def detect_keyword_resources(
     request: str,
-    manifest: Optional[Dict[str, Any]] = None,
-) -> Set[str]:
+    manifest: dict[str, Any] | None = None,
+) -> set[str]:
     """Scan raw request for product keywords not caught by parse_intent."""
     resources = manifest_resources(manifest)
     patterns = _compile_keyword_patterns(resources)
-    hits: Set[str] = set()
+    hits: set[str] = set()
     for pattern, tf_type in patterns:
         if pattern.search(request):
             hits.add(tf_type)
     return hits
 
 
-def _remediation_for(tf_type: str, meta: Dict[str, Any]) -> List[str]:
+def _remediation_for(tf_type: str, meta: dict[str, Any]) -> list[str]:
     registry_name = meta.get("registry_name")
     lines = [
         f"资源 {tf_type} 尚无 NL2HCL module 模板（modules/ 缺失或未编排）。",
@@ -97,9 +96,9 @@ def _remediation_for(tf_type: str, meta: Dict[str, Any]) -> List[str]:
 
 
 def check_nl2hcl_coverage(
-    intent: Dict[str, Any],
+    intent: dict[str, Any],
     request: str,
-    manifest: Optional[Dict[str, Any]] = None,
+    manifest: dict[str, Any] | None = None,
 ) -> CoverageReport:
     """Detect silent omissions and NL2HCL module gaps."""
     resources = manifest_resources(manifest)
@@ -163,9 +162,9 @@ def format_coverage_halt(report: CoverageReport) -> str:
     return "\n".join(lines)
 
 
-def verify_manifest(manifest: Optional[Dict[str, Any]] = None) -> List[str]:
+def verify_manifest(manifest: dict[str, Any] | None = None) -> list[str]:
     """Developer gate: manifest ↔ modules/ ↔ resource_registry ↔ NL2HCL patterns."""
-    errors: List[str] = []
+    errors: list[str] = []
     manifest = manifest or load_manifest()
     resources = manifest_resources(manifest)
 
@@ -234,7 +233,7 @@ def verify_manifest(manifest: Optional[Dict[str, Any]] = None) -> List[str]:
     return errors
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="Module coverage verification")

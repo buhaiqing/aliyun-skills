@@ -4,11 +4,12 @@ Verifies topological ordering: parent resources must appear before
 their children, regardless of insertion order.
 """
 import pytest
+
 from scripts.lib.dependency_inference import (
-    infer_dependencies,
     DependencyInferenceError,
+    infer_dependencies,
 )
-from scripts.lib.field_mapper import MappingSpec, MappingRule
+from scripts.lib.field_mapper import MappingRule, MappingSpec
 
 
 def _make_resource(rt, data, spec, block_name):

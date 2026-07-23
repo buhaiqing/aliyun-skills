@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_cms_alarm_setup.py — Phase 3-B + Phase 4: Create / update CMS alarm rules for
 GCL phantom-op findings AND real pass-rate metrics.
@@ -34,17 +33,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import subprocess
 import sys
 import textwrap
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 #: Alarm definitions (alarm name → config)
 #: These MUST match the rubric §2.2 alarm thresholds.
-ALARMS: List[Dict[str, Any]] = [
+ALARMS: list[dict[str, Any]] = [
     {
         "name": "GCL-Phantom-Pass",
         "json_path": ("summary", "by_finding_type", "PHANTOM_PASS"),
@@ -127,7 +124,7 @@ EXIT_ERROR = 4
 # ---------------------------------------------------------------------------
 
 
-def load_latest_report(report_dir: Path) -> Optional[Dict[str, Any]]:
+def load_latest_report(report_dir: Path) -> dict[str, Any] | None:
     """Find the most recent crosscheck-report-*.json and parse it."""
     if not report_dir.is_dir():
         return None
@@ -135,7 +132,7 @@ def load_latest_report(report_dir: Path) -> Optional[Dict[str, Any]]:
     return json.loads(files[-1].read_text(encoding="utf-8")) if files else None
 
 
-def extract_metric_value(report: Dict[str, Any], json_path: Tuple[str, ...]) -> int:
+def extract_metric_value(report: dict[str, Any], json_path: tuple[str, ...]) -> int:
     """Traverse the report dict along json_path and return the value (or 0).
 
     Used by Phase 3-B phantom alarms to extract finding counts from
@@ -147,10 +144,10 @@ def extract_metric_value(report: Dict[str, Any], json_path: Tuple[str, ...]) -> 
             current = current.get(key, 0)
         else:
             return 0
-    return int(current) if isinstance(current, (int, float)) else 0
+    return int(current) if isinstance(current, int | float) else 0
 
 
-def is_passrate_alarm(alarm: Dict[str, Any]) -> bool:
+def is_passrate_alarm(alarm: dict[str, Any]) -> bool:
     """Return True if this is a Phase 4 pass-rate alarm (metric-based)."""
     return "json_path_metric" in alarm
 
@@ -160,7 +157,7 @@ def is_passrate_alarm(alarm: Dict[str, Any]) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def call_describe_alarm_list(name: str, region: str) -> List[Dict[str, Any]]:
+def call_describe_alarm_list(name: str, region: str) -> list[dict[str, Any]]:
     """Call `aliyun cms DescribeMetricAlarmList` for a specific alarm name."""
     proc = subprocess.run(
         [
@@ -179,7 +176,7 @@ def call_describe_alarm_list(name: str, region: str) -> List[Dict[str, Any]]:
         return []
 
 
-def call_put_metric_alarm(config: Dict[str, Any], region: str) -> int:
+def call_put_metric_alarm(config: dict[str, Any], region: str) -> int:
     """Call `aliyun cms PutMetricAlarm` with the given config.
 
     Supports two alarm types:
@@ -234,10 +231,10 @@ def call_delete_metric_alarm(name: str, region: str) -> int:
 
 
 def reconcile(
-    report: Dict[str, Any],
+    report: dict[str, Any],
     contact_group: str,
     region: str,
-    webhook: Optional[str] = None,
+    webhook: str | None = None,
     dry_run: bool = False,
 ) -> int:
     """Reconcile the desired alarm state against existing CMS alarms.
@@ -358,7 +355,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
 
     report = load_latest_report(args.report_dir)

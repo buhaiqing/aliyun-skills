@@ -44,7 +44,6 @@ from gcl_memory import (
     memory_store_lite,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -983,7 +982,7 @@ class MemoryPurgeUnknownTests(unittest.TestCase):
         self._write_unknown("alicloud-ecs-ops")
         self._write_unknown("alicloud-slb-ops")
         # Run via CLI (dry-run)
-        with tempfile.TemporaryDirectory() as env_dir:
+        with tempfile.TemporaryDirectory():
             # Write memory_root path to a temp marker
             # We call main() with args
             import io

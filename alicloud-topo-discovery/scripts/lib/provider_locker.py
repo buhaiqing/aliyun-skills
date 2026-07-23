@@ -10,8 +10,6 @@ Phase 1 strategy:
 - NEVER output AK patterns (LTAI*, AKIA*) in any path
 """
 import re
-from typing import Optional
-
 
 # Current stable Aliyun Provider version (update when Aliyun releases new stable)
 DEFAULT_PROVIDER_VERSION = "1.220.0"
@@ -38,7 +36,7 @@ _FORBIDDEN_PATTERNS = [
 def generate_provider_block(
     version: str = DEFAULT_PROVIDER_VERSION,
     region: str = "cn-hangzhou",
-    profile: Optional[str] = None,
+    profile: str | None = None,
 ) -> str:
     """Generate a Terraform provider block as a string.
 
@@ -107,7 +105,7 @@ class ProviderLocker:
         self.version = version
 
     def render_block(
-        self, region: str = "cn-hangzhou", profile: Optional[str] = None
+        self, region: str = "cn-hangzhou", profile: str | None = None
     ) -> str:
         """Render the provider block with this locker's version."""
         return generate_provider_block(

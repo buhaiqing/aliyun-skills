@@ -10,7 +10,7 @@ Architecture:
     FieldMapper.map_resource(resource_type, resource_data, spec, block_name) -> str
 """
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from scripts.lib.sensitive_masker import SensitiveMasker
 
@@ -32,7 +32,7 @@ class MappingSpec:
     resource_type: str
     terraform_type: str
     rules: list = field(default_factory=list)
-    parent_ref: Optional[str] = None
+    parent_ref: str | None = None
 
 
 class FieldMapper:
@@ -89,7 +89,7 @@ class FieldMapper:
                 var_ref = self._masker.mask_field(resource_type, api_field_name, raw_value)[0]
                 hcl_value = var_ref if isinstance(var_ref, str) else self._format_value(var_ref, rule.type)
                 lines.append(f"  {rule.hcl_attr} = {hcl_value}")
-                lines.append(f"  sensitive = true")
+                lines.append("  sensitive = true")
             else:
                 lines.append(f"  {rule.hcl_attr} = {hcl_value}")
 
@@ -135,7 +135,7 @@ class FieldMapper:
         if type_hint == "int":
             return str(int(value))
         if type_hint == "list":
-            if isinstance(value, (list, tuple)):
+            if isinstance(value, list | tuple):
                 items = ", ".join(f'"{str(v)}"' for v in value)
                 return f"[{items}]"
             return f'["{value}"]'

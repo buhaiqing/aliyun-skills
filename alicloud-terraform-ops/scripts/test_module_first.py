@@ -8,9 +8,9 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
+import nl2hcl_generator
 from execution_trace import CommandRecord
 from module_catalog import MODULES_ROOT, copy_modules, modules_for_trace, plan_modules
-import nl2hcl_generator
 from nl2hcl_generator import NL2HCLGenerator, lint_hcl
 
 

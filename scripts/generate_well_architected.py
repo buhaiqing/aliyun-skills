@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Batch generate well-architected-assessment.md files for missing skills."""
 
 from __future__ import annotations

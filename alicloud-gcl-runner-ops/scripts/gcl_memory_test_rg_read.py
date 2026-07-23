@@ -34,14 +34,11 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-import gcl_memory  # noqa: E402
 from gcl_memory import (  # noqa: E402
     _matches_resource_dimensions,
     main,
     memory_retrieve,
-    memory_store_lite,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixture builders

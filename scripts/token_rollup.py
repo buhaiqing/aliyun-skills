@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """TEL Phase 5 — aggregate runtime LLM token usage from traces into .runtime/token/.
 
 Reads wrapper traces (.runtime/traces/<skill>/ and legacy alicloud-*-ops/.runtime/traces/), GCL audit traces, and
@@ -13,10 +12,11 @@ import json
 import os
 import sys
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, DefaultDict, Iterable
+from typing import Any
 
 ROLLUP_VERSION = "1.5.0"
 INCREMENTAL_STATE_VERSION = "1.0.0"
@@ -54,7 +54,7 @@ def records_cache_path(repo_root: Path) -> Path:
 def _parse_ts(raw: Any, fallback: datetime | None = None) -> datetime | None:
     if raw is None or raw == "":
         return fallback
-    if isinstance(raw, (int, float)):
+    if isinstance(raw, int | float):
         try:
             return datetime.fromtimestamp(float(raw), tz=timezone.utc)
         except (OSError, OverflowError, ValueError):
@@ -396,7 +396,7 @@ def scan_l1_skill_stats(repo_root: Path, since: datetime) -> dict[str, Any]:
     if not root.is_dir():
         return {"available": False, "memory_root": str(root), "skill_stats": {}}
 
-    skill_stats: DefaultDict[str, dict[str, int]] = defaultdict(lambda: {"total": 0, "pass": 0, "fail": 0})
+    skill_stats: defaultdict[str, dict[str, int]] = defaultdict(lambda: {"total": 0, "pass": 0, "fail": 0})
     files_scanned = 0
     entries_in_window = 0
 
@@ -571,7 +571,7 @@ def scan_l2_patterns(repo_root: Path, since: datetime) -> dict[str, Any]:
     if not store:
         return {"available": False, "reflexion_root": str(root), "index": {}, "patterns_in_window": 0}
 
-    index: DefaultDict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    index: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     patterns_in_window = 0
 
     for category, rows in store.items():
@@ -685,7 +685,7 @@ def build_l2_join(
     l2_scan: dict[str, Any],
 ) -> dict[str, Any]:
     """Aggregate waste events by L2 (skill, op, category) trap (X-2)."""
-    traps: DefaultDict[tuple[str, str, str, str], dict[str, Any]] = defaultdict(
+    traps: defaultdict[tuple[str, str, str, str], dict[str, Any]] = defaultdict(
         lambda: {
             "waste_event_count": 0,
             "waste_tokens": 0,
@@ -799,7 +799,7 @@ def join_mcp_into_rollup(
     """Complete MCP dimension rollup across global / by_skill / by_agent_model (X-18)."""
     total_traces = len(records)
     mcp_records = [r for r in records if r.mcp]
-    util_samples = [float(r.mcp["mcp_tool_utilization"]) for r in mcp_records if isinstance(r.mcp.get("mcp_tool_utilization"), (int, float))]
+    util_samples = [float(r.mcp["mcp_tool_utilization"]) for r in mcp_records if isinstance(r.mcp.get("mcp_tool_utilization"), int | float)]
     waste_total = sum(int(r.mcp.get("mcp_schema_waste_tokens") or 0) for r in mcp_records)
     confidence: set[str] = set()
     for rec in mcp_records:
@@ -837,7 +837,7 @@ def join_mcp_into_rollup(
         s_loaded, s_invoked = _mcp_tool_sets(sidecar)
         loaded_all |= s_loaded
         invoked_all |= s_invoked
-        if isinstance(sidecar.get("mcp_tool_utilization"), (int, float)):
+        if isinstance(sidecar.get("mcp_tool_utilization"), int | float):
             util_samples.append(float(sidecar["mcp_tool_utilization"]))
         waste_total += int(sidecar.get("mcp_schema_waste_tokens") or 0)
         conf = sidecar.get("attribution_confidence")
@@ -978,7 +978,7 @@ class Bucket:
         if rec.mcp:
             self.mcp_trace_count += 1
             util = rec.mcp.get("mcp_tool_utilization")
-            if isinstance(util, (int, float)):
+            if isinstance(util, int | float):
                 self.mcp_util_samples.append(float(util))
             waste = rec.mcp.get("mcp_schema_waste_tokens")
             if isinstance(waste, int):
@@ -1037,10 +1037,10 @@ def _bucket_key_agent_model(rec: NormalizedRecord) -> str:
 
 def aggregate_records(records: Iterable[NormalizedRecord]) -> dict[str, Any]:
     global_b = Bucket()
-    by_skill: DefaultDict[str, Bucket] = defaultdict(Bucket)
-    by_op: DefaultDict[str, Bucket] = defaultdict(Bucket)
-    by_agent_model: DefaultDict[str, Bucket] = defaultdict(Bucket)
-    by_turn: DefaultDict[str, Bucket] = defaultdict(Bucket)
+    by_skill: defaultdict[str, Bucket] = defaultdict(Bucket)
+    by_op: defaultdict[str, Bucket] = defaultdict(Bucket)
+    by_agent_model: defaultdict[str, Bucket] = defaultdict(Bucket)
+    by_turn: defaultdict[str, Bucket] = defaultdict(Bucket)
     agent_model_meta: dict[str, dict[str, str]] = {}
 
     for rec in records:
@@ -1284,8 +1284,8 @@ def render_report(rollup: dict[str, Any], coverage: dict[str, Any]) -> str:
         "",
         "## Global",
         "",
-        f"| Metric | Value |",
-        f"|--------|------:|",
+        "| Metric | Value |",
+        "|--------|------:|",
         f"| Total tokens | {g.get('llm_usage', {}).get('total_tokens', 0)} |",
         f"| Traces | {g.get('trace_count', 0)} |",
         f"| tokens_per_success | {g.get('tokens_per_success', 0)} |",

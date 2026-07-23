@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """集中清理 alicloud-terraform-ops 运行时产物（默认 dry-run）。"""
 
 from __future__ import annotations
@@ -9,7 +8,6 @@ import shutil
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
 
 from runtime_paths import (
     audit_dir,
@@ -28,8 +26,8 @@ class CleanupItem:
 
 @dataclass
 class CleanupReport:
-    items: List[CleanupItem] = field(default_factory=list)
-    skipped: List[str] = field(default_factory=list)
+    items: list[CleanupItem] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
 
     @property
     def total_bytes(self) -> int:
@@ -51,7 +49,7 @@ def _dir_size(path: Path) -> int:
     return total
 
 
-def collect_targets(*, include_legacy: bool) -> List[CleanupItem]:
+def collect_targets(*, include_legacy: bool) -> list[CleanupItem]:
     root = get_skill_runtime_root()
     targets = [
         CleanupItem(root / "nl2hcl", "NL2HCL 生成物"),

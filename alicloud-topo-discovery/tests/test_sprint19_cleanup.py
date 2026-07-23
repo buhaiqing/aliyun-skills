@@ -8,14 +8,11 @@
   T5: gcl_runner.DEFAULT_AUDIT_DIR 指向 aliyun-skills 顶层 .runtime
   T6: cleanup --apply 标记超期 baseline 为 .expired
 """
-import json
 import os
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-
-import pytest
 
 SKILLS_DIR = Path("/Users/bohaiqing/opensource/git/aliyun-skills")
 

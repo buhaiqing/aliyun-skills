@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Repo-wide runtime cleanup for aliyun-skills (all skills).
 
 Default: dry-run. Use --apply to delete.
@@ -24,7 +23,6 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_SKILLS_DIR = SCRIPT_DIR.parent
@@ -39,7 +37,7 @@ class CleanupTarget:
 
 @dataclass
 class CleanupReport:
-    targets: List[CleanupTarget] = field(default_factory=list)
+    targets: list[CleanupTarget] = field(default_factory=list)
 
     @property
     def total_bytes(self) -> int:
@@ -73,8 +71,8 @@ def _dir_size(path: Path) -> int:
     return total
 
 
-def _collect_legacy_skill_paths(skills_dir: Path) -> List[CleanupTarget]:
-    targets: List[CleanupTarget] = []
+def _collect_legacy_skill_paths(skills_dir: Path) -> list[CleanupTarget]:
+    targets: list[CleanupTarget] = []
     for skill_dir in sorted(skills_dir.glob("alicloud-*")):
         if not skill_dir.is_dir():
             continue
@@ -92,8 +90,8 @@ def _collect_legacy_skill_paths(skills_dir: Path) -> List[CleanupTarget]:
     return targets
 
 
-def _collect_repo_legacy(skills_dir: Path) -> List[CleanupTarget]:
-    targets: List[CleanupTarget] = []
+def _collect_repo_legacy(skills_dir: Path) -> list[CleanupTarget]:
+    targets: list[CleanupTarget] = []
     for rel, reason in (
         ("audit-results", "repo legacy GCL traces"),
         ("infra-baseline", "repo legacy baselines"),
@@ -105,8 +103,8 @@ def _collect_repo_legacy(skills_dir: Path) -> List[CleanupTarget]:
     return targets
 
 
-def collect_full_wipe_targets(skills_dir: Path) -> List[CleanupTarget]:
-    targets: List[CleanupTarget] = []
+def collect_full_wipe_targets(skills_dir: Path) -> list[CleanupTarget]:
+    targets: list[CleanupTarget] = []
     runtime_root = skills_dir / ".runtime"
     if runtime_root.exists():
         targets.append(CleanupTarget(runtime_root, "unified .runtime/ tree"))
@@ -194,7 +192,7 @@ def purge_memory_fixtures(*, skills_dir: Path, apply: bool) -> MemoryPurgeReport
         except OSError:
             continue
 
-        kept_lines: List[str] = []
+        kept_lines: list[str] = []
         removed_here = 0
         for line in text.splitlines():
             stripped = line.strip()
@@ -378,7 +376,7 @@ def run_token_layer_maintain(skills_dir: Path, apply: bool) -> int:
     return proc.returncode
 
 
-def run_retention_cleanup(skills_dir: Path, apply: bool, argv: List[str]) -> int:
+def run_retention_cleanup(skills_dir: Path, apply: bool, argv: list[str]) -> int:
     aiops_script = skills_dir / "alicloud-aiops-cruise" / "scripts" / "lib" / "runtime_cleanup.py"
     if not aiops_script.is_file():
         print(f"[WARN] retention cleanup unavailable: {aiops_script} not found", file=sys.stderr)
@@ -400,7 +398,7 @@ def _format_bytes(num: int) -> str:
     return f"{num / (1024 * 1024):.1f} MB"
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="aliyun-skills repo-wide runtime cleanup")
     parser.add_argument("--apply", action="store_true", help="actually delete (default dry-run)")
     parser.add_argument(

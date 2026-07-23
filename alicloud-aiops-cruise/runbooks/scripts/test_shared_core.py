@@ -11,10 +11,10 @@ _shared.py 核心功能单元测试套件
     python3 test_shared_core.py -v
 """
 
-import sys
 import os
+import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 # 添加脚本目录到路径
@@ -38,14 +38,14 @@ class TestSubprocessTimeout(unittest.TestCase):
         """所有 subprocess.run 调用都应该有 timeout 参数"""
         import inspect
         import re
-        
+
         source = inspect.getsource(_shared)
         pattern = r'subprocess\.run\([^)]+\)'
         matches = re.findall(pattern, source, re.DOTALL)
-        
+
         calls_with_timeout = sum(1 for m in matches if 'timeout=' in m)
         total_calls = len(matches)
-        
+
         self.assertEqual(calls_with_timeout, total_calls,
                         f"{total_calls - calls_with_timeout} subprocess.run calls missing timeout")
 
@@ -57,7 +57,7 @@ class TestSemaphoreNonBlocking(unittest.TestCase):
         """q() 函数应该使用 acquire(timeout=...) 而非阻塞获取"""
         import inspect
         source = inspect.getsource(_shared.q)
-        
+
         self.assertIn('acquire(timeout=', source,
                      "q() should use non-blocking acquire with timeout")
         self.assertIn('semaphore timeout', source.lower(),
@@ -67,7 +67,7 @@ class TestSemaphoreNonBlocking(unittest.TestCase):
         """Semaphore 超时值应该与命令 timeout 一致"""
         import inspect
         source = inspect.getsource(_shared.q)
-        
+
         # 检查是否使用了 timeout 参数
         self.assertRegex(source, r'acquire\(timeout=\w+\)',
                         "Semaphore acquire should use dynamic timeout value")
@@ -85,7 +85,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
             'v': 95.5,
             'th': '75/90'
         }
-        
+
         self.finding_warning = {
             'r': 'i-test-002',
             't': 'ECS',
@@ -93,7 +93,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
             'v': 78.0,
             'th': '70/85'
         }
-        
+
         self.common_params = {
             'customer': 'test-customer',
             'run_id': 'test-run-id',
@@ -109,14 +109,14 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_critical, **self.common_params
         )
-        
+
         ts = incident['timestamp']
-        
+
         # 检查格式: YYYY-MM-DDTHH:MM:SSZ
         self.assertIn('T', ts, "timestamp should contain 'T' separator")
         self.assertTrue(ts.endswith('Z'), "timestamp should end with 'Z'")
         self.assertNotIn('.', ts, "timestamp should not have microseconds")
-        
+
         # 验证可以解析
         try:
             datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ")
@@ -128,7 +128,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_critical, **self.common_params
         )
-        
+
         self.assertEqual(incident['level'], 'CRITICAL')
         self.assertIsNotNone(incident['dedup_key'])
         self.assertGreater(len(incident['dedup_key']), 0,
@@ -139,7 +139,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_warning, **self.common_params
         )
-        
+
         self.assertEqual(incident['level'], 'WARNING')
         self.assertIsNotNone(incident['dedup_key'])
         self.assertGreater(len(incident['dedup_key']), 0)
@@ -149,10 +149,10 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_critical, **self.common_params
         )
-        
+
         dedup_key = incident['dedup_key']
         parts = dedup_key.split(':')
-        
+
         self.assertEqual(len(parts), 5,
                         f"dedup_key should have 5 parts: {dedup_key}")
         self.assertEqual(parts[0], 'test-customer')
@@ -169,7 +169,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
             'v': 95.5,
             'th': '75/90'
         }
-        
+
         # CRITICAL/WARNING 必须有 dedup_key,如果 resource_id 为空会失败
         with self.assertRaises(ValueError):
             _shared.to_incident(bad_finding, **self.common_params)
@@ -179,7 +179,7 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_critical, **self.common_params
         )
-        
+
         self.assertEqual(incident['schema_version'], '1.0.0')
 
     def test_required_fields_present(self):
@@ -187,13 +187,13 @@ class TestIncidentSchemaConverter(unittest.TestCase):
         incident = _shared.to_incident(
             self.finding_critical, **self.common_params
         )
-        
+
         required_fields = [
             'incident_id', 'schema_version', 'customer', 'timestamp',
             'run_id', 'level', 'resource_type', 'resource_id', 'region',
             'rule_id', 'title', 'dedup_key', 'impact', 'suggestion', 'trace'
         ]
-        
+
         for field in required_fields:
             self.assertIn(field, incident,
                          f"Required field '{field}' missing from incident")
@@ -217,13 +217,13 @@ class TestIdempotentUtils(unittest.TestCase):
         import tempfile
         with tempfile.NamedTemporaryFile(delete=False, suffix='.log') as f:
             tmp_path = f.name
-        
+
         try:
             self.lib_idempotent.safe_append(tmp_path, "test line")
-            
-            with open(tmp_path, 'r') as f:
+
+            with open(tmp_path) as f:
                 content = f.read()
-            
+
             self.assertIn('test line', content)
             self.assertIn('[', content)  # 应该有时间戳前缀
         finally:
@@ -234,15 +234,15 @@ class TestIdempotentUtils(unittest.TestCase):
         import tempfile
         with tempfile.NamedTemporaryFile(delete=False, suffix='.log') as f:
             tmp_path = f.name
-        
+
         try:
             self.lib_idempotent.safe_append(tmp_path, "line 1")
             self.lib_idempotent.safe_append(tmp_path, "line 2")
             self.lib_idempotent.safe_append(tmp_path, "line 3")
-            
-            with open(tmp_path, 'r') as f:
+
+            with open(tmp_path) as f:
                 lines = f.readlines()
-            
+
             self.assertEqual(len(lines), 3)
             self.assertIn('line 1', lines[0])
             self.assertIn('line 2', lines[1])

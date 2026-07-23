@@ -3031,7 +3031,7 @@ def main(argv: list[str] | None = None) -> int:
     gcl_critic_llm_endpoint: str | None = os.environ.get("GCL_CRITIC_LLM_ENDPOINT")
     gcl_critic_llm_api_key: str | None = os.environ.get("GCL_CRITIC_LLM_API_KEY")
     gcl_critic_llm_model: str | None = os.environ.get("GCL_CRITIC_LLM_MODEL")
-    gcl_critic_llm_timeout: int = int(os.environ.get("GCL_CRITIC_LLM_TIMEOUT", "30"))
+    int(os.environ.get("GCL_CRITIC_LLM_TIMEOUT", "30"))
     gcl_critic_llm_fail_open: bool = os.environ.get("GCL_CRITIC_LLM_FAIL_OPEN", "true").lower() == "true"
 
     # Pre-flight check for LLM/hybrid mode

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Batch generate missing reference files for skills."""
 
 from __future__ import annotations
@@ -113,7 +112,7 @@ SKILL_CONFIGS = {
 def generate_core_concepts(skill_name: str, config: dict) -> str:
     """Generate core-concepts.md content."""
     resources_list = "\n".join([f"- **{r}**: Primary resource type" for r in config["resources"]])
-    
+
     return f"""# Core Concepts — Alibaba Cloud {config['name']}
 
 ## What is {config['name']}?
@@ -159,7 +158,7 @@ def generate_api_sdk_usage(skill_name: str, config: dict) -> str:
     operations_table = "\n".join(
         [f"| {op[1]} | `{op[0]}` | `{op[2]}()` | `{op[3]}` |" for op in config["operations"]]
     )
-    
+
     return f"""# API & SDK — Alibaba Cloud {config['name']}
 
 ## OpenAPI
@@ -200,7 +199,7 @@ def generate_troubleshooting(skill_name: str, config: dict) -> str:
     error_table = "\n".join(
         [f"| `{code}` | {http} | {mean} | {action} |" for code, http, mean, action in config["error_codes"]]
     )
-    
+
     return f"""# Troubleshooting Alibaba Cloud {config['name']}
 
 ## Common API Error Codes
@@ -328,10 +327,10 @@ def fix_invalid_json(skill_name: str) -> bool:
     """Fix invalid eval_queries.json files."""
     assets_dir = REPO_ROOT / skill_name / "assets"
     target_file = assets_dir / "eval_queries.json"
-    
+
     if not target_file.exists():
         return False
-    
+
     try:
         content = target_file.read_text(encoding="utf-8")
         json.loads(content)

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import tempfile
 import unittest
@@ -123,7 +122,7 @@ class DiffVsBaselineTests(unittest.TestCase):
                 "alicloud-ecs-ops": {"failure_rate": 0.2, "risk_score": 0.2},
             },
         }
-        delta = strategy.diff_vs_baseline(current, baseline)
+        strategy.diff_vs_baseline(current, baseline)
         types = [i["type"] for i in current["actionable_items"]]
         self.assertIn("failure_rate_worsening", types)
 

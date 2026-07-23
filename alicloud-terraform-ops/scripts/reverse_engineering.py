@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 reverse_engineering.py — Import Existing Resources to Terraform
 
@@ -57,23 +56,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
 import textwrap
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Import resource registry for PreFlight checks
-from resource_registry import (
-    ResourceRegistry, 
-    CapabilityChecker, 
-    SupportLevel,
-    ResourceCapability,
-    get_registry
-)
-
+from resource_registry import CapabilityChecker, ResourceCapability, get_registry
 
 # Allowed terraform subcommands during dry-run mode. All others are mocked.
 TERRAFORM_DRY_RUN_ALLOWED = frozenset({"init", "validate", "plan"})
@@ -120,13 +111,13 @@ class ResourceReferenceRegistry:
     """同一批次导入资源：cloud ID → Terraform 资源引用。"""
 
     def __init__(self) -> None:
-        self._entries: Dict[str, Tuple[str, str]] = {}
+        self._entries: dict[str, tuple[str, str]] = {}
 
     def register(self, cloud_id: str, tf_type: str, tf_name: str) -> None:
         if cloud_id:
             self._entries[cloud_id] = (tf_type, tf_name)
 
-    def reference(self, cloud_id: str, attribute: str = "id") -> Optional[str]:
+    def reference(self, cloud_id: str, attribute: str = "id") -> str | None:
         if not cloud_id:
             return None
         entry = self._entries.get(cloud_id)
@@ -246,7 +237,7 @@ class ResourceMapper:
         self.region = region
 
     @staticmethod
-    def extract_cloud_id(resource_type: str, data: Dict) -> str:
+    def extract_cloud_id(resource_type: str, data: dict) -> str:
         """从 API 响应提取云资源 ID。"""
         if resource_type == "vpc":
             return data.get("Vpc", {}).get("VpcId", "")
@@ -305,7 +296,7 @@ class ResourceMapper:
             tf_name = f"{prefix}{tf_name}" if tf_name else prefix.rstrip("_")
         return tf_name
 
-    def _hcl_ref(self, refs: Optional[ResourceReferenceRegistry], cloud_id: str) -> str:
+    def _hcl_ref(self, refs: ResourceReferenceRegistry | None, cloud_id: str) -> str:
         if refs:
             return refs.hcl_value(cloud_id)
         if cloud_id:
@@ -313,7 +304,7 @@ class ResourceMapper:
         return '""'
 
     @staticmethod
-    def extract_attached_instance_id(data: Dict) -> Optional[str]:
+    def extract_attached_instance_id(data: dict) -> str | None:
         disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
         if isinstance(disk, list):
             disk = disk[0] if disk else {}
@@ -330,7 +321,7 @@ class ResourceMapper:
         disk_id: str,
         instance_id: str,
         disk_tf_name: str,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         attach_tf_name = f"attach_{disk_tf_name.replace('imported_disk_', '', 1)}"
         instance_ref = self._hcl_ref(refs, instance_id)
@@ -346,7 +337,7 @@ class ResourceMapper:
             }}
         """)
 
-    def query_resource(self, resource_type: str, resource_id: str) -> Optional[Dict]:
+    def query_resource(self, resource_type: str, resource_id: str) -> dict | None:
         """Query resource details via aliyun CLI."""
         mapping = self.RESOURCE_APIS.get(resource_type)
         if not mapping:
@@ -393,12 +384,12 @@ class ResourceMapper:
         except Exception as e:
             return {"error": str(e), "id": resource_id}
 
-    def discover_associated(self, resource_type: str, resource_id: str) -> List[Dict]:
+    def discover_associated(self, resource_type: str, resource_id: str) -> list[dict]:
         """Discover associated resources."""
-        associated: List[Dict] = []
+        associated: list[dict] = []
         seen: set = set()
 
-        def _add(items: List[Dict]) -> None:
+        def _add(items: list[dict]) -> None:
             for item in items:
                 key = (item["type"], item["id"])
                 if key not in seen and item["type"] in self.RESOURCE_APIS:
@@ -427,7 +418,7 @@ class ResourceMapper:
 
         return associated
 
-    def _query_vswitches(self, vpc_id: str) -> List[Dict]:
+    def _query_vswitches(self, vpc_id: str) -> list[dict]:
         """Query vSwitches in VPC."""
         cmd = [
             "aliyun", "vpc", "DescribeVSwitches",
@@ -455,7 +446,7 @@ class ResourceMapper:
 
         return []
 
-    def _query_route_tables(self, vpc_id: str) -> List[Dict]:
+    def _query_route_tables(self, vpc_id: str) -> list[dict]:
         """Query route tables in VPC."""
         cmd = [
             "aliyun", "vpc", "DescribeRouteTables",
@@ -483,7 +474,7 @@ class ResourceMapper:
 
         return []
 
-    def _query_nat_gateways(self, vpc_id: str) -> List[Dict]:
+    def _query_nat_gateways(self, vpc_id: str) -> list[dict]:
         """Query NAT gateways in VPC."""
         cmd = [
             "aliyun", "vpc", "DescribeNatGateways",
@@ -507,13 +498,13 @@ class ResourceMapper:
             log_dry_run("ERROR", f"查询 NAT Gateway 失败: {e}", is_error=True)
         return []
 
-    def _discover_from_ecs(self, data: Dict) -> List[Dict]:
+    def _discover_from_ecs(self, data: dict) -> list[dict]:
         """Discover resources linked to an ECS instance."""
         instances = data.get("Instances", {}).get("Instance", [])
         if not instances:
             return []
         instance = instances[0]
-        found: List[Dict] = []
+        found: list[dict] = []
 
         vswitch_ids = instance.get("VpcAttributes", {}).get("VSwitchId", [])
         for vsid in vswitch_ids:
@@ -535,10 +526,10 @@ class ResourceMapper:
 
         return found
 
-    def _discover_from_slb(self, data: Dict) -> List[Dict]:
+    def _discover_from_slb(self, data: dict) -> list[dict]:
         """Discover backend servers and network links for SLB."""
         lb = data.get("LoadBalancer", {})
-        found: List[Dict] = []
+        found: list[dict] = []
         vswitch_id = lb.get("VSwitchId")
         vpc_id = lb.get("VpcId")
         if vswitch_id:
@@ -553,12 +544,12 @@ class ResourceMapper:
                 found.append({"type": "ecs", "id": server_id, "name": b.get("ServerIp", "")})
         return found
 
-    def _discover_from_rds(self, data: Dict) -> List[Dict]:
+    def _discover_from_rds(self, data: dict) -> list[dict]:
         """Discover network dependencies for RDS."""
         db = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
         if not db:
             db = data.get("DBInstanceAttribute", {})
-        found: List[Dict] = []
+        found: list[dict] = []
         vswitch_id = db.get("VSwitchId")
         vpc_id = db.get("VpcId")
         if vswitch_id:
@@ -570,9 +561,9 @@ class ResourceMapper:
     def to_hcl(
         self,
         resource_type: str,
-        resource_data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        resource_data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert API response to HCL."""
         kwargs = {"tf_name": tf_name, "refs": refs}
@@ -609,9 +600,9 @@ class ResourceMapper:
 
     def _vpc_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert VPC API response to HCL."""
         vpc = data.get("Vpc", {})
@@ -651,9 +642,9 @@ class ResourceMapper:
 
     def _vswitch_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert vSwitch API response to HCL."""
         vswitch = data.get("VSwitch", {})
@@ -690,9 +681,9 @@ class ResourceMapper:
 
     def _ecs_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert ECS API response to HCL."""
         instances = data.get("Instances", {}).get("Instance", [])
@@ -745,9 +736,9 @@ class ResourceMapper:
 
     def _rds_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert RDS API response to HCL."""
         db_instance = data.get("Items", {}).get("DBInstanceAttribute", [{}])[0]
@@ -793,9 +784,9 @@ class ResourceMapper:
 
     def _redis_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert Redis/Tair API response to HCL."""
         instance = data.get("Instances", {}).get("KVStoreInstance", [{}])[0]
@@ -840,9 +831,9 @@ class ResourceMapper:
 
     def _slb_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert SLB API response to HCL."""
         lb = data.get("LoadBalancer", {})
@@ -883,9 +874,9 @@ class ResourceMapper:
 
     def _eip_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert EIP API response to HCL."""
         eips = data.get("EipAddresses", {}).get("EipAddress", [])
@@ -924,9 +915,9 @@ class ResourceMapper:
 
     def _sg_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert Security Group API response to HCL."""
         sg = data.get("SecurityGroup", {})
@@ -966,9 +957,9 @@ class ResourceMapper:
 
     def _nat_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert NAT Gateway API response to HCL."""
         nat = data.get("NatGateway", data)
@@ -1005,9 +996,9 @@ class ResourceMapper:
 
     def _mongodb_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert MongoDB API response to HCL."""
         instance = data.get("DBInstances", {}).get("DBInstance", [{}])[0]
@@ -1049,9 +1040,9 @@ class ResourceMapper:
 
     def _polardb_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert PolarDB cluster API response to HCL."""
         cluster = data.get("Items", {}).get("DBCluster", [{}])[0]
@@ -1093,9 +1084,9 @@ class ResourceMapper:
 
     def _disk_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert Disk API response to HCL."""
         disk = data.get("Disk", data.get("Disks", {}).get("Disk", [{}]))
@@ -1135,9 +1126,9 @@ class ResourceMapper:
 
     def _route_table_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert Route Table API response to HCL."""
         rt = data.get("RouteTable", data)
@@ -1175,9 +1166,9 @@ class ResourceMapper:
 
     def _oss_to_hcl(
         self,
-        data: Dict,
-        tf_name: Optional[str] = None,
-        refs: Optional[ResourceReferenceRegistry] = None,
+        data: dict,
+        tf_name: str | None = None,
+        refs: ResourceReferenceRegistry | None = None,
     ) -> str:
         """Convert OSS bucket info to HCL."""
         bucket_name = data.get("BucketName", data.get("Bucket", {}).get("Name", "imported-bucket"))
@@ -1210,7 +1201,7 @@ class ResourceMapper:
             }}
         """)
 
-    def generate_import_script(self, resources: List[Dict[str, str]]) -> str:
+    def generate_import_script(self, resources: list[dict[str, str]]) -> str:
         """Generate terraform import shell script."""
         lines = [
             "#!/bin/bash",
@@ -1244,7 +1235,7 @@ class ResourceMapper:
         return "\n".join(lines)
 
 
-def import_resources_for_hitl(resources: List[Dict]) -> List[Dict[str, Any]]:
+def import_resources_for_hitl(resources: list[dict]) -> list[dict[str, Any]]:
     """Reverse Engineering 产物 → HITL ResourceInfo 兼容结构。"""
     return [
         {
@@ -1257,9 +1248,9 @@ def import_resources_for_hitl(resources: List[Dict]) -> List[Dict[str, Any]]:
     ]
 
 
-def collect_output_previews(output_dir: Path, max_chars: int = 8000) -> Dict[str, str]:
+def collect_output_previews(output_dir: Path, max_chars: int = 8000) -> dict[str, str]:
     """读取生成目录中的 .tf / .sh 作为 HITL 配置预览。"""
-    previews: Dict[str, str] = {}
+    previews: dict[str, str] = {}
     if not output_dir.is_dir():
         return previews
     for path in sorted(output_dir.iterdir()):
@@ -1276,8 +1267,8 @@ class ReverseEngineering:
     """Main reverse engineering orchestrator."""
 
     def __init__(
-        self, 
-        region: str = "cn-hangzhou", 
+        self,
+        region: str = "cn-hangzhou",
         output_dir: Path | None = None,
         skip_preflight: bool = False
     ):
@@ -1294,10 +1285,10 @@ class ReverseEngineering:
     def run(
         self,
         resource_type: str,
-        resource_ids: List[str],
+        resource_ids: list[str],
         dry_run: bool = False,
         discover_associated: bool = False
-    ) -> Tuple[bool, List[Dict]]:
+    ) -> tuple[bool, list[dict]]:
         """
         Run reverse engineering.
         Returns: (success, generated_resources)
@@ -1310,47 +1301,47 @@ class ReverseEngineering:
         # ==========================================
         if not self.skip_preflight:
             print(f"{Colors.CYAN}[PreFlight]{Colors.END} 检查资源类型支持: {resource_type}")
-            
+
             required_caps = {
                 ResourceCapability.DISCOVER,
                 ResourceCapability.HCL_GENERATE
             }
             if discover_associated:
                 required_caps.add(ResourceCapability.ASSOCIATED_DISCOVER)
-            
+
             preflight_result = self.registry.preflight_check(
-                resource_type, 
+                resource_type,
                 required_capabilities=required_caps
             )
-            
+
             print(f"  {preflight_result.message}")
-            
+
             if preflight_result.warnings:
                 for warning in preflight_result.warnings:
                     print(f"  {Colors.YELLOW}⚠ {warning}{Colors.END}")
-            
+
             if not preflight_result.can_proceed:
                 print(f"\n{Colors.RED}[PreFlight] 检查未通过，无法继续{Colors.END}")
                 if preflight_result.suggestions:
                     print("\n建议:")
                     for suggestion in preflight_result.suggestions:
                         print(f"  • {suggestion}")
-                
+
                 # 显示支持矩阵
                 print(f"\n{Colors.CYAN}支持的资源类型:{Colors.END}")
                 for name in self.registry.list_supported_names():
                     print(f"  - {name}")
-                
+
                 return False, []
-            
+
             if preflight_result.fallback_available:
                 print(f"\n{Colors.YELLOW}[PreFlight] 将使用降级模式继续{Colors.END}")
-            
+
             print(f"{Colors.GREEN}[PreFlight] 检查通过 ✓{Colors.END}\n")
 
         all_resources = []
-        pending_resources: List[Dict] = []
-        work_queue: List[Tuple[str, str]] = [(resource_type, rid) for rid in resource_ids]
+        pending_resources: list[dict] = []
+        work_queue: list[tuple[str, str]] = [(resource_type, rid) for rid in resource_ids]
         processed: set = set()
 
         if discover_associated:
@@ -1447,7 +1438,7 @@ class ReverseEngineering:
 
         return True, all_resources
 
-    def _generate_files(self, resources: List[Dict], dry_run: bool) -> Optional[Dict[str, str]]:
+    def _generate_files(self, resources: list[dict], dry_run: bool) -> dict[str, str] | None:
         """Generate output files. Returns content dict in dry-run mode."""
         if not dry_run:
             self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -1463,7 +1454,7 @@ class ReverseEngineering:
             by_type[rtype].append(resource)
 
         # For dry-run: collect generated content
-        generated_content: Dict[str, str] = {}
+        generated_content: dict[str, str] = {}
 
         # Generate HCL files per type
         for rtype, rlist in by_type.items():
@@ -1491,7 +1482,7 @@ class ReverseEngineering:
 
         return generated_content if dry_run else None
 
-    def _run_terraform_safe(self, cmd: List[str], cwd: Path) -> subprocess.CompletedProcess:
+    def _run_terraform_safe(self, cmd: list[str], cwd: Path) -> subprocess.CompletedProcess:
         """
         Run terraform with dry-run safety guard.
         Only init/validate/plan are executed. All other commands are mocked.
@@ -1645,7 +1636,7 @@ def main():
 
     # Run reverse engineering
     engine = ReverseEngineering(
-        region=args.region, 
+        region=args.region,
         output_dir=args.output_dir,
         skip_preflight=args.skip_preflight
     )
@@ -1658,7 +1649,7 @@ def main():
 
     if success:
         print(f"\n{Colors.GREEN}✓ Reverse engineering completed{Colors.END}")
-        print(f"\n生成的资源:")
+        print("\n生成的资源:")
         for r in resources:
             print(f"  - {r['tf_type']}.{r['tf_name']} ({r['id']})")
 
@@ -1666,9 +1657,9 @@ def main():
             print(f"\n{Colors.CYAN}注意: 当前为 dry-run 模式，未实际导入资源{Colors.END}")
             print(f"{Colors.CYAN}      确认无误后，运行 import.sh 执行导入{Colors.END}")
         else:
-            print(f"\n执行导入:")
+            print("\n执行导入:")
             print(f"  cd {args.output_dir}")
-            print(f"  ./import.sh")
+            print("  ./import.sh")
     else:
         print(f"\n{Colors.RED}✗ Reverse engineering failed{Colors.END}")
         sys.exit(1)

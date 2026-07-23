@@ -1,7 +1,6 @@
 """Tests for local baseline backend (Task 15)."""
-import shutil
-from datetime import date, timedelta
-from pathlib import Path
+from datetime import date
+
 from scripts.lib.baseline_local import LocalBackend
 
 

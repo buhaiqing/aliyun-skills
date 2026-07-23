@@ -543,7 +543,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
     """ACK independent collector for cluster/node-level acs_k8s metrics.
     Node-level metrics (node.cpu.capacity, node.memory.limit, etc.)
     require the ags-metrics-collector addon installed on the cluster."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     result = {"metrics": {}, "backtrack": None, "audit": None, "limits": None}
     if not clusters:
         return result
@@ -558,7 +558,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
         if not cid:
             continue
         cl_dims = json.dumps([{"cluster": cid}])
-        
+
         # ------------------------------------------------------------
         # 前置探针: 检测 ags-metrics-collector 是否安装
         # 未安装则跳过所有节点级采集 (backtrack/limits/oversale)，节省 ~70s
@@ -566,7 +566,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
         probe = q_cached(["cs", "GET", "/clusters/" + cid + "/components/ags-metrics-collector", "--region", region], timeout=10)
         has_node_monitoring = probe is not None and isinstance(probe, dict) and probe.get("state") == "running"
         if not has_node_monitoring:
-            log("WARN", "ags-metrics-collector not installed on cluster=%s -> skip node-level CMS backtrack (~70s saved)" % cname)
+            log("WARN", f"ags-metrics-collector not installed on cluster={cname} -> skip node-level CMS backtrack (~70s saved)")
 
         for metric, mk in [("CpuUsage", "cpu_util"), ("MemoryUsage", "mem_util")]:
             data = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s_dashboard", "--MetricName", metric,
@@ -578,7 +578,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
                 except Exception: dps = []
             vals = [p.get("Average", 0) for p in dps if isinstance(p, dict)]
             if not vals: continue
-            rk = "ack_%s_%s" % (cid, mk)
+            rk = f"ack_{cid}_{mk}"
             result["metrics"][rk] = {"_type": "ACK", "_id": cid}
             result["metrics"][rk][mk] = round(sum(vals) / len(vals), 2)
         raw_nodes = q_cached(["cs", "GET", "/clusters/" + cid + "/nodes", "--region", region])
@@ -608,8 +608,8 @@ def _collect_ack(clusters: list, region: str) -> dict:
                         except Exception: dps = []
                     vals = [p.get("Average", 0) for p in dps if isinstance(p, dict)]
                     if not vals: continue
-                    rk = "ack_%s_%s_%s" % (cid, nname, mk)
-                    result["metrics"][rk] = {"_type": "ACK", "_id": "%s/%s" % (cid, nname)}
+                    rk = f"ack_{cid}_{nname}_{mk}"
+                    result["metrics"][rk] = {"_type": "ACK", "_id": f"{cid}/{nname}"}
                     result["metrics"][rk][mk] = round(sum(vals) / len(vals), 2)
             if node_names:
                 result["limits"] = _collect_k8s_limits(region, cid, node_names, d7=d7s, end=end)
@@ -618,7 +618,7 @@ def _collect_ack(clusters: list, region: str) -> dict:
         # K8s events via local kubectl (non-blocking, permission issues are warnings only)
         result["k8s_events"] = _collect_k8s_events_local(cid, region)
         if result["k8s_events"]["status"] != "OK":
-            log("WARN", "k8s_events: %s" % result["k8s_events"]["message"])
+            log("WARN", "k8s_events: {}".format(result["k8s_events"]["message"]))
     log("RESULT", "_collect_ack metrics=%d" % len(result["metrics"]))
     return result
 
@@ -650,7 +650,7 @@ def collect_and_score(selected, region):
                 anomalies.extend(a)
                 baseline_data.update(bd)
             except Exception as e:
-                err("E099", "metrics: %s" % e)
+                err("E099", f"metrics: {e}")
     ack_resources = selected.get("ACK", [])
     if ack_resources:
         ack_result = _collect_ack(ack_resources, region)
@@ -768,7 +768,7 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
                 f.write("\n---\n## ACK CLUSTER INSPECTION\n")
                 for cl in ack_resources:
                     cname = cl.get("name", cl.get("cluster_id", ""))
-                    f.write("\n### %s\n" % cname)
+                    f.write(f"\n### {cname}\n")
                 audit = ack_data.get("audit")
                 if audit:
                     f.write("\n**SLS 审计日志**: " + ("ENABLED" if audit.get("audit_enabled") else "DISABLED") + "\n")
@@ -809,7 +809,7 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
 
     # Markdown: data_availability section
     md_lines = [
-        f"\n## [DATA-AVAIL] 数据可用性预检\n",
+        "\n## [DATA-AVAIL] 数据可用性预检\n",
         f"> **置信度: {confidence}** — {data_avail.get("confidence_reason", "")}\n\n",
         "| 探针 | 结果 | 详情 |\n",
         "|:-----|:-----|:-----|\n",
@@ -819,7 +819,7 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
                    "NO_ALERTS": "NO_ALERTS", "PENDING": "PENDING", "SKIPPED": "SKIPPED"}
         result_txt = icon_map.get(probe.get("result", ""), probe.get("result", ""))
         detail = probe.get("detail", "").replace("|", "&#124;")
-        md_lines.append("| %s | %s | %s |\n" % (probe_name, result_txt, detail))
+        md_lines.append(f"| {probe_name} | {result_txt} | {detail} |\n")
     if data_gap_warnings:
         md_lines.append("\n### data_gap 影响评估\n\n")
         md_lines.append("| 资源 | 问题 | 说明 |\n")
@@ -828,7 +828,7 @@ def report(selected, metrics, anomalies, args, ack_data=None, baseline_data=None
             rname = (dw.get("resources", [{}])[0] or {}).get("name", "")
             title = dw.get("title", "").replace("|", "&#124;")
             sugg = dw.get("suggestion", "").replace("|", "&#124;")
-            md_lines.append("| %s | %s | %s |\n" % (rname, title, sugg))
+            md_lines.append(f"| {rname} | {title} | {sugg} |\n")
     md_lines.append("\n")
 
     rpt = {
@@ -912,7 +912,7 @@ def format_limits_report(limits):
     lines.append("| \u8282\u70b9 | CPU\u603b\u91cf(\u6838) | \u5df2\u5206\u914d(\u6838) | \u5206\u914d\u6bd4\u4f8b | \u7ed3\u8bba | \u5185\u5b58\u603b\u91cf(MB) | \u5df2\u5206\u914d(MB) | \u5206\u914d\u6bd4\u4f8b | \u7ed3\u8bba | CPU\u4f7f\u7528\u7387 | \u5185\u5b58\u4f7f\u7528\u7387 |\n")
     lines.append("|------|-----------:|----------:|--------:|:---:|------------:|-----------:|--------:|:---:|:--------:|:--------:|\n")
     for n in limits["nodes"]:
-        lines.append("| %s | %s | %s | %s%% | %s | %s | %s | %s%% | %s | %s%% | %s%% |\n" % (
+        lines.append("| {} | {} | {} | {}% | {} | {} | {} | {}% | {} | {}% | {}% |\n".format(
             n["name"][:24], n["cpu"].get("capacity","-"), n["cpu"].get("limit","-"),
             n["cpu"].get("oversale_ratio","-"), n["cpu"].get("level","SAFE"),
             n["memory"].get("capacity","-"), n["memory"].get("limit","-"),
@@ -923,13 +923,13 @@ def format_limits_report(limits):
     if crit:
         lines.append("\n### \U0001f534 \u9700\u8981\u7acb\u5373\u5904\u7406\n\n")
         for cn in crit:
-            lines.append("**%s**\n" % cn["name"])
+            lines.append("**{}**\n".format(cn["name"]))
             if cn["cpu"].get("oversale_ratio",0) >= 200:
                 lines.append("  \u2776 **\u7d27\u6025\u6269\u5bb9**\uff1a\u7acb\u5373\u5411\u8282\u70b9\u6c60\u6dfb\u52a0\u65b0\u8282\u70b9\n")
     if warn:
         lines.append("\n### \U0001f7e1 \u5efa\u8bae\u5173\u6ce8\n\n")
         for wn in warn:
-            lines.append("- %s\n" % wn["name"])
+            lines.append("- {}\n".format(wn["name"]))
     if not crit and not warn:
         lines.append("\n\u2705 **\u6240\u6709\u8282\u70b9\u8d44\u6e90\u5206\u914d\u6b63\u5e38**\uff0c\u65e0\u9700\u5904\u7406\u3002\n\n")
     return "".join(lines)
@@ -1057,7 +1057,7 @@ def _append_single_resource_topology_note(md_path, resource_id):
 
 def main():
     # Sprint 12 Stage 2 D1: 重入检查 (file lock)
-    from lib_idempotent import acquire_lock, release_lock, is_locked
+    from lib_idempotent import acquire_lock, is_locked, release_lock
     lock_name = f"daily-health-check.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
     if not acquire_lock(lock_name, ttl=900):  # 15 分钟
         print(f"[ERROR] TYPE=LOCKED FIX=有其他 daily-health-check 正在运行 (is_locked={is_locked(lock_name)})")

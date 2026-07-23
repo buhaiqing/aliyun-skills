@@ -276,7 +276,7 @@ def extract_error_code_from_output(output: Any) -> str:
     try:
         if isinstance(output, str):
             data = json.loads(output)
-        elif isinstance(output, (dict, list)):
+        elif isinstance(output, dict | list):
             data = output
         else:
             return ""
@@ -931,7 +931,7 @@ def reflexion_extract_wrapper_lite(
     message = ""
     if output is not None and output != "":
         try:
-            data = output if isinstance(output, (dict, list)) else json.loads(str(output))
+            data = output if isinstance(output, dict | list) else json.loads(str(output))
             if isinstance(data, dict):
                 message = str(data.get("Message") or data.get("message") or "")[:120]
         except (json.JSONDecodeError, TypeError, ValueError):

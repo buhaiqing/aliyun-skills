@@ -9,8 +9,7 @@ Phase 1 covers Top-5 resource types:
 
 Phase 3 (Plan 3) will add the remaining 13 types.
 """
-from scripts.lib.field_mapper import MappingSpec, MappingRule
-
+from scripts.lib.field_mapper import MappingRule, MappingSpec
 
 MAPPINGS = {
     "vpc": MappingSpec(

@@ -2,11 +2,10 @@
 """Tests for Git backend (Plan 2 Task 1)."""
 import json
 import subprocess
-import tempfile
 from datetime import date
-from pathlib import Path
 
 import pytest
+
 from scripts.lib.baseline_git import GitBackend
 
 
@@ -42,7 +41,7 @@ def snapshot(tmp_path):
 
 def test_git_init_repo(git_repo):
     """GitBackend initializes a git repo in root_dir."""
-    backend = GitBackend(root_dir=git_repo, remote_url=None, push=False)
+    GitBackend(root_dir=git_repo, remote_url=None, push=False)
     assert (git_repo / ".git").exists()
 
 

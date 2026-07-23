@@ -20,7 +20,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from _shared import log, _resolve_runbooks_output_dir
+from _shared import _resolve_runbooks_output_dir, log
 
 __all__ = ["AgentFallback", "agent_dispatch"]
 
@@ -237,7 +237,7 @@ class AgentFallback:
         # 找最近 7d cruise 报告
         reports = []
         if self.output_dir.exists():
-            for f in sorted(self.output_dir.glob(f"cruise-*.json"), reverse=True)[:7]:
+            for f in sorted(self.output_dir.glob("cruise-*.json"), reverse=True)[:7]:
                 reports.append(str(f))
 
         return {

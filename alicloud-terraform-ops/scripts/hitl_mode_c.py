@@ -21,37 +21,63 @@ import json
 import os
 import shutil
 import sys
-import time
-import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 try:
-    from hitl_mode_a import (
-        Checkpoint, CheckpointType, CheckpointStatus, StepType, Action,
-        Environment, EnvironmentPolicy, Step, StepResult, ResourceInfo,
-        UserAbortedError, CheckpointStore, Colors,
-    )
     from hitl_common import (
-        AuditLogger, AuditEventType, AuditEvent,
-        HITLConfig, NotificationManager, NotificationPayload,
-        CLIErrorHandler, CheckpointErrorHandler, ErrorAction,
-        ExpiredError, ConfigError, parse_ttl, now_iso, safe_load_json,
+        AuditEvent,
+        AuditEventType,
+        AuditLogger,
+        CheckpointErrorHandler,
+        CLIErrorHandler,
+        ConfigError,
+        ErrorAction,
+        ExpiredError,
+        HITLConfig,
+        NotificationManager,
+        NotificationPayload,
+        now_iso,
+        parse_ttl,
+        safe_load_json,
+    )
+    from hitl_mode_a import (
+        Action,
+        Checkpoint,
+        CheckpointStatus,
+        CheckpointStore,
+        CheckpointType,
+        Colors,
+        Environment,
+        EnvironmentPolicy,
+        ResourceInfo,
+        Step,
+        StepResult,
+        StepType,
+        UserAbortedError,
     )
 except ImportError:
-    from scripts.hitl_mode_a import (  # type: ignore
-        Checkpoint, CheckpointType, CheckpointStatus, StepType, Action,
-        Environment, EnvironmentPolicy, Step, StepResult, ResourceInfo,
-        UserAbortedError, CheckpointStore, Colors,
-    )
     from scripts.hitl_common import (  # type: ignore
-        AuditLogger, AuditEventType, AuditEvent,
-        HITLConfig, NotificationManager, NotificationPayload,
-        CLIErrorHandler, CheckpointErrorHandler, ErrorAction,
-        ExpiredError, ConfigError, parse_ttl, now_iso, safe_load_json,
+        AuditEventType,
+        AuditLogger,
+        HITLConfig,
+        parse_ttl,
+        safe_load_json,
+    )
+    from scripts.hitl_mode_a import (  # type: ignore
+        Action,
+        Checkpoint,
+        CheckpointStatus,
+        CheckpointStore,
+        Colors,
+        Environment,
+        ResourceInfo,
+        Step,
+        StepResult,
     )
 
 
@@ -72,11 +98,11 @@ class ClassifiedResource:
     resource: ResourceInfo
     classification: ResourceClassification
     reason: str = ""
-    warning: Optional[str] = None
+    warning: str | None = None
     selected: bool = True
-    extra: Dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "resource": {
                 "type": self.resource.resource_type,
@@ -96,9 +122,9 @@ class ClassifiedResource:
 @dataclass
 class SelectionResult:
     """选择结果"""
-    selected_resources: List[ClassifiedResource] = field(default_factory=list)
-    skipped_resources: List[ClassifiedResource] = field(default_factory=list)
-    warned_resources: List[ClassifiedResource] = field(default_factory=list)
+    selected_resources: list[ClassifiedResource] = field(default_factory=list)
+    skipped_resources: list[ClassifiedResource] = field(default_factory=list)
+    warned_resources: list[ClassifiedResource] = field(default_factory=list)
     selection_mode: str = "default"  # default / custom / all / dry-run
 
 
@@ -131,9 +157,9 @@ class ResourceClassifier:
     def __init__(self, audit: AuditLogger):
         self.audit = audit
 
-    def classify(self, resources: List[ResourceInfo]) -> List[ClassifiedResource]:
+    def classify(self, resources: list[ResourceInfo]) -> list[ClassifiedResource]:
         """对资源列表进行分类"""
-        classified: List[ClassifiedResource] = []
+        classified: list[ClassifiedResource] = []
 
         for r in resources:
             rtype = r.resource_type.lower()
@@ -190,7 +216,7 @@ class BatchSelector:
             return f"{color}{text}{Colors.RESET}"
         return text
 
-    def render(self, classified: List[ClassifiedResource], title: str = "资源导入选择") -> None:
+    def render(self, classified: list[ClassifiedResource], title: str = "资源导入选择") -> None:
         """渲染分组选择界面 (dry-run / 只读模式)"""
         print()
         print(self._c(Colors.BOLD + Colors.CYAN, f"=== {title} ==="))
@@ -235,7 +261,7 @@ class BatchSelector:
 
     def select_interactive(
         self,
-        classified: List[ClassifiedResource],
+        classified: list[ClassifiedResource],
     ) -> SelectionResult:
         """交互式选择 (完整流程)"""
         # 1. 渲染初始状态
@@ -246,9 +272,9 @@ class BatchSelector:
         print(self._c(Colors.BOLD, "请选择操作模式:"))
         print(f"  [1] 导入全部 [PASS] ({sum(1 for c in classified if c.classification == ResourceClassification.PASS)} 个)")
         print(f"  [2] 逐一审核 [WARN] ({sum(1 for c in classified if c.classification == ResourceClassification.WARN)} 个)")
-        print(f"  [3] 自定义选择")
-        print(f"  [4] 干运行 (dry-run)")
-        print(f"  [5] 保存并退出 (稍后继续)")
+        print("  [3] 自定义选择")
+        print("  [4] 干运行 (dry-run)")
+        print("  [5] 保存并退出 (稍后继续)")
 
         try:
             choice = input("\n请选择 [1-5]: ").strip()
@@ -275,7 +301,7 @@ class BatchSelector:
 
         return SelectionResult(selection_mode="default")
 
-    def _select_all_pass(self, classified: List[ClassifiedResource]) -> SelectionResult:
+    def _select_all_pass(self, classified: list[ClassifiedResource]) -> SelectionResult:
         """模式 1: 导入全部 PASS"""
         for cr in classified:
             cr.selected = cr.classification == ResourceClassification.PASS
@@ -297,7 +323,7 @@ class BatchSelector:
         )
         return result
 
-    def _review_warn(self, classified: List[ClassifiedResource]) -> SelectionResult:
+    def _review_warn(self, classified: list[ClassifiedResource]) -> SelectionResult:
         """模式 2: 逐一审核 WARN"""
         # PASS 自动选中
         for cr in classified:
@@ -339,7 +365,7 @@ class BatchSelector:
         )
         return result
 
-    def _select_custom(self, classified: List[ClassifiedResource]) -> SelectionResult:
+    def _select_custom(self, classified: list[ClassifiedResource]) -> SelectionResult:
         """模式 3: 自定义选择 (简化版: 编号输入)"""
         print()
         print("自定义选择 (输入资源编号列表，逗号分隔；输入 a 全选；输入 q 取消):")
@@ -392,9 +418,9 @@ class BatchSelector:
 
     @staticmethod
     def _group_by_classification(
-        classified: List[ClassifiedResource],
-    ) -> Dict[ResourceClassification, List[ClassifiedResource]]:
-        groups: Dict[ResourceClassification, List[ClassifiedResource]] = {
+        classified: list[ClassifiedResource],
+    ) -> dict[ResourceClassification, list[ClassifiedResource]]:
+        groups: dict[ResourceClassification, list[ClassifiedResource]] = {
             ResourceClassification.PASS: [],
             ResourceClassification.WARN: [],
             ResourceClassification.SKIP: [],
@@ -412,13 +438,13 @@ class BatchSelector:
 class DriftReport:
     """漂移报告"""
     has_drift: bool
-    changes: List[Dict[str, Any]] = field(default_factory=list)
-    missing_resources: List[str] = field(default_factory=list)  # 已不存在
-    unexpected_resources: List[str] = field(default_factory=list)  # 新出现
-    attribute_changes: Dict[str, Dict[str, Tuple[Any, Any]]] = field(default_factory=dict)
+    changes: list[dict[str, Any]] = field(default_factory=list)
+    missing_resources: list[str] = field(default_factory=list)  # 已不存在
+    unexpected_resources: list[str] = field(default_factory=list)  # 新出现
+    attribute_changes: dict[str, dict[str, tuple[Any, Any]]] = field(default_factory=dict)
     # resource_id -> {attr_name: (old_value, new_value)}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "has_drift": self.has_drift,
             "changes_count": len(self.changes),
@@ -443,7 +469,7 @@ class DriftDetector:
     def detect(
         self,
         checkpoint: Checkpoint,
-        current_resources: Optional[List[ResourceInfo]] = None,
+        current_resources: list[ResourceInfo] | None = None,
     ) -> DriftReport:
         """检测漂移
 
@@ -505,13 +531,13 @@ class DriftDetector:
 class RecoveryResult:
     """恢复结果"""
     success: bool
-    checkpoint: Optional[Checkpoint] = None
-    drift: Optional[DriftReport] = None
-    warning: Optional[str] = None
-    error: Optional[str] = None
+    checkpoint: Checkpoint | None = None
+    drift: DriftReport | None = None
+    warning: str | None = None
+    error: str | None = None
     can_resume: bool = False
-    next_action: Optional[str] = None
-    pending_steps: List[Step] = field(default_factory=list)
+    next_action: str | None = None
+    pending_steps: list[Step] = field(default_factory=list)
 
 
 class SessionRecovery:
@@ -530,7 +556,7 @@ class SessionRecovery:
     def resume(
         self,
         checkpoint_id: str,
-        current_resources: Optional[List[ResourceInfo]] = None,
+        current_resources: list[ResourceInfo] | None = None,
     ) -> RecoveryResult:
         """恢复检查点"""
         self.audit.emit(
@@ -541,7 +567,7 @@ class SessionRecovery:
         # 1. 加载检查点
         try:
             checkpoint = self.store.load(checkpoint_id)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             return RecoveryResult(success=False, error=f"检查点不存在: {checkpoint_id}")
         except json.JSONDecodeError as e:
             return RecoveryResult(
@@ -560,7 +586,7 @@ class SessionRecovery:
             )
 
         # 3. 恢复上下文
-        context = self._restore_context(checkpoint)
+        self._restore_context(checkpoint)
 
         # 4. 检测漂移
         drift = self.drift_detector.detect(checkpoint, current_resources)
@@ -602,7 +628,7 @@ class SessionRecovery:
             pending_steps=pending_steps,
         )
 
-    def _restore_context(self, checkpoint: Checkpoint) -> Dict[str, Any]:
+    def _restore_context(self, checkpoint: Checkpoint) -> dict[str, Any]:
         """恢复执行上下文 — spec §5.3
 
         子类/调用方可以扩展此方法以恢复生成的文件、临时数据等
@@ -636,14 +662,14 @@ class CheckpointExpirationManager:
         self.config = config
         self.audit = audit
 
-    def cleanup_expired(self, dry_run: bool = False) -> List[str]:
+    def cleanup_expired(self, dry_run: bool = False) -> list[str]:
         """清理过期检查点
 
         Returns:
             被删除/将删除的检查点 ID 列表
         """
-        expired: List[str] = []
-        all_checkpoints: List[Checkpoint] = []
+        expired: list[str] = []
+        all_checkpoints: list[Checkpoint] = []
         for filepath in self.store.base_path.glob("*.json"):
             if filepath.suffix == ".json" and filepath.name.endswith(".json.bak"):
                 continue
@@ -728,7 +754,7 @@ class PauseController:
         self,
         store: CheckpointStore,
         audit: AuditLogger,
-        ui_callback: Optional[Callable[[str], None]] = None,
+        ui_callback: Callable[[str], None] | None = None,
     ):
         self.store = store
         self.audit = audit
@@ -745,8 +771,8 @@ class PauseController:
     def save_progress(
         self,
         checkpoint: Checkpoint,
-        step: Optional[Step] = None,
-        result: Optional[StepResult] = None,
+        step: Step | None = None,
+        result: StepResult | None = None,
     ) -> Path:
         """保存进度"""
         if step and result:
@@ -853,20 +879,20 @@ class CheckpointStoreWithBackup(CheckpointStore):
         if filepath.exists():
             try:
                 shutil.copy2(filepath, backup)
-            except (OSError, IOError):
+            except OSError:
                 pass  # 备份失败不阻塞保存
 
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(checkpoint.to_dict(), f, indent=2, ensure_ascii=False)
         return filepath
 
-    def load_backup(self, checkpoint_id: str) -> Optional[Checkpoint]:
+    def load_backup(self, checkpoint_id: str) -> Checkpoint | None:
         """从备份加载"""
         backup = self.base_path / f"{checkpoint_id}.json.bak"
         if not backup.exists():
             return None
         try:
-            with open(backup, "r", encoding="utf-8") as f:
+            with open(backup, encoding="utf-8") as f:
                 data = json.load(f)
             return self._deserialize(data)
         except (json.JSONDecodeError, KeyError, OSError):
@@ -880,7 +906,7 @@ class CheckpointStoreWithBackup(CheckpointStore):
 def create_pause_controller(
     config: HITLConfig,
     audit: AuditLogger,
-    store: Optional[CheckpointStore] = None,
+    store: CheckpointStore | None = None,
 ) -> PauseController:
     """创建暂停控制器"""
     store = store or CheckpointStoreWithBackup(
@@ -892,7 +918,7 @@ def create_pause_controller(
 def create_session_recovery(
     config: HITLConfig,
     audit: AuditLogger,
-    store: Optional[CheckpointStore] = None,
+    store: CheckpointStore | None = None,
 ) -> SessionRecovery:
     """创建会话恢复器"""
     store = store or CheckpointStoreWithBackup(
@@ -905,7 +931,7 @@ def create_session_recovery(
 def create_expiration_manager(
     config: HITLConfig,
     audit: AuditLogger,
-    store: Optional[CheckpointStore] = None,
+    store: CheckpointStore | None = None,
 ) -> CheckpointExpirationManager:
     """创建过期管理器"""
     store = store or CheckpointStoreWithBackup(
@@ -996,7 +1022,7 @@ def main():
             sys.exit(1)
 
         cp = result.checkpoint
-        print(f"[OK] 恢复成功")
+        print("[OK] 恢复成功")
         print(f"  ID: {cp.id}")
         print(f"  类型: {cp.type.value}")
         print(f"  环境: {cp.environment.value}")
@@ -1064,7 +1090,7 @@ def main():
         if manager.extend_ttl(args.checkpoint_id, args.ttl):
             print(f"[OK] {args.checkpoint_id} TTL 已延长到 {args.ttl}")
         else:
-            print(f"[ERROR] 延长失败: 检查点不存在")
+            print("[ERROR] 延长失败: 检查点不存在")
             sys.exit(1)
 
     elif args.command == "batch-select":

@@ -329,7 +329,7 @@ class SanitizeTests(unittest.TestCase):
 
     def test_mysql_uri_creds(self):
         text = "mysql -u root -pmysqlpwd -h host db"
-        out = gcl_runner.sanitize(text)
+        gcl_runner.sanitize(text)
         # mysql CLI -p<password> (no space) is not directly covered; only
         # the URI form is sanitized. Document this limitation explicitly.
         # Here we test the URI form instead:
@@ -1034,7 +1034,7 @@ class ExtractFailurePatternTests(unittest.TestCase):
 
     def test_max_iter_returns_none_when_no_failing_dimension(self):
         """MAX_ITER with all scores >= 0.8 → no failure pattern (noise filter).
-        
+
         Note: If scores are between 0.5 and 0.8, a near-miss pattern is recorded
         to capture borderline cases for future optimization.
         """
@@ -2418,6 +2418,62 @@ class MaxIterCalculatorTests(unittest.TestCase):
         """0.299 < 0.3 -> low bucket, floor=2."""
         result = gcl_runner.max_iter_calculator(0.299, "alicloud-ecs-ops")
         self.assertEqual(result, 2)
+
+
+class ResolveSkillVersionTests(unittest.TestCase):
+    """Regression guard for skill_version extraction into GCL traces."""
+
+    def _make_skill(self, tmp_root: Path, skill: str, frontmatter: str) -> None:
+        skill_dir = tmp_root / skill
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(frontmatter, encoding="utf-8")
+
+    def test_reads_metadata_version(self):
+        """metadata.version is extracted with source=skill_md."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._make_skill(
+                root, "alicloud-demo-ops",
+                '---\nname: alicloud-demo-ops\nmetadata:\n  version: "9.9.9"\n---\n',
+            )
+            with mock.patch.object(gcl_runner, "resolve_skills_root", lambda: root):
+                version, source = gcl_runner.resolve_skill_version("alicloud-demo-ops", None)
+            self.assertEqual(version, "9.9.9")
+            self.assertEqual(source, "skill_md")
+
+    def test_accepts_top_level_version_for_robustness(self):
+        """A top-level version: key (no metadata block) is also accepted."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._make_skill(
+                root, "alicloud-demo-ops",
+                '---\nname: alicloud-demo-ops\nversion: "1.2.3"\n---\n',
+            )
+            with mock.patch.object(gcl_runner, "resolve_skills_root", lambda: root):
+                version, source = gcl_runner.resolve_skill_version("alicloud-demo-ops", None)
+            self.assertEqual(version, "1.2.3")
+            self.assertEqual(source, "skill_md")
+
+    def test_skips_leading_html_comment(self):
+        """SKILL.md with a leading markdownlint HTML comment still parses."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._make_skill(
+                root, "alicloud-demo-ops",
+                '<!-- markdownlint-disable -->\n---\nname: x\nmetadata:\n  version: "4.5.6"\n---\n',
+            )
+            with mock.patch.object(gcl_runner, "resolve_skills_root", lambda: root):
+                version, source = gcl_runner.resolve_skill_version("alicloud-demo-ops", None)
+            self.assertEqual(version, "4.5.6")
+            self.assertEqual(source, "skill_md")
+
+    def test_missing_skill_yields_git_or_unknown(self):
+        """A skill with no SKILL.md falls back to git hash / unknown."""
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)  # no SKILL.md created
+            with mock.patch.object(gcl_runner, "resolve_skills_root", lambda: root):
+                version, source = gcl_runner.resolve_skill_version("alicloud-missing-ops", None)
+            self.assertIn(source, ("git", "unknown"))
 
 
 if __name__ == "__main__":

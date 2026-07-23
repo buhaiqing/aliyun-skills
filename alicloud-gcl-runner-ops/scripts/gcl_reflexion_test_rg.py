@@ -10,7 +10,6 @@ Tests:
 - test_retrieve_no_filter_returns_all (regression — confirms default behaviour)
 """
 
-import json
 import os
 import sys
 import tempfile
@@ -25,16 +24,12 @@ from gcl_reflexion import (
     _empty_success_store,
     _save_store,
     _save_success_store,
-    _store_path,
-    _success_patterns_path,
     is_mapped_in_repair_table,
     parse_repair_table_codes,
     reflexion_extract,
     reflexion_extract_wrapper_lite,
     reflexion_retrieve,
-    reflexion_store,
     success_retrieve,
-    success_store,
 )
 
 

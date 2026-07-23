@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Terraform apply/destroy execution helpers for terraform_ops HITL flows."""
 
 from __future__ import annotations
@@ -10,7 +9,6 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from execution_trace import CommandRecord
 from terraform_plan_runner import PlanRunResult, TerraformPlanRunner, summary_from_plan_stdout
@@ -22,10 +20,10 @@ class ExecRunResult:
     stdout: str = ""
     stderr: str = ""
     exit_code: int = 0
-    commands: List[CommandRecord] = field(default_factory=list)
-    error: Optional[str] = None
-    plan_file: Optional[Path] = None
-    state_backup: Optional[Path] = None
+    commands: list[CommandRecord] = field(default_factory=list)
+    error: str | None = None
+    plan_file: Path | None = None
+    state_backup: Path | None = None
 
 
 class TerraformExecutor:
@@ -33,7 +31,7 @@ class TerraformExecutor:
 
     def __init__(
         self,
-        plan_runner: Optional[TerraformPlanRunner] = None,
+        plan_runner: TerraformPlanRunner | None = None,
         apply_timeout: int = 600,
         destroy_timeout: int = 600,
         state_pull_timeout: int = 120,
@@ -48,7 +46,7 @@ class TerraformExecutor:
         work_dir: Path,
         *,
         use_backend: bool = True,
-        plan_out: Optional[Path] = None,
+        plan_out: Path | None = None,
     ) -> PlanRunResult:
         plan_path = plan_out or (work_dir / "tfplan")
         return self.plan_runner.run(
@@ -117,7 +115,7 @@ class TerraformExecutor:
             state_backup=backup_path,
         )
 
-    def apply(self, work_dir: Path, plan_file: Optional[Path] = None) -> ExecRunResult:
+    def apply(self, work_dir: Path, plan_file: Path | None = None) -> ExecRunResult:
         work_dir = work_dir.resolve()
         plan_path = (plan_file or work_dir / "tfplan").resolve()
         if not plan_path.is_file():
@@ -141,12 +139,12 @@ class TerraformExecutor:
 
     def _run(
         self,
-        cmd: List[str],
+        cmd: list[str],
         work_dir: Path,
         *,
         phase: str,
         timeout: int,
-        plan_file: Optional[Path] = None,
+        plan_file: Path | None = None,
     ) -> ExecRunResult:
         started = time.time()
         try:
@@ -206,9 +204,9 @@ class TerraformExecutor:
         )
 
 
-def plan_summary_to_resources(plan_summary: dict) -> List[dict]:
+def plan_summary_to_resources(plan_summary: dict) -> list[dict]:
     """Plan 摘要 → HITL ResourceInfo 兼容结构（用于 destroy 预览）。"""
-    resources: List[dict] = []
+    resources: list[dict] = []
     delete_count = int(plan_summary.get("delete", 0) or 0)
     if delete_count:
         resources.append({

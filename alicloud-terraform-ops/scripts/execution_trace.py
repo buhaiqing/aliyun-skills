@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 execution_trace.py — 统一执行轨迹持久化
 
@@ -12,11 +11,10 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 TRACE_VERSION = "1.0.0"
 
@@ -47,7 +45,7 @@ class CommandRecord:
     stderr_excerpt: str
     duration_ms: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -63,14 +61,14 @@ class ExecutionTrace:
     request: str = ""
     dry_run: bool = True
     success: bool = False
-    session_id: Optional[str] = None
-    commands: List[CommandRecord] = field(default_factory=list)
-    plan_summary: Optional[Dict[str, Any]] = None
-    intent: Optional[Dict[str, Any]] = None
-    critic: Optional[Dict[str, Any]] = None
-    artifacts: Dict[str, str] = field(default_factory=dict)
+    session_id: str | None = None
+    commands: list[CommandRecord] = field(default_factory=list)
+    plan_summary: dict[str, Any] | None = None
+    intent: dict[str, Any] | None = None
+    critic: dict[str, Any] | None = None
+    artifacts: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "trace_version": self.trace_version,
             "trace_id": self.trace_id,
@@ -93,7 +91,7 @@ class ExecutionTrace:
         }
 
 
-def parse_plan_summary(plan_stdout: str) -> Optional[Dict[str, Any]]:
+def parse_plan_summary(plan_stdout: str) -> dict[str, Any] | None:
     """从 terraform plan 输出解析变更摘要."""
     if not plan_stdout:
         return None
@@ -115,7 +113,7 @@ def parse_plan_summary(plan_stdout: str) -> Optional[Dict[str, Any]]:
     }
 
 
-def build_critic_scores(success: bool) -> Dict[str, Any]:
+def build_critic_scores(success: bool) -> dict[str, Any]:
     return {
         "scores": {
             "correctness": 1 if success else 0,
@@ -132,7 +130,7 @@ def build_critic_scores(success: bool) -> Dict[str, Any]:
 class ExecutionTraceWriter:
     """写入 audit-results 目录."""
 
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Path | None = None):
         self.base_dir = base_dir or default_trace_dir()
 
     def write(self, trace: ExecutionTrace) -> Path:
@@ -153,13 +151,13 @@ def persist_dry_run_trace(
     region: str,
     request: str,
     work_dir: Path,
-    command_records: List[CommandRecord],
+    command_records: list[CommandRecord],
     success: bool,
     plan_stdout: str = "",
-    intent: Optional[Dict[str, Any]] = None,
-    session_id: Optional[str] = None,
-    output_dir: Optional[str] = None,
-    trace_dir: Optional[Path] = None,
+    intent: dict[str, Any] | None = None,
+    session_id: str | None = None,
+    output_dir: str | None = None,
+    trace_dir: Path | None = None,
 ) -> Path:
     """构建并持久化 dry-run 执行轨迹."""
     trace = ExecutionTrace(

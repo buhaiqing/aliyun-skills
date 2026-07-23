@@ -28,7 +28,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from _shared import log, _resolve_runbooks_output_dir
+from _shared import _resolve_runbooks_output_dir, log
 
 __all__ = ["Orchestrator", "DispatchDecision", "route_dispatch"]
 
@@ -170,7 +170,7 @@ class Orchestrator:
                 output = "[TIMEOUT after 900s]"
         else:
             # agent: 委托给 agent-fallback.py
-            log("DIAG", f"agent engine: 委托给 agent-fallback.py")
+            log("DIAG", "agent engine: 委托给 agent-fallback.py")
             agent_cmd = ["python3", str(self.scripts_dir / "agent-fallback.py"),
                          "--scenario", scenario, "--runbook", str(runbook_path)]
             for k, v in args.items():

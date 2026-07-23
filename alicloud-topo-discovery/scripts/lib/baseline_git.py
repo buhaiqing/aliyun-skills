@@ -10,10 +10,8 @@ Usage:
 """
 import os
 import subprocess
-import sys
 from datetime import date
 from pathlib import Path
-from typing import List, Optional
 
 
 class GitBackend:
@@ -26,7 +24,7 @@ class GitBackend:
     def __init__(
         self,
         root_dir: Path,
-        remote_url: Optional[str] = None,
+        remote_url: str | None = None,
         branch: str = "main",
         commit_user: str = "topo-discovery",
         commit_email: str = "topo@alicloud.com",
@@ -81,7 +79,7 @@ class GitBackend:
 
         return sha
 
-    def list_baselines(self) -> List[date]:
+    def list_baselines(self) -> list[date]:
         """Return sorted list of baseline dates from the baselines/ dir."""
         base = self.root / "baselines"
         if not base.exists():
@@ -96,7 +94,7 @@ class GitBackend:
                 continue
         return sorted(dates)
 
-    def get_latest(self) -> Optional[Path]:
+    def get_latest(self) -> Path | None:
         dates = self.list_baselines()
         if not dates:
             return None

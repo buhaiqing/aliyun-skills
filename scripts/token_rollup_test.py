@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Unit tests for scripts/token_rollup.py (TEL Phase 5)."""
 
 from __future__ import annotations

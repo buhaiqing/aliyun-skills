@@ -40,7 +40,7 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 # WT-1 parser (RG/Tags extraction). Defensive import — if the module is
 # missing or fails to load, we fall back to a stub returning the empty
@@ -456,7 +456,7 @@ def memory_retrieve(
     memory_root: str | Path | None = None,
     resource_group_id: str | None = None,
     tag_filter: dict[str, str] | None = None,
-) -> List[dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Query recent memory entries for a skill, optionally filtered by operation.
 
     Returns the most recent *top_k* entries sorted by timestamp descending.
@@ -517,7 +517,7 @@ def memory_retrieve(
     return entries[:top_k]
 
 
-def _read_jsonl_tail(path: Path, n: int) -> List[dict[str, Any]]:
+def _read_jsonl_tail(path: Path, n: int) -> list[dict[str, Any]]:
     """Read the last *n* JSON entries from a JSONL file.
 
     Uses a bounded single-read strategy: estimates bytes needed based on
@@ -588,7 +588,7 @@ def _read_jsonl_tail(path: Path, n: int) -> List[dict[str, Any]]:
                         break
         else:
             # Only read full file as last resort
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 all_lines = f.readlines()
             entries = []
             for line in reversed(all_lines):
@@ -683,7 +683,7 @@ def _prune_jsonl(
     entries_before = 0
     kept_entries: list[str] = []
 
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:

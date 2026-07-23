@@ -25,7 +25,6 @@ Usage:
 import argparse
 import json
 import os
-import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -263,7 +262,7 @@ def cleanup_memory(memory_keep_days: int, apply: bool) -> dict:
     if not gcl_memory_path.is_file():
         return {"status": "skipped", "reason": f"gcl_memory.py not found at {gcl_memory_path}"}
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=memory_keep_days)
+    datetime.now(timezone.utc) - timedelta(days=memory_keep_days)
     memory_root = Path(skills_dir) / ".runtime" / "memory"
     if not memory_root.exists():
         return {"status": "skipped", "reason": f"memory root not found: {memory_root}"}
@@ -352,7 +351,7 @@ def enforce_size_limit(runtime_root: Path, max_size_mb: float, apply: bool) -> d
             break
         if apply:
             try:
-                size = f.stat().st_size / (1024 * 1024)
+                f.stat().st_size / (1024 * 1024)
                 f.unlink()
                 deleted += 1
             except OSError:
@@ -396,13 +395,13 @@ def main():
 
     runtime_root = get_runtime_root()
     if args.traces_only:
-        print(f"==========================================")
-        print(f"  SkillOpt Trace Cleanup")
+        print("==========================================")
+        print("  SkillOpt Trace Cleanup")
         print(f"  SKILLS_DIR: {skills_dir_path}")
         print(f"  RUNTIME_ROOT: {runtime_root}")
         print(f"  模式: {'APPLY (实际删除)' if args.apply else 'DRY-RUN (只列出, 不删除)'}")
         print(f"  traces_keep_days: {traces_keep_days}")
-        print(f"==========================================\n")
+        print("==========================================\n")
         result = cleanup_traces(skills_dir_path, runtime_root, traces_keep_days, args.apply)
         print(
             f"  trace: scanned={result['trace_scanned']} deleted={result['trace_deleted']} "
@@ -413,7 +412,7 @@ def main():
             f"kept={result['session_kept']}"
         )
         if not args.apply:
-            print(f"\n  [WARN]  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
+            print("\n  [WARN]  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
         if args.report:
             report = {
                 "runtime_root": str(runtime_root),
@@ -429,16 +428,16 @@ def main():
 
     if not runtime_root.exists():
         print(f"[INFO] .runtime/ 不存在: {runtime_root}")
-        print(f"[HINT] 调一次 configdrift.sh / baseline-manager.py 自动创建")
+        print("[HINT] 调一次 configdrift.sh / baseline-manager.py 自动创建")
         return
 
     total_before = get_dir_size_mb(runtime_root)
-    print(f"==========================================")
-    print(f"  Runtime Cleanup (Sprint 19)")
+    print("==========================================")
+    print("  Runtime Cleanup (Sprint 19)")
     print(f"  RUNTIME_ROOT: {runtime_root}")
     print(f"  模式: {'APPLY (实际删除)' if args.apply else 'DRY-RUN (只列出, 不删除)'}")
     print(f"  当前总大小: {total_before:.2f} MB")
-    print(f"==========================================\n")
+    print("==========================================\n")
 
     report = {
         "runtime_root": str(runtime_root),
@@ -491,7 +490,7 @@ def main():
     report["actions"]["traces"] = result
 
     # 5. cache (全部)
-    print(f"[5/8] cache (all) ...")
+    print("[5/8] cache (all) ...")
     result = cleanup_cache(runtime_root, args.apply)
     print(f"  scanned={result['scanned']}  deleted={result['deleted']}")
     report["actions"]["cache"] = result
@@ -522,12 +521,12 @@ def main():
     report["total_size_mb_after"] = round(total_after, 2)
     report["size_freed_mb"] = round(total_before - total_after, 2)
 
-    print(f"\n==========================================")
+    print("\n==========================================")
     print(f"  总大小: {total_before:.2f} MB -> {total_after:.2f} MB")
     print(f"  释放: {total_before - total_after:.2f} MB")
     if not args.apply:
-        print(f"  [WARN]  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
-    print(f"==========================================")
+        print("  [WARN]  DRY-RUN 模式, 未实际删除.  真正清理加 --apply")
+    print("==========================================")
 
     if args.report:
         Path(args.report).write_text(json.dumps(report, indent=2, ensure_ascii=False))

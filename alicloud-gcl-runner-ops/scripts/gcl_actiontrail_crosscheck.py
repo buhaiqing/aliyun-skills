@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_actiontrail_crosscheck.py — Cloud-side audit for GCL traces.
 
@@ -85,16 +84,14 @@ import shlex
 import subprocess
 import sys
 import textwrap
-import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Reuse the sanitization function from gcl_runner so both scripts agree
 # on what counts as a secret. This keeps the cross-check report free of
 # inlined secrets.
 _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
-import gcl_runner  # noqa: E402
 
 #: Service name → expected EventName regex (the API op name as it appears
 #: in ActionTrail). Maps our internal `aliyun <product> <Op>` style to
@@ -202,7 +199,7 @@ EXIT_API_ERROR = 3
 # ---------------------------------------------------------------------------
 
 
-def load_trace(path: Path) -> Dict[str, Any]:
+def load_trace(path: Path) -> dict[str, Any]:
     """Load a GCL trace JSON file. Sanitizes secret values on the fly."""
     if not path.is_file():
         raise FileNotFoundError(f"trace not found: {path}")
@@ -210,7 +207,7 @@ def load_trace(path: Path) -> Dict[str, Any]:
     return raw
 
 
-def extract_local_op(trace: Dict[str, Any]) -> Tuple[str, str, str]:
+def extract_local_op(trace: dict[str, Any]) -> tuple[str, str, str]:
     """From a trace, extract (service, op, resource_id).
 
     Returns ("", "", "") if any of the three cannot be determined.
@@ -244,7 +241,7 @@ def extract_local_op(trace: Dict[str, Any]) -> Tuple[str, str, str]:
     return (service, op, resource_id)
 
 
-def extract_local_timestamp(trace: Dict[str, Any]) -> Optional[str]:
+def extract_local_timestamp(trace: dict[str, Any]) -> str | None:
     """Extract the local generator's timestamp from the trace's request_id
     + the trace file's mtime (best-effort)."""
     return None  # ActionTrail LookupEvents uses wall-clock; we just compare
@@ -262,10 +259,10 @@ def call_lookup_events(
     start_time: str,
     end_time: str,
     max_results: int = 50,
-    region: Optional[str] = None,
-    access_key_id: Optional[str] = None,
+    region: str | None = None,
+    access_key_id: str | None = None,
     timeout: int = 60,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Call `aliyun actiontrail LookupEvents` and return the parsed events.
 
     Uses the CLI (per repo's cli-first convention). Returns a list of
@@ -338,13 +335,13 @@ class APICallError(Exception):
 
 
 def find_matching_events(
-    events: List[Dict[str, Any]],
+    events: list[dict[str, Any]],
     service: str,
     op: str,
     resource_id: str,
-    access_key_id: Optional[str],
+    access_key_id: str | None,
     window_seconds: int = 600,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Filter `events` to those that match the local trace's op.
 
     A match requires:
@@ -367,7 +364,7 @@ def find_matching_events(
         # Unknown service/op; fall back to PascalCase of op (best effort)
         expected_event_names = [op]
 
-    matched: List[Dict[str, Any]] = []
+    matched: list[dict[str, Any]] = []
     for ev in events:
         if ev.get("EventName") not in expected_event_names:
             continue
@@ -389,7 +386,7 @@ def find_matching_events(
     return matched
 
 
-def crosscheck_one(trace_path: Path) -> Dict[str, Any]:
+def crosscheck_one(trace_path: Path) -> dict[str, Any]:
     """Cross-check a single GCL trace against ActionTrail events.
 
     Returns a dict:
@@ -416,7 +413,7 @@ def crosscheck_one(trace_path: Path) -> Dict[str, Any]:
     local_decision = trace.get("final", {}).get("status", "UNKNOWN")
     skill = trace.get("skill", "unknown")
 
-    report: Dict[str, Any] = {
+    report: dict[str, Any] = {
         "trace_path": str(trace_path),
         "trace_skill": skill,
         "trace_decision": local_decision,
@@ -456,8 +453,8 @@ def crosscheck_one(trace_path: Path) -> Dict[str, Any]:
         if re.match(pattern, op)
     ] or [op]
 
-    all_events: List[Dict[str, Any]] = []
-    api_errors: List[str] = []
+    all_events: list[dict[str, Any]] = []
+    api_errors: list[str] = []
     for event_name in expected_event_names:
         try:
             events = call_lookup_events(
@@ -595,9 +592,9 @@ def crosscheck_one(trace_path: Path) -> Dict[str, Any]:
     return report
 
 
-def aggregate_findings(reports: List[Dict[str, Any]]) -> Dict[str, Any]:
+def aggregate_findings(reports: list[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate cross-check reports into a single summary."""
-    summary: Dict[str, Any] = {
+    summary: dict[str, Any] = {
         "total_traces": len(reports),
         "clean": 0,
         "phantoms": 0,
@@ -672,7 +669,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
 
     # Resolve trace files
@@ -692,7 +689,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             return EXIT_CLEAN
 
     # Cross-check each trace
-    reports: List[Dict[str, Any]] = []
+    reports: list[dict[str, Any]] = []
     for tp in trace_paths:
         try:
             r = crosscheck_one(tp)

@@ -1,11 +1,12 @@
 """Tests for Aliyun Terraform provider version locking."""
 import re
+
 import pytest
+
 from scripts.lib.provider_locker import (
-    ProviderLocker,
     DEFAULT_PROVIDER_VERSION,
+    ProviderLocker,
     generate_provider_block,
-    _validate_version,
 )
 
 

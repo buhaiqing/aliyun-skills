@@ -18,7 +18,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from _shared import log, _resolve_runbooks_output_dir
+from _shared import _resolve_runbooks_output_dir, log
 
 __all__ = ["WorkflowRunner", "Workflow", "run_workflow"]
 

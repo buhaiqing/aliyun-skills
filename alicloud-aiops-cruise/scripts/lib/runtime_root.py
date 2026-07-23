@@ -21,7 +21,6 @@ Usage:
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def get_runtime_root() -> Path:
@@ -75,7 +74,7 @@ class RuntimeRoot:
         logs_dir:      ${root}/logs/<skill_key>
     """
 
-    def __init__(self, skill: str = "shared", root: Optional[Path] = None):
+    def __init__(self, skill: str = "shared", root: Path | None = None):
         """初始化.
 
         Args:

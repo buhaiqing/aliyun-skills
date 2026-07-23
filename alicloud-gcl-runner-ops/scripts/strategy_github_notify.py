@@ -26,9 +26,8 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from gcl_strategy import strategy_store, WORK_DIR  # noqa: E402
+from gcl_strategy import WORK_DIR, strategy_store  # noqa: E402
 from strategy_notify import (  # noqa: E402
-    build_strategy_ai_brief,
     should_notify,
     write_ai_brief_attachment,
 )

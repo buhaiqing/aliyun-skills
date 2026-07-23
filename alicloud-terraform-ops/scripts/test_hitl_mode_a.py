@@ -14,9 +14,9 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from hitl_mode_a import (
     Action,
-    CLIController,
     CheckpointStore,
     CheckpointType,
+    CLIController,
     Environment,
     EnvironmentPolicy,
     Step,

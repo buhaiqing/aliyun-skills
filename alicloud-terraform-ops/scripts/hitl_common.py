@@ -17,15 +17,13 @@ from __future__ import annotations
 import json
 import os
 import re
-import sys
 import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
-
+from typing import Any
 
 # ============================================================================
 # 审计日志 — spec §8
@@ -79,15 +77,15 @@ class AuditEvent:
     event: str
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
     level: str = "INFO"
-    checkpoint_id: Optional[str] = None
-    user: Optional[str] = None
-    environment: Optional[str] = None
-    step: Optional[Dict[str, Any]] = None
-    context: Dict[str, Any] = field(default_factory=dict)
-    trace_id: Optional[str] = None
-    span_id: Optional[str] = None
+    checkpoint_id: str | None = None
+    user: str | None = None
+    environment: str | None = None
+    step: dict[str, Any] | None = None
+    context: dict[str, Any] = field(default_factory=dict)
+    trace_id: str | None = None
+    span_id: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = {
             "timestamp": self.timestamp,
             "level": self.level,
@@ -116,10 +114,10 @@ class AuditLogger:
     日志格式: JSON Lines (每行一个 JSON 对象), 符合 spec §8.2
     """
 
-    def __init__(self, base_path: Optional[Path] = None):
+    def __init__(self, base_path: Path | None = None):
         self.base_path = base_path or Path.home() / ".pi" / "terraform-ops" / "audit"
         self.base_path.mkdir(parents=True, exist_ok=True)
-        self._trace_id: Optional[str] = None
+        self._trace_id: str | None = None
 
     def _get_log_file(self) -> Path:
         today = datetime.now().strftime("%Y%m%d")
@@ -134,11 +132,11 @@ class AuditLogger:
     def emit(
         self,
         event_type: AuditEventType,
-        checkpoint_id: Optional[str] = None,
-        user: Optional[str] = None,
-        environment: Optional[str] = None,
-        step: Optional[Dict[str, Any]] = None,
-        context: Optional[Dict[str, Any]] = None,
+        checkpoint_id: str | None = None,
+        user: str | None = None,
+        environment: str | None = None,
+        step: dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
         level: str = "INFO",
     ):
         """便捷触发方法"""
@@ -164,18 +162,18 @@ class AuditLogger:
 
     def query(
         self,
-        event_type: Optional[AuditEventType] = None,
-        checkpoint_id: Optional[str] = None,
+        event_type: AuditEventType | None = None,
+        checkpoint_id: str | None = None,
         limit: int = 100,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """查询审计日志"""
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         log_files = sorted(self.base_path.glob("audit-*.jsonl"), reverse=True)
 
         for log_file in log_files:
             if len(results) >= limit:
                 break
-            with open(log_file, "r", encoding="utf-8") as f:
+            with open(log_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
@@ -258,7 +256,7 @@ class Severity(str, Enum):
 
 
 # 错误类别 → 严重等级映射 (默认策略)
-DEFAULT_CATEGORY_SEVERITY: Dict[HTTPErrorCategory, Severity] = {
+DEFAULT_CATEGORY_SEVERITY: dict[HTTPErrorCategory, Severity] = {
     # P0: 立即告警，不重试
     HTTPErrorCategory.UNAUTHORIZED: Severity.P0,           # 401 凭证过期
     HTTPErrorCategory.FORBIDDEN: Severity.P0,              # 403 权限不足
@@ -323,7 +321,7 @@ def _classify_network_error(error: Exception) -> HTTPErrorCategory:
     import socket
     import ssl
 
-    if isinstance(error, (socket.timeout, TimeoutError)):
+    if isinstance(error, socket.timeout | TimeoutError):
         return HTTPErrorCategory.NETWORK_TIMEOUT
     if isinstance(error, ssl.SSLError):
         return HTTPErrorCategory.SSL_ERROR
@@ -341,7 +339,7 @@ class NetworkError(HITLError):
 
     category 字段标记具体网络错误类型 (timeout/dns/connection/ssl/other)
     """
-    def __init__(self, message: str, category: Optional[HTTPErrorCategory] = None):
+    def __init__(self, message: str, category: HTTPErrorCategory | None = None):
         super().__init__(message)
         self.category = category or HTTPErrorCategory.NETWORK_OTHER
 
@@ -392,8 +390,8 @@ class RetryableHTTPError(HITLError):
         self,
         message: str,
         status_code: int,
-        category: Optional[HTTPErrorCategory] = None,
-        retry_after: Optional[float] = None,
+        category: HTTPErrorCategory | None = None,
+        retry_after: float | None = None,
     ):
         super().__init__(message)
         self.status_code = status_code
@@ -408,7 +406,7 @@ class NonRetryableHTTPError(HITLError):
         self,
         message: str,
         status_code: int,
-        category: Optional[HTTPErrorCategory] = None,
+        category: HTTPErrorCategory | None = None,
     ):
         super().__init__(message)
         self.status_code = status_code
@@ -420,7 +418,7 @@ class ErrorAction:
     """错误处理动作"""
     action: str  # RETRY / PAUSE / HALT / UPDATE_EXISTING_PR / RETRY_WITH_NEW_BRANCH
     reason: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # ============================================================================
@@ -444,7 +442,7 @@ class CircuitBreakerConfig:
     # 半开状态下, 连续成功 N 次后恢复正常
     success_threshold: int = 2
     # 哪些错误类别计入熔断计数 (默认仅服务端错误和网络错误)
-    counted_categories: Optional[Set[HTTPErrorCategory]] = None
+    counted_categories: Set[HTTPErrorCategory] | None = None
 
     def __post_init__(self):
         if self.counted_categories is None:
@@ -508,11 +506,11 @@ class CircuitBreaker:
 
         # 每个 channel 独立状态
         # channel_name -> {state, failure_count, success_count, opened_at, last_failure}
-        self._states: Dict[str, Dict[str, Any]] = {}
+        self._states: dict[str, dict[str, Any]] = {}
         self._lock = __import__("threading").Lock()
 
     @classmethod
-    def from_env(cls, audit: AuditLogger) -> "CircuitBreaker":
+    def from_env(cls, audit: AuditLogger) -> CircuitBreaker:
         """从环境变量创建熔断器"""
         config = CircuitBreakerConfig(
             failure_threshold=int(os.environ.get("TF_OPS_CB_FAILURE_THRESHOLD", "5")),
@@ -521,7 +519,7 @@ class CircuitBreaker:
         )
         return cls(config, audit)
 
-    def _get_state(self, channel: str) -> Dict[str, Any]:
+    def _get_state(self, channel: str) -> dict[str, Any]:
         """获取 channel 状态, 惰性初始化"""
         if channel not in self._states:
             self._states[channel] = {
@@ -666,7 +664,7 @@ class CircuitBreaker:
         with self._lock:
             self._states.pop(channel, None)
 
-    def stats(self, channel: str) -> Dict[str, Any]:
+    def stats(self, channel: str) -> dict[str, Any]:
         """获取 channel 状态 (用于调试/监控)"""
         with self._lock:
             state = self._get_state(channel)
@@ -698,13 +696,13 @@ class EscalationPolicy:
         default_factory=lambda: {Severity.P0}
     )
     # 升级通知渠道 (独立于主通知渠道)
-    escalation_channels: List[str] = field(
+    escalation_channels: list[str] = field(
         default_factory=lambda: ["console"]
     )
     # 抑制窗口 (秒): 同 channel+category 在此窗口内不重复升级
     suppression_window: float = 300.0
     # 类别 → 严重等级 覆盖 (未覆盖时使用 DEFAULT_CATEGORY_SEVERITY)
-    category_severity_overrides: Dict[HTTPErrorCategory, Severity] = field(
+    category_severity_overrides: dict[HTTPErrorCategory, Severity] = field(
         default_factory=dict
     )
 
@@ -719,7 +717,7 @@ class EscalationPolicy:
         return severity in self.escalate_severities
 
     @classmethod
-    def from_env(cls) -> "EscalationPolicy":
+    def from_env(cls) -> EscalationPolicy:
         """从环境变量创建"""
         policy = cls()
 
@@ -770,21 +768,21 @@ class EscalationManager:
         self,
         policy: EscalationPolicy,
         audit: AuditLogger,
-        notification: "NotificationManager",
+        notification: NotificationManager,
     ):
         self.policy = policy
         self.audit = audit
         self.notification = notification
 
         # 升级抑制记录: (channel_name, category) -> last_escalation_timestamp
-        self._last_escalation: Dict[Tuple[str, HTTPErrorCategory], float] = {}
+        self._last_escalation: dict[Tuple[str, HTTPErrorCategory], float] = {}
         self._lock = __import__("threading").Lock()
 
     def evaluate(
         self,
         channel: str,
         category: HTTPErrorCategory,
-    ) -> Tuple[Optional[Severity], bool]:
+    ) -> Tuple[Severity | None, bool]:
         """评估错误是否需要升级
 
         Returns:
@@ -800,7 +798,7 @@ class EscalationManager:
         channel: str,
         category: HTTPErrorCategory,
         error: Exception,
-        payload: Optional["NotificationPayload"] = None,
+        payload: NotificationPayload | None = None,
     ) -> bool:
         """发送升级告警 (检查抑制后)
 
@@ -895,7 +893,7 @@ class EscalationManager:
         severity: Severity,
         category: HTTPErrorCategory,
         error: Exception,
-        payload: Optional["NotificationPayload"],
+        payload: NotificationPayload | None,
     ) -> str:
         """构造升级告警详情"""
         lines = [
@@ -914,7 +912,7 @@ class EscalationManager:
             lines.append("- 需立即人工介入 (检查凭证/配置/服务可用性)")
         return "\n".join(lines)
 
-    def reset_suppression(self, channel: Optional[str] = None):
+    def reset_suppression(self, channel: str | None = None):
         """手动重置抑制 (运维场景)"""
         with self._lock:
             if channel is None:
@@ -924,7 +922,7 @@ class EscalationManager:
                     k: v for k, v in self._last_escalation.items() if k[0] != channel
                 }
 
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """查询抑制状态 (调试/监控)"""
         with self._lock:
             now = time.time()
@@ -1007,7 +1005,7 @@ class PRErrorHandler:
     def __init__(self, audit: AuditLogger):
         self.audit = audit
 
-    def handle_git_error(self, error: GitError, pr_id: Optional[str] = None) -> ErrorAction:
+    def handle_git_error(self, error: GitError, pr_id: str | None = None) -> ErrorAction:
         if error.code == "branch_already_exists":
             return ErrorAction(
                 action="RETRY_WITH_NEW_BRANCH",
@@ -1072,7 +1070,7 @@ class CheckpointErrorHandler:
         self,
         error: Exception,
         checkpoint_id: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if isinstance(error, FileNotFoundError):
             return {
                 "error": f"检查点不存在: {checkpoint_id}",
@@ -1109,7 +1107,7 @@ class CheckpointErrorHandler:
             "checkpoint": None,
         }
 
-    def _try_load_backup(self, checkpoint_id: str) -> Optional[Any]:
+    def _try_load_backup(self, checkpoint_id: str) -> Any | None:
         """尝试加载备份 (.bak 文件)"""
         if self.store is None:
             return None
@@ -1148,32 +1146,32 @@ class HITLConfig:
 
     # 钉钉
     dingtalk_webhook_env: str = "DINGTALK_WEBHOOK_URL"
-    dingtalk_webhook: Optional[str] = None  # 实际值，从环境变量解析
+    dingtalk_webhook: str | None = None  # 实际值，从环境变量解析
     dingtalk_secret_env: str = "DINGTALK_WEBHOOK_SECRET"  # 可选: 加签密钥
 
     # 飞书
     feishu_webhook_env: str = "FEISHU_WEBHOOK_URL"
-    feishu_webhook: Optional[str] = None
+    feishu_webhook: str | None = None
     feishu_secret_env: str = "FEISHU_WEBHOOK_SECRET"  # 可选: 签名校验密钥
 
     # 企业微信
     wecom_webhook_env: str = "WECOM_WEBHOOK_URL"
-    wecom_webhook: Optional[str] = None
+    wecom_webhook: str | None = None
 
     # 默认通知渠道
-    default_notification_channels: List[str] = field(default_factory=lambda: ["console"])
+    default_notification_channels: list[str] = field(default_factory=lambda: ["console"])
 
     # 审批人 (CodeOwners)
-    codeowners: Dict[str, List[str]] = field(default_factory=dict)
+    codeowners: dict[str, list[str]] = field(default_factory=dict)
 
     # 环境特定策略覆盖
-    environment_overrides: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    environment_overrides: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # 来源
-    sources: List[str] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
 
     @classmethod
-    def load(cls, project_path: Optional[Path] = None) -> "HITLConfig":
+    def load(cls, project_path: Path | None = None) -> HITLConfig:
         """加载配置 (合并多层来源)"""
         config = cls()
 
@@ -1181,7 +1179,7 @@ class HITLConfig:
         config.sources.append("default")
 
         # 4. 用户配置 ~/.pi/terraform-ops.yaml
-        user_data: Optional[Dict[str, Any]] = None
+        user_data: dict[str, Any] | None = None
         user_config_path = Path.home() / ".pi" / "terraform-ops.yaml"
         if user_config_path.exists():
             user_data = cls._parse_yaml(user_config_path)
@@ -1190,7 +1188,7 @@ class HITLConfig:
                 config.sources.append(f"user:{user_config_path}")
 
         # 3. 项目配置 ./.pi/terraform-ops.yaml
-        proj_data: Optional[Dict[str, Any]] = None
+        proj_data: dict[str, Any] | None = None
         if project_path:
             project_config = project_path / ".pi" / "terraform-ops.yaml"
             if not project_config.exists():
@@ -1240,7 +1238,7 @@ class HITLConfig:
         return config
 
     @staticmethod
-    def _parse_yaml(path: Path) -> Optional[Dict[str, Any]]:
+    def _parse_yaml(path: Path) -> dict[str, Any] | None:
         """轻量 YAML 解析 (仅支持 spec §6.2 中使用的子集)
 
         由于零依赖限制，仅支持:
@@ -1252,19 +1250,19 @@ class HITLConfig:
         """
         try:
             import yaml  # type: ignore
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             return data if isinstance(data, dict) else None
         except ImportError:
             return HITLConfig._parse_yaml_minimal(path)
 
     @staticmethod
-    def _parse_yaml_minimal(path: Path) -> Optional[Dict[str, Any]]:
+    def _parse_yaml_minimal(path: Path) -> dict[str, Any] | None:
         """最小化 YAML 解析 (无 PyYAML 依赖时的回退)"""
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 content = f.read()
-        except (OSError, IOError):
+        except OSError:
             return None
 
         try:
@@ -1277,7 +1275,7 @@ class HITLConfig:
         # 真正的最小化解析 (只支持 spec 示例中的格式)
         return _MinimalYAMLParser.parse(content)
 
-    def _merge(self, overrides: Dict[str, Any]):
+    def _merge(self, overrides: dict[str, Any]):
         """深度合并覆盖"""
         for key, value in overrides.items():
             if isinstance(value, dict) and isinstance(getattr(self, key, None), dict):
@@ -1286,7 +1284,7 @@ class HITLConfig:
             else:
                 setattr(self, key, value)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """序列化为字典 (用于调试)"""
         return {
             "mode": self.mode,
@@ -1327,7 +1325,7 @@ class _MinimalYAMLParser:
     """
 
     @classmethod
-    def parse(cls, content: str) -> Optional[Dict[str, Any]]:
+    def parse(cls, content: str) -> dict[str, Any] | None:
         lines = []
         for raw in content.splitlines():
             # 去除注释
@@ -1339,17 +1337,17 @@ class _MinimalYAMLParser:
         if not lines:
             return None
 
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
         cls._parse_block(lines, 0, 0, result)
         return result
 
     @classmethod
     def _parse_block(
         cls,
-        lines: List[str],
+        lines: list[str],
         start: int,
         base_indent: int,
-        out: Dict[str, Any],
+        out: dict[str, Any],
     ) -> int:
         i = start
         while i < len(lines):
@@ -1385,7 +1383,7 @@ class _MinimalYAMLParser:
                     if next_indent > base_indent:
                         if lines[i + 1].lstrip().startswith("- "):
                             # 列表
-                            lst: List[Any] = []
+                            lst: list[Any] = []
                             j = i + 1
                             while j < len(lines):
                                 next_line = lines[j]
@@ -1395,7 +1393,7 @@ class _MinimalYAMLParser:
                                 item = next_line.lstrip()[2:].strip()
                                 # 处理嵌套 key: value
                                 if ":" in item:
-                                    sub: Dict[str, Any] = {}
+                                    sub: dict[str, Any] = {}
                                     sub_k, _, sub_v = item.partition(":")
                                     sub[sub_k.strip()] = cls._parse_value(sub_v.strip())
                                     lst.append(sub)
@@ -1406,7 +1404,7 @@ class _MinimalYAMLParser:
                             i = j
                             continue
                         else:
-                            sub_dict: Dict[str, Any] = {}
+                            sub_dict: dict[str, Any] = {}
                             i = cls._parse_block(lines, i + 1, next_indent, sub_dict)
                             out[key] = sub_dict
                             continue
@@ -1455,8 +1453,8 @@ class NotificationPayload:
     title: str
     message: str
     level: str = "info"  # info / warning / error / success
-    url: Optional[str] = None
-    extra: Dict[str, Any] = field(default_factory=dict)
+    url: str | None = None
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 class NotificationManager:
@@ -1481,8 +1479,8 @@ class NotificationManager:
         config: HITLConfig,
         audit: AuditLogger,
         console_output: bool = True,
-        circuit_breaker: Optional["CircuitBreaker"] = None,
-        escalation_manager: Optional["EscalationManager"] = None,
+        circuit_breaker: CircuitBreaker | None = None,
+        escalation_manager: EscalationManager | None = None,
     ):
         self.config = config
         self.audit = audit
@@ -1503,7 +1501,7 @@ class NotificationManager:
         self.escalation_manager = escalation_manager
 
         # 渠道注册表
-        self._channels: Dict[str, "_Channel"] = {
+        self._channels: dict[str, _Channel] = {
             "console": _ConsoleChannel(console_output),
             "dingtalk": _DingTalkChannel(
                 webhook_url=config.dingtalk_webhook,
@@ -1529,11 +1527,11 @@ class NotificationManager:
             if self.escalation_manager is not None:
                 ch.escalation_manager = self.escalation_manager
 
-    def register_channel(self, name: str, channel: "_Channel"):
+    def register_channel(self, name: str, channel: _Channel):
         """注册自定义渠道 (扩展点)"""
         self._channels[name] = channel
 
-    def list_channels(self) -> List[str]:
+    def list_channels(self) -> list[str]:
         """列出可用渠道"""
         return list(self._channels.keys())
 
@@ -1544,8 +1542,8 @@ class NotificationManager:
     def send_all(
         self,
         payload: NotificationPayload,
-        channels: Optional[List[str]] = None,
-    ) -> Dict[str, bool]:
+        channels: list[str] | None = None,
+    ) -> dict[str, bool]:
         """发送到多个渠道 (默认使用 config.default_notification_channels)
 
         Returns:
@@ -1554,7 +1552,7 @@ class NotificationManager:
         if channels is None:
             channels = self.config.default_notification_channels or ["console"]
 
-        results: Dict[str, bool] = {}
+        results: dict[str, bool] = {}
         for ch in channels:
             results[ch] = self._dispatch(ch, payload)
         return results
@@ -1622,9 +1620,9 @@ class _Channel:
 
     def __init__(self):
         # 可选熔断器 (由 NotificationManager 注入)
-        self.circuit_breaker: Optional["CircuitBreaker"] = None
+        self.circuit_breaker: CircuitBreaker | None = None
         # 可选升级管理器 (由 NotificationManager 注入)
-        self.escalation_manager: Optional["EscalationManager"] = None
+        self.escalation_manager: EscalationManager | None = None
 
     @classmethod
     def _get_retry_config(cls) -> tuple:
@@ -1654,14 +1652,14 @@ class _Channel:
         可重试: NetworkError, RetryableHTTPError (5xx/429)
         不可重试: WebhookError, NonRetryableHTTPError, 其他 Exception
         """
-        return isinstance(error, (NetworkError, RetryableHTTPError))
+        return isinstance(error, NetworkError | RetryableHTTPError)
 
     @staticmethod
     def _compute_backoff(
         attempt: int,
         initial: float = 1.0,
         maximum: float = 30.0,
-        retry_after: Optional[float] = None,
+        retry_after: float | None = None,
     ) -> float:
         """计算指数退避时延 (秒)
 
@@ -1728,7 +1726,6 @@ class _Channel:
                 )
                 return False
 
-        last_error: Optional[Exception] = None
         # 总尝试次数 = 1 (首次) + max_retries
         for attempt in range(0, max_retries + 1):
             try:
@@ -1744,7 +1741,6 @@ class _Channel:
                     pass
                 return False
             except Exception as e:
-                last_error = e
                 # 熔断器记录失败 (仅在错误被计入时触发熔断)
                 if self.circuit_breaker is not None:
                     self.circuit_breaker.record_failure(self.name, e)
@@ -1888,7 +1884,7 @@ def _is_dry_run() -> bool:
     return os.environ.get("TF_OPS_DRYRUN_NOTIFICATION") == "1"
 
 
-def _http_post(url: str, body: Dict[str, Any], timeout: int = 10) -> int:
+def _http_post(url: str, body: dict[str, Any], timeout: int = 10) -> int:
     """通过 stdlib urllib 发送 POST 请求
 
     Returns:
@@ -1900,8 +1896,8 @@ def _http_post(url: str, body: Dict[str, Any], timeout: int = 10) -> int:
         NonRetryableHTTPError  - HTTP 4xx (不可重试, 排除 429, 含 category)
         WebhookError           - 配置/安全错误 (不可重试)
     """
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     try:
         req = urllib.request.Request(  # nosec - URL 由用户从环境变量配置
@@ -1917,7 +1913,7 @@ def _http_post(url: str, body: Dict[str, Any], timeout: int = 10) -> int:
         status = e.code
         category = _classify_http_status(status)
         # 尝试读取 Retry-After header
-        retry_after: Optional[float] = None
+        retry_after: float | None = None
         try:
             ra_header = e.headers.get("Retry-After") if e.headers else None
             if ra_header:
@@ -2010,13 +2006,13 @@ class _DingTalkChannel(_Channel):
     """
     name = "dingtalk"
 
-    def __init__(self, webhook_url: Optional[str], webhook_env: str, secret: Optional[str] = None):
+    def __init__(self, webhook_url: str | None, webhook_env: str, secret: str | None = None):
         super().__init__()
         self.webhook_url = webhook_url
         self.webhook_env = webhook_env
         self.secret = secret
 
-    def build_message(self, payload: NotificationPayload) -> Dict[str, Any]:
+    def build_message(self, payload: NotificationPayload) -> dict[str, Any]:
         """构造钉钉 markdown 消息"""
         return {
             "msgtype": "markdown",
@@ -2027,13 +2023,13 @@ class _DingTalkChannel(_Channel):
             },
         }
 
-    def _sign(self) -> Dict[str, str]:
+    def _sign(self) -> dict[str, str]:
         """加签 (钉钉可选安全机制)"""
         if not self.secret:
             return {}
-        import hmac
-        import hashlib
         import base64
+        import hashlib
+        import hmac
         import urllib.parse
         timestamp = str(round(time.time() * 1000))
         string_to_sign = f"{timestamp}\n{self.secret}"
@@ -2111,13 +2107,13 @@ class _FeishuChannel(_Channel):
     """
     name = "feishu"
 
-    def __init__(self, webhook_url: Optional[str], webhook_env: str, secret: Optional[str] = None):
+    def __init__(self, webhook_url: str | None, webhook_env: str, secret: str | None = None):
         super().__init__()
         self.webhook_url = webhook_url
         self.webhook_env = webhook_env
         self.secret = secret
 
-    def build_message(self, payload: NotificationPayload) -> Dict[str, Any]:
+    def build_message(self, payload: NotificationPayload) -> dict[str, Any]:
         """构造飞书交互式卡片消息
 
         飞书推荐使用 interactive 卡片, 支持标题/多字段/链接, 体验优于纯文本
@@ -2138,7 +2134,7 @@ class _FeishuChannel(_Channel):
         if payload.url:
             body_lines.append(f"\n[View Details]({payload.url})")
 
-        elements: List[Dict[str, Any]] = []
+        elements: list[dict[str, Any]] = []
         if body_lines:
             elements.append({
                 "tag": "markdown",
@@ -2177,9 +2173,9 @@ class _FeishuChannel(_Channel):
         """
         if not self.secret:
             return ""
-        import hmac
-        import hashlib
         import base64
+        import hashlib
+        import hmac
         timestamp = str(int(time.time()))
         string_to_sign = f"{timestamp}\n{self.secret}"
         hmac_code = hmac.new(
@@ -2257,12 +2253,12 @@ class _WeComChannel(_Channel):
     """
     name = "wecom"
 
-    def __init__(self, webhook_url: Optional[str], webhook_env: str):
+    def __init__(self, webhook_url: str | None, webhook_env: str):
         super().__init__()
         self.webhook_url = webhook_url
         self.webhook_env = webhook_env
 
-    def build_message(self, payload: NotificationPayload) -> Dict[str, Any]:
+    def build_message(self, payload: NotificationPayload) -> dict[str, Any]:
         """构造企业微信 markdown 消息"""
         content_parts = [f"## {payload.title}"]
         if payload.message:
@@ -2383,22 +2379,22 @@ def now_iso() -> str:
     return datetime.utcnow().isoformat() + "Z"
 
 
-def safe_load_json(path: Path) -> Optional[Dict[str, Any]]:
+def safe_load_json(path: Path) -> dict[str, Any] | None:
     """安全加载 JSON 文件"""
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
-    except (OSError, IOError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError):
         return None
 
 
-def redact_secrets(data: Dict[str, Any]) -> Dict[str, Any]:
+def redact_secrets(data: dict[str, Any]) -> dict[str, Any]:
     """脱敏数据中的敏感字段"""
     sensitive_keys = {
         "password", "secret", "token", "api_key", "access_key",
         "webhook", "credential", "private_key",
     }
-    redacted: Dict[str, Any] = {}
+    redacted: dict[str, Any] = {}
     for k, v in data.items():
         if any(s in k.lower() for s in sensitive_keys):
             redacted[k] = "****"

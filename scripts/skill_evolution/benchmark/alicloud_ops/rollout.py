@@ -14,7 +14,6 @@ _EVOLUTION_DIR = Path(__file__).resolve().parents[2]
 if str(_EVOLUTION_DIR) not in sys.path:
     sys.path.insert(0, str(_EVOLUTION_DIR))
 from export_trajectories import sanitize_command  # noqa: E402
-
 from query_resolver import resolve_operation
 from trajectories import (
     build_trajectory_memory_context,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """alicloud-terraform-ops 运行时路径 — 统一写入 ${SKILLS_DIR}/.runtime/terraform-ops/。
 
 Committed templates: alicloud-terraform-ops/environments/ (in Git).

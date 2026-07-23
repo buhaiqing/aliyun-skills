@@ -17,26 +17,35 @@ Python 3.10+ 标准库 unittest
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-from typing import Any, Dict
+from unittest.mock import patch
 
 # 允许单独运行
 sys.path.insert(0, str(Path(__file__).parent))
 
 from hitl_common import (
-    AuditLogger, AuditEventType, HITLConfig, NotificationManager,
-    NotificationPayload, WebhookError, NetworkError, RetryableHTTPError,
-    NonRetryableHTTPError, HTTPErrorCategory,
-    CircuitBreaker, CircuitBreakerConfig, CircuitBreakerOpenError, CircuitState,
-    Severity, EscalationPolicy, EscalationManager, DEFAULT_CATEGORY_SEVERITY,
+    DEFAULT_CATEGORY_SEVERITY,
+    AuditEventType,
+    AuditLogger,
+    CircuitBreaker,
+    CircuitBreakerConfig,
+    CircuitBreakerOpenError,
+    CircuitState,
+    EscalationManager,
+    EscalationPolicy,
+    HITLConfig,
+    HTTPErrorCategory,
+    NetworkError,
+    NonRetryableHTTPError,
+    NotificationManager,
+    NotificationPayload,
+    RetryableHTTPError,
+    Severity,
 )
-
 
 # ============================================================================
 # Test Fixtures
@@ -84,7 +93,6 @@ class _NotificationTestBase(unittest.TestCase):
             self._saved_env[k] = os.environ.pop(k, None)
 
         # 每个 test 独立 audit 目录, 避免事件干扰
-        import shutil
         import tempfile
         self._audit_dir = Path(tempfile.mkdtemp(prefix="test-audit-"))
         self.audit = AuditLogger(base_path=self._audit_dir)
@@ -707,8 +715,9 @@ class TestRetryableErrorCategory(unittest.TestCase):
 
     def test_retry_audit_includes_error_category(self):
         """重试事件包含 error_category 字段"""
+        import shutil
+        import tempfile
         from pathlib import Path
-        import shutil, tempfile
         audit_dir = Path(tempfile.mkdtemp())
         try:
             audit = AuditLogger(base_path=audit_dir)
@@ -1055,9 +1064,10 @@ class TestChannelErrorCategoryInAudit(_NotificationTestBase):
     def test_network_error_category_classified(self):
         """NetworkError.category 根据底层异常推断"""
         import socket
+
         from hitl_common import _classify_network_error
         self.assertEqual(
-            _classify_network_error(socket.timeout("timeout")),
+            _classify_network_error(TimeoutError("timeout")),
             HTTPErrorCategory.NETWORK_TIMEOUT,
         )
         self.assertEqual(

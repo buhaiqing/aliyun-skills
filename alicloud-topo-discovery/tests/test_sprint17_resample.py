@@ -13,11 +13,8 @@
   T10: CLI --resample 与 --diff 互斥 (exit=2, 明确错误)
 """
 import json
-import os
 import subprocess
 import sys
-import tempfile
-from datetime import date, timedelta
 from pathlib import Path
 
 import pytest

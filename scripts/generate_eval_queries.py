@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Batch generate eval_queries.json files for missing skills."""
 
 from __future__ import annotations

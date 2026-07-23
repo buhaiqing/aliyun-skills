@@ -7,7 +7,8 @@ Uses real fixture JSON files from tests/fixtures/ and verifies:
 - Parent references (vpc_id, vswitch_id) use dependency notation
 """
 import pytest
-from scripts.lib.field_mapper import FieldMapper, MappingSpec, MappingRule
+
+from scripts.lib.field_mapper import FieldMapper
 from scripts.lib.mappings import MAPPINGS
 
 

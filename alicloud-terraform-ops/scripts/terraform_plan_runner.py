@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Run terraform init/validate/plan for HITL CP3 and NL2HCL dry-run."""
 
 from __future__ import annotations
@@ -9,7 +8,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from execution_trace import CommandRecord, parse_plan_summary
 
@@ -22,18 +21,18 @@ class PlanRunResult:
     init_exit: int = 0
     validate_exit: int = 0
     plan_exit: int = 0
-    summary: Dict[str, Any] = field(default_factory=dict)
-    commands: List[CommandRecord] = field(default_factory=list)
-    error: Optional[str] = None
+    summary: dict[str, Any] = field(default_factory=dict)
+    commands: list[CommandRecord] = field(default_factory=list)
+    error: str | None = None
 
 
-def summary_from_plan_stdout(plan_stdout: str) -> Dict[str, Any]:
+def summary_from_plan_stdout(plan_stdout: str) -> dict[str, Any]:
     """Map parse_plan_summary keys to HITL render_plan_summary shape."""
     parsed = parse_plan_summary(plan_stdout) or {}
     create = parsed.get("add", 0)
     update = parsed.get("change", 0)
     delete = parsed.get("destroy", 0)
-    risks: List[str] = []
+    risks: list[str] = []
     if delete:
         risks.append(f"Plan 将销毁 {delete} 个资源")
     return {
@@ -65,7 +64,7 @@ class TerraformPlanRunner:
         *,
         use_backend: bool = False,
         destroy: bool = False,
-        plan_out: Optional[Path] = None,
+        plan_out: Path | None = None,
     ) -> PlanRunResult:
         work_dir = work_dir.resolve()
         if not work_dir.is_dir():
@@ -81,7 +80,7 @@ class TerraformPlanRunner:
                 error="未找到 terraform CLI（请安装 >= 1.5.0）",
             )
 
-        commands: List[CommandRecord] = []
+        commands: list[CommandRecord] = []
         init_cmd = [terraform, "init", "-input=false"]
         if not use_backend:
             init_cmd.insert(2, "-backend=false")

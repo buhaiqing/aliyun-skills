@@ -9,6 +9,7 @@ subdir importable as a package.
 import json
 import sys
 from pathlib import Path
+
 import pytest
 
 # Make `scripts.lib.*` imports work in tests.

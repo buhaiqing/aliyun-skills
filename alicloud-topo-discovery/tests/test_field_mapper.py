@@ -1,9 +1,10 @@
 """Tests for field_mapper core (JSON → HCL conversion)."""
 import pytest
+
 from scripts.lib.field_mapper import (
     FieldMapper,
-    MappingSpec,
     MappingRule,
+    MappingSpec,
     _slugify,
 )
 

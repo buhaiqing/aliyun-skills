@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_smart_alarm_cms_setup.py — Phase 7: Smart Alert Loop CMS alarm setup
 
@@ -36,12 +35,11 @@ import json
 import subprocess
 import sys
 import textwrap
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 #: Smart pattern alarm definitions
 #: These alarms monitor custom metrics pushed by gcl_smart_alarm_engine.py
-SMART_ALARMS: List[Dict[str, Any]] = [
+SMART_ALARMS: list[dict[str, Any]] = [
     {
         "name": "GCL-Smart-Resource-Degraded",
         "metric_name": "gcl_smart_resource_degraded_count",
@@ -106,7 +104,7 @@ EXIT_DELETED = 3
 EXIT_ERROR = 4
 
 
-def call_describe_alarm_list(name: str, region: str) -> List[Dict[str, Any]]:
+def call_describe_alarm_list(name: str, region: str) -> list[dict[str, Any]]:
     """Call `aliyun cms DescribeMetricAlarmList` for a specific alarm name."""
     proc = subprocess.run(
         [
@@ -125,7 +123,7 @@ def call_describe_alarm_list(name: str, region: str) -> List[Dict[str, Any]]:
         return []
 
 
-def call_put_metric_alarm(config: Dict[str, Any], region: str) -> int:
+def call_put_metric_alarm(config: dict[str, Any], region: str) -> int:
     """Call `aliyun cms PutMetricAlarm` with the given config."""
     args = [
         "aliyun", "cms", "PutMetricAlarm",
@@ -166,7 +164,7 @@ def call_delete_metric_alarm(name: str, region: str) -> int:
 def reconcile(
     contact_group: str,
     region: str,
-    webhook: Optional[str] = None,
+    webhook: str | None = None,
     dry_run: bool = False,
 ) -> int:
     """
@@ -270,7 +268,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
 
     print("=" * 70)

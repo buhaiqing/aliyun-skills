@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Validate all alicloud-*-ops skill directory structures.
 
 Checks compliance with AGENTS.md canonical structure requirements.
@@ -9,12 +8,10 @@ Exits with non-zero code if any validation fails.
 from __future__ import annotations
 
 import json
-import os
 import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
@@ -77,8 +74,8 @@ class ValidationError:
 
 @dataclass
 class ValidationReport:
-    errors: List[ValidationError] = field(default_factory=list)
-    warnings: List[ValidationError] = field(default_factory=list)
+    errors: list[ValidationError] = field(default_factory=list)
+    warnings: list[ValidationError] = field(default_factory=list)
     checked: int = 0
     passed: int = 0
 
@@ -92,10 +89,10 @@ class ValidationReport:
 def parse_skill_frontmatter(skill_md_path: Path) -> dict:
     """Extract frontmatter from SKILL.md as dict."""
     content = skill_md_path.read_text(encoding="utf-8")
-    
+
     # Remove HTML comments at the start (e.g., <!-- markdownlint-disable -->)
     content = re.sub(r"^\s*<!--.*?-->\s*", "", content, flags=re.DOTALL)
-    
+
     match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not match:
         return {}
@@ -104,31 +101,31 @@ def parse_skill_frontmatter(skill_md_path: Path) -> dict:
     result = {}
     current_key = None
     current_value = []
-    
+
     for line in frontmatter.split("\n"):
         # Skip comment lines
         if line.strip().startswith("#"):
             continue
-            
+
         # Check for new key (not indented, contains colon)
         if ":" in line and not line.startswith(" ") and not line.startswith("\t"):
             # Save previous key-value pair
             if current_key:
                 value = "\n".join(current_value).strip().strip('"').strip("'")
                 result[current_key] = value
-            
+
             key, _, value = line.partition(":")
             current_key = key.strip()
             current_value = [value]
         elif current_key:
             # Continuation of multi-line value
             current_value.append(line)
-    
+
     # Save last key
     if current_key:
         value = "\n".join(current_value).strip().strip('"').strip("'")
         result[current_key] = value
-    
+
     return result
 
 
@@ -146,7 +143,7 @@ def get_metadata_type(skill_dir: Path) -> str | None:
     return type_match.group(1) if type_match else None
 
 
-def required_files_for_skill(skill_name: str, skill_dir: Path) -> List[str]:
+def required_files_for_skill(skill_name: str, skill_dir: Path) -> list[str]:
     """Return required file list based on skill metadata type."""
     metadata_type = get_metadata_type(skill_dir)
     if metadata_type in SHARED_FRAMEWORK_TYPES:
@@ -205,7 +202,7 @@ def validate_skill(skill_dir: Path, report: ValidationReport) -> bool:
     return is_valid
 
 
-def discover_skills(repo_root: Path) -> List[Path]:
+def discover_skills(repo_root: Path) -> list[Path]:
     """Discover all alicloud-*-ops directories."""
     skills = []
     for item in sorted(repo_root.glob("alicloud-*-ops")):
@@ -241,7 +238,7 @@ def print_report(report: ValidationReport):
     print("=" * 60)
 
 
-def main(argv: List[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate alicloud-*-ops skill structures")
     parser.add_argument("--strict", action="store_true", help="Treat warnings as errors")
     parser.add_argument("--skill", help="Validate only specific skill")

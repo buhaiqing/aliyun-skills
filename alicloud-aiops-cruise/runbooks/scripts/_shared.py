@@ -866,7 +866,7 @@ def _query_single_metric(ns, metric, dimensions, start, end):
 
 def backtrack_cms(region, cluster_id, node_ids, days=7, start_time=None, end_time=None):
     """CMS history backtrack. Supports N-day or custom time window."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     now = datetime.now(timezone.utc)
     if start_time and end_time:
         start, end = start_time, end_time
@@ -892,7 +892,7 @@ def backtrack_cms(region, cluster_id, node_ids, days=7, start_time=None, end_tim
                 vals = [round(v, 1) for _, v in pts[-7:]]
                 result["oversale_trend"].append(
                     {"node": nid, "metric": label, "trend": vals,
-                     "message": "\u8fde\u7eed\u4e0a\u5347: %.1f%%->%.1f%%" % (vals[0], vals[-1])})
+                     "message": f"\u8fde\u7eed\u4e0a\u5347: {vals[0]:.1f}%->{vals[-1]:.1f}%"})
             for s in _find_spikes(pts):
                 result["spikes"].append(s)
     return result
@@ -904,13 +904,13 @@ def format_backtrack_report(report):
     if report.get("oversale_trend"):
         lines.append("\u8d8b\u52bf\u5f02\u5e38\n")
         for t in report["oversale_trend"]:
-            lines.append("- %s: %s\n" % (t["node"][:20], t["message"]))
+            lines.append("- {}: {}\n".format(t["node"][:20], t["message"]))
     else:
         lines.append("\u65e0\u5f02\u5e38\u8d8b\u52bf\u3002\n\n")
     if report.get("spikes"):
         lines.append("\u7a81\u53d8\u4e8b\u4ef6\n")
         for s in report["spikes"]:
-            lines.append("- %s: %s value=%.1f z=%.1f\n" % (s["node"][:20], s["time"][:16], s["value"], s["z"]))
+            lines.append("- {}: {} value={:.1f} z={:.1f}\n".format(s["node"][:20], s["time"][:16], s["value"], s["z"]))
     else:
         lines.append("\u672a\u68c0\u6d4b\u5230\u663e\u8457\u7a81\u53d8\u3002\n\n")
     return "".join(lines)
@@ -927,7 +927,7 @@ def check_audit_log_enabled(region, cluster_id):
             result["audit_enabled"] = bool(audit_raw.get("audit_enabled", False))
             result["sls_project"] = audit_raw.get("sls_project_name", "")
     except Exception as e:
-        log("WARN", "check_audit_log: %s" % e)
+        log("WARN", f"check_audit_log: {e}")
     return result
 
 
@@ -946,7 +946,7 @@ def query_sls_k8s_events(sls_project, region, start, end, keywords=None):
                                "source": log_entry.get("source", ""),
                                "message": log_entry.get("content", "")})
     except Exception as e:
-        warn("E060", "SLS query: %s" % e)
+        warn("E060", f"SLS query: {e}")
     return events
 
 
@@ -957,7 +957,7 @@ def format_sls_event_report(events):
     lines = ["\n### SLS \u5ba1\u8ba1\u4e8b\u4ef6\n"]
     lines.append("| \u65f6\u95f4 | \u6765\u6e90 | \u5185\u5bb9 |\n|------|------|------|\n")
     for e in events:
-        lines.append("| %s | %s | %s |\n" % (str(e.get("time", ""))[:16], e.get("source", "")[:15], e.get("message", "")[:60]))
+        lines.append("| {} | {} | {} |\n".format(str(e.get("time", ""))[:16], e.get("source", "")[:15], e.get("message", "")[:60]))
     return "".join(lines)
 
 
@@ -965,11 +965,11 @@ def _collect_k8s_events_local(cluster_id, region):
     """Collect K8s events via local kubectl + CS API kubeconfig.
     Non-blocking: permission failures return status AUTH_ERROR without raising.
     Status: OK / AUTH_ERROR / TOOL_MISSING / NETWORK_ERROR / SKIPPED"""
-    import subprocess
     import json
     import os
-    import tempfile
     import shutil
+    import subprocess
+    import tempfile
     result = {"status": "SKIPPED", "events": [], "summary": {}, "message": ""}
     kubectl_path = shutil.which("kubectl")
     if not kubectl_path:
@@ -994,7 +994,7 @@ def _collect_k8s_events_local(cluster_id, region):
     except Exception as e:
         result["message"] = "[ERROR] kubeconfig parse: " + str(e)[:80]
         return result
-    
+
     tmpf = tempfile.NamedTemporaryFile(mode="w", suffix=".kubeconfig", delete=False)
     tmpf.write(config_yaml)
     tmpf.close()
@@ -1070,13 +1070,13 @@ def format_k8s_events_report(k8s_events):
 
 def _drill_pod_limits(region, cluster_id, node_name, metric="cpu"):
     """Drill into Pod-level limits for an overcommitted node."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     now = datetime.now(timezone.utc)
     end = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     h6 = (now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
     dims = json.dumps([{"cluster": cluster_id, "node": node_name}])
-    limit_m = "pod.%s.limit" % metric
-    usage_m = "pod.%s.usage_rate" % metric
+    limit_m = f"pod.{metric}.limit"
+    usage_m = f"pod.{metric}.usage_rate"
     raw = q_cached(["cms", "DescribeMetricList", "--Namespace", "acs_k8s", "--MetricName", limit_m,
              "--Dimensions", dims, "--Period", "3600", "--StartTime", h6, "--EndTime", end], timeout=20)
     if not raw: return []
@@ -1108,9 +1108,9 @@ def _drill_pod_limits(region, cluster_id, node_name, metric="cpu"):
     result = []
     for sp in sorted_pods:
         entry = {"pod": sp["pod"], "namespace": sp["namespace"],
-                 "%s_limit" % metric: round(sp.get("limit", 0), 2)}
+                 f"{metric}_limit": round(sp.get("limit", 0), 2)}
         if "usage" in sp:
-            entry["%s_usage" % metric] = round(sp.get("usage", 0), 2)
+            entry[f"{metric}_usage"] = round(sp.get("usage", 0), 2)
         result.append(entry)
     return result
 
@@ -1118,7 +1118,7 @@ def _drill_pod_limits(region, cluster_id, node_name, metric="cpu"):
 def _collect_k8s_limits(region, cluster_id, node_names, d7=None, end=None):
     """Aggregate node capacity/limit metrics.
     [NOTE] Node-level acs_k8s metrics require ags-metrics-collector addon."""
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     now = datetime.now(timezone.utc)
     end = end or now.strftime("%Y-%m-%dT%H:%M:%SZ")
     d7 = d7 or (now - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -1666,13 +1666,13 @@ def format_anomaly_scores_table(anomaly_scores):
         lines.append("| 实例 | 类型 | 指标 | 当前值 | 基线μ | Z-Score | 方法 | 等级 |\n")
         lines.append("|------|------|------|-------:|------:|-------:|------|:----:|\n")
         for a in critical:
-            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | CRITICAL CRITICAL |\n" % (
+            lines.append("| {} | {} | {} | {:.1f} | {:.1f} | {:.1f} | {} | CRITICAL CRITICAL |\n".format(
                 a.get("instance_id", "")[:20], a.get("resource_type", ""),
                 a.get("metric", ""), a.get("current_value", 0),
                 a.get("baseline_mean", 0), a.get("z_score", 0),
                 a.get("method", "")))
         for a in warning:
-            lines.append("| %s | %s | %s | %.1f | %.1f | %.1f | %s | WARNING WARNING |\n" % (
+            lines.append("| {} | {} | {} | {:.1f} | {:.1f} | {:.1f} | {} | WARNING WARNING |\n".format(
                 a.get("instance_id", "")[:20], a.get("resource_type", ""),
                 a.get("metric", ""), a.get("current_value", 0),
                 a.get("baseline_mean", 0), a.get("z_score", 0),

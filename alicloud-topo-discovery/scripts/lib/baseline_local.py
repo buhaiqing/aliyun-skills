@@ -6,7 +6,6 @@ Implements: write, list, retention (mark expired, never delete).
 import shutil
 from datetime import date, timedelta
 from pathlib import Path
-from typing import List, Optional
 
 
 class LocalBackend:
@@ -47,7 +46,7 @@ class LocalBackend:
         shutil.copytree(str(snapshot), str(dst))
         return dst
 
-    def list_baselines(self) -> List[date]:
+    def list_baselines(self) -> list[date]:
         """Return sorted list of baseline dates (excluding expired)."""
         dates = []
         for entry in sorted(self.root.iterdir()):
@@ -59,14 +58,14 @@ class LocalBackend:
                 continue
         return sorted(dates)
 
-    def get_latest(self) -> Optional[Path]:
+    def get_latest(self) -> Path | None:
         """Return path to most recent baseline directory, or None."""
         baselines = self.list_baselines()
         if not baselines:
             return None
         return self.root / baselines[-1].isoformat()
 
-    def get_by_date(self, date_str: str) -> Optional[Path]:
+    def get_by_date(self, date_str: str) -> Path | None:
         """Return path to baseline directory for the given date, or None.
 
         Args:
@@ -87,7 +86,7 @@ class LocalBackend:
 
     # ── Sprint 17: 重采样工具 ──────────────────────────────
 
-    def copy_baseline(self, src_date: str, dst_date: str, force: bool = False) -> Optional[Path]:
+    def copy_baseline(self, src_date: str, dst_date: str, force: bool = False) -> Path | None:
         """Copy a baseline directory from src_date to dst_date (resample).
 
         Copies manifest.json + inventory.json. Rewrites generated_at in
@@ -139,7 +138,7 @@ class LocalBackend:
 
         return dst
 
-    def list_gaps(self, start: str, end: str) -> List[str]:
+    def list_gaps(self, start: str, end: str) -> list[str]:
         """List dates in [start, end] range that have no baseline directory.
 
         Args:
@@ -164,7 +163,7 @@ class LocalBackend:
             current += timedelta(days=1)
         return gaps
 
-    def fill_gaps(self, src_date: str, start: str, end: str, force: bool = False) -> List[str]:
+    def fill_gaps(self, src_date: str, start: str, end: str, force: bool = False) -> list[str]:
         """Fill all gaps in [start, end] range by copying from src_date.
 
         Args:
@@ -184,7 +183,7 @@ class LocalBackend:
                 created.append(gap_date)
         return created
 
-    def apply_retention(self, retention_days: int, today: Optional[date] = None) -> List[str]:
+    def apply_retention(self, retention_days: int, today: date | None = None) -> list[str]:
         """Mark directories older than retention_days with '.expired' suffix.
 
         Args:

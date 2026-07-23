@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_smart_alarm_integration_test.py — Integration tests for Smart Alert + Runner.
 
@@ -43,7 +42,7 @@ class IntegrationTestBase(unittest.TestCase):
         self.trace_dir = Path(self.tmpdir.name) / "traces"
         self.trace_dir.mkdir()
         self.state_path = Path(self.tmpdir.name) / "degradation-state.json"
-        
+
         # Initialize empty state
         self.state_path.write_text(json.dumps({
             "downgraded_resources": {},
@@ -60,13 +59,13 @@ class IntegrationTestBase(unittest.TestCase):
                           command: str = None) -> Path:
         """Create a GCL trace file matching gcl_runner output format."""
         now = datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)
-        
+
         if command is None:
             if skill == "alicloud-ecs-ops" and resource_id:
                 command = f"aliyun ecs DescribeInstanceAttribute --InstanceId {resource_id} --RegionId {region}"
             else:
                 command = f"aliyun {skill.replace('alicloud-', '').replace('-ops', '')} TestOp"
-        
+
         trace = {
             "skill": skill,
             "request": "test-request",
@@ -108,7 +107,7 @@ class IntegrationTestBase(unittest.TestCase):
                 "output": f"exit_code={0 if decision == 'PASS' else 1} request_id=test-req-001 duration=100ms"
             }
         }
-        
+
         # Generate unique filename
         ts = now.strftime("%Y%m%d-%H%M%S")
         suffix = f"{minutes_ago:04d}"
@@ -124,22 +123,22 @@ class EndToEndWorkflowTests(IntegrationTestBase):
         """完整流程：生成trace → 检测风险 → 应用降级 → 后续runner使用降级max_iter."""
         resource_id = "i-bp1xxxxxxxxxxxxxx"
         skill = "alicloud-ecs-ops"
-        
+
         with mock.patch.object(engine, 'get_degradation_state_path', return_value=self.state_path):
             # Step 1: Create traces that trigger resource_safety_repeated pattern
             # Need 2 SAFETY_FAIL within 30 minutes for the same resource
             self._create_gcl_trace(skill, "SAFETY_FAIL", resource_id, minutes_ago=10)
             self._create_gcl_trace(skill, "SAFETY_FAIL", resource_id, minutes_ago=20)
-            
+
             # Also create some PASS traces for other resources (noise)
             self._create_gcl_trace(skill, "PASS", "i-bp2xxxxxxxxxxxxxx", minutes_ago=5)
             self._create_gcl_trace(skill, "PASS", "i-bp3xxxxxxxxxxxxxx", minutes_ago=15)
-            
+
             # Step 2: Run alarm engine to detect patterns and apply degradation
             with mock.patch.object(engine, 'load_traces', return_value=engine.load_traces(self.trace_dir, 60)):
                 traces = engine.load_traces(self.trace_dir, 60)
                 self.assertEqual(len(traces), 4)
-                
+
                 # Detect patterns
                 state = engine.load_degradation_state()
                 all_findings = []
@@ -149,23 +148,23 @@ class EndToEndWorkflowTests(IntegrationTestBase):
                         result = engine.apply_degradation(match, state, dry_run=False)
                         match["degradation_result"] = result
                         all_findings.append(match)
-                
+
                 # Verify resource_safety_repeated was detected
                 pattern_ids = [f["pattern_id"] for f in all_findings]
                 self.assertIn("resource_safety_repeated", pattern_ids)
-                
+
                 # Verify degradation was applied
                 self.assertIn(resource_id, state["downgraded_resources"])
                 downgraded_info = state["downgraded_resources"][resource_id]
                 self.assertEqual(downgraded_info["current_max_iter"], 1)
                 self.assertEqual(downgraded_info["original_max_iter"], 2)
-            
+
             # Step 3: Verify gcl_runner respects the degradation
             command = f"aliyun ecs DescribeInstanceAttribute --InstanceId {resource_id} --RegionId cn-hangzhou"
-            
+
             with mock.patch.object(runner, '_get_degradation_state_path', return_value=self.state_path):
                 adaptive_max_iter, reason = runner.get_adaptive_max_iter(skill, command, base_max_iter=2)
-                
+
                 # Should return degraded max_iter (1)
                 self.assertEqual(adaptive_max_iter, 1)
                 self.assertIsNotNone(reason)
@@ -176,47 +175,47 @@ class EndToEndWorkflowTests(IntegrationTestBase):
         """Region级集中爆发检测流程."""
         skill = "alicloud-ecs-ops"
         region = "cn-hangzhou"
-        
+
         with mock.patch.object(engine, 'get_degradation_state_path', return_value=self.state_path):
             # Create 5 SAFETY_FAIL traces for different resources in same region
             for i in range(5):
                 self._create_gcl_trace(
-                    skill, "SAFETY_FAIL", 
-                    f"i-bp{i}xxxxxxxxxxxxxx", 
+                    skill, "SAFETY_FAIL",
+                    f"i-bp{i}xxxxxxxxxxxxxx",
                     region=region,
                     minutes_ago=i*2
                 )
-            
+
             # Load and analyze traces
             traces = engine.load_traces(self.trace_dir, 60)
             self.assertEqual(len(traces), 5)
-            
+
             # Detect region_safety_burst pattern
             pattern = [p for p in engine.DEFAULT_RISK_PATTERNS if p["id"] == "region_safety_burst"][0]
             matches = engine.match_risk_pattern(traces, pattern)
-            
+
             # Should detect region burst
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0]["pattern_id"], "region_safety_burst")
             self.assertEqual(matches[0]["group_key"], region)
             self.assertEqual(matches[0]["occurrence_count"], 5)
-            
+
             # Apply degradation (should mark region for inspection)
             state = engine.load_degradation_state()
             result = engine.apply_degradation(matches[0], state, dry_run=False)
-            
+
             self.assertTrue(result["applied"])
             self.assertIn(region, state["hot_regions"])
 
     def test_e2e_auto_restore_workflow(self):
         """自动恢复过期降级的完整流程."""
         resource_id = "i-bp1xxxxxxxxxxxxxx"
-        
+
         with mock.patch.object(engine, 'get_degradation_state_path', return_value=self.state_path):
             # Manually create an expired degradation
             now = datetime.now(timezone.utc)
             expired_time = now - timedelta(minutes=1)  # 1 minute ago (expired)
-            
+
             state = {
                 "downgraded_resources": {
                     resource_id: {
@@ -233,22 +232,22 @@ class EndToEndWorkflowTests(IntegrationTestBase):
                 "version": "1.0.0"
             }
             engine.save_degradation_state(state)
-            
+
             # Verify runner sees the degradation before restore
             command = f"aliyun ecs DescribeInstanceAttribute --InstanceId {resource_id} --RegionId cn-hangzhou"
-            
+
             with mock.patch.object(runner, '_get_degradation_state_path', return_value=self.state_path):
                 adaptive_max_iter, reason = runner.get_adaptive_max_iter("alicloud-ecs-ops", command, 2)
                 self.assertEqual(adaptive_max_iter, 1)  # Still degraded
-            
+
             # Run restore_expired_degradations
             current_state = engine.load_degradation_state()
             restored = engine.restore_expired_degradations(current_state, dry_run=False)
-            
+
             # Verify restoration
             self.assertTrue(any(resource_id in r for r in restored))
             self.assertNotIn(resource_id, current_state["downgraded_resources"])
-            
+
             # Verify runner no longer sees degradation after restore
             with mock.patch.object(runner, '_get_degradation_state_path', return_value=self.state_path):
                 engine.save_degradation_state(current_state)  # Save the restored state
@@ -265,14 +264,14 @@ class AdaptiveModeIntegrationTests(IntegrationTestBase):
         resource_id = "i-bp1xxxxxxxxxxxxxx"
         skill = "alicloud-ecs-ops"
         command = f"aliyun ecs DescribeInstanceAttribute --InstanceId {resource_id} --RegionId cn-hangzhou"
-        
+
         with mock.patch.object(engine, 'get_degradation_state_path', return_value=self.state_path):
             with mock.patch.object(runner, '_get_degradation_state_path', return_value=self.state_path):
                 # Initially no degradation
                 max_iter, reason = runner.get_adaptive_max_iter(skill, command, base_max_iter=2)
                 self.assertEqual(max_iter, 2)
                 self.assertIsNone(reason)
-                
+
                 # Create degradation via engine
                 state = engine.load_degradation_state()
                 state["downgraded_resources"][resource_id] = {
@@ -285,7 +284,7 @@ class AdaptiveModeIntegrationTests(IntegrationTestBase):
                     "reason": "Integration test"
                 }
                 engine.save_degradation_state(state)
-                
+
                 # Runner should now see the degradation
                 max_iter, reason = runner.get_adaptive_max_iter(skill, command, base_max_iter=2)
                 self.assertEqual(max_iter, 1)
@@ -296,7 +295,7 @@ class AdaptiveModeIntegrationTests(IntegrationTestBase):
         """Runner的--adaptive模式对未知资源返回base_max_iter."""
         skill = "alicloud-ecs-ops"
         command = "aliyun ecs DescribeRegions"  # No resource ID
-        
+
         with mock.patch.object(runner, '_get_degradation_state_path', return_value=self.state_path):
             max_iter, reason = runner.get_adaptive_max_iter(skill, command, base_max_iter=2)
             # Should return base since no resource ID can be extracted
@@ -310,14 +309,14 @@ class AdaptiveModeIntegrationTests(IntegrationTestBase):
             ("alicloud-rds-ops", "aliyun rds DescribeDBInstanceAttribute --DBInstanceId rm-bp1xxxxxxxxxx", "rm-bp1xxxxxxxxxx"),
             ("alicloud-redis-ops", "aliyun r-kvstore DescribeInstanceAttribute --InstanceId r-bp1xxxxxxxxxx", "r-bp1xxxxxxxxxx"),
         ]
-        
+
         for skill, command, expected_id in test_cases:
             with self.subTest(skill=skill):
                 # Engine extraction
                 engine_id = engine.extract_resource_id(skill, command)
                 # Runner extraction
                 runner_id = runner._extract_resource_id(skill, command)
-                
+
                 self.assertEqual(engine_id, expected_id, f"Engine extraction failed for {skill}")
                 self.assertEqual(runner_id, expected_id, f"Runner extraction failed for {skill}")
                 self.assertEqual(engine_id, runner_id, f"Engine and Runner extraction mismatch for {skill}")
@@ -370,13 +369,13 @@ class TraceFormatCompatibilityTests(IntegrationTestBase):
                 "output": "exit_code=0 request_id=test-req-001 duration=150ms"
             }
         }
-        
+
         path = self.trace_dir / "gcl-trace-test.json"
         path.write_text(json.dumps(trace), encoding="utf-8")
-        
+
         # Engine should parse this correctly
         parsed = engine.parse_trace_file(path)
-        
+
         self.assertIsNotNone(parsed)
         self.assertEqual(parsed["skill"], "alicloud-ecs-ops")
         self.assertEqual(parsed["decision"], "PASS")
@@ -419,12 +418,12 @@ class TraceFormatCompatibilityTests(IntegrationTestBase):
                 "iter": 1
             }
         }
-        
+
         path = self.trace_dir / "gcl-trace-hallucination.json"
         path.write_text(json.dumps(trace), encoding="utf-8")
-        
+
         parsed = engine.parse_trace_file(path)
-        
+
         self.assertIsNotNone(parsed)
         self.assertEqual(parsed["decision"], "HALLUCINATION_ABORT")
         self.assertEqual(parsed["resource_id"], "i-bp1xxxxxxxxxxxxxx")
@@ -439,15 +438,15 @@ class StateFileCompatibilityTests(IntegrationTestBase):
         with mock.patch.dict(os.environ, {"ALIYUN_SKILLS_RUNTIME_ROOT": "/test/runtime"}):
             engine_path = engine.get_degradation_state_path()
             runner_path = runner._get_degradation_state_path()
-            
+
             self.assertEqual(engine_path, runner_path)
             self.assertEqual(engine_path, Path("/test/runtime/gcl-degradation-state.json"))
-        
+
         # Test without environment variable (fallback)
         with mock.patch.dict(os.environ, {}, clear=True):
             engine_path = engine.get_degradation_state_path()
             runner_path = runner._get_degradation_state_path()
-            
+
             self.assertEqual(engine_path, runner_path)
 
     def test_runner_reads_engine_written_state(self):
@@ -476,10 +475,10 @@ class StateFileCompatibilityTests(IntegrationTestBase):
                     "version": "1.0.0"
                 }
                 engine.save_degradation_state(state)
-                
+
                 # Runner reads state
                 runner_state = runner._load_degradation_state()
-                
+
                 self.assertIn("i-bp1xxxxxxxxxxxxxx", runner_state["downgraded_resources"])
                 self.assertEqual(runner_state["downgraded_resources"]["i-bp1xxxxxxxxxxxxxx"]["current_max_iter"], 1)
 
@@ -504,7 +503,7 @@ class MultipleResourceScenarioTests(IntegrationTestBase):
                     "auto_restore_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
                 }
                 engine.save_degradation_state(state)
-                
+
                 # Test each resource
                 resources = [
                     ("i-bp1xxxxxxxxxxxxxx", 1),  # Degraded
@@ -512,12 +511,12 @@ class MultipleResourceScenarioTests(IntegrationTestBase):
                     ("i-bp3xxxxxxxxxxxxxx", 1),  # Degraded
                     ("i-bp4xxxxxxxxxxxxxx", 2),  # Not degraded
                 ]
-                
+
                 for resource_id, expected_max_iter in resources:
                     command = f"aliyun ecs DescribeInstanceAttribute --InstanceId {resource_id} --RegionId cn-hangzhou"
                     max_iter, reason = runner.get_adaptive_max_iter("alicloud-ecs-ops", command, 2)
-                    
-                    self.assertEqual(max_iter, expected_max_iter, 
+
+                    self.assertEqual(max_iter, expected_max_iter,
                                      f"Resource {resource_id} should have max_iter={expected_max_iter}")
 
     def test_degradation_isolation_between_skills(self):
@@ -532,11 +531,11 @@ class MultipleResourceScenarioTests(IntegrationTestBase):
                     "current_max_iter": 1
                 }
                 engine.save_degradation_state(state)
-                
+
                 # RDS resource with similar ID pattern should not be affected
                 rds_command = "aliyun rds DescribeDBInstanceAttribute --DBInstanceId rm-bp1xxxxxxxxxx --RegionId cn-hangzhou"
                 max_iter, reason = runner.get_adaptive_max_iter("alicloud-rds-ops", rds_command, 2)
-                
+
                 self.assertEqual(max_iter, 2)  # Not degraded
                 self.assertIsNone(reason)
 

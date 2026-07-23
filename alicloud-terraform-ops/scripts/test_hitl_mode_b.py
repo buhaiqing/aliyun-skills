@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-import json
-import os
 import sys
 import tempfile
 import unittest
@@ -13,6 +11,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
+from hitl_common import AuditLogger, HITLConfig, NotificationManager, PRErrorHandler
 from hitl_mode_a import CheckpointType, Environment, create_checkpoint
 from hitl_mode_b import (
     CommentAction,
@@ -20,12 +19,10 @@ from hitl_mode_b import (
     GitError,
     LocalGitProvider,
     PRFile,
-    PRManager,
     PRFileGenerator,
+    PRManager,
     PRStatus,
-    create_pr_manager,
 )
-from hitl_common import AuditLogger, HITLConfig, PRErrorHandler, NotificationManager
 
 
 class TestCommentCommandParser(unittest.TestCase):

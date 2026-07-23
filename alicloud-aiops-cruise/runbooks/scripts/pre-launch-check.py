@@ -202,7 +202,7 @@ def main():
     from lib_idempotent import acquire_lock, release_lock
     lock_name = f"pre-launch-check.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
     if not acquire_lock(lock_name, ttl=900):
-        print(f"[ERROR] TYPE=LOCKED FIX=有其他 pre-launch-check 正在运行")
+        print("[ERROR] TYPE=LOCKED FIX=有其他 pre-launch-check 正在运行")
         sys.exit(10)
     try:
         _main_locked()

@@ -25,8 +25,13 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 if str(_SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPT_DIR))
 
-from gcl_strategy import _atomic_write_json, normalize_skill_name, refresh_report_from_baseline  # noqa: E402
-from gcl_strategy import WRITE_AUTHORITY_GHA_GIT, WORK_DIR  # noqa: E402
+from gcl_strategy import (  # noqa: E402  # noqa: E402
+    WORK_DIR,
+    WRITE_AUTHORITY_GHA_GIT,
+    _atomic_write_json,
+    normalize_skill_name,
+    refresh_report_from_baseline,
+)
 
 DEFAULT_BASELINE = Path("docs") / "strategy-baseline.json"
 DEFAULT_OUTPUT = WORK_DIR / "rule_proposals.json"

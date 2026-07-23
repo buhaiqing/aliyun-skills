@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Tests for runtime_paths.py — .runtime/terraform-ops/ layout."""
 
 from __future__ import annotations

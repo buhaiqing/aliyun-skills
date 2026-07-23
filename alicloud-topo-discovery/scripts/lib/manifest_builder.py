@@ -7,7 +7,6 @@ This module guarantees that any dict returned by .build() will pass
 ManifestValidator().validate() without raising.
 """
 from datetime import datetime, timezone
-from typing import Optional
 
 GENERATOR = "alicloud-topo-discovery"
 GENERATOR_VERSION = "1.0.0"
@@ -27,8 +26,8 @@ class ManifestBuilder:
         region: str,
         scope: str,
         provider_version: str,
-        account_alias: Optional[str] = None,
-        role_arn: Optional[str] = None,
+        account_alias: str | None = None,
+        role_arn: str | None = None,
     ):
         if not account_id or not isinstance(account_id, str):
             raise ValueError("account_id must be a non-empty string")

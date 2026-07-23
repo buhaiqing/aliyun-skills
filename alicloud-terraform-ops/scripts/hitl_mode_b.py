@@ -19,44 +19,69 @@ from __future__ import annotations
 
 import json
 import os
-import re
-import subprocess
 import sys
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 # 复用 Mode A 的核心类型
 try:
-    from hitl_mode_a import (
-        Checkpoint, CheckpointType, CheckpointStatus, StepType, Action,
-        Environment, EnvironmentPolicy, Step, StepResult, ResourceInfo,
-        UserAbortedError, CheckpointStore,
-    )
     from hitl_common import (
-        AuditLogger, AuditEventType, AuditEvent,
-        HITLConfig, NotificationManager, NotificationPayload,
-        CLIErrorHandler, PRErrorHandler, ErrorAction,
-        GitError, NetworkError, WebhookError, ConfigError,
-        parse_ttl, now_iso, safe_load_json, redact_secrets,
+        AuditEvent,
+        AuditEventType,
+        AuditLogger,
+        CLIErrorHandler,
+        ConfigError,
+        ErrorAction,
+        GitError,
+        HITLConfig,
+        NetworkError,
+        NotificationManager,
+        NotificationPayload,
+        PRErrorHandler,
+        WebhookError,
+        now_iso,
+        parse_ttl,
+        redact_secrets,
+        safe_load_json,
+    )
+    from hitl_mode_a import (
+        Action,
+        Checkpoint,
+        CheckpointStatus,
+        CheckpointStore,
+        CheckpointType,
+        Environment,
+        EnvironmentPolicy,
+        ResourceInfo,
+        Step,
+        StepResult,
+        StepType,
+        UserAbortedError,
     )
 except ImportError:
     # 当作为脚本直接运行时
-    from scripts.hitl_mode_a import (  # type: ignore
-        Checkpoint, CheckpointType, CheckpointStatus, StepType, Action,
-        Environment, EnvironmentPolicy, Step, StepResult, ResourceInfo,
-        UserAbortedError, CheckpointStore,
-    )
     from scripts.hitl_common import (  # type: ignore
-        AuditLogger, AuditEventType, AuditEvent,
-        HITLConfig, NotificationManager, NotificationPayload,
-        CLIErrorHandler, PRErrorHandler, ErrorAction,
-        GitError, NetworkError, WebhookError, ConfigError,
-        parse_ttl, now_iso, safe_load_json, redact_secrets,
+        AuditEventType,
+        AuditLogger,
+        GitError,
+        HITLConfig,
+        NotificationManager,
+        NotificationPayload,
+        PRErrorHandler,
+        now_iso,
+        safe_load_json,
+    )
+    from scripts.hitl_mode_a import (  # type: ignore
+        Checkpoint,
+        CheckpointType,
+        Environment,
+        ResourceInfo,
     )
 
 
@@ -105,19 +130,19 @@ class PullRequest:
     branch: str
     base_branch: str
     status: PRStatus = PRStatus.OPEN
-    url: Optional[str] = None
+    url: str | None = None
     author: str = ""
-    reviewers: List[str] = field(default_factory=list)
-    labels: List[str] = field(default_factory=list)
-    comments: List[Dict[str, Any]] = field(default_factory=list)
+    reviewers: list[str] = field(default_factory=list)
+    labels: list[str] = field(default_factory=list)
+    comments: list[dict[str, Any]] = field(default_factory=list)
     created_at: str = field(default_factory=now_iso)
     updated_at: str = field(default_factory=now_iso)
-    merged_at: Optional[str] = None
-    closed_at: Optional[str] = None
-    approvals: List[str] = field(default_factory=list)
-    rejections: List[Tuple[str, str]] = field(default_factory=list)  # (user, reason)
+    merged_at: str | None = None
+    closed_at: str | None = None
+    approvals: list[str] = field(default_factory=list)
+    rejections: list[tuple[str, str]] = field(default_factory=list)  # (user, reason)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "number": self.number,
@@ -144,9 +169,9 @@ class PullRequest:
 class CommandResult:
     """评论指令解析结果"""
     action: CommentAction
-    args: List[str] = field(default_factory=list)
-    reason: Optional[str] = None
-    error: Optional[str] = None
+    args: list[str] = field(default_factory=list)
+    reason: str | None = None
+    error: str | None = None
     require_approval: bool = False
 
 
@@ -180,7 +205,7 @@ class GitProvider:
         raise NotImplementedError
 
     # ---------- 文件操作 ----------
-    def commit_files(self, branch: str, files: List[PRFile], message: str) -> str:
+    def commit_files(self, branch: str, files: list[PRFile], message: str) -> str:
         """返回 commit SHA"""
         raise NotImplementedError
 
@@ -191,21 +216,21 @@ class GitProvider:
         body: str,
         head: str,
         base: str,
-        labels: List[str],
-        reviewers: List[str],
+        labels: list[str],
+        reviewers: list[str],
     ) -> PullRequest:
         raise NotImplementedError
 
-    def update_pr(self, pr_id: str, files: List[PRFile], message: str) -> str:
+    def update_pr(self, pr_id: str, files: list[PRFile], message: str) -> str:
         raise NotImplementedError
 
     def get_pr(self, pr_id: str) -> PullRequest:
         raise NotImplementedError
 
-    def list_pr_comments(self, pr_id: str) -> List[Dict[str, Any]]:
+    def list_pr_comments(self, pr_id: str) -> list[dict[str, Any]]:
         raise NotImplementedError
 
-    def add_pr_comment(self, pr_id: str, body: str) -> Dict[str, Any]:
+    def add_pr_comment(self, pr_id: str, body: str) -> dict[str, Any]:
         raise NotImplementedError
 
     def approve_pr(self, pr_id: str, user: str) -> None:
@@ -221,7 +246,7 @@ class GitProvider:
         raise NotImplementedError
 
     # ---------- 工具 ----------
-    def get_file(self, branch: str, path: str) -> Optional[str]:
+    def get_file(self, branch: str, path: str) -> str | None:
         raise NotImplementedError
 
     def generate_branch_name(self, checkpoint: Checkpoint) -> str:
@@ -242,7 +267,7 @@ class LocalGitProvider(GitProvider):
         self,
         config: HITLConfig,
         audit: AuditLogger,
-        store_dir: Optional[Path] = None,
+        store_dir: Path | None = None,
     ):
         super().__init__(config, audit)
         if store_dir is None:
@@ -274,18 +299,18 @@ class LocalGitProvider(GitProvider):
         (self.store_dir / "counter.txt").write_text(str(self._pr_counter))
         return self._pr_counter
 
-    def _load_prs(self) -> Dict[str, Dict[str, Any]]:
+    def _load_prs(self) -> dict[str, dict[str, Any]]:
         return safe_load_json(self.prs_file) or {}
 
-    def _save_prs(self, prs: Dict[str, Dict[str, Any]]):
+    def _save_prs(self, prs: dict[str, dict[str, Any]]):
         with open(self.prs_file, "w", encoding="utf-8") as f:
             json.dump(prs, f, indent=2, ensure_ascii=False)
 
-    def _save_comments(self, comments: Dict[str, List[Dict[str, Any]]]):
+    def _save_comments(self, comments: dict[str, list[dict[str, Any]]]):
         with open(self.comments_file, "w", encoding="utf-8") as f:
             json.dump(comments, f, indent=2, ensure_ascii=False)
 
-    def _load_comments(self) -> Dict[str, List[Dict[str, Any]]]:
+    def _load_comments(self) -> dict[str, list[dict[str, Any]]]:
         return safe_load_json(self.comments_file) or {}
 
     # ---------- 分支 ----------
@@ -309,7 +334,7 @@ class LocalGitProvider(GitProvider):
         return (self.branches_dir / name).exists()
 
     # ---------- 提交 ----------
-    def commit_files(self, branch: str, files: List[PRFile], message: str) -> str:
+    def commit_files(self, branch: str, files: list[PRFile], message: str) -> str:
         if not self.branch_exists(branch):
             raise GitError(f"分支不存在: {branch}", code="not_found")
 
@@ -348,8 +373,8 @@ class LocalGitProvider(GitProvider):
         body: str,
         head: str,
         base: str,
-        labels: List[str],
-        reviewers: List[str],
+        labels: list[str],
+        reviewers: list[str],
     ) -> PullRequest:
         # 检查 PR 是否已存在
         prs = self._load_prs()
@@ -390,7 +415,7 @@ class LocalGitProvider(GitProvider):
         )
         return pr
 
-    def update_pr(self, pr_id: str, files: List[PRFile], message: str) -> str:
+    def update_pr(self, pr_id: str, files: list[PRFile], message: str) -> str:
         prs = self._load_prs()
         if pr_id not in prs:
             raise GitError(f"PR 不存在: {pr_id}", code="not_found")
@@ -431,11 +456,11 @@ class LocalGitProvider(GitProvider):
         self._save_prs(prs)
 
     # ---------- 评论 ----------
-    def list_pr_comments(self, pr_id: str) -> List[Dict[str, Any]]:
+    def list_pr_comments(self, pr_id: str) -> list[dict[str, Any]]:
         comments = self._load_comments()
         return comments.get(pr_id, [])
 
-    def add_pr_comment(self, pr_id: str, body: str) -> Dict[str, Any]:
+    def add_pr_comment(self, pr_id: str, body: str) -> dict[str, Any]:
         comments = self._load_comments()
         if pr_id not in comments:
             comments[pr_id] = []
@@ -519,7 +544,7 @@ class LocalGitProvider(GitProvider):
             context={"pr_id": pr_id},
         )
 
-    def get_file(self, branch: str, path: str) -> Optional[str]:
+    def get_file(self, branch: str, path: str) -> str | None:
         if not self.branch_exists(branch):
             return None
         target = self.branches_dir / branch / path
@@ -549,11 +574,11 @@ class PRFileGenerator:
     def generate_files(
         self,
         checkpoint: Checkpoint,
-        plan_summary: Optional[Dict[str, Any]] = None,
-        hcl_content: Optional[Dict[str, str]] = None,
-    ) -> List[PRFile]:
+        plan_summary: dict[str, Any] | None = None,
+        hcl_content: dict[str, str] | None = None,
+    ) -> list[PRFile]:
         """生成 PR 文件列表"""
-        files: List[PRFile] = []
+        files: list[PRFile] = []
 
         # 1. Terraform 配置文件
         if hcl_content:
@@ -590,7 +615,7 @@ class PRFileGenerator:
     def generate_plan_md(
         self,
         checkpoint: Checkpoint,
-        plan: Dict[str, Any],
+        plan: dict[str, Any],
     ) -> str:
         """生成 PLAN.md — spec §4.3"""
         create = plan.get("create", len([r for r in checkpoint.resources if r.status != "imported"]))
@@ -664,7 +689,7 @@ class PRFileGenerator:
 *Checkpoint: {checkpoint.id}*
 """
 
-    def _render_resources_table(self, resources: List[ResourceInfo]) -> str:
+    def _render_resources_table(self, resources: list[ResourceInfo]) -> str:
         if not resources:
             return "_无资源_"
         lines = [
@@ -676,7 +701,7 @@ class PRFileGenerator:
             lines.append(f"| {r.resource_type} | {r.name} | `{rid}` | {r.status} |")
         return "\n".join(lines)
 
-    def _render_risk_checks(self, risks: List[str], env: Environment) -> str:
+    def _render_risk_checks(self, risks: list[str], env: Environment) -> str:
         checks = [
             f"- [PASS] 环境: {env.value}",
         ]
@@ -692,7 +717,7 @@ class PRFileGenerator:
 
         return "\n".join(checks)
 
-    def _get_approvers(self, env: Environment) -> List[str]:
+    def _get_approvers(self, env: Environment) -> list[str]:
         """获取环境对应的审批人"""
         if env == Environment.PRODUCTION:
             return ["Tech Lead", "Ops Manager"]
@@ -767,7 +792,7 @@ class CommentCommandParser:
     支持: /plan /approve /reject /apply /skip-cp /help
     """
 
-    COMMANDS: Dict[str, Dict[str, Any]] = {
+    COMMANDS: dict[str, dict[str, Any]] = {
         "/plan": {
             "description": "重新执行 terraform plan",
             "permission": ["author", "reviewer"],
@@ -855,7 +880,7 @@ class CommentCommandParser:
         )
 
     @staticmethod
-    def _check_permission(user_role: str, allowed: List[str]) -> bool:
+    def _check_permission(user_role: str, allowed: list[str]) -> bool:
         if "anyone" in allowed:
             return True
         return user_role in allowed
@@ -892,10 +917,10 @@ class PRWatcher:
     def watch(
         self,
         pr_id: str,
-        on_approve: Optional[Callable[[PullRequest], None]] = None,
-        on_reject: Optional[Callable[[PullRequest, str], None]] = None,
-        on_comment: Optional[Callable[[PullRequest, CommandResult], None]] = None,
-        on_apply: Optional[Callable[[PullRequest], None]] = None,
+        on_approve: Callable[[PullRequest], None] | None = None,
+        on_reject: Callable[[PullRequest, str], None] | None = None,
+        on_comment: Callable[[PullRequest, CommandResult], None] | None = None,
+        on_apply: Callable[[PullRequest], None] | None = None,
     ) -> PullRequest:
         """监听 PR 直至终态"""
         start = time.time()
@@ -1015,10 +1040,10 @@ class PRManager:
 
     def create_terraform_pr(
         self,
-        config_files: Dict[str, str],
+        config_files: dict[str, str],
         checkpoint: Checkpoint,
-        plan_summary: Optional[Dict[str, Any]] = None,
-        reviewers: Optional[List[str]] = None,
+        plan_summary: dict[str, Any] | None = None,
+        reviewers: list[str] | None = None,
         retry_count: int = 0,
     ) -> PullRequest:
         """创建 Terraform PR
@@ -1097,7 +1122,7 @@ class PRManager:
 
         return pr
 
-    def _find_existing_pr(self, branch: str) -> Optional[PullRequest]:
+    def _find_existing_pr(self, branch: str) -> PullRequest | None:
         """查找分支对应的现有 PR"""
         # 简化实现: 通过 provider 内部状态查找
         try:
@@ -1117,7 +1142,7 @@ class PRManager:
             pass
         return None
 
-    def _get_reviewers_for_env(self, env: Environment) -> List[str]:
+    def _get_reviewers_for_env(self, env: Environment) -> list[str]:
         """根据环境获取审批人"""
         env_reviewers = {
             Environment.PRODUCTION: ["tech-lead", "ops-manager"],
@@ -1128,7 +1153,7 @@ class PRManager:
         }
         return env_reviewers.get(env, [])
 
-    def _generate_commit_message(self, checkpoint: Checkpoint, files: List[PRFile]) -> str:
+    def _generate_commit_message(self, checkpoint: Checkpoint, files: list[PRFile]) -> str:
         """生成 commit message"""
         resource_types = sorted({r.resource_type for r in checkpoint.resources})
         resource_str = ", ".join(resource_types[:5])
@@ -1143,7 +1168,7 @@ class PRManager:
             f"Files: {len(files)}"
         )
 
-    def _notify_reviewers(self, pr: PullRequest, reviewers: List[str]):
+    def _notify_reviewers(self, pr: PullRequest, reviewers: list[str]):
         """通知审批人"""
         if not reviewers:
             return
@@ -1270,7 +1295,7 @@ def main():
 
         try:
             pr = pr_manager.create_terraform_pr(hcl_files, checkpoint)
-            print(f"[OK] PR 创建成功")
+            print("[OK] PR 创建成功")
             print(f"  ID: {pr.id}")
             print(f"  Number: #{pr.number}")
             print(f"  URL: {pr.url}")
@@ -1288,7 +1313,7 @@ def main():
             print(f"  Branch: {pr.branch}")
             print(f"  Approvals: {', '.join(pr.approvals) or '(none)'}")
             if pr.rejections:
-                print(f"  Rejections:")
+                print("  Rejections:")
                 for user, reason in pr.rejections:
                     print(f"    - {user}: {reason}")
         except GitError as e:

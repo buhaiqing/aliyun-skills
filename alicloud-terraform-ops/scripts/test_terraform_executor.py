@@ -97,8 +97,9 @@ class TestApplyDestroyBridge(unittest.TestCase):
 
 class TestRuntimeWorkDir(unittest.TestCase):
     def test_ensure_runtime_work_dir_seeds_from_template(self):
-        import terraform_ops
         from unittest.mock import patch
+
+        import terraform_ops
 
         with tempfile.TemporaryDirectory() as tmp:
             skill_root = Path(tmp)

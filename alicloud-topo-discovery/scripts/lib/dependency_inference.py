@@ -8,7 +8,7 @@ adjacency list from MappingSpec.parent_ref fields. Handles cycles,
 orphans, and DAG ordering correctly across all Python 3.x versions.
 """
 from collections import defaultdict, deque
-from typing import Any, Optional
+from typing import Any
 
 
 class DependencyInferenceError(Exception):
@@ -94,8 +94,8 @@ def _resolve_parent_id(data: dict, parent_ref: str) -> Any:
 
 
 def _find_block_by_id(
-    parent_id: Any, block_lookup: dict, exclude: Optional[str] = None
-) -> Optional[str]:
+    parent_id: Any, block_lookup: dict, exclude: str | None = None
+) -> str | None:
     """Find a block name whose resource_data contains the given parent_id.
 
     Args:

@@ -35,14 +35,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _shared  # noqa: E402
 
-
 # ── 工具: mock subprocess.run 模拟 aliyun CLI ──
 
 
 def _make_fake_run(latency_s: float = 0.05, payload: dict = None):
     """返回一个 mock subprocess.run 函数, 模拟 aliyun CLI 的延迟和返回."""
     call_count = {"n": 0}
-    counter_lock = _FakeLock()  # 用 _shared.Semaphore 替代 threading.Lock (零依赖)
+    _FakeLock()  # 用 _shared.Semaphore 替代 threading.Lock (零依赖)
 
     def fake_run(args, **kwargs):
         call_count["n"] += 1
@@ -105,7 +104,7 @@ class TestQcmsBatch(unittest.TestCase):
                 # q_cached 第一次会 cache miss, 后续 hit. 但每个 job 唯一 key 所以都是 miss.
                 # 验证: 至少结果是 dict 或 None, 不抛异常
                 self.assertTrue(r is None or isinstance(r, dict))
-        print(f"  [PASS] T2: q_cms_batch 5 jobs -> 5 results (顺序保留)")
+        print("  [PASS] T2: q_cms_batch 5 jobs -> 5 results (顺序保留)")
 
     def test_t3_concurrency_speedup(self):
         """T3: 10 个 job × 50ms 串行需 500ms, 并发应 < 200ms"""
@@ -113,7 +112,7 @@ class TestQcmsBatch(unittest.TestCase):
         with patch.object(_shared.subprocess, "run", side_effect=fake):
             jobs = [["cms", "DescribeMetricList", "--Dimensions", f'[{{"i":"{i}"}}'] for i in range(10)]
             t0 = time.time()
-            results = _shared.q_cms_batch(jobs, max_workers=10)
+            _shared.q_cms_batch(jobs, max_workers=10)
             elapsed = time.time() - t0
         # 串行 10 × 50ms = 500ms; 并发 10 worker 应 < 200ms (留余量)
         self.assertLess(elapsed, 0.2, f"并发 10 jobs 耗时 {elapsed*1000:.0f}ms 应 < 200ms")
@@ -136,14 +135,14 @@ class TestCacheAndSemaphore(unittest.TestCase):
         fake = _make_fake_run(latency_s=0.01)
         cmd = ["ecs", "DescribeInstances", "--RegionId", "cn-hangzhou"]
         with patch.object(_shared.subprocess, "run", side_effect=fake):
-            r1 = _shared.q_cached(cmd)
-            r2 = _shared.q_cached(cmd)
-            r3 = _shared.q_cached(cmd)
+            _shared.q_cached(cmd)
+            _shared.q_cached(cmd)
+            _shared.q_cached(cmd)
         self.assertEqual(fake.call_count["n"], 1, f"应只调 1 次 subprocess, 实际 {fake.call_count['n']}")
         stats = _shared.cache_stats()
         self.assertEqual(stats["hit"], 2)
         self.assertEqual(stats["miss"], 1)
-        print(f"  [PASS] T4: 3 次 q_cached 同一 cmd -> subprocess 1 次 (hit=2, miss=1)")
+        print("  [PASS] T4: 3 次 q_cached 同一 cmd -> subprocess 1 次 (hit=2, miss=1)")
 
     def test_t5_cms_semaphore_default_20(self):
         """T5: CMS Semaphore 默认 20 并发 (Sprint 14: 5->20)"""
@@ -158,7 +157,7 @@ class TestCacheAndSemaphore(unittest.TestCase):
             capture_output=True, text=True, env=env, timeout=5,
         )
         self.assertIn("30", r.stdout, f"env override should yield 30, got: {r.stdout!r}")
-        print(f"  [PASS] T5: CMS Semaphore 默认 20, 环境变量 AIOPS_CMS_CONCURRENCY 可覆盖 (Sprint 14: 5->20)")
+        print("  [PASS] T5: CMS Semaphore 默认 20, 环境变量 AIOPS_CMS_CONCURRENCY 可覆盖 (Sprint 14: 5->20)")
 
     def test_t6_cache_ttl_extended(self):
         """T6: 资源清单类 TTL 已升级到 3600s (Sprint 14)"""
@@ -166,7 +165,7 @@ class TestCacheAndSemaphore(unittest.TestCase):
         self.assertEqual(_shared.CACHE_TTL["DescribeDBInstances"], 3600)
         self.assertEqual(_shared.CACHE_TTL["QueryBillOverview"], 3600)
         self.assertEqual(_shared.CACHE_DEFAULT_TTL, 300)
-        print(f"  [PASS] T6: 资源清单+账单类 TTL=3600s, 默认 TTL=300s (Sprint 14)")
+        print("  [PASS] T6: 资源清单+账单类 TTL=3600s, 默认 TTL=300s (Sprint 14)")
 
 
 class TestCLIIntegrty(unittest.TestCase):
@@ -188,7 +187,7 @@ class TestCLIIntegrty(unittest.TestCase):
         )
         self.assertEqual(r.returncode, 0, f"cost-watch.py --help returncode={r.returncode}")
         self.assertIn("--budget", r.stdout)
-        print(f"  [PASS] T7: daily-health-check / capacity-planning --describe + cost-watch --help 正常")
+        print("  [PASS] T7: daily-health-check / capacity-planning --describe + cost-watch --help 正常")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -214,8 +213,8 @@ def _make_dim_aware_fake_run(latency_s: float = 0.001):
             time.sleep(latency_s)
         # 解析 cmd: args[0] 是 "aliyun", 后面是参数
         cmd = args[1:]
-        ns = cmd[cmd.index("--Namespace") + 1]
-        metric = cmd[cmd.index("--MetricName") + 1]
+        cmd[cmd.index("--Namespace") + 1]
+        cmd[cmd.index("--MetricName") + 1]
         dims_json = cmd[cmd.index("--Dimensions") + 1]
         dims = json.loads(dims_json)
         # 模拟服务端行为: 每个 dim_value 独立一组 datapoints
@@ -333,7 +332,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         self.assertEqual(counter["n"], 2)
         self.assertEqual(set(d1.keys()), {"i-1", "i-2"})
         self.assertEqual(set(d2.keys()), {"i-3", "i-4"})
-        print(f"  [PASS] T10: 不同 dim_values 列表 -> 2 个独立 API 调用 (缓存 key 隔离)")
+        print("  [PASS] T10: 不同 dim_values 列表 -> 2 个独立 API 调用 (缓存 key 隔离)")
 
     def test_t11_cache_hit(self):
         """T11: 同一 dim_values 列表重复调用 -> 第二次走 cache"""
@@ -348,7 +347,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
         # 两次结果应该一致
         self.assertEqual(d1.keys(), d2.keys())
         self.assertEqual(d2.keys(), d3.keys())
-        print(f"  [PASS] T11: 3 次同一 dim_values -> subprocess 1 次 (cache hit)")
+        print("  [PASS] T11: 3 次同一 dim_values -> subprocess 1 次 (cache hit)")
 
     def test_t12_regression_equivalence(self):
         """T12: [关键回归] per-instance 调用 vs q_cms_batch_by_dim 输出 dict 完全一致
@@ -383,7 +382,7 @@ class TestQcmsBatchByDim(unittest.TestCase):
                 self.assertEqual(dp_p.get("timestamp"), dp_b.get("timestamp"))
         # 性能断言: by_dim 应 1 次 API (20 < 50), per_instance 应 20 次
         self.assertEqual(counter["n"], 1, f"by_dim 应 1 次 API, 实际 {counter['n']}")
-        print(f"  [PASS] T12: per-instance vs by_dim 行为完全一致 (20 instance, 1 次 API vs 20 次)")
+        print("  [PASS] T12: per-instance vs by_dim 行为完全一致 (20 instance, 1 次 API vs 20 次)")
 
     def test_t13_perf_100ecs_3metric_2period(self):
         """T13: [性能目标] 100 ECS × 3 metric × 2 period: 600 次 -> ≤12 次 subprocess.run
@@ -394,7 +393,6 @@ class TestQcmsBatchByDim(unittest.TestCase):
         fake, counter = _make_dim_aware_fake_run(latency_s=0)
         rids = [f"i-{i}" for i in range(100)]
         metrics_def = ["CPUUtilization", "memory_usedutilization", "DiskUsage"]  # 3 个指标
-        periods = [("300", "h6", "end"), ("3600", "d7", "end")]  # 2 个 period
 
         with patch.object(_shared.subprocess, "run", side_effect=fake):
             # 模拟 _collect_one 真实调用模式

@@ -10,8 +10,6 @@ For each sensitive field:
 
 Security principle: NEVER log or return the original sensitive value.
 """
-from typing import Optional, Tuple
-
 
 # Resource type -> field name (lowercase) -> HCL variable name
 # These are fields that appear in Describe* API responses.
@@ -29,7 +27,7 @@ SENSITIVE_FIELDS: dict = {
 }
 
 
-def _var_name_for(resource_type: str, field_name: str) -> Optional[str]:
+def _var_name_for(resource_type: str, field_name: str) -> str | None:
     """Return the HCL variable name for a sensitive field, or None if not sensitive."""
     rt_fields = SENSITIVE_FIELDS.get(resource_type.lower(), {})
     return rt_fields.get(field_name.lower())
@@ -79,7 +77,7 @@ class SensitiveMasker:
 
     def mask_field(
         self, resource_type: str, field_name: str, value
-    ) -> Tuple[object, Optional[str]]:
+    ) -> tuple[object, str | None]:
         """Mask a single field value.
 
         Returns:
@@ -113,7 +111,7 @@ class SensitiveMasker:
         """Format a Python value as an HCL literal."""
         if isinstance(value, bool):
             return "true" if value else "false"
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return str(value)
         if value is None:
             return "null"

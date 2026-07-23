@@ -191,7 +191,6 @@ def make_report(findings, args):
             f.write(f"- {e['time']} {e['name']}\n")
     rpt = {"report_id": rid, **findings}
     # Sprint 9: MD Incidents 章节 - 在此处临时挂入, json.dump 后再写
-    md_incidents_pending = None
     # Sprint 9: 增 incidents[] (incident-schema v1.0.0)
     crit_raw = []
     warn_raw = []
@@ -247,10 +246,10 @@ def make_report(findings, args):
 
 def main():
     # Sprint 12 Stage 2 D1: 重入检查
-    from lib_idempotent import acquire_lock, release_lock, is_locked
+    from lib_idempotent import acquire_lock, release_lock
     lock_name = f"emergency-troubleshoot.{os.environ.get('CRUISE_LOCK_KEY', 'default')}"
     if not acquire_lock(lock_name, ttl=600):
-        print(f"[ERROR] TYPE=LOCKED FIX=有其他 emergency-troubleshoot 正在运行")
+        print("[ERROR] TYPE=LOCKED FIX=有其他 emergency-troubleshoot 正在运行")
         sys.exit(10)
     try:
         _main_locked()

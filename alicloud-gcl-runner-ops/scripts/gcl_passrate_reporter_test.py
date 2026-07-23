@@ -39,7 +39,6 @@ from gcl_passrate_reporter import (
     parse_iso_timestamp,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -518,10 +517,9 @@ class CliAnomalyTests(unittest.TestCase):
             output_dir = Path(tmp) / "anomaly"
 
             # Write baseline entries (4 weeks of ~100%, 1 current week of ~0%)
-            import io
             from gcl_passrate_reporter import _iso_year_week
             now = datetime.now(timezone.utc)
-            current_week = _iso_year_week(now)
+            _iso_year_week(now)
 
             lines_week_minus4 = []
             lines_week_0 = []

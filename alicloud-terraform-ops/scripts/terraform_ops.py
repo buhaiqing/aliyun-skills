@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 terraform_ops.py — alicloud-terraform-ops 统一 CLI 入口
 
@@ -24,7 +23,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -87,14 +85,14 @@ def _hitl_environment_name(environment: str) -> str:
 def _run_create_with_hitl(args: argparse.Namespace) -> int:
     """NL2HCL 生成后将产物注入 HITL Mode A 检查点并进入 CP1-CP3。"""
     from hitl_mode_a import (
-        CLIController,
         CheckpointStore,
         CheckpointType,
+        CLIController,
         UserAbortedError,
         create_checkpoint,
     )
-    from nl2hcl_generator import NL2HCLGenerator, CoverageGapError, intent_to_hitl_resources
     from module_coverage import check_nl2hcl_coverage, format_coverage_halt
+    from nl2hcl_generator import CoverageGapError, NL2HCLGenerator, intent_to_hitl_resources
 
     output_dir = args.output_dir.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -172,9 +170,9 @@ def _parse_import_resource_ids(args: argparse.Namespace) -> list[str]:
 def _run_import_with_hitl(args: argparse.Namespace) -> int:
     """逆向工程生成 HCL 后注入 HITL Mode A IMPORT 检查点（CP1→CP4→CP3）。"""
     from hitl_mode_a import (
-        CLIController,
         CheckpointStore,
         CheckpointType,
+        CLIController,
         UserAbortedError,
         create_checkpoint,
     )
@@ -314,7 +312,7 @@ def _resolve_work_dir(args: argparse.Namespace) -> Path:
     return Path(work_dir).resolve()
 
 
-def _validate_work_dir(work_dir: Path) -> Optional[str]:
+def _validate_work_dir(work_dir: Path) -> str | None:
     if not work_dir.is_dir():
         return f"工作目录不存在: {work_dir}"
     tf_files = list(work_dir.glob("*.tf"))
@@ -325,10 +323,10 @@ def _validate_work_dir(work_dir: Path) -> Optional[str]:
 
 def _run_apply_with_hitl(args: argparse.Namespace) -> int:
     from hitl_mode_a import (
-        CLIController,
         CheckpointStatus,
         CheckpointStore,
         CheckpointType,
+        CLIController,
         UserAbortedError,
         create_checkpoint,
     )
@@ -420,10 +418,10 @@ def _run_apply(args: argparse.Namespace) -> int:
 
 def _run_destroy_with_hitl(args: argparse.Namespace) -> int:
     from hitl_mode_a import (
-        CLIController,
         CheckpointStatus,
         CheckpointStore,
         CheckpointType,
+        CLIController,
         UserAbortedError,
         create_checkpoint,
     )

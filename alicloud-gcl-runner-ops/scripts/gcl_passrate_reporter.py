@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_passrate_reporter.py — Phase 4: Aggregate GCL trace pass-rates and
 report to CloudMonitor (CMS) custom metrics.
@@ -37,15 +36,14 @@ import argparse
 import json
 import os
 import re
+import statistics
 import subprocess
 import sys
 import textwrap
-import statistics
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 #: Rubric dimension names (the 5 core + 3 Aliyun extensions from AGENTS.md §12.3)
 DIMENSIONS = (
@@ -75,7 +73,7 @@ EXIT_ERROR = 2
 # ---------------------------------------------------------------------------
 
 
-def parse_iso_timestamp(ts_str: str) -> Optional[datetime]:
+def parse_iso_timestamp(ts_str: str) -> datetime | None:
     """Parse ISO 8601 timestamp from trace filename or embedded timestamp."""
     # Try embedded timestamp in trace JSON first
     if ts_str and isinstance(ts_str, str):
@@ -86,7 +84,7 @@ def parse_iso_timestamp(ts_str: str) -> Optional[datetime]:
     return None
 
 
-def load_traces(trace_dir: Path, since_hours: int) -> List[Dict[str, Any]]:
+def load_traces(trace_dir: Path, since_hours: int) -> list[dict[str, Any]]:
     """Load GCL trace JSON files from trace_dir, filtered by recency.
 
     Returns traces whose mtime is within ``since_hours`` of now.
@@ -94,7 +92,7 @@ def load_traces(trace_dir: Path, since_hours: int) -> List[Dict[str, Any]]:
     """
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=since_hours)
-    traces: List[Dict[str, Any]] = []
+    traces: list[dict[str, Any]] = []
 
     if not trace_dir.is_dir():
         print(f"[WARN] trace-dir not found: {trace_dir}")
@@ -114,7 +112,7 @@ def load_traces(trace_dir: Path, since_hours: int) -> List[Dict[str, Any]]:
     return traces
 
 
-def extract_metrics(trace: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def extract_metrics(trace: dict[str, Any]) -> dict[str, Any] | None:
     """Extract skill name, decision, and dimension scores from a single trace.
 
     Returns a dict with keys: skill, decision, scores (dict of dim→float),
@@ -154,21 +152,21 @@ def extract_metrics(trace: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def compute_pass_rates(
-    traces: List[Dict[str, Any]],
-) -> Dict[str, Any]:
+    traces: list[dict[str, Any]],
+) -> dict[str, Any]:
     """Aggregate pass-rates by skill and by dimension.
 
     Returns dict shaped for CMS custom metric reporting.
     """
     # per-skill: {skill: {dim: {"pass": int, "total": int}}}
-    skill_data: Dict[str, Dict[str, Dict[str, float]]] = defaultdict(
+    skill_data: dict[str, dict[str, dict[str, float]]] = defaultdict(
         lambda: {d: {"pass": 0.0, "total": 0.0} for d in DIMENSIONS}
     )
     # overall totals (across all skills)
-    overall: Dict[str, Dict[str, float]] = {
+    overall: dict[str, dict[str, float]] = {
         d: {"pass": 0.0, "total": 0.0} for d in DIMENSIONS
     }
-    by_decision: Dict[str, int] = defaultdict(int)
+    by_decision: dict[str, int] = defaultdict(int)
 
     total_traces = 0
     skipped_traces = 0
@@ -187,7 +185,7 @@ def compute_pass_rates(
 
         for dim in DIMENSIONS:
             score = scores.get(dim)
-            if score is None or not isinstance(score, (int, float)):
+            if score is None or not isinstance(score, int | float):
                 continue
             # A score >= 0.5 counts as a "pass" for this dimension
             passed = 1.0 if score >= 0.5 else 0.0
@@ -237,7 +235,7 @@ def compute_pass_rates(
 
 
 def push_custom_metrics(
-    report: Dict[str, Any],
+    report: dict[str, Any],
     region: str,
     dry_run: bool = False,
 ) -> int:
@@ -246,7 +244,7 @@ def push_custom_metrics(
     Returns EXIT_CLEAN on success, EXIT_ERROR on failure.
     """
     # Build a list of MetricList items
-    metrics: List[Dict[str, Any]] = []
+    metrics: list[dict[str, Any]] = []
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
 
     # Dimension: d — each dimension sends one metric per skill
@@ -357,7 +355,7 @@ def push_custom_metrics(
 # ---------------------------------------------------------------------------
 
 
-def load_memory_entries(memory_root: Path, window_days: int = 90) -> List[Dict[str, Any]]:
+def load_memory_entries(memory_root: Path, window_days: int = 90) -> list[dict[str, Any]]:
     """Load Layer-1 memory trace entries from ``.runtime/memory/`` JSONL files.
 
     Returns entries whose ``timestamp`` is within *window_days* of now.
@@ -365,7 +363,7 @@ def load_memory_entries(memory_root: Path, window_days: int = 90) -> List[Dict[s
     """
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=window_days)
-    entries: List[Dict[str, Any]] = []
+    entries: list[dict[str, Any]] = []
 
     if not memory_root.is_dir():
         print(f"[WARN] memory-root not found: {memory_root}")
@@ -373,13 +371,13 @@ def load_memory_entries(memory_root: Path, window_days: int = 90) -> List[Dict[s
 
     for jsonl_path in sorted(memory_root.rglob("*.jsonl")):
         try:
-            with open(jsonl_path, "r", encoding="utf-8") as f:
+            with open(jsonl_path, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line:
                         continue
                     try:
-                        entry: Dict[str, Any] = json.loads(line)
+                        entry: dict[str, Any] = json.loads(line)
                     except json.JSONDecodeError:
                         continue
                     ts_str = entry.get("timestamp")
@@ -402,15 +400,15 @@ def _iso_year_week(dt: datetime) -> str:
 
 
 def compute_weekly_pass_rates(
-    entries: List[Dict[str, Any]],
-) -> Dict[str, Dict[str, Dict[str, float]]]:
+    entries: list[dict[str, Any]],
+) -> dict[str, dict[str, dict[str, float]]]:
     """Group memory entries by skill and ISO week, compute pass-rate per group.
 
     Returns ``{skill: {week_key: {"pass": int, "total": int, "rate": float}}}``.
     Entries without a parseable timestamp are skipped.
     """
     # skill -> week -> {pass, total}
-    data: Dict[str, Dict[str, Dict[str, float]]] = defaultdict(
+    data: dict[str, dict[str, dict[str, float]]] = defaultdict(
         lambda: defaultdict(lambda: {"pass": 0, "total": 0})
     )
 
@@ -426,7 +424,7 @@ def compute_weekly_pass_rates(
         if rubric_pass:
             data[skill][week]["pass"] += 1
 
-    result: Dict[str, Dict[str, Dict[str, float]]] = {}
+    result: dict[str, dict[str, dict[str, float]]] = {}
     for skill, weeks in data.items():
         result[skill] = {}
         for week, counts in weeks.items():
@@ -440,7 +438,7 @@ def compute_weekly_pass_rates(
     return result
 
 
-def _week_date_range(week_key: str) -> Tuple[datetime, datetime]:
+def _week_date_range(week_key: str) -> tuple[datetime, datetime]:
     """Return (start, end) datetimes for an ISO week key like ``2026-W28``.
 
     Start = Monday 00:00:00 UTC, End = Sunday 23:59:59 UTC.
@@ -461,8 +459,8 @@ def _week_date_range(week_key: str) -> Tuple[datetime, datetime]:
 
 
 def _collect_affected_operations(
-    entries: List[Dict[str, Any]], skill: str, week_key: str
-) -> List[str]:
+    entries: list[dict[str, Any]], skill: str, week_key: str
+) -> list[str]:
     """Collect unique operation names for a (skill, week) group."""
     ops: set[str] = set()
     for entry in entries:
@@ -484,7 +482,7 @@ def detect_anomaly(
     window_days: int = 90,
     threshold_stddev: float = 3.0,
     threshold_relative: float = 0.5,
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Detect pass-rate anomalies per skill from Layer-1 memory traces.
 
     Groups entries by skill and ISO week.  For each skill's most recent
@@ -513,7 +511,7 @@ def detect_anomaly(
         return []
 
     weekly = compute_weekly_pass_rates(entries)
-    anomalies: List[Dict[str, Any]] = []
+    anomalies: list[dict[str, Any]] = []
     now = datetime.now(timezone.utc)
     ts_file = now.strftime("%Y%m%dT%H%M%S")
 
@@ -528,7 +526,7 @@ def detect_anomaly(
 
         # Baseline = all completed weeks before the current one
         baseline_weeks = sorted_weeks[:-1]
-        baseline_rates: List[float] = [weeks[w]["rate"] for w in baseline_weeks]
+        baseline_rates: list[float] = [weeks[w]["rate"] for w in baseline_weeks]
 
         if len(baseline_rates) < 2:
             continue  # need at least 2 baseline weeks for a meaningful stddev
@@ -559,7 +557,7 @@ def detect_anomaly(
         window_start, window_end = _week_date_range(current_week)
         affected_ops = _collect_affected_operations(entries, skill, current_week)
 
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "skill": skill,
             "current_week_pass_rate": current_rate,
             "baseline_pass_rate": round(baseline_mean, 2),
@@ -692,7 +690,7 @@ def _resolve_runtime_root() -> Path:
     ))
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
 
     # ---- Phase B3: anomaly detection mode ----

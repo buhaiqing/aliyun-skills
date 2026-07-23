@@ -22,12 +22,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import scan_repair_coverage as src  # noqa: E402
 from gcl_reflexion import (  # noqa: E402
     is_mapped_in_repair_table,
     parse_repair_table_codes,
 )
-import scan_repair_coverage as src  # noqa: E402
-
 
 # A minimal but realistic harness-lib.sh used by the file-based tests.
 # Mirrors the structure of alicloud-ecs-ops/scripts/harness-lib.sh.

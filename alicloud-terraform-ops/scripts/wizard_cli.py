@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 wizard_cli.py — Terraform IaC 交互式向导
 
@@ -18,27 +17,27 @@ import os
 import sys
 import tempfile
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from runtime_paths import default_import_output, default_nl2hcl_output
 
 try:
-    from nl2hcl_generator import NL2HCLGenerator, Colors, print_dry_run_banner, log_dry_run
-    from reverse_engineering import ReverseEngineering
     from execution_trace import build_critic_scores, parse_plan_summary, persist_dry_run_trace
+    from nl2hcl_generator import Colors, NL2HCLGenerator, log_dry_run, print_dry_run_banner
+    from reverse_engineering import ReverseEngineering
 except ImportError:
-    from scripts.nl2hcl_generator import NL2HCLGenerator, Colors, print_dry_run_banner, log_dry_run  # type: ignore
-    from scripts.reverse_engineering import ReverseEngineering  # type: ignore
     from scripts.execution_trace import build_critic_scores, parse_plan_summary, persist_dry_run_trace  # type: ignore
+    from scripts.nl2hcl_generator import Colors, NL2HCLGenerator, log_dry_run, print_dry_run_banner  # type: ignore
+    from scripts.reverse_engineering import ReverseEngineering  # type: ignore
 
 
 WIZARD_VERSION = "1.0.0"
 SESSION_DIR = Path.home() / ".aliyun-terraform" / "sessions"
 
-QUICK_TEMPLATES: Dict[str, Dict[str, Any]] = {
+QUICK_TEMPLATES: dict[str, dict[str, Any]] = {
     "vpc-basic": {
         "request": "创建一个 VPC，包含两个可用区的交换机",
         "environment": "dev",
@@ -65,11 +64,11 @@ class WizardStep:
     step: int
     name: str
     input: Any
-    output: Dict[str, Any] = field(default_factory=dict)
+    output: dict[str, Any] = field(default_factory=dict)
     timestamp: str = field(default_factory=now_iso)
-    validation: Optional[Dict[str, Any]] = None
+    validation: dict[str, Any] | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         d = {
             "step": self.step,
             "name": self.name,
@@ -89,14 +88,14 @@ class WizardSession:
     user_id: str = ""
     workflow_type: str = "nl2hcl"
     started_at: str = field(default_factory=now_iso)
-    completed_at: Optional[str] = None
+    completed_at: str | None = None
     current_step: int = 1
     status: str = "running"
-    params: Dict[str, Any] = field(default_factory=dict)
-    steps: List[WizardStep] = field(default_factory=list)
-    artifacts: Dict[str, str] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
+    steps: list[WizardStep] = field(default_factory=list)
+    artifacts: dict[str, str] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "wizard_version": self.wizard_version,
             "session_id": self.session_id,
@@ -112,7 +111,7 @@ class WizardSession:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "WizardSession":
+    def from_dict(cls, data: dict[str, Any]) -> WizardSession:
         steps = [
             WizardStep(
                 step=s["step"],
@@ -142,7 +141,7 @@ class WizardSession:
 class WizardStore:
     """会话持久化"""
 
-    def __init__(self, base_dir: Optional[Path] = None):
+    def __init__(self, base_dir: Path | None = None):
         self.base_dir = base_dir or SESSION_DIR
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -160,7 +159,7 @@ class WizardStore:
             raise FileNotFoundError(f"会话不存在: {session_id}")
         return WizardSession.from_dict(json.loads(path.read_text(encoding="utf-8")))
 
-    def list_sessions(self, limit: int = 10) -> List[WizardSession]:
+    def list_sessions(self, limit: int = 10) -> list[WizardSession]:
         files = sorted(
             self.base_dir.glob("session-*.json"),
             key=lambda p: p.stat().st_mtime,
@@ -187,7 +186,7 @@ def _prompt(label: str, default: str = "") -> str:
     return value or default
 
 
-def _prompt_choice(label: str, choices: List[str], default: str) -> str:
+def _prompt_choice(label: str, choices: list[str], default: str) -> str:
     print(f"{label}:")
     for i, c in enumerate(choices, 1):
         mark = "❯" if c == default else "○"
@@ -196,7 +195,7 @@ def _prompt_choice(label: str, choices: List[str], default: str) -> str:
     return value if value in choices else default
 
 
-def _load_config(path: Path) -> Dict[str, Any]:
+def _load_config(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
     if path.suffix in (".yaml", ".yml"):
         try:
@@ -211,18 +210,18 @@ def _load_config(path: Path) -> Dict[str, Any]:
 class WizardRunner:
     """向导执行器"""
 
-    def __init__(self, store: Optional[WizardStore] = None, output_dir: Optional[Path] = None):
+    def __init__(self, store: WizardStore | None = None, output_dir: Path | None = None):
         self.store = store or WizardStore()
         self.output_dir = output_dir or default_nl2hcl_output()
 
     def run_nl2hcl(
         self,
         quick: bool = False,
-        template: Optional[str] = None,
-        config_path: Optional[Path] = None,
-        environment: Optional[str] = None,
-        region: Optional[str] = None,
-        request: Optional[str] = None,
+        template: str | None = None,
+        config_path: Path | None = None,
+        environment: str | None = None,
+        region: str | None = None,
+        request: str | None = None,
         dry_run: bool = True,
     ) -> WizardSession:
         session = WizardSession(
@@ -230,7 +229,7 @@ class WizardRunner:
             user_id=os.environ.get("USER", "unknown"),
             workflow_type="nl2hcl",
         )
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
 
         if config_path:
             params = _load_config(config_path)
@@ -395,8 +394,8 @@ class WizardRunner:
 
     def run_import(
         self,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
         region: str = "cn-hangzhou",
         discover: bool = True,
         dry_run: bool = True,
@@ -522,7 +521,7 @@ def cmd_diagnose(args: argparse.Namespace) -> None:
                 print(f"  ⚠ warning: {w}")
         if step.output.get("error"):
             print(f"  ✗ error: {step.output['error']}")
-            print(f"  Recommendation: 检查配置参数后重新运行 dry-run")
+            print("  Recommendation: 检查配置参数后重新运行 dry-run")
         if step.name == "dry_run" and step.output.get("gcl_trace"):
             scores = step.output["gcl_trace"].get("scores", {})
             failed = [k for k, v in scores.items() if v < 1]

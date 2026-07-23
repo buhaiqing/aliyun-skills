@@ -461,11 +461,9 @@ class NL2HCLGenerator:
 
         # 实例规格（查表匹配 + 未命中时收集候选给用户挑）
         instance_type = None
-        matched_spec_description = None
         for pattern, ecs_type, desc in self.INSTANCE_TYPE_PATTERNS:
             if re.search(pattern, request_lower, re.IGNORECASE):
                 instance_type = ecs_type
-                matched_spec_description = desc
                 break
 
         # 未识别时提示候选

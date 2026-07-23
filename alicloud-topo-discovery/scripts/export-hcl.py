@@ -11,13 +11,13 @@ Usage:
 import argparse
 import json
 import os
-from concurrent.futures import ThreadPoolExecutor
-import shutil
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 # Ensure scripts/ is on sys.path so `from scripts.lib.X import Y` works
@@ -26,13 +26,13 @@ _script_dir = Path(__file__).resolve().parent
 if str(_script_dir.parent) not in sys.path:
     sys.path.insert(0, str(_script_dir.parent))
 
-from scripts.lib.mappings import MAPPINGS
-from scripts.lib.field_mapper import FieldMapper
+
 from scripts.lib.dependency_inference import infer_dependencies
+from scripts.lib.field_mapper import FieldMapper
 from scripts.lib.manifest_builder import ManifestBuilder
 from scripts.lib.manifest_validator import ManifestValidator
+from scripts.lib.mappings import MAPPINGS
 from scripts.lib.provider_locker import ProviderLocker
-from datetime import datetime, timezone
 
 
 def parse_args(argv=None):
@@ -80,12 +80,11 @@ def main():
         # Use exec to replace the current process for the source + re-exec pattern.
         # Simpler approach: source the helper by reading and exec'ing in this process.
         try:
-            import runpy
             # Run sts-helper.sh in a way that updates os.environ via `bash -c 'source ... && env -0'`
             # Actually the cleanest approach is to fork a child that returns the new env via NUL-delimited output.
-            helper_globals = {"__file__": str(sts_helper)}
+            {"__file__": str(sts_helper)}
             with open(sts_helper) as _hf:
-                helper_code = _hf.read()
+                _hf.read()
             # Wrap in a function to allow `exit N` to set sys.exit-like behavior
             # but we want the env vars to land in os.environ.
             import subprocess as _sp
@@ -96,7 +95,7 @@ def main():
                 capture_output=True, timeout=60,
             )
             if result.returncode != 0:
-                print(f"[ERROR] TYPE=ASSUME_ROLE_FAILED FIX=Check role and permissions")
+                print("[ERROR] TYPE=ASSUME_ROLE_FAILED FIX=Check role and permissions")
                 print(result.stderr.decode("utf-8", errors="replace"))
                 sys.exit(10)
             # Parse NUL-delimited env output and merge into os.environ
@@ -110,8 +109,8 @@ def main():
                 if k.startswith("ALIBABA_CLOUD_"):
                     os.environ[k] = v
             if os.environ.get("ALIBABA_CLOUD_ACCESS_KEY_ID", "") == prev_ak:
-                print(f"[WARN] AssumeRole did not update ALIBABA_CLOUD_ACCESS_KEY_ID; "
-                      f"check sts-helper.sh output above")
+                print("[WARN] AssumeRole did not update ALIBABA_CLOUD_ACCESS_KEY_ID; "
+                      "check sts-helper.sh output above")
         except Exception as e:
             print(f"[ERROR] TYPE=ASSUME_ROLE_FAILED FIX=Check role and permissions: {e}")
             sys.exit(10)
@@ -124,7 +123,6 @@ def main():
         resource_types = [t for t in resource_types if t not in args.exclude_types]
 
     all_blocks = []
-    all_masked_paths = []
     unsupported = []
     # Resolve the *actual* account ID via STS, not by misreading the AK env var
     try:

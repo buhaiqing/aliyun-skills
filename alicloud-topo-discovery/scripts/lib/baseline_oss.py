@@ -8,14 +8,11 @@ Usage:
     backend = OSSBackend(bucket="my-baselines", prefix="topo/")
     key = backend.write_baseline(snapshot_path)
 """
-import json
 import mimetypes
 import os
 import subprocess
-import tempfile
 from datetime import date
 from pathlib import Path
-from typing import List, Optional
 
 
 class OSSBackend:
@@ -29,9 +26,9 @@ class OSSBackend:
         self,
         bucket: str,
         prefix: str = "baselines/",
-        endpoint: Optional[str] = None,
-        ak_id: Optional[str] = None,
-        ak_secret: Optional[str] = None,
+        endpoint: str | None = None,
+        ak_id: str | None = None,
+        ak_secret: str | None = None,
     ):
         if not bucket:
             raise ValueError("bucket must be non-empty")
@@ -65,7 +62,7 @@ class OSSBackend:
 
         return key_prefix
 
-    def list_baselines(self) -> List[date]:
+    def list_baselines(self) -> list[date]:
         """List baseline dates from OSS prefix."""
         if not self._bucket_exists():
             return []
@@ -100,7 +97,7 @@ class OSSBackend:
         if result.returncode != 0:
             raise RuntimeError(f"OSS upload failed for {object_key}: {result.stderr}")
 
-    def _list_objects(self, prefix: str, delimiter: str = "/") -> List[str]:
+    def _list_objects(self, prefix: str, delimiter: str = "/") -> list[str]:
         """List OSS objects with given prefix, returning common prefixes."""
         result = subprocess.run(
             ["aliyun", "oss", "ls", f"oss://{self.bucket}/{prefix}", "-d", delimiter],

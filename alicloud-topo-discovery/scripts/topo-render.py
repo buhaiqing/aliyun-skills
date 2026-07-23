@@ -10,7 +10,10 @@ Usage:
   python3 topo-render.py <output_dir> <mode:brief|full> <timestamp> <region> [--format ascii|mermaid|both] [--health-json path]
 """
 
-import json, sys, os, argparse, tempfile
+import argparse
+import json
+import os
+import tempfile
 
 # ── Config ──
 MAX_NODES_PER_VSWITCH = 50  # collapse if any VSwitch has more than this
@@ -253,7 +256,7 @@ def render_mermaid():
     lines.append("```mermaid")
     lines.append("graph TB")
     lines.append(f"    subgraph VPC[{vpc_name} ({vpc_id})]")
-    lines.append(f"        style VPC fill:#e8f4fd,stroke:#3b82f6")
+    lines.append("        style VPC fill:#e8f4fd,stroke:#3b82f6")
 
     seen_res_ids = set()
     collision_count = [0]

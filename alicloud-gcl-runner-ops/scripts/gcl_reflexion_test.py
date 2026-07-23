@@ -20,17 +20,12 @@ from gcl_reflexion import (
     _load_store,
     _load_success_store,
     _save_store,
-    _store_path,
     _success_patterns_path,
     _time_weighted_score,
     compute_command_hash,
     format_success_patterns,
-    remediation_apply_from_trace,
-    remediation_confirm_window_k,
-    remediation_record_opportunities,
-    remediation_record_success_streak,
-    reflexion_aggregate_generalized,
     normalize_error_pattern,
+    reflexion_aggregate_generalized,
     reflexion_extract,
     reflexion_extract_wrapper_lite,
     reflexion_maintain,
@@ -39,6 +34,10 @@ from gcl_reflexion import (
     reflexion_retrieve,
     reflexion_store,
     reflexion_store_wrapper_lite,
+    remediation_apply_from_trace,
+    remediation_confirm_window_k,
+    remediation_record_opportunities,
+    remediation_record_success_streak,
     success_report,
     success_retrieve,
     success_store,
@@ -819,7 +818,7 @@ class CrossSkillAggregateTests(unittest.TestCase):
             {
                 "category": "cli_parameter",
                 "skill": skill,
-                "command": f"aliyun x DeleteThing --RegionId cn-hangzhou",
+                "command": "aliyun x DeleteThing --RegionId cn-hangzhou",
                 "error": "MissingParam: InstanceId",
                 "fix": fix,
                 "root_cause": "repeatlist",
@@ -1012,7 +1011,7 @@ class CLITests(unittest.TestCase):
                "error": "E1", "fix": "F1", "root_cause": "RC"}
         reflexion_store(pat, root=self.root)
         from gcl_reflexion import main as reflexion_main
-        output = self.root / "report.md"
+        self.root / "report.md"
         # Override SKILLS_DIR so report writes inside tmpdir, not cwd
         old_env = os.environ.get("SKILLS_DIR")
         os.environ["SKILLS_DIR"] = str(self.root)

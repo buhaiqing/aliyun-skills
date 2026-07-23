@@ -19,8 +19,6 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import pytest
-
 SKILL_DIR = Path(__file__).parent.parent
 SCRIPTS_DIR = SKILL_DIR / "scripts"
 sys.path.insert(0, str(SKILL_DIR))

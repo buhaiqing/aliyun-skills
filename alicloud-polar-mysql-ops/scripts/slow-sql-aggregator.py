@@ -27,8 +27,7 @@ import sys
 import time
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 # ──────────────────────────────────────────────
 # 配置常量
@@ -82,7 +81,7 @@ class EmptyPage(Exception):
 
 def fetch_slow_log_page(cluster_id: str, start_time: str, end_time: str,
                         page: int, page_size: int,
-                        region: Optional[str] = None) -> List[Dict[str, Any]]:
+                        region: str | None = None) -> list[dict[str, Any]]:
     """Call aliyun polardb DescribeSlowLogRecords for a single page.
 
     Args:
@@ -108,7 +107,7 @@ def fetch_slow_log_page(cluster_id: str, start_time: str, end_time: str,
         "--PageNumber", str(page),
     ]
 
-    last_error: Optional[Tuple[int, str]] = None
+    last_error: tuple[int, str] | None = None
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
@@ -145,13 +144,13 @@ def fetch_slow_log_page(cluster_id: str, start_time: str, end_time: str,
 
 def fetch_all_slow_logs(cluster_id: str, start_time: str, end_time: str,
                         page_size: int = DEFAULT_PAGE_SIZE,
-                        region: Optional[str] = None) -> List[Dict[str, Any]]:
+                        region: str | None = None) -> list[dict[str, Any]]:
     """Fetch all slow log records with automatic pagination.
 
     Pagination stops when EmptyPage is raised (normal end-of-data).
     FetchError propagates to caller — no silent data loss.
     """
-    all_records: List[Dict[str, Any]] = []
+    all_records: list[dict[str, Any]] = []
     page = 1
 
     print(f"[DIAG] Fetching slow logs: cluster={cluster_id} range=[{start_time}, {end_time}] region={region or os.environ.get(ENV_REGION, '?')}")
@@ -179,9 +178,9 @@ def fetch_all_slow_logs(cluster_id: str, start_time: str, end_time: str,
     return all_records
 
 
-def aggregate_by_sqlhash(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def aggregate_by_sqlhash(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Aggregate records by SQLHash — count, total/max/avg time, rows scanned."""
-    stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {
+    stats: dict[str, dict[str, Any]] = defaultdict(lambda: {
         "count": 0,
         "total_time_ms": 0,
         "max_ms": 0,
@@ -208,9 +207,9 @@ def aggregate_by_sqlhash(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, A
     return stats
 
 
-def aggregate_by_node(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def aggregate_by_node(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Aggregate records by DBNodeId."""
-    stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0})
+    stats: dict[str, dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0})
     for r in records:
         n = r.get("DBNodeId", "?")
         stats[n]["count"] += 1
@@ -218,9 +217,9 @@ def aggregate_by_node(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
     return stats
 
 
-def aggregate_by_database(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def aggregate_by_database(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Aggregate records by DBName."""
-    stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0})
+    stats: dict[str, dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0})
     for r in records:
         d = r.get("DBName", "?")
         stats[d]["count"] += 1
@@ -228,9 +227,9 @@ def aggregate_by_database(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, 
     return stats
 
 
-def aggregate_by_time(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+def aggregate_by_time(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """Aggregate records by minute-level time buckets."""
-    stats: Dict[str, Dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0, "max_ms": 0})
+    stats: dict[str, dict[str, Any]] = defaultdict(lambda: {"count": 0, "total_ms": 0, "max_ms": 0})
     for r in records:
         ts = r.get("ExecutionStartTime", "")[:16]  # YYYY-MM-DDTHH:MM
         stats[ts]["count"] += 1
@@ -240,7 +239,7 @@ def aggregate_by_time(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]
     return stats
 
 
-def format_report(records: List[Dict[str, Any]], cluster_id: str,
+def format_report(records: list[dict[str, Any]], cluster_id: str,
                   start_time: str, end_time: str, top_n: int) -> str:
     """Generate formatted multi-section analysis report."""
     lines = []
@@ -248,7 +247,7 @@ def format_report(records: List[Dict[str, Any]], cluster_id: str,
 
     # Header
     lines.append(sep)
-    lines.append(f"PolarDB 慢 SQL 聚合分析报告")
+    lines.append("PolarDB 慢 SQL 聚合分析报告")
     lines.append(f"集群: {cluster_id} | 时间范围: {start_time} ~ {end_time}")
     lines.append(f"报告生成时间: {datetime.now().isoformat()}")
     lines.append(sep)

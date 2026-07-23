@@ -4,7 +4,6 @@ Test script for HCL generation functions.
 验证新添加的 RDS/Redis/SLB/EIP/SG HCL 生成函数
 """
 
-import json
 from reverse_engineering import ResourceMapper
 
 
@@ -13,9 +12,9 @@ def test_rds_hcl():
     print("=" * 60)
     print("Test: RDS HCL Generation")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     # Mock RDS API response
     mock_data = {
         "Items": {
@@ -32,10 +31,10 @@ def test_rds_hcl():
             }]
         }
     }
-    
+
     hcl = mapper.to_hcl("rds", mock_data)
     print(hcl)
-    
+
     # Validation checks
     assert 'resource "alicloud_db_instance"' in hcl
     assert "prod-mysql" in hcl
@@ -49,9 +48,9 @@ def test_redis_hcl():
     print("=" * 60)
     print("Test: Redis HCL Generation")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     # Mock Redis API response
     mock_data = {
         "Instances": {
@@ -66,10 +65,10 @@ def test_redis_hcl():
             }]
         }
     }
-    
+
     hcl = mapper.to_hcl("redis", mock_data)
     print(hcl)
-    
+
     # Validation checks
     assert 'resource "alicloud_kvstore_instance"' in hcl
     assert "cache-cluster" in hcl
@@ -82,9 +81,9 @@ def test_slb_hcl():
     print("=" * 60)
     print("Test: SLB HCL Generation")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     # Mock SLB API response
     mock_data = {
         "LoadBalancer": {
@@ -96,10 +95,10 @@ def test_slb_hcl():
             "VSwitchId": "vsw-bp1xxxxxxxxx"
         }
     }
-    
+
     hcl = mapper.to_hcl("slb", mock_data)
     print(hcl)
-    
+
     # Validation checks
     assert 'resource "alicloud_slb_load_balancer"' in hcl
     assert "web-lb" in hcl
@@ -113,9 +112,9 @@ def test_eip_hcl():
     print("=" * 60)
     print("Test: EIP HCL Generation")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     # Mock EIP API response
     mock_data = {
         "EipAddresses": {
@@ -128,10 +127,10 @@ def test_eip_hcl():
             }]
         }
     }
-    
+
     hcl = mapper.to_hcl("eip", mock_data)
     print(hcl)
-    
+
     # Validation checks
     assert 'resource "alicloud_eip_address"' in hcl
     assert "BGP" in hcl
@@ -145,9 +144,9 @@ def test_sg_hcl():
     print("=" * 60)
     print("Test: Security Group HCL Generation")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     # Mock Security Group API response
     mock_data = {
         "SecurityGroup": {
@@ -157,10 +156,10 @@ def test_sg_hcl():
             "VpcId": "vpc-bp1xxxxxxxxx"
         }
     }
-    
+
     hcl = mapper.to_hcl("security_group", mock_data)
     print(hcl)
-    
+
     # Validation checks
     assert 'resource "alicloud_security_group"' in hcl
     assert "web-sg" in hcl
@@ -173,23 +172,23 @@ def test_all_resource_types():
     print("=" * 60)
     print("Test: Resource Type Mapping Coverage")
     print("=" * 60)
-    
+
     mapper = ResourceMapper()
-    
+
     expected_types = [
-        "vpc", "vswitch", "ecs", "rds", "redis", 
+        "vpc", "vswitch", "ecs", "rds", "redis",
         "slb", "eip", "security_group"
     ]
-    
+
     supported_types = list(mapper.RESOURCE_APIS.keys())
-    
+
     print(f"Expected types: {expected_types}")
     print(f"Supported types: {supported_types}")
-    
+
     for rtype in expected_types:
         assert rtype in supported_types, f"Missing resource type: {rtype}"
         print(f"  ✅ {rtype}")
-    
+
     print("\n✅ All resource types are mapped\n")
 
 
@@ -198,7 +197,7 @@ def main():
     print("\n" + "=" * 60)
     print("HCL Generation Function Tests")
     print("=" * 60 + "\n")
-    
+
     try:
         test_all_resource_types()
         test_rds_hcl()
@@ -206,12 +205,12 @@ def main():
         test_slb_hcl()
         test_eip_hcl()
         test_sg_hcl()
-        
+
         print("=" * 60)
         print("✅ ALL TESTS PASSED")
         print("=" * 60)
         return 0
-        
+
     except AssertionError as e:
         print(f"\n❌ TEST FAILED: {e}")
         return 1

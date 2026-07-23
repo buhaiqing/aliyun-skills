@@ -21,9 +21,7 @@ cost-watch.py v1.0 — 每日成本监控与预警
 
 import argparse
 import json
-import os
 import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,7 +29,6 @@ from pathlib import Path
 # 收益: 12 次 bssopenapi 调用自动获得 1h 文件系统缓存 (跨进程+跨脚本)
 #      + 复用 _CMS_SEM 限速 + 退避重试 + 缓存命中统计
 from _shared import q_cached
-
 
 # ── 日期工具 ──
 
@@ -344,11 +341,11 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
 
     # ── Markdown ──
     lines = []
-    lines.append(f"# CostWatch 每日成本监控报告")
-    lines.append(f"")
+    lines.append("# CostWatch 每日成本监控报告")
+    lines.append("")
     lines.append(f"**时间**: {now.strftime('%Y-%m-%d %H:%M:%S')} UTC")
     lines.append(f"**报告ID**: {rid}")
-    lines.append(f"")
+    lines.append("")
     lines.append("---")
     lines.append("")
 
@@ -358,15 +355,15 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     level_icon = {"P0_CRITICAL": "CRITICAL", "P1_WARNING": "WARNING", "OK": "PASS"}
     emoji = level_icon.get(anomaly.get("level", "OK"), "PASS")
     lines.append(f"{emoji} **等级**: {anomaly.get('level', 'OK')}")
-    lines.append(f"")
-    lines.append(f"| 指标 | 金额 (CNY) |")
-    lines.append(f"|------|:---------:|:")
+    lines.append("")
+    lines.append("| 指标 | 金额 (CNY) |")
+    lines.append("|------|:---------:|:")
     lines.append(f"| 本月 ({_current_month()}) | {anomaly['total_current']:>10.2f} |")
     lines.append(f"| 上月 ({_last_month()}) | {anomaly['total_last']:>10.2f} |")
     lines.append(f"| 日均本月 | {anomaly['daily_current']:>10.2f} CNY/天 |")
     lines.append(f"| 日均上月 | {anomaly['daily_last']:>10.2f} CNY/天 |")
     lines.append(f"| 日均环比变化 | {anomaly['change_pct']:>+9.1f}% |")
-    lines.append(f"")
+    lines.append("")
 
     anomaly_items = anomaly.get("products", [])
     if anomaly_items:
@@ -429,9 +426,9 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     budget_icon = {"P0_CRITICAL": "CRITICAL", "P1_WARNING": "WARNING", "OK": "PASS"}
     b_emoji = budget_icon.get(budget.get("level", "OK"), "PASS")
     lines.append(f"{b_emoji} **预算**: {budget['budget']:.0f} CNY | **已花费**: {budget['spend']:.2f} CNY | **使用率**: {budget['pct']:.1f}%")
-    lines.append(f"")
+    lines.append("")
     lines.append(f"| 账户余额 | {budget['balance']} CNY |")
-    lines.append(f"")
+    lines.append("")
 
     lines.append("---")
     lines.append("")
@@ -439,8 +436,8 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
     # 5) Health
     lines.append("## 5️⃣ 账户金融健康摘要")
     lines.append("")
-    lines.append(f"| 指标 | 值 |")
-    lines.append(f"|------|:---:|")
+    lines.append("| 指标 | 值 |")
+    lines.append("|------|:---:|")
     lines.append(f"| 可用余额 | {health['balance']} CNY |")
     lines.append(f"| 信用额度 | {health['credit']} CNY |")
     lines.append(f"| 可用代金券 | {len(health['coupons'])} 张 |")
@@ -448,7 +445,7 @@ def generate_report(anomaly, expiry, coverage, budget, health, output_dir: Path)
         total_coupon = sum(float(c.get("balance", 0) or 0) for c in health["coupons"])
         lines.append(f"| 代金券总余额 | {total_coupon:.2f} CNY |")
     lines.append(f"| 储值卡 | {len(health['prepaid_cards'])} 张 |")
-    lines.append(f"")
+    lines.append("")
     if health["active_orders"]:
         lines.append("### 近期订单")
         lines.append("")

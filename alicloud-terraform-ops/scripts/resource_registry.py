@@ -77,7 +77,7 @@ class PreFlightResult:
 class ResourceRegistry:
     """
     资源注册中心
-    
+
     统一管理所有支持的资源类型，提供能力查询和预检功能。
     """
 
@@ -474,11 +474,11 @@ class ResourceRegistry:
     ) -> PreFlightResult:
         """
         PreFlight 预检
-        
+
         Args:
             resource_type: 资源类型名称
             required_capabilities: 必需的能力集合
-        
+
         Returns:
             PreFlightResult 检查结果
         """
@@ -629,23 +629,21 @@ class CapabilityChecker:
     ) -> dict[str, PreFlightResult]:
         """
         检查导入请求
-        
+
         Args:
             resource_types: 资源类型列表
             fail_fast: 遇到不支持类型时立即失败
-        
+
         Returns:
             各资源类型的检查结果
         """
         results = {}
-        has_unsupported = False
 
         for rtype in resource_types:
             result = self.registry.preflight_check(rtype)
             results[rtype] = result
 
             if not result.can_proceed:
-                has_unsupported = True
                 if fail_fast:
                     break
 

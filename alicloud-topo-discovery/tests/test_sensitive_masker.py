@@ -1,9 +1,8 @@
 """Tests for sensitive field masker."""
-import pytest
 from scripts.lib.sensitive_masker import (
+    SENSITIVE_FIELDS,
     SensitiveMasker,
     mask_value,
-    SENSITIVE_FIELDS,
 )
 
 

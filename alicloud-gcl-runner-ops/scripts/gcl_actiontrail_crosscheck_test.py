@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 gcl_actiontrail_crosscheck_test.py — unit tests for
 `gcl_actiontrail_crosscheck.py`.
@@ -46,7 +45,6 @@ _HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HERE))
 
 import gcl_actiontrail_crosscheck as xchk  # noqa: E402
-
 
 # ---------------------------------------------------------------------------
 # Test helpers
@@ -408,8 +406,8 @@ class MainTests(unittest.TestCase):
     def test_trace_dir_with_report(self):
         # Two traces: one PASS (no event → PHANTOM_PASS), one FAIL (with event → PHANTOM_FAIL)
         mtime = _dt.datetime.now(tz=_dt.timezone.utc) - _dt.timedelta(hours=1)
-        path1 = make_trace(self.tmp_path, decision="PASS", mtime=mtime)
-        path2 = make_trace(self.tmp_path, decision="SAFETY_FAIL", op="StopInstance",
+        make_trace(self.tmp_path, decision="PASS", mtime=mtime)
+        make_trace(self.tmp_path, decision="SAFETY_FAIL", op="StopInstance",
                             command="aliyun ecs StopInstance --InstanceId i-bp1xxxxxxxxxx", mtime=mtime)
         report_path = self.tmp_path / "report.json"
 

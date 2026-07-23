@@ -9,17 +9,16 @@ HITL Mode A - Interactive CLI Implementation
 
 from __future__ import annotations
 
-import os
-import sys
 import json
-import time
 import signal
-from datetime import datetime, timedelta
-from enum import Enum, auto
+import sys
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Callable, Any, Union
+from datetime import datetime, timedelta
+from enum import Enum
 from pathlib import Path
-
+from typing import Any
 
 # ============================================================================
 # Enums and Constants
@@ -107,19 +106,19 @@ class ResourceInfo:
     """资源信息"""
     resource_type: str
     name: str
-    id: Optional[str] = None
+    id: str | None = None
     status: str = "pending"
-    attributes: Dict[str, Any] = field(default_factory=dict)
-    warnings: List[str] = field(default_factory=list)
+    attributes: dict[str, Any] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass
 class StepResult:
     """步骤执行结果"""
     action: Action
-    data: Dict[str, Any] = field(default_factory=dict)
-    reason: Optional[str] = None
-    modifications: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    reason: str | None = None
+    modifications: dict[str, Any] | None = None
 
 
 @dataclass
@@ -127,10 +126,10 @@ class Step:
     """检查点步骤"""
     type: StepType
     status: CheckpointStatus = CheckpointStatus.PENDING
-    data: Dict[str, Any] = field(default_factory=dict)
-    result: Optional[StepResult] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    data: dict[str, Any] = field(default_factory=dict)
+    result: StepResult | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
 
 
 @dataclass
@@ -155,36 +154,36 @@ class Checkpoint:
     environment: Environment
     mode: HITLMode = HITLMode.CLI
     status: CheckpointStatus = CheckpointStatus.INIT
-    
+
     # Context
-    resources: List[ResourceInfo] = field(default_factory=list)
-    generated_files: Dict[str, str] = field(default_factory=dict)
-    user_inputs: Dict[str, Any] = field(default_factory=dict)
-    
+    resources: list[ResourceInfo] = field(default_factory=list)
+    generated_files: dict[str, str] = field(default_factory=dict)
+    user_inputs: dict[str, Any] = field(default_factory=dict)
+
     # History
-    steps: List[Step] = field(default_factory=list)
+    steps: list[Step] = field(default_factory=list)
     current_step_index: int = 0
-    
+
     # Timestamps
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
-    expires_at: Optional[datetime] = None
-    
+    expires_at: datetime | None = None
+
     # Retry
     retry_count: int = 0
     max_retries: int = 3
-    
-    def get_current_step(self) -> Optional[Step]:
+
+    def get_current_step(self) -> Step | None:
         """获取当前步骤"""
         if 0 <= self.current_step_index < len(self.steps):
             return self.steps[self.current_step_index]
         return None
-    
-    def get_pending_steps(self) -> List[Step]:
+
+    def get_pending_steps(self) -> list[Step]:
         """获取待执行的步骤"""
-        return [s for s in self.steps[self.current_step_index:] 
+        return [s for s in self.steps[self.current_step_index:]
                 if s.status == CheckpointStatus.PENDING]
-    
+
     def complete_step(self, step: Step, result: StepResult):
         """完成步骤"""
         step.status = CheckpointStatus.COMPLETED
@@ -192,29 +191,29 @@ class Checkpoint:
         step.completed_at = datetime.now()
         self.current_step_index += 1
         self.updated_at = datetime.now()
-    
+
     def pause(self):
         """暂停检查点"""
         self.status = CheckpointStatus.PAUSED
         self.updated_at = datetime.now()
-    
+
     def resume(self):
         """恢复检查点"""
         self.status = CheckpointStatus.RUNNING
         self.updated_at = datetime.now()
-    
+
     def abort(self, reason: str):
         """中止检查点"""
         self.status = CheckpointStatus.FAILED
         self.updated_at = datetime.now()
-    
+
     def is_expired(self) -> bool:
         """检查是否过期"""
         if self.expires_at:
             return datetime.now() > self.expires_at
         return False
-    
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """序列化为字典"""
         return {
             "id": self.id,
@@ -259,7 +258,7 @@ class Checkpoint:
 
 class EnvironmentPolicy:
     """环境策略管理"""
-    
+
     # 五级环境策略配置
     POLICIES = {
         Environment.INT: {
@@ -348,13 +347,13 @@ class EnvironmentPolicy:
             ),
         },
     }
-    
+
     @classmethod
     def get_policy(cls, env: Environment, step: StepType) -> PolicyConfig:
         """获取策略配置"""
         env_policies = cls.POLICIES.get(env, cls.POLICIES[Environment.DEV])
         return env_policies.get(step, PolicyConfig())
-    
+
     @classmethod
     def should_skip(cls, env: Environment, step: StepType) -> bool:
         """检查是否跳过步骤"""
@@ -368,17 +367,17 @@ class EnvironmentPolicy:
 
 class CLIRenderer:
     """CLI 渲染器"""
-    
+
     def __init__(self, use_color: bool = True):
         self.use_color = use_color and sys.stdout.isatty()
-    
+
     def _c(self, color: str, text: str) -> str:
         """添加颜色"""
         if self.use_color:
             return f"{color}{text}{Colors.RESET}"
         return text
-    
-    def render_header(self, title: str, env: Optional[Environment] = None):
+
+    def render_header(self, title: str, env: Environment | None = None):
         """渲染标题"""
         env_str = f" [{env.value.upper()}]" if env else ""
         print()
@@ -386,18 +385,18 @@ class CLIRenderer:
         print(f"  {self._c(Colors.BOLD + Colors.CYAN, title)}{self._c(Colors.YELLOW, env_str)}")
         print("=" * 60)
         print()
-    
-    def render_resources(self, resources: List[ResourceInfo]):
+
+    def render_resources(self, resources: list[ResourceInfo]):
         """渲染资源列表"""
         if not resources:
             print(self._c(Colors.DIM, "  (无资源)"))
             return
-        
+
         # 按类型分组
-        by_type: Dict[str, List[ResourceInfo]] = {}
+        by_type: dict[str, list[ResourceInfo]] = {}
         for r in resources:
             by_type.setdefault(r.resource_type, []).append(r)
-        
+
         for rtype, items in by_type.items():
             print(f"  {self._c(Colors.BOLD, rtype)}: {len(items)} 个")
             for item in items:
@@ -410,8 +409,8 @@ class CLIRenderer:
                     for w in item.warnings:
                         print(f"      {self._c(Colors.YELLOW, '⚠ ' + w)}")
         print()
-    
-    def render_config_preview(self, files: Dict[str, str], max_lines: int = 20):
+
+    def render_config_preview(self, files: dict[str, str], max_lines: int = 20):
         """渲染配置预览"""
         for filename, content in files.items():
             print(f"  {self._c(Colors.BOLD + Colors.BLUE, filename)}")
@@ -424,13 +423,13 @@ class CLIRenderer:
                 for line in lines:
                     print(f"    {line}")
             print()
-    
-    def render_plan_summary(self, plan_data: Dict[str, Any]):
+
+    def render_plan_summary(self, plan_data: dict[str, Any]):
         """渲染 Plan 摘要"""
         create = plan_data.get('create', 0)
         update = plan_data.get('update', 0)
         delete = plan_data.get('delete', 0)
-        
+
         print(f"  {self._c(Colors.BOLD, '变更概览:')}")
         if create:
             print(f"    {self._c(Colors.GREEN, f'+ 创建: {create}')}")
@@ -438,11 +437,11 @@ class CLIRenderer:
             print(f"    {self._c(Colors.YELLOW, f'~ 修改: {update}')}")
         if delete:
             print(f"    {self._c(Colors.RED, f'- 销毁: {delete}')} ⚠️")
-        
+
         if not any([create, update, delete]):
             print(f"    {self._c(Colors.GREEN, '无变更')}")
         print()
-        
+
         # 风险提示
         risks = plan_data.get('risks', [])
         if risks:
@@ -472,71 +471,71 @@ class CLIRenderer:
 
     def render_selection_list(
         self,
-        items: List[Dict[str, Any]],
+        items: list[dict[str, Any]],
         title: str = "选择资源",
-        selected: Optional[set] = None
+        selected: set | None = None
     ) -> set:
         """渲染选择列表（简化版，非交互式）"""
         print(f"  {self._c(Colors.BOLD, title)}")
-        
+
         selected = selected or set()
-        
+
         for i, item in enumerate(items, 1):
             mark = "x" if item['id'] in selected else " "
             status = item.get('status', '')
             status_str = ""
-            
+
             if status == 'pass':
                 status_str = self._c(Colors.GREEN, " [PASS]")
             elif status == 'warn':
                 status_str = self._c(Colors.YELLOW, " [WARN]")
             elif status == 'skip':
                 status_str = self._c(Colors.RED, " [SKIP]")
-            
+
             print(f"    [{mark}] {i}. {item.get('name', item['id'])}{status_str}")
             if item.get('warning'):
                 print(f"        {self._c(Colors.YELLOW, '⚠ ' + item['warning'])}")
-        
+
         print()
         return selected
-    
+
     def render_timer(self, remaining: int):
         """渲染倒计时"""
         mins, secs = divmod(remaining, 60)
         print(f"  {self._c(Colors.DIM, f'[超时: {mins:02d}:{secs:02d}]')}", end='\r')
-    
+
     def render_success(self, message: str):
         """渲染成功消息"""
         print(f"  {self._c(Colors.GREEN, '✓')} {message}")
-    
+
     def render_error(self, message: str):
         """渲染错误消息"""
         print(f"  {self._c(Colors.RED, '✗')} {message}")
-    
+
     def render_warning(self, message: str):
         """渲染警告消息"""
         print(f"  {self._c(Colors.YELLOW, '!')} {message}")
-    
+
     def render_info(self, message: str):
         """渲染信息消息"""
         print(f"  {self._c(Colors.BLUE, 'ℹ')} {message}")
-    
+
     def prompt(
-        self, 
-        message: str, 
-        options: Optional[List[str]] = None,
-        default: Optional[str] = None,
-        timeout: Optional[int] = None
+        self,
+        message: str,
+        options: list[str] | None = None,
+        default: str | None = None,
+        timeout: int | None = None
     ) -> str:
         """
         提示用户输入
-        
+
         Args:
             message: 提示消息
             options: 可选选项列表
             default: 默认值
             timeout: 超时时间（秒）
-        
+
         Returns:
             用户输入
         """
@@ -545,30 +544,30 @@ class CLIRenderer:
             opts_str = f" [{'/'.join(options)}]"
         if default:
             opts_str += f" (默认: {default})"
-        
+
         prompt_text = f"{message}{opts_str}> "
-        
+
         if timeout:
             return self._prompt_with_timeout(prompt_text, timeout, default)
-        
+
         try:
             user_input = input(prompt_text).strip()
             return user_input if user_input else (default or "")
         except (EOFError, KeyboardInterrupt):
             print()
             return "q"  # 退出信号
-    
+
     def _prompt_with_timeout(
-        self, 
-        prompt_text: str, 
-        timeout: int, 
-        default: Optional[str] = None
+        self,
+        prompt_text: str,
+        timeout: int,
+        default: str | None = None
     ) -> str:
         """带超时的提示"""
         import select
-        
+
         print(prompt_text, end='', flush=True)
-        
+
         # 简单的超时实现
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -579,11 +578,11 @@ class CLIRenderer:
                 except (EOFError, KeyboardInterrupt):
                     print()
                     return "q"
-            
+
             remaining = int(timeout - (time.time() - start_time))
             if remaining <= 0:
                 break
-        
+
         print()
         raise TimeoutError("输入超时")
 
@@ -594,42 +593,42 @@ class CLIRenderer:
 
 class CheckpointStore:
     """检查点存储"""
-    
-    def __init__(self, base_path: Optional[Path] = None):
+
+    def __init__(self, base_path: Path | None = None):
         self.base_path = base_path or Path.home() / ".pi" / "terraform-ops" / "checkpoints"
         self.base_path.mkdir(parents=True, exist_ok=True)
-    
+
     def save(self, checkpoint: Checkpoint) -> Path:
         """保存检查点"""
         filepath = self.base_path / f"{checkpoint.id}.json"
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(checkpoint.to_dict(), f, indent=2, ensure_ascii=False)
         return filepath
-    
-    def load(self, checkpoint_id: str) -> Optional[Checkpoint]:
+
+    def load(self, checkpoint_id: str) -> Checkpoint | None:
         """加载检查点"""
         filepath = self.base_path / f"{checkpoint_id}.json"
         if not filepath.exists():
             return None
-        
-        with open(filepath, 'r', encoding='utf-8') as f:
+
+        with open(filepath, encoding='utf-8') as f:
             data = json.load(f)
-        
+
         return self._deserialize(data)
-    
-    def list_active(self) -> List[Checkpoint]:
+
+    def list_active(self) -> list[Checkpoint]:
         """列出活跃检查点"""
         checkpoints = []
         for filepath in self.base_path.glob("*.json"):
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding='utf-8') as f:
                 data = json.load(f)
             cp = self._deserialize(data)
             if cp.status in [CheckpointStatus.PENDING, CheckpointStatus.PAUSED]:
                 if not cp.is_expired():
                     checkpoints.append(cp)
         return checkpoints
-    
-    def _deserialize(self, data: Dict[str, Any]) -> Checkpoint:
+
+    def _deserialize(self, data: dict[str, Any]) -> Checkpoint:
         """反序列化检查点"""
         resources = [
             ResourceInfo(
@@ -640,7 +639,7 @@ class CheckpointStore:
                 attributes=r.get('attributes', {})
             ) for r in data.get('resources', [])
         ]
-        
+
         steps = [
             Step(
                 type=StepType(s['type']),
@@ -653,7 +652,7 @@ class CheckpointStore:
                 ) if s.get('result') and s['result'].get('action') else None
             ) for s in data.get('steps', [])
         ]
-        
+
         return Checkpoint(
             id=data['id'],
             type=CheckpointType(data['type']),
@@ -678,13 +677,13 @@ class CheckpointStore:
 
 class CLIController:
     """CLI 控制器 - HITL Mode A 核心实现"""
-    
+
     def __init__(
-        self, 
+        self,
         checkpoint: Checkpoint,
-        store: Optional[CheckpointStore] = None,
+        store: CheckpointStore | None = None,
         use_color: bool = True,
-        plan_runner: Optional[Any] = None,
+        plan_runner: Any | None = None,
     ):
         self.checkpoint = checkpoint
         self.store = store or CheckpointStore()
@@ -697,11 +696,11 @@ class CLIController:
             self.plan_runner = TerraformPlanRunner()
         else:
             self.plan_runner = plan_runner
-        
+
         # 设置信号处理
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
-    
+
     def _signal_handler(self, signum, frame):
         """信号处理"""
         print("\n")
@@ -712,62 +711,62 @@ class CLIController:
         self.ui.render_info(f"检查点已保存: {self.checkpoint.id}")
         self.ui.render_info("可以使用 --resume 参数恢复执行")
         sys.exit(0)
-    
+
     def run(self) -> Checkpoint:
         """
         主执行循环
-        
+
         Returns:
             完成后的检查点
-        
+
         Raises:
             UserAbortedError: 用户中止
             TimeoutError: 超时
         """
         self._running = True
         self.checkpoint.status = CheckpointStatus.RUNNING
-        
+
         try:
             pending_steps = self.checkpoint.get_pending_steps()
-            
+
             if not pending_steps:
                 self.ui.render_info("所有步骤已完成")
                 self.checkpoint.status = CheckpointStatus.COMPLETED
                 return self.checkpoint
-            
+
             for step in pending_steps:
                 if self._interrupted:
                     break
-                
+
                 # 检查策略
                 policy = self.policy.get_policy(
-                    self.checkpoint.environment, 
+                    self.checkpoint.environment,
                     step.type
                 )
-                
+
                 if self.policy.should_skip(self.checkpoint.environment, step.type):
                     self.ui.render_info(f"跳过步骤: {step.type.value}")
                     self.checkpoint.complete_step(step, StepResult(Action.SKIP))
                     continue
-                
+
                 # 执行步骤
                 result = self._execute_step(step, policy)
-                
+
                 if result.action == Action.PAUSE:
                     self.checkpoint.pause()
                     self.store.save(self.checkpoint)
                     self.ui.render_info(f"检查点已暂停: {self.checkpoint.id}")
                     return self.checkpoint
-                
+
                 elif result.action == Action.ABORT:
                     self.checkpoint.abort(result.reason or "用户中止")
                     self.store.save(self.checkpoint)
                     raise UserAbortedError(result.reason or "用户中止操作")
-                
+
                 elif result.action == Action.CONTINUE:
                     self.checkpoint.complete_step(step, result)
                     self.store.save(self.checkpoint)
-                
+
                 elif result.action == Action.RETRY:
                     if self.checkpoint.retry_count < self.checkpoint.max_retries:
                         self.checkpoint.retry_count += 1
@@ -778,13 +777,13 @@ class CLIController:
                         self.store.save(self.checkpoint)
                     else:
                         raise MaxRetryError(f"步骤 {step.type.value} 重试次数耗尽")
-            
+
             # 所有步骤完成
             self.checkpoint.status = CheckpointStatus.COMPLETED
             self.store.save(self.checkpoint)
             self.ui.render_success("所有检查点已完成")
             return self.checkpoint
-            
+
         except TimeoutError as e:
             self.checkpoint.pause()
             self.store.save(self.checkpoint)
@@ -795,44 +794,44 @@ class CLIController:
             self.store.save(self.checkpoint)
             self.ui.render_error(f"执行失败: {e}")
             raise
-    
+
     def _execute_step(self, step: Step, policy: PolicyConfig) -> StepResult:
         """执行单个步骤"""
         step.status = CheckpointStatus.RUNNING
         step.started_at = datetime.now()
-        
-        handlers: Dict[StepType, Callable[[Step, PolicyConfig], StepResult]] = {
+
+        handlers: dict[StepType, Callable[[Step, PolicyConfig], StepResult]] = {
             StepType.CONFIRM_INTENT: self._confirm_intent,
             StepType.REVIEW_CONFIG: self._review_config,
             StepType.CONFIRM_PLAN: self._confirm_plan,
             StepType.CONFIRM_IMPORT: self._confirm_import,
             StepType.CONFIRM_DESTROY: self._confirm_destroy,
         }
-        
+
         handler = handlers.get(step.type)
         if not handler:
             return StepResult(Action.CONTINUE, reason=f"未支持的步骤类型: {step.type.value}")
-        
+
         try:
             return handler(step, policy)
         except TimeoutError:
             return StepResult(Action.PAUSE, reason="操作超时")
-    
+
     # ========================================================================
     # CP1: 意图确认 (Confirm Intent)
     # ========================================================================
-    
+
     def _confirm_intent(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP1: 意图确认"""
         self.ui.render_header("检查点 1/5: 意图确认 (CP1)", self.checkpoint.environment)
-        
+
         # 显示解析的资源
         if self.checkpoint.resources:
             self.ui.render_info("检测到以下资源需求:")
             self.ui.render_resources(self.checkpoint.resources)
         else:
             self.ui.render_info(step.data.get('intent', '用户请求'))
-        
+
         # 生产环境特殊要求
         if self.checkpoint.environment == Environment.PRODUCTION:
             if policy.require_jira_ticket:
@@ -840,13 +839,13 @@ class CLIController:
                 if not jira:
                     return StepResult(Action.ABORT, reason="生产环境必须提供 Jira Ticket")
                 step.data['jira_ticket'] = jira
-            
+
             if policy.require_reason:
                 reason = self.ui.prompt("请输入变更原因:")
                 if not reason:
                     return StepResult(Action.ABORT, reason="生产环境必须提供变更原因")
                 step.data['change_reason'] = reason
-        
+
         # 确认
         try:
             choice = self.ui.prompt(
@@ -857,7 +856,7 @@ class CLIController:
             )
         except TimeoutError:
             return StepResult(Action.PAUSE, reason="确认超时")
-        
+
         if choice.lower() in ("y", "yes", ""):
             self.ui.render_success("意图已确认")
             return StepResult(Action.CONTINUE)
@@ -868,14 +867,14 @@ class CLIController:
             return StepResult(Action.CONTINUE, data={"modifications": modifications})
         elif choice.lower() == "q":
             return StepResult(Action.PAUSE, reason="用户选择退出")
-        
+
         return StepResult(Action.CONTINUE)
-    
-    def _collect_modifications(self) -> Dict[str, Any]:
+
+    def _collect_modifications(self) -> dict[str, Any]:
         """收集用户修改"""
         modifications = {}
         self.ui.render_info("进入修改模式 (直接回车保持原值)")
-        
+
         for resource in self.checkpoint.resources:
             name = self.ui.prompt(
                 f"修改 {resource.name} 的名称",
@@ -883,29 +882,29 @@ class CLIController:
             )
             if name != resource.name:
                 modifications[resource.name] = {"name": name}
-        
+
         return modifications
-    
+
     # ========================================================================
     # CP2: 配置审核 (Review Config)
     # ========================================================================
-    
+
     def _review_config(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP2: 配置审核"""
         self.ui.render_header("检查点 2/5: 配置审核 (CP2)", self.checkpoint.environment)
-        
+
         if not self.checkpoint.generated_files:
             self.ui.render_warning("暂无生成的配置文件")
             return StepResult(Action.CONTINUE)
-        
+
         # 显示生成的文件
         self.ui.render_info("生成的配置文件预览:")
         self.ui.render_config_preview(self.checkpoint.generated_files)
-        
+
         # 环境特定提示
         if self.checkpoint.environment in (Environment.UAT, Environment.PERFORMANCE, Environment.PRODUCTION):
             self.ui.render_warning("此环境要求配置必须经过审核")
-        
+
         try:
             choice = self.ui.prompt(
                 "配置审核",
@@ -915,7 +914,7 @@ class CLIController:
             )
         except TimeoutError:
             return StepResult(Action.PAUSE, reason="审核超时")
-        
+
         if choice.lower() in ("y", "yes", ""):
             self.ui.render_success("配置已审核通过")
             return StepResult(Action.CONTINUE)
@@ -926,21 +925,21 @@ class CLIController:
             return StepResult(Action.PAUSE, reason="等待外部编辑")
         elif choice.lower() == "q":
             return StepResult(Action.PAUSE)
-        
+
         return StepResult(Action.CONTINUE)
-    
+
     # ========================================================================
     # CP3: Plan 确认 (Confirm Plan)
     # ========================================================================
 
-    def _resolve_work_dir(self) -> Optional[Path]:
+    def _resolve_work_dir(self) -> Path | None:
         raw = self.checkpoint.user_inputs.get("output_dir")
         if not raw:
             return None
         path = Path(str(raw)).expanduser()
         return path if path.is_dir() else None
 
-    def _fallback_plan_data(self) -> Dict[str, Any]:
+    def _fallback_plan_data(self) -> dict[str, Any]:
         pending = len([r for r in self.checkpoint.resources if r.status == "pending"])
         return {
             "create": pending,
@@ -950,7 +949,7 @@ class CLIController:
             "source": "resource_estimate",
         }
 
-    def _ensure_plan_data(self, step: Step) -> Dict[str, Any]:
+    def _ensure_plan_data(self, step: Step) -> dict[str, Any]:
         """执行 terraform plan（一次）并缓存到 step.data。"""
         if step.data.get("plan_executed"):
             return step.data.get("plan", self._fallback_plan_data())
@@ -985,11 +984,11 @@ class CLIController:
         step.data["plan"] = plan_data
         step.data["plan_executed"] = True
         return plan_data
-    
+
     def _confirm_plan(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP3: Plan 确认"""
         self.ui.render_header("检查点 3/5: Plan 确认 (CP3)", self.checkpoint.environment)
-        
+
         # 显示 Dry-run 信息
         if policy.dry_run:
             self.ui.render_info("╔════════════════════════════════════════════════════════╗")
@@ -1012,7 +1011,7 @@ class CLIController:
             if len(resources) > 10:
                 print(f"    ... 另有 {len(resources) - 10} 个")
             print()
-        
+
         # 冷却期（生产环境）
         if policy.cooldown > 0:
             self.ui.render_warning(f"生产环境需要 {policy.cooldown} 秒冷却期...")
@@ -1020,7 +1019,7 @@ class CLIController:
                 print(f"  冷却中... {i} 秒", end='\r')
                 time.sleep(1)
             print()
-        
+
         # 自动批准（int 环境小变更）— 仅真实 plan 成功时启用
         plan_from_terraform = step.data.get("plan_source") == "terraform plan"
         if policy.auto_approve and plan_from_terraform:
@@ -1029,7 +1028,7 @@ class CLIController:
             if total <= 5 and cost <= 10 and plan_data.get('delete', 0) == 0:
                 self.ui.render_success("符合自动批准条件，继续执行")
                 return StepResult(Action.CONTINUE, data={"auto_approved": True, "plan": plan_data})
-        
+
         try:
             choice = self.ui.prompt(
                 "确认执行 terraform apply?",
@@ -1039,7 +1038,7 @@ class CLIController:
             )
         except TimeoutError:
             return StepResult(Action.PAUSE, reason="确认超时")
-        
+
         if choice.lower() in ("y", "yes"):
             self.ui.render_success("Plan 已确认")
             return StepResult(Action.CONTINUE, data={"plan": plan_data})
@@ -1052,27 +1051,27 @@ class CLIController:
             return StepResult(Action.RETRY)
         elif choice.lower() == "q":
             return StepResult(Action.PAUSE)
-        
+
         return StepResult(Action.CONTINUE)
-    
+
     # ========================================================================
     # CP4: 导入确认 (Confirm Import)
     # ========================================================================
-    
+
     def _confirm_import(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP4: 导入确认（逆向工程专用）"""
         self.ui.render_header("检查点 4/5: 导入确认 (CP4)", self.checkpoint.environment)
-        
+
         if self.checkpoint.type != CheckpointType.IMPORT:
             return StepResult(Action.CONTINUE)
-        
+
         # 显示发现的资源
         resources = step.data.get('discovered_resources', self.checkpoint.resources)
-        
+
         if not resources:
             self.ui.render_warning("未发现可导入的资源")
             return StepResult(Action.CONTINUE)
-        
+
         # 资源分级显示
         items = []
         for r in resources:
@@ -1087,11 +1086,11 @@ class CLIController:
                 item['status'] = 'warn'
                 item['warning'] = r.warnings[0]
             items.append(item)
-        
+
         self.ui.render_selection_list(items, "选择要导入的资源")
-        
+
         self.ui.render_info("操作提示: [数字]选择/取消  [a]全选  [c]确认  [q]保存退出")
-        
+
         try:
             choice = self.ui.prompt(
                 "确认导入以上资源到 Terraform?",
@@ -1101,7 +1100,7 @@ class CLIController:
             )
         except TimeoutError:
             return StepResult(Action.PAUSE, reason="确认超时")
-        
+
         if choice.lower() in ("y", "yes", ""):
             self.ui.render_success("导入已确认")
             return StepResult(Action.CONTINUE)
@@ -1112,24 +1111,24 @@ class CLIController:
             return StepResult(Action.PAUSE)
         elif choice.lower() == "q":
             return StepResult(Action.PAUSE)
-        
+
         return StepResult(Action.CONTINUE)
-    
+
     # ========================================================================
     # CP5: 销毁确认 (Confirm Destroy)
     # ========================================================================
-    
+
     def _confirm_destroy(self, step: Step, policy: PolicyConfig) -> StepResult:
         """CP5: 销毁确认（最高安全级别）"""
         self.ui.render_header("⚠️  检查点 5/5: 销毁确认 (CP5)", self.checkpoint.environment)
-        
+
         # 危险警告
         self.ui.render_error("╔════════════════════════════════════════════════════════╗")
         self.ui.render_error("║              ⚠️  危险操作: 资源销毁                      ║")
         self.ui.render_error("║        此操作将永久删除资源，数据不可恢复!              ║")
         self.ui.render_error("╚════════════════════════════════════════════════════════╝")
         print()
-        
+
         # 显示将要销毁的资源
         if self.checkpoint.resources:
             self.ui.render_info("以下资源将被销毁:")
@@ -1143,11 +1142,11 @@ class CLIController:
         state_backup = self.checkpoint.user_inputs.get("state_backup")
         if state_backup:
             self.ui.render_info(f"State 备份: {state_backup}")
-        
+
         # 环境特定警告
         if self.checkpoint.environment == Environment.PRODUCTION:
             self.ui.render_error("生产环境销毁需要双重确认!")
-        
+
         # 冷却期
         if policy.cooldown > 0:
             self.ui.render_warning(f"冷却期: {policy.cooldown} 秒...")
@@ -1155,14 +1154,14 @@ class CLIController:
                 print(f"  冷却中... {i} 秒  (按 Ctrl+C 取消)", end='\r')
                 time.sleep(1)
             print()
-        
+
         # 第一次确认
         confirm1 = self.ui.prompt(
             f"请输入环境名 '{self.checkpoint.environment.value}' 以确认销毁:"
         )
         if confirm1 != self.checkpoint.environment.value:
             return StepResult(Action.ABORT, reason="确认信息不匹配")
-        
+
         # 第二次确认（UAT+）
         if policy.confirm_count >= 2:
             confirm2 = self.ui.prompt(
@@ -1170,7 +1169,7 @@ class CLIController:
             )
             if confirm2 != "yes-destroy":
                 return StepResult(Action.ABORT, reason="二次确认失败")
-        
+
         self.ui.render_success("销毁已确认")
         return StepResult(Action.CONTINUE, data={"destroy_confirmed": True})
 
@@ -1200,15 +1199,15 @@ class TimeoutError(Exception):
 
 def create_checkpoint(
     checkpoint_type: CheckpointType,
-    environment: Union[str, Environment],
-    resources: Optional[List[Dict[str, Any]]] = None,
-    checkpoint_id: Optional[str] = None,
-    generated_files: Optional[Dict[str, str]] = None,
-    user_inputs: Optional[Dict[str, Any]] = None,
+    environment: str | Environment,
+    resources: list[dict[str, Any]] | None = None,
+    checkpoint_id: str | None = None,
+    generated_files: dict[str, str] | None = None,
+    user_inputs: dict[str, Any] | None = None,
 ) -> Checkpoint:
     """
     创建检查点
-    
+
     Args:
         checkpoint_type: 检查点类型
         environment: 环境名称或枚举
@@ -1216,18 +1215,18 @@ def create_checkpoint(
         checkpoint_id: 自定义检查点ID
         generated_files: NL2HCL 生成的根目录 HCL 预览（main.tf 等）
         user_inputs: 附加上下文（request、output_dir 等）
-    
+
     Returns:
         新创建的检查点
     """
     if isinstance(environment, str):
         environment = Environment(environment)
-    
+
     # 生成检查点ID
     if not checkpoint_id:
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         checkpoint_id = f"cp-{checkpoint_type.value}-{environment.value}-{timestamp}"
-    
+
     # 转换资源
     resource_objects = []
     if resources:
@@ -1240,7 +1239,7 @@ def create_checkpoint(
                 attributes=r.get('attributes', {}),
                 warnings=r.get('warnings', [])
             ))
-    
+
     # 确定步骤顺序
     step_types = []
     if checkpoint_type == CheckpointType.NL2HCL:
@@ -1251,7 +1250,7 @@ def create_checkpoint(
         step_types = [StepType.CONFIRM_PLAN]
     elif checkpoint_type == CheckpointType.DESTROY:
         step_types = [StepType.CONFIRM_DESTROY]
-    
+
     steps = [Step(type=st) for st in step_types]
     if user_inputs and user_inputs.get("request") and steps:
         steps[0].data["intent"] = user_inputs["request"]
@@ -1269,40 +1268,40 @@ def create_checkpoint(
     )
 
 
-def resume_checkpoint(checkpoint_id: str, store: Optional[CheckpointStore] = None) -> Checkpoint:
+def resume_checkpoint(checkpoint_id: str, store: CheckpointStore | None = None) -> Checkpoint:
     """
     恢复检查点
-    
+
     Args:
         checkpoint_id: 检查点ID
         store: 存储实例
-    
+
     Returns:
         恢复的检查点
-    
+
     Raises:
         FileNotFoundError: 检查点不存在
     """
     store = store or CheckpointStore()
     checkpoint = store.load(checkpoint_id)
-    
+
     if not checkpoint:
         raise FileNotFoundError(f"检查点不存在: {checkpoint_id}")
-    
+
     if checkpoint.is_expired():
         raise ValueError(f"检查点已过期: {checkpoint_id}")
-    
+
     checkpoint.resume()
     return checkpoint
 
 
-def list_checkpoints(store: Optional[CheckpointStore] = None) -> List[Checkpoint]:
+def list_checkpoints(store: CheckpointStore | None = None) -> list[Checkpoint]:
     """
     列出活跃检查点
-    
+
     Args:
         store: 存储实例
-    
+
     Returns:
         活跃检查点列表
     """
@@ -1317,7 +1316,7 @@ def list_checkpoints(store: Optional[CheckpointStore] = None) -> List[Checkpoint
 def main():
     """CLI 入口点"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="HITL Mode A - 交互式 CLI for Terraform IaC"
     )
@@ -1348,11 +1347,11 @@ def main():
         action="store_true",
         help="禁用颜色输出"
     )
-    
+
     args = parser.parse_args()
-    
+
     store = CheckpointStore()
-    
+
     # 列出检查点
     if args.list:
         checkpoints = list_checkpoints(store)
@@ -1363,7 +1362,7 @@ def main():
         else:
             print("无活跃检查点")
         return
-    
+
     # 恢复检查点
     if args.resume:
         try:
@@ -1378,14 +1377,14 @@ def main():
             checkpoint_type=CheckpointType(args.type),
             environment=args.env
         )
-    
+
     # 运行控制器
     controller = CLIController(
         checkpoint=checkpoint,
         store=store,
         use_color=not args.no_color
     )
-    
+
     try:
         controller.run()
     except UserAbortedError as e:

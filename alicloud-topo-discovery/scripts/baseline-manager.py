@@ -266,7 +266,7 @@ def _guess_resource_type(rid: str) -> str:
     """Guess resource type from ID prefix."""
     if not rid:
         return "Unknown"
-    prefix = rid.split("-")[0] if "-" in rid else rid[:2]
+    rid.split("-")[0] if "-" in rid else rid[:2]
     type_map = {
         "vpc": "VPC", "vsw": "VSwitch", "i-": "ECS",
         "lb-": "SLB", "ngw": "NAT", "eip": "EIP",
@@ -337,7 +337,7 @@ def main():
                     print(f"  Dates: {', '.join(created)}")
             else:
                 # Mode 3: batch copy all dates in range
-                gaps = backend.list_gaps(start, end)
+                backend.list_gaps(start, end)
                 created = 0
                 skipped = 0
                 for d in [date.fromisoformat(start) + timedelta(days=i)
@@ -355,7 +355,7 @@ def main():
             print("[ERROR] --resample requires --as-of <DATE> or --as-of-range <START>:<END>")
             sys.exit(2)
 
-        print(f"[SUMMARY] Resample done")
+        print("[SUMMARY] Resample done")
         return
 
     # Step 1: Run topo-scan to collect real data
@@ -426,17 +426,17 @@ def main():
 
     # Write human-readable summary
     summary_lines = [
-        f"# Infrastructure Baseline Snapshot",
-        f"",
+        "# Infrastructure Baseline Snapshot",
+        "",
         f"**Date**: {manifest['generated_at']}",
         f"**Account**: {manifest['account_id']}",
         f"**Region**: {manifest['region']}",
         f"**Total Resources**: {manifest['resource_count']}",
-        f"",
-        f"## Resource Counts",
-        f"",
-        f"| Type | Count |",
-        f"|------|:-----:|",
+        "",
+        "## Resource Counts",
+        "",
+        "| Type | Count |",
+        "|------|:-----:|",
     ]
     for rtype, count in sorted(inventory["resource_counts"].items()):
         summary_lines.append(f"| {rtype} | {count} |")
