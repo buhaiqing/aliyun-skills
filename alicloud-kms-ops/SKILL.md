@@ -197,7 +197,7 @@ aliyun kms ListKeys --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand KMS architecture, key lifecycle, and protection levels
-- [Common Operations](#execution-flows) — Create, manage, and delete keys and secrets
+- [Common Operations](#execution) — Create, manage, and delete keys and secrets
 - [Troubleshooting](references/troubleshooting.md) — Fix common KMS issues
 
 ## Runtime Rules
@@ -845,7 +845,7 @@ aliyun kms AsymmetricVerify \
 ## Quality Gate (GCL)
 
 This skill is the **fifth rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 Every runtime execution of an `alicloud-kms-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

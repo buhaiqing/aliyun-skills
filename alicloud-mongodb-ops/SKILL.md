@@ -73,7 +73,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/mongodb-harness-wrapper.sh` for all MongoDB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dds` only when the wrapper is unavailable or `harness-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/mongodb-harness-wrapper.sh` for all MongoDB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dds` only when the wrapper is unavailable or `harness-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 
@@ -506,7 +506,7 @@ Detailed documentation for specialized operations:
 
 ## Quality Gate (GCL)
 
-Ninth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Ninth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

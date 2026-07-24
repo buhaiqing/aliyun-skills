@@ -233,7 +233,7 @@ Elastic Container Instances (ECI) via `aliyun eci ...` (primary) or JIT Go SDK
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 - [ ] VPC + VSwitch + SecurityGroup exist in the target region
-- [ ] **⚠️** Run the [OpenAPI verify status](#✅-openapi-验证状态-verified-2026-06-02)
+- [ ] **⚠️** Run the OpenAPI verify status
       at the top of this file before first CreateContainerGroup
 
 ### Verify Setup
@@ -786,7 +786,7 @@ ECIs are short-lived by design, so "idle" is unusual. Patterns:
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

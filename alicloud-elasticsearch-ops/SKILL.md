@@ -207,7 +207,7 @@ func main() {
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand Elasticsearch architecture
-- [Common Operations](#execution-flows) — Create, manage, and delete instances
+- [Common Operations](#execution-flows-agent-readable) — Create, manage, and delete instances
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
 
 ## Capabilities at a Glance
@@ -514,7 +514,7 @@ Poll until upgrade completes (status transitions through upgrade phases)
 
 ## Quality Gate (GCL)
 
-Tenth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Tenth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|
@@ -532,11 +532,11 @@ Tenth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loo
 ## Well-Architected Assessment
 
 This skill's operations are evaluated against Alibaba Cloud's Well-Architected Framework (卓越架构). For detailed assessment patterns per pillar:
-- [Security Assessment](references/well-architected-assessment.md#21-安全支柱-security)
-- [Stability Assessment](references/well-architected-assessment.md#22-稳定支柱-stability)
-- [Cost Assessment](references/well-architected-assessment.md#23-成本支柱-cost)
-- [Efficiency Assessment](references/well-architected-assessment.md#24-效率支柱-efficiency)
-- [Performance Assessment](references/well-architected-assessment.md#25-性能支柱-performance)
+- Security Assessment
+- Stability Assessment
+- Cost Assessment
+- Efficiency Assessment
+- Performance Assessment
 
 ## See Also — Meta-Skill Rules
 

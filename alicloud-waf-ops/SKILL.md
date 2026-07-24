@@ -164,7 +164,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 ### Response Field Table
 
-> **TE-3/TE-6**: Only most commonly used fields shown. Full field lists → [API & SDK Usage](references/api-sdk-usage.md#response-fields).
+> **TE-3/TE-6**: Only most commonly used fields shown. Full field lists → [API & SDK Usage](references/api-sdk-usage.md#common-response-fields).
 
 | Operation | Key Fields |
 |-----------|-------------|
@@ -663,7 +663,7 @@ aliyun waf-openapi DescribeIpHitItems \
 
 ## Quality Gate (GCL)
 
-This skill is part of the **Generator-Critic-Loop (GCL)** adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). Every runtime execution of an `alicloud-waf-ops` operation MUST be wrapped in a GCL loop before the result is returned to the user.
+This skill is part of the **Generator-Critic-Loop (GCL)** adversarial quality gate defined in [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). Every runtime execution of an `alicloud-waf-ops` operation MUST be wrapped in a GCL loop before the result is returned to the user.
 
 > **Two references in this directory carry the GCL contract:**
 >

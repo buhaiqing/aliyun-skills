@@ -122,7 +122,7 @@ replacement workflow** end-to-end.
 ## Diagnostic Log Format
 
 Every CAS operation MUST emit structured diagnostic logs per
-[`docs/diagnostic-logging-standard.md`](../../docs/diagnostic-logging-standard.md):
+[`docs/diagnostic-logging-standard.md`](../docs/diagnostic-logging-standard.md):
 
 ```
 [HH:MM:SS] [PHASE] key=value
@@ -182,7 +182,7 @@ GCL traces MUST be persisted to:
 ./audit-results/gcl-trace-cert-ops-{ISO-timestamp}.json
 ```
 
-Per [`AGENTS.md` §12.6`](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+Per [`AGENTS.md` §12.6`](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 
 ## Quick Start
 
@@ -504,7 +504,7 @@ aliyun cas DeleteUserCertificate \
 
 ## Quality Gate (GCL)
 
-**Recommended** rollout per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+**Recommended** rollout per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 
 | Aspect | Setting |
 |--------|---------|

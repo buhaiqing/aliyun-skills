@@ -26,7 +26,7 @@ metadata:
 
 # GCL Rollout Specification (Generator-Critic-Loop)
 
-> **Authoritative source for the GCL contract is [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).**
+> **Authoritative source for the GCL contract is [`AGENTS.md` §12](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).**
 > This reference explains **how to implement** the contract in a generated
 > skill. Read `AGENTS.md` §12 first; this file is the implementation
 > playbook.
@@ -258,7 +258,7 @@ metadata:
    independent re-query pattern, the rubber-stamping prevention rule
    (Critic MUST NOT see `{{user.request}}`), and the **test accuracy /
    regression assessment** block from
-   [`docs/gcl-critic-test-assessment-block.md`](../../../docs/gcl-critic-test-assessment-block.md).
+   [`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md).
 4. **Anti-Patterns** — 4-6 banned patterns.
 5. **Changelog** — 1.0.0 with date and summary.
 
@@ -300,7 +300,7 @@ You are the Critic in a GCL for Alibaba Cloud <Product>. Read-only.
 # blocking=true if tests_accurate=false or regression_required without green-run evidence
 ```
 
-Canonical block: [`docs/gcl-critic-test-assessment-block.md`](../../../docs/gcl-critic-test-assessment-block.md).
+Canonical block: [`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md).
 
 ---
 

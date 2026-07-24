@@ -236,7 +236,7 @@ quota pre-flight checks.
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 - [ ] VPC + VSwitch exist in the target region
-- [ ] **⚠️** Run the [OpenAPI verify checklist](#⚠️-openapi-验证清单-read-before-execute--必读)
+- [ ] **⚠️** Run the OpenAPI verify checklist
       at the top of this file before first CreateCluster
 
 ### Verify Setup
@@ -688,7 +688,7 @@ Phase 3: Validate — Pod scheduling, service connectivity, application health
 tighten HPA. No concept of "idle node" — cost is per Pod.
 
 > **Cost allocation:** `kubectl top pods` + ECI pricing → per-namespace
-> cost. See [FinOps Operations](#finops-operations) below.
+> cost. See [FinOps Operations](#finops-operations-成本优化运维) below.
 
 ### 效率 (Efficiency)
 
@@ -790,7 +790,7 @@ ASK 没有"空闲节点"，但有"空闲 Pod"：
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

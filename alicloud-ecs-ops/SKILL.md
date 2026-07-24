@@ -1646,7 +1646,7 @@ aliyun ecs DescribeCloudAssistantStatus \
 ## Quality Gate (GCL)
 
 This skill is the **Phase 1 pilot** for the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 Every runtime execution of an `alicloud-ecs-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 
@@ -1656,7 +1656,7 @@ in a GCL loop before the result is returned to the user.
 > |---|---|
 > | [`references/rubric.md`](references/rubric.md) | The 5 core + 3 Aliyun-specific rubric dimensions, per-op Safety sub-rules, thresholds, and worked examples |
 > | [`references/prompt-templates.md`](references/prompt-templates.md) | The Generator and Critic prompt templates (with `{{env.*}}` / `{{user.*}}` / `{{output.*}}` placeholders) |
-> | [`docs/failure-patterns.md`](../docs/failure-patterns.md) | Cross-session failure memory — Generator reads before execution to avoid known mistakes; GCL traces append new patterns after execution |
+> | [`docs/failure-patterns.md`](../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md) | Cross-session failure memory — Generator reads before execution to avoid known mistakes; GCL traces append new patterns after execution |
 >
 > The full rationale, termination rules, anti-patterns, and rollout roadmap
 > live in `AGENTS.md` §12. Reflexion integration is defined in `AGENTS.md` §15.

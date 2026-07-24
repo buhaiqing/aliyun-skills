@@ -270,7 +270,7 @@ aliyun advisor describe-advices --product Ecs --biz-language zh
   inspection model and advice structure
 - [CLI Usage](references/cli-usage.md) — All 16 CLI commands with
   parameters and JSON paths
-- [Cost Optimization](references/cli-usage.md#cost-optimization) —
+- Cost Optimization —
   Dedicated subsection for cost reduction workflows
 - [Troubleshooting](references/troubleshooting.md) — Fix common errors
 
@@ -888,7 +888,7 @@ for the full five-pillar assessment.
 ## Quality Gate (GCL)
 
 This skill participates in the Generator-Critic-Loop (GCL) defined in
-[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+[`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 Per `AGENTS.md` §12.8, this skill is classified as **`recommended`** (it
 has 3 inspection-trigger side effects: `RefreshAdvisorCheck`,
 `RefreshAdvisorCostCheck`, `RefreshAdvisorResource`; no destructive

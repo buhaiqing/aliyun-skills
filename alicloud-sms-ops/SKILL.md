@@ -229,7 +229,7 @@ aliyun dysmsapi SendSms \
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand SMS Service architecture
-- [Common Operations](#execution-flows) — Send, manage signatures/templates, query reports
+- [Common Operations](#execution-flows-agent-readable) — Send, manage signatures/templates, query reports
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
 
 ## Capabilities at a Glance
@@ -774,7 +774,7 @@ SKILL.md already has full flow, no Complete Workflow in config or SDK files.
 
 ## Quality Gate (GCL)
 
-Phase 5 extension rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 extension rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

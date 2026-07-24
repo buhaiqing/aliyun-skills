@@ -37,7 +37,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-skillopt-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-skillopt-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 
@@ -186,7 +186,7 @@ aliyun resourcemanager ListResourceGroups
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand Resource Directory hierarchy and tag architecture
-- [Common Operations](#execution-flows) — Account, folder, resource group, tag management
+- [Common Operations](#execution-flows-agent-readable) — Account, folder, resource group, tag management
 - [Troubleshooting](references/core-concepts.md) — Fix common issues
 
 ## Capabilities at a Glance
@@ -796,7 +796,7 @@ aliyun tag GetPolicyEnableStatus \
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

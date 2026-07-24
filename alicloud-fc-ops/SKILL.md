@@ -190,7 +190,7 @@ aliyun fc-open GET /2023-03-30/functions/{{user.function_name}}
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — FC 3.0 architecture, limits, dependency graph
 - [GPU Inference (vLLM & Batch)](references/gpu-inference.md) — GPU function paths, batching, warmup, LLM metrics
-- [Execution Flows](#execution-flows) — CRUD operations, CLI + SDK paths
+- [Execution Flows](#execution) — CRUD operations, CLI + SDK paths
 - [Monitoring](references/monitoring.md) — Multi-metric anomaly inspection, AIOps patterns
 - [Troubleshooting](references/troubleshooting.md) — FC error codes, 5-step diagnosis
 
@@ -685,7 +685,7 @@ See [../alicloud-skill-generator/references/execution-environment.md](../aliclou
 
 ## Quality Gate (GCL)
 
-Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|
