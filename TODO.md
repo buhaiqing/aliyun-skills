@@ -111,6 +111,10 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 ### Deferred cleanup (after `strategy-preflight` → `doctor` rename)
 
 - ✅ `DOCTOR_WORK` / `.runtime/doctor/work` — see above
+- 📋 **M1-b doc-link anchors (deferred 2026-07-24)**: M1 shipped CAT1–CAT5 (path-depth + dead links + `gcl-spec.md` reroute, commit `135e0ef`→`b75ee5e`). Verification surfaced ~150 additional broken intra-repo anchor links NOT in original M1 scope:
+  - **Class A (~34 links / 34 files)**: `references/*.md` point to `../../AGENTS.md#critic-test--regression-assessment-mandatory` and `../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate` — these anchors do NOT exist in AGENTS.md; correct target is `docs/gcl-spec.md#21-critic-test--regression-assessment-mandatory` / `#generator-critic-loop-gcl--implementation-spec`. Uniform, safe reroute (same root cause as M1 CAT3).
+  - **Class B (~114 links / 45 files)**: within-skill `../SKILL.md#operation-*` / `#phase-3-*` / `#api-and-response-conventions-*` anchors that don't match actual SKILL.md heading slugs — heterogeneous per-skill doc rot; needs individual investigation (some may be missing sections, not just wrong slugs).
+  - **Action**: open a separate GCL task (M1-b) to fix Class A (mechanical) and triage Class B (per-skill). NOTE: the broken-link checker in `gcl.log`/M1 prompts was anchor-blind — strip `#fragment` before `Path.resolve()` to avoid false "BROKEN" counts.
 - ✅ `DOCTOR_LLM_*` env vars + legacy `STRATEGY_LLM_*` fallback in `strategy_synthesize.py`
 - _(unchanged)_ `docs/strategy-baseline.json` / `docs/strategy-report.md` — committed Layer 3 data files; rename not required
 - ✅ `docs/doctor-review-setup.md` (was `strategy-review-setup.md`)
