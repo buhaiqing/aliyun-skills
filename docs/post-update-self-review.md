@@ -107,7 +107,7 @@ C6 is a **MUST PASS** gate, not a suggestion. Verify each rule:
 
 ### Self-Review Record（追加到现有记录）
 
-```
+```markdown
 ### Round 4: Compound Engineering
 - [confirmed/skip] CE1: {decision recorded in ARCHITECTURE.md / no new decisions}
 - [confirmed/skip] CE2: {template updated in AGENTS.md §18.4 / no reusable pattern}
@@ -125,7 +125,7 @@ C6 is a **MUST PASS** gate, not a suggestion. Verify each rule:
 
 After each review, output a brief record in the current session:
 
-```
+```markdown
 ## Review Record
 ### Round 1: Structural
 - [found/ok] {check item}: {description}
@@ -156,7 +156,7 @@ This record is session-only (no file write), but MUST be visible as evidence of 
 
 After all 4 rounds pass, output:
 
-```
+```markdown
 ✅ Post-Update Self-Review — 4/4 rounds clean
    R1 Structural: PASS
    R2 Content:    PASS
@@ -173,6 +173,7 @@ After all 4 rounds pass, output:
 ### Triggers
 
 Link validation is required when:
+
 - Adding or deleting `.md` files
 - Moving files to a different directory (e.g. into `advanced/`)
 - Modifying any markdown link in any file
@@ -234,7 +235,7 @@ grep -rl '```bash' alicloud-{product}-ops/references/ | xargs grep -oP '```bash\
 diff /tmp/skill_code.txt /tmp/ref_code.txt
 ```
 
-### On Failure
+### On Failure (dedup)
 
 Duplicate found → **delete the copy in references/** → re-verify
 

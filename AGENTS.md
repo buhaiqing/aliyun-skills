@@ -57,6 +57,7 @@ Canonical skill: `karpathy-guidelines`.
 | **决策记录** | 关键设计决策记录在 ARCHITECTURE.md 中，含理由 | 凭记忆做决策，换人就丢失上下文 |
 
 **每完成一个任务，必须自问**：
+
 - 这次的方法/模板能不能下次直接复用？
 - 这次的决策有没有记录在 ARCHITECTURE.md 的决策表中？
 - 有没有废弃文档该删没删？
@@ -66,7 +67,7 @@ Canonical skill: `karpathy-guidelines`.
 
 ### 0.4 CodeGraph Integration (MANDATORY)
 
-> CodeGraph (https://github.com/colbymchenry/codegraph) 是本仓库的符号知识图谱，
+> CodeGraph (<https://github.com/colbymchenry/codegraph>) 是本仓库的符号知识图谱，
 > 通过 SQLite 索引了所有 symbol、边和文件关系。
 
 | # | Rule | Detail |
@@ -140,7 +141,7 @@ aliyun-[product]-ops/
 |------|-------------|
 | **R-N1 Prompt docs** | Two distinct files, do **not** mix them: `prompt-templates.md` = GCL Generator/Critic/Orchestrator templates (engine-internal); `prompt-examples.md` = user-facing natural-language prompt examples users can copy-paste. Never name a user doc `prompts.md`. |
 | **R-N2 ASCII filenames** | `references/` filenames MUST be ASCII (no Chinese / full-width chars), e.g. `sg-secops-inspection.md` NOT `sg-secops巡检.md`. Non-ASCII names break Agent reads and script references. |
-| **R-N3 Placeholder integrity** | Every `{{user.*}}` / `{{env.*}}` / `{{output.*}}` MUST have both braces. Pre-merge MUST `grep -nE '\{\{[^}]*$|\{\{[^}]*\}?[^}]*$'` (or visually scan) to catch unclosed `{{user.check_id}` style typos — they produce broken commands at execution. |
+| **R-N3 Placeholder integrity** | Every `{{user.*}}` / `{{env.*}}` / `{{output.*}}` MUST have both braces. Pre-merge MUST `grep -nE '\{\{[^}]*$\|\{\{[^}]*\}?[^}]*$'` (or visually scan) to catch unclosed `{{user.check_id}` style typos — they produce broken commands at execution. |
 
 ---
 
@@ -187,6 +188,7 @@ Every development task in this repo MUST proceed in exactly this order:
 ```
 
 **禁止项（Banned）：**
+
 - ❌ 没有 Spec 就写 Plan
 - ❌ 没有 Plan 就写实现代码（"先写代码再说" / "边写边想"）
 - ❌ 把 Plan 和 Implement 合并跳过 Plan
@@ -300,7 +302,7 @@ Data-plane gap: `redis-ops` → `ecs-ops RunCommand` → target ECS executes `re
 | **成本警示** | 任何"创建"类 Example 必须明确标注 spec / 计费方式 / 释放方法，避免默认规格产生高额账单 |
 | **适用范围** | 所有 skill 的 SKILL.md / references/*.md / examples / snippets / test fixtures |
 | **检測** | pre-merge self-review (R2 / F5) 必须扫所有 Example 段是否含破坏性 op；发现即 FAIL |
-| **迁移成本** | 现有 Example 含破坏性 op 的 skill 列入 backlog，逐一迁移到「只读 + 安全写」二例结构
+| **迁移成本** | 现有 Example 含破坏性 op 的 skill 列入 backlog，逐一迁移到「只读 + 安全写」二例结构 |
 
 ---
 
@@ -406,6 +408,7 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 | **Track 2: 真实环境 / 集成层** | 在真实凭证 + 真实 `aliyun` CLI 调用下，跑一次端到端集成 | 真实云账号 + `aliyun <product> <action>` + GCL runner | trace 落盘、memory_store / reflexion_store 真实触发 |
 
 **禁止**：
+
 - ❌ 只跑 dry-run 就宣称交付（机制 ≠ 集成）
 - ❌ 只跑真实环境就宣称交付（路径覆盖 ≠ 真实数据）
 - ❌ 跳过任一轨道（违反双轨原则，回归风险翻倍）
@@ -413,6 +416,7 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 **优先级**：真实环境出现破坏性风险时，**先 Track 1 跑通，再 Track 2 用只读操作集成**（如 `Describe*` / `List*` / `Get*`），避免误删资源。
 
 **典型场景举例**：
+
 | 功能 | Track 1 | Track 2 |
 |------|---------|---------|
 | GCL pre-flight 注入 | `gcl_runner.py --dry-run --user-request "..."` 验链路 | 任意产品 skill 跑一次非 dry-run GCL，trace 中 `generator_prompt_with_memory` 含真实替换文本 |
@@ -420,6 +424,7 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 | memory_preflight retrieval | `memory_preflight_test.py` 单测 | 跑一次 GCL，trace 含真实 `slots.known_traps` 内容 |
 
 **例外**（仅以下情况可单轨）：
+
 - 纯静态文档改动（不涉及代码）→ 只跑 lint
 - 仅 stub / fixture 改动 → Track 1 即可
 
@@ -846,6 +851,7 @@ Extracts structured failure patterns from GCL traces into a deduped JSON store. 
 
 **R1 — GitHub 锚点 slug 算法（🔴 易错）**
 Markdown 标题转 GitHub 锚点的规则：`lower` → 删除所有**非** `[字母|数字|空格|连字符]` 的字符（含 `.` `&` `(` `)` `/` `—` `：` `≥` `🔴` `（）`，但**保留 CJK/Unicode 字母**）→ 每个空格替换为一个 `-`。
+
 - **关键陷阱**：`&`、`—`、`/` 等被**删除**而非折叠，其两侧的空格保留，因此会产生**双连字符** `--`。例如 `### 2.1 Critic Test & Regression Assessment (MANDATORY)` → `21-critic-test--regression-assessment-mandatory`；`# Generator-Critic-Loop (GCL) — Implementation Spec` → `generator-critic-loop-gcl--implementation-spec`。这两个 `--` 是**正确**的，不是 broken anchor。
 - **反模式**：用"折叠为单 `-`"模型校验锚点，会误报大量 broken link。任何锚点校验脚本必须实现上面的精确算法，并跳过围栏代码块（` ``` ` / `~~~`）和 `{{...}}` 模板占位符。
 
