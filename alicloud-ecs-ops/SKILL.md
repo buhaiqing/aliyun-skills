@@ -158,7 +158,7 @@ Alibaba Cloud ECS (Elastic Compute Service) provides scalable virtual servers in
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ecs-skillopt-wrapper.sh` for all ECS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun ecs` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement (physical interception of all `aliyun ecs` calls), source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](file://../../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ecs-skillopt-wrapper.sh` for all ECS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun ecs` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement (physical interception of all `aliyun ecs` calls), source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
 | CLI verification | Run `<action> --help` before first use to verify parameter formats | [CLI](references/cli-usage.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
