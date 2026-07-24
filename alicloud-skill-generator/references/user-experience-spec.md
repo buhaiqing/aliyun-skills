@@ -13,8 +13,8 @@
 2. [Onboarding & Guidance](#2-onboarding--guidance)
 3. [Interaction Design](#3-interaction-design)
 4. [Feedback Mechanisms](#4-feedback-mechanisms)
-5. [Error Handling & Recovery](#5-error-handling-recovery)
-6. [UX Review & Validation](#6-ux-review-validation)
+5. [Error Handling & Recovery](#5-error-handling--recovery)
+6. [UX Review & Validation](#6-ux-review--validation)
 7. [Appendix: UX Patterns Library](#7-appendix-ux-patterns-library)
 
 ---

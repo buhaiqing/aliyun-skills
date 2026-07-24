@@ -21,7 +21,7 @@
 7. [Complete Workflow](#7-complete-workflow)
 8. [How to Add Runtime Harness to a New Skill](#8-how-to-add-runtime-harness-to-a-new-skill)
 9. [Quality Standards](#9-quality-standards)
-10. [Environment Variables & Enable Flags](#10-environment-variables-enable-flags)
+10. [Environment Variables & Enable Flags](#10-environment-variables--enable-flags)
 11. [Multi-Skill Langfuse Session Testing](#11-multi-skill-langfuse-session-testing)
 
 ---
