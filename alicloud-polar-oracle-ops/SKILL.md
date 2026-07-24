@@ -399,7 +399,7 @@ aliyun polardb-io UpgradeDBCluster \
 
 **5-step workflow:** Discovery (list clusters) → Collection (CPU/Memory/IOPS/Storage/Sessions) → Detection (4 anomaly pattern rules) → Diagnosis (slow SQL, tablespace, sessions) → Report (Markdown).
 
-Full CLI script template at [references/cli-usage.md](references/cli-usage.md#intelligent-inspection).
+Full CLI script template at references/cli-usage.md.
 
 **Inspection scoring:**
 
@@ -474,7 +474,7 @@ Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com
 
 ## Quality Gate (GCL)
 
-Thirteenth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **Inherits canonical from `alicloud-polar-mysql-ops`** + Oracle-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Thirteenth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). **Inherits canonical from `alicloud-polar-mysql-ops`** + Oracle-specific deviations. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

@@ -168,7 +168,7 @@ aliyun vpc DescribeEipAddresses --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
 ### Next Steps
 
 - [Core Concepts](references/core-concepts.md) — Understand EIP architecture and billing
-- [Common Operations](#execution-flows) — Allocate, bind, release, and manage EIPs
+- [Common Operations](#execution) — Allocate, bind, release, and manage EIPs
 - [Troubleshooting](references/troubleshooting.md) — Fix common EIP issues
 
 ## Capabilities at a Glance
@@ -514,7 +514,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 ## Quality Gate (GCL)
 
 This skill is the **sixth rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 Every runtime execution of an `alicloud-eip-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

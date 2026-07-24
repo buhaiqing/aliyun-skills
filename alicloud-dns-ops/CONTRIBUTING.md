@@ -15,7 +15,7 @@ Thank you for your interest in contributing to the Alibaba Cloud DNS Operations 
 
 ## Code of Conduct
 
-Please follow our [Code of Conduct](../CODE_OF_CONDUCT.md) in all interactions with the project.
+Please follow our Code of Conduct in all interactions with the project.
 
 ## Getting Started
 

@@ -50,14 +50,14 @@ metadata:
 
 ## Product Skill Mission
 
-> Canonical spec: [`AGENTS.md` §0.3](../AGENTS.md#03-product-skill-mission). Include this section in every generated `SKILL.md` (adapt the **This skill** column only).
+> Canonical spec: [`AGENTS.md` §0.3](../../AGENTS.md#04-product-skill-mission). Include this section in every generated `SKILL.md` (adapt the **This skill** column only).
 
 Each `alicloud-*-ops` skill is a **domain colleague** that delivers through **Harness Engineering** — not a self-contained memory or learning subsystem.
 
 | Pillar | Mission | This skill |
 |--------|---------|------------|
-| **Domain colleague** | Product expertise + assembled context to help humans work smarter — partner, not black box | [Product Name] runbook: Pre-flight, `{{user.*}}` / `{{env.*}}` / `{{output.*}}`, Delegation Rules, [UX spec](references/user-experience-spec.md) (when shipped), `eval_queries.json` |
-| **Harnessed delivery** | Complete tasks with explainable, observable outcomes | GCL rubric + `prompt-templates.md`, wrapper-first CLI ([Runtime Rules](#runtime-rules-mandatory)), [diagnostic logging](../docs/diagnostic-logging-standard.md), Langfuse via SkillOpt |
+| **Domain colleague** | Product expertise + assembled context to help humans work smarter — partner, not black box | [Product Name] runbook: Pre-flight, `{{user.*}}` / `{{env.*}}` / `{{output.*}}`, Delegation Rules, [UX spec](user-experience-spec.md) (when shipped), `eval_queries.json` |
+| **Harnessed delivery** | Complete tasks with explainable, observable outcomes | GCL rubric + `prompt-templates.md`, wrapper-first CLI ([Runtime Rules](#runtime-rules-mandatory)), [diagnostic logging](../../docs/diagnostic-logging-standard.md), Langfuse via SkillOpt |
 
 **Collaboration posture (bounded autonomy):**
 
@@ -74,7 +74,7 @@ Each `alicloud-*-ops` skill is a **domain colleague** that delivers through **Ha
 | **Artifact evolution** | Skill authors, generator, `AGENTS.md` §11 self-review | Improve runbooks, rubric, troubleshooting, `eval_queries.json` |
 | **Runtime signals** | `gcl-runner-ops`, `skillopt-ops`, repo batch tooling | **Consume** platform feedback when provided; **do not** add memory / Reflexion / LLM-evolution sections here |
 
-**Non-goals** (platform-owned — [`AGENTS.md` §16.8](../AGENTS.md#168-platform-ownership--product-skills-excluded)): Layer 1/2 memory indexing, Reflexion report generation, trace-retention policy, offline LLM runbook mining as skill-owned agent workflows.
+**Non-goals** (platform-owned — [`AGENTS.md` §16.8](../../AGENTS.md#168-platform-ownership--product-skills-excluded)): Layer 1/2 memory indexing, Reflexion report generation, trace-retention policy, offline LLM runbook mining as skill-owned agent workflows.
 
 ## Runtime Rules (MANDATORY)
 
@@ -82,10 +82,10 @@ Each `alicloud-*-ops` skill is a **domain colleague** that delivers through **Ha
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/[product]-skillopt-wrapper.sh` for all `[product]` CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun [product]` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement (physical interception of all `aliyun [product]` calls), source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](file://../../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
-| CLI verification | Run `<action> --help` before first use to verify parameter formats | [CLI](references/cli-usage.md) |
-| Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
-| GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/[product]-skillopt-wrapper.sh` for all `[product]` CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun [product]` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement (physical interception of all `aliyun [product]` calls), source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | CLI, SkillOpt, [Shim](../scripts/skillopt-shim/SHIM-README.md) |
+| CLI verification | Run `<action> --help` before first use to verify parameter formats | CLI |
+| Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | Integration |
+| GCL | All write operations MUST pass GCL adversarial review before execution | GCL Rubric |
 
 > **Verification (CI gate):** `bash scripts/validate-wrapper-first.sh` must report 0 P0 violations. If your skill ships a wrapper, the static check enforces that this table is present.
 
@@ -115,7 +115,7 @@ In addition to the Five Core Standards, every generated skill MUST map its opera
 | **效率 (Efficiency)** | Batch operations, CI/CD integration, automation patterns | `references/well-architected-assessment.md` §2.4 |
 | **性能 (Performance)** | Metrics, auto-scaling, performance baselines | `references/well-architected-assessment.md` §2.5 |
 
-See [references/well-architected-assessment.md](references/well-architected-assessment.md) for the complete specification.
+See [well-architected-assessment.md](well-architected-assessment.md) for the complete specification.
 
 ## Trigger & Scope (Agent-Readable)
 
@@ -219,9 +219,9 @@ aliyun [product] Describe[Resources] --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 ```
 
 ### Next Steps
-- [Core Concepts](references/core-concepts.md) — Understand [Product Name] architecture
-- [Common Operations](#execution-flows) — Create, manage, and delete resources
-- [Troubleshooting](references/troubleshooting.md) — Fix common issues
+- Core Concepts — Understand [Product Name] architecture
+- [Common Operations](#execution) — Create, manage, and delete resources
+- Troubleshooting — Fix common issues
 
 ## Capabilities at a Glance
 
@@ -615,22 +615,22 @@ request := &[product].Restore[Resource]Request{
 
 ## Reference Directory
 
-- [Core Concepts](references/core-concepts.md)
-- [API & SDK Usage](references/api-sdk-usage.md)
-- [CLI Usage](references/cli-usage.md) (**required** when `cli_applicability: cli-first` or `dual-path`; omit for `sdk-only`; basic examples for `cli-only`)
-- [Troubleshooting Guide](references/troubleshooting.md)
-- [Monitoring & Alerts](references/monitoring.md)
-- [Integration](references/integration.md)
-- [Knowledge Base](references/knowledge-base.md) — fault pattern library (AIOps diagnostic skills)
-- [Observability Integration](references/observability.md) — Metrics/Logs/Traces linkage (AIOps diagnostic skills)
-- [Prompts Handbook](references/prompt-examples.md) — common prompt templates (AIOps diagnostic skills)
-- [User Experience Specification](references/user-experience-spec.md) — mandatory UX compliance reference
-- [AIOps Best Practices](references/aiops-best-practices.md) — mandatory AIOps patterns for monitoring/diagnosis skills
-- [Optimization Analysis](references/optimization-analysis.md) — three-dimensional optimization framework
-- [Execution Environment Setup](references/execution-environment.md) — CLI install, Go JIT download, credential config, verification
-- [CLI Behavioral Reference](references/cli-behavior.md) — verified `aliyun` CLI conventions (JSON output, env vars, invocation patterns)
-- [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for all installation flows
-- [Well-Architected Assessment](references/well-architected-assessment.md) — **MANDATORY** Alibaba Cloud Well-Architected Framework five-pillar integration
+- Core Concepts
+- API & SDK Usage
+- CLI Usage (**required** when `cli_applicability: cli-first` or `dual-path`; omit for `sdk-only`; basic examples for `cli-only`)
+- Troubleshooting Guide
+- Monitoring & Alerts
+- Integration
+- Knowledge Base — fault pattern library (AIOps diagnostic skills)
+- Observability Integration — Metrics/Logs/Traces linkage (AIOps diagnostic skills)
+- Prompts Handbook — common prompt templates (AIOps diagnostic skills)
+- [User Experience Specification](user-experience-spec.md) — mandatory UX compliance reference
+- [AIOps Best Practices](aiops-best-practices.md) — mandatory AIOps patterns for monitoring/diagnosis skills
+- [Optimization Analysis](optimization-analysis.md) — three-dimensional optimization framework
+- [Execution Environment Setup](execution-environment.md) — CLI install, Go JIT download, credential config, verification
+- [CLI Behavioral Reference](cli-behavior.md) — verified `aliyun` CLI conventions (JSON output, env vars, invocation patterns)
+- [Enhanced Self-Healing Framework](enhanced-self-healing-framework.md) — **MANDATORY** self-healing patterns for all installation flows
+- [Well-Architected Assessment](well-architected-assessment.md) — **MANDATORY** Alibaba Cloud Well-Architected Framework five-pillar integration
 
 ## Operational Best Practices
 
@@ -911,7 +911,7 @@ func main() {
         RegionId: tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),
     }
     
-    response, err := client.Describe[Resource](request)
+    response, err := client.DescribeResource
     if err != nil {
         panic(err)
     }

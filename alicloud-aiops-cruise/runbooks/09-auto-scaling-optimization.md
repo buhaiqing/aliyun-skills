@@ -8,7 +8,7 @@ risk_level: "中"
 execution_time_estimate: "3-10 分钟"
 ---
 
-> **脚本**: [`runbooks/scripts/auto-scaling-optimization.py`](scripts/auto-scaling-optimization.py) — 全自动执行本 runbook
+> **脚本**: `runbooks/scripts/auto-scaling-optimization.py` — 全自动执行本 runbook
 
 # 弹性伸缩性能优化
 

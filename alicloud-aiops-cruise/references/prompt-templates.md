@@ -124,7 +124,7 @@ Critic 反馈: {{output.critic_suggestions}}
 
 ## GCL Critic — 测试准确率与回归评估（强制）
 
-> **准确率优先于覆盖率**（[`AGENTS.md` §12](../../AGENTS.md#critic-test--regression-assessment-mandatory)）— 适用于本文件中**每一个** Critic 模板。规范原文：[`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md)。
+> **准确率优先于覆盖率**（[`AGENTS.md` §12](../../docs/gcl-spec.md#21-critic-test--regression-assessment-mandatory)）— 适用于本文件中**每一个** Critic 模板。规范原文：[`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md)。
 
 每次评审时，Critic 还必须评估：
 

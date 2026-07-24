@@ -165,7 +165,7 @@ aliyun vpc DescribeNatGateways --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
 ### Next Steps
 
 - [Core Concepts](references/core-concepts.md) — Understand NAT Gateway architecture and types
-- [Common Operations](#execution-flows) — Create NAT, configure SNAT/DNAT, release
+- [Common Operations](#execution) — Create NAT, configure SNAT/DNAT, release
 - [Troubleshooting](references/troubleshooting.md) — Fix SNAT/DNAT failures
 
 ## Capabilities at a Glance
@@ -514,7 +514,7 @@ NAT Gateway operations MUST be differentiated by system sensitivity level. Sensi
 
 ## Quality Gate (GCL)
 
-Eighth rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Eighth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

@@ -68,7 +68,7 @@ This meta-skill operates at **Medium** guidance level: it provides **templates a
 
 Generated skills are **agent-readable runbooks**: triggers, env vs user placeholders, pre-flight → execute → validate → recover, safety gates, and outputs **grounded in OpenAPI and verified CLI behavior**, not guessed.
 
-Each product skill follows the dual mission in [`AGENTS.md` §0.3](../AGENTS.md#03-product-skill-mission) — **domain colleague** (context + collaboration) and **harnessed delivery** (GCL, SkillOpt, observable execution). Memory / Reflexion / LLM-evolution pipelines are platform-owned, not skill-owned.
+Each product skill follows the dual mission in `AGENTS.md` §0.3 — **domain colleague** (context + collaboration) and **harnessed delivery** (GCL, SkillOpt, observable execution). Memory / Reflexion / LLM-evolution pipelines are platform-owned, not skill-owned.
 
 ### Technology Stack
 - **CLI:** `aliyun` (Go binary, static, no dependencies) — primary execution path
@@ -583,7 +583,7 @@ Replace all `[Placeholder]` with product-specific content derived from Step 2. E
 
 Run the [P0/P1 Checklist](#p0--must-pass) below against the generated skill. Run the [Adversarial Review](references/governance-and-adversarial-review.md) scenarios (when present).
 
-**Skill Change Critic Gate (RT-6, mandatory when behavior/scripts change):** per [AGENTS.md §11.1](../AGENTS.md#skill-change-critic-gate-mandatory--closes-the-loop) — `classify` → `template` (agent fills `tests_accurate` + `accuracy_rationale`) → `verify --run` must exit 0 before marking Step 6 done. Pure docs/formatting with zero behavioral delta may document skip in verdict only.
+**Skill Change Critic Gate (RT-6, mandatory when behavior/scripts change):** per AGENTS.md §11.1 — `classify` → `template` (agent fills `tests_accurate` + `accuracy_rationale`) → `verify --run` must exit 0 before marking Step 6 done. Pure docs/formatting with zero behavioral delta may document skip in verdict only.
 
 **For any failure:**
 1. Identify the gap
@@ -674,7 +674,7 @@ Create an `assets/eval_queries.json` file with ~20 queries (10 should-trigger, 1
 
 ### Secrets
 - Only `{{env.*}}` **names** and documentation; never real keys or customer data
-- Credential masking is MANDATORY — see [references/execution-environment.md](references/execution-environment.md#credential-security)
+- Credential masking is MANDATORY — see [references/execution-environment.md](references/execution-environment.md#5-credential-security-mandatory)
 
 ### CLI-First with JIT Go SDK Fallback
 - Primary path: `aliyun` CLI (static Go binary, covers 90%+ APIs)
@@ -696,7 +696,7 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 ### P0 — MUST PASS
 
 - [ ] **Trigger & Scope** with SHOULD-use / SHOULD-NOT-use and delegation rules
-- [ ] **Product Skill Mission:** `## Product Skill Mission` section present per [`AGENTS.md` §0.3](../AGENTS.md#03-product-skill-mission) and [template](references/alicloud-skill-template.md#product-skill-mission) — dual pillar table, bounded-autonomy roles, artifact vs runtime improvement sources, non-goals (no skill-owned memory/Reflexion workflows)
+- [ ] **Product Skill Mission:** `## Product Skill Mission` section present per `AGENTS.md` §0.3 and [template](references/alicloud-skill-template.md#product-skill-mission) — dual pillar table, bounded-autonomy roles, artifact vs runtime improvement sources, non-goals (no skill-owned memory/Reflexion workflows)
 - [ ] **Variables:** `{{env.*}}` vs `{{user.*}}`; no secret literals; `{{env.*}}` never collected from user
 - [ ] **Flows:** Pre-flight → Execute → Validate → Recover for **each** critical operation
 - [ ] **Each flow** documents the correct primary path per `cli_applicability` (`cli-first`/`dual-path` → `aliyun` primary + SDK fallback; `sdk-only` → SDK only; `cli-only` → CLI read-only)
@@ -730,13 +730,13 @@ Optional later improvements: PR template checkbox linking to that doc; periodic 
 - [ ] **[GCL] Quality Gate section in SKILL.md (when `required` or `recommended`):** `## Quality Gate (GCL)` section inserted between `## Operational Best Practices` and `## See Also — Meta-Skill Rules`, with classification table (Required? / `max_iter` / Most-scrutinized ops), `Changelog` line at 1.0.0, and links to both `references/rubric.md` AND `references/prompt-templates.md` per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §6
 - [ ] **[GCL] Cross-skill delegation documented (when skill touches other products):** Generator template hard rules list explicit delegation to other skills' GCL rules (e.g. VPC → `alicloud-eip-ops` for EIP ops; NAT → `alicloud-eip-ops`; PolarDB → `alicloud-rds-ops` for shared SQL WHERE-clause) per [gcl-rollout-spec.md](references/gcl-rollout-spec.md) §7
 
-- [ ] **[GCL] Hallucination Detection awareness (when `required` or `recommended` per AGENTS.md §14.5):** Generator and prompt templates reference H pre-execution check expectations; `references/rubric.md` includes CLI parameter coverage notes for the skill's primary operations; `references/prompt-templates.md` mentions H gate's pre-execution role per [docs/gcl-spec.md §14](docs/gcl-spec.md#14-hallucination-detection-layer-h)
+- [ ] **[GCL] Hallucination Detection awareness (when `required` or `recommended` per AGENTS.md §14.5):** Generator and prompt templates reference H pre-execution check expectations; `references/rubric.md` includes CLI parameter coverage notes for the skill's primary operations; `references/prompt-templates.md` mentions H gate's pre-execution role per [docs/gcl-spec.md §14](../docs/gcl-spec.md#14-hallucination-detection-layer-h)
 
-- [ ] **[GCL] Wrapper Compliance declared (when skill has `scripts/*-skillopt-wrapper.sh` per AGENTS.md §15.5):** `references/rubric.md` includes §2.4 Wrapper Compliance dimension with the bypass detection rule and exit-code 6 (`WRAPPER_BYPASS`); `references/prompt-templates.md` Generator template includes the wrapper-first rule ("all `aliyun <product>` calls MUST be routed through `scripts/<product>-skillopt-wrapper.sh`"); `SKILL.md` Runtime Rules table has a `CLI path` row marked MANDATORY pointing to the wrapper. The Critic scores `wrapper_compliance = 0` and the loop terminates with `WRAPPER_BYPASS` when the Generator invokes bare `aliyun <product>` (per [docs/gcl-spec.md §14.2.4](docs/gcl-spec.md#1424-wrapper-compliance-h-recommended-for-all-skills-with-wrappers) and §3 Wrapper Compliance).
+- [ ] **[GCL] Wrapper Compliance declared (when skill has `scripts/*-skillopt-wrapper.sh` per AGENTS.md §15.5):** `references/rubric.md` includes §2.4 Wrapper Compliance dimension with the bypass detection rule and exit-code 6 (`WRAPPER_BYPASS`); `references/prompt-templates.md` Generator template includes the wrapper-first rule ("all `aliyun <product>` calls MUST be routed through `scripts/<product>-skillopt-wrapper.sh`"); `SKILL.md` Runtime Rules table has a `CLI path` row marked MANDATORY pointing to the wrapper. The Critic scores `wrapper_compliance = 0` and the loop terminates with `WRAPPER_BYPASS` when the Generator invokes bare `aliyun <product>` (per [docs/gcl-spec.md §14.2.4](../docs/gcl-spec.md#1424-wrapper-compliance-h--recommended-for-all-skills-with-wrappers) and §3 Wrapper Compliance).
 
 - [ ] **Wrapper-First static check (P2 — `scripts/validate-wrapper-first.sh`):** When the skill ships `scripts/*-skillopt-wrapper.sh`, `SKILL.md` MUST include the `## Runtime Rules` section with a `CLI path` row marked MANDATORY pointing to the wrapper, and a `Fallback` row describing when bare `aliyun <product>` is acceptable. Run `bash scripts/validate-wrapper-first.sh --skill alicloud-<product>-ops` after generation; must report `0` P0 violations. This is the static counterpart to the runtime P0 + P1 defenses (AGENTS.md §15.8 + `require_skillopt_wrapper` + Langfuse bypass alert). Template for the required table is in [alicloud-skill-template.md](references/alicloud-skill-template.md#runtime-rules-mandatory).
 
-- [ ] **[RT-6] Skill Change Critic Gate (when scripts, wrappers, SkillOpt, GCL runner, or execution flows change):** Agent completes [AGENTS.md §11.1 Skill Change Critic Gate](../AGENTS.md#skill-change-critic-gate-mandatory--closes-the-loop) — `bash scripts/skill-change-critic-gate.sh classify` → `template` → edit `.runtime/audit/skill-change-verdict.json` (`tests_accurate` + **accuracy_rationale**, accuracy over coverage) → `verify --verdict ... --run` exits 0. Completion summary lists gate result. Pure docs with zero behavioral delta: `regression_required=false` with substantive skip rationale only.
+- [ ] **[RT-6] Skill Change Critic Gate (when scripts, wrappers, SkillOpt, GCL runner, or execution flows change):** Agent completes AGENTS.md §11.1 Skill Change Critic Gate — `bash scripts/skill-change-critic-gate.sh classify` → `template` → edit `.runtime/audit/skill-change-verdict.json` (`tests_accurate` + **accuracy_rationale**, accuracy over coverage) → `verify --verdict ... --run` exits 0. Completion summary lists gate result. Pure docs with zero behavioral delta: `regression_required=false` with substantive skip rationale only.
 
 ### P1 — SHOULD PASS
 

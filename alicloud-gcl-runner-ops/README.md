@@ -128,5 +128,5 @@ Every change to this shared framework:
 ## References
 
 - Full GCL specification: [`docs/gcl-spec.md`](../docs/gcl-spec.md)
-- AGENTS.md rules: [`../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate`](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+- AGENTS.md rules: [`../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec`](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec)
 - SkillOpt integration: [`references/skillopt-integration.md`](./references/skillopt-integration.md)

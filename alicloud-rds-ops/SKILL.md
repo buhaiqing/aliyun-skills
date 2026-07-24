@@ -1291,7 +1291,7 @@ aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subc
 ## Quality Gate (GCL)
 
 This skill is the **third rollout** of the Generator-Critic-Loop (GCL)
-adversarial quality gate defined in [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+adversarial quality gate defined in [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 Every runtime execution of an `alicloud-rds-ops` operation MUST be wrapped
 in a GCL loop before the result is returned to the user.
 

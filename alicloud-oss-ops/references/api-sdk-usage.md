@@ -83,7 +83,7 @@
 
 ## Common JSON Paths (TE-4 Centralized)
 
-See [SKILL.md §API and Response Conventions](../SKILL.md#api-and-response-conventions-agent-readable)
+See SKILL.md §API and Response Conventions
 for the complete table. Highlights:
 
 ```

@@ -672,7 +672,7 @@ aliyun dts ResetDtsJob \
    fi
    ```
 
-4. **Configure Credentials** (credential masking rules per [execution-environment.md](references/integration.md#5-credential-security-mandatory)):
+4. **Configure Credentials** (credential masking rules per execution-environment.md):
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
@@ -723,7 +723,7 @@ Common JSON paths declared once in SKILL.md and references.
 
 ## Quality Gate (GCL)
 
-Phase 1 rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Phase 1 rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

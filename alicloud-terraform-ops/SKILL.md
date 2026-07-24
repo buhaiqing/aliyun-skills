@@ -167,7 +167,7 @@ terraform apply
 
 **Option B: Directory-based (recommended for significantly different environments)**
 
-预置模板见 [`environments/`](environments/README.md)（`dev` / `staging` / `prod`）。运行时工作目录为 **`.runtime/terraform-ops/environments/<env>/`**（gitignored，首次 apply 自动从模板复制）。
+预置模板见 `environments/`（`dev` / `staging` / `prod`）。运行时工作目录为 **`.runtime/terraform-ops/environments/<env>/`**（gitignored，首次 apply 自动从模板复制）。
 
 ```
 environments/                              # 模板（进 Git）
@@ -417,7 +417,7 @@ Full spec: [references/hitl-workflow.md](references/hitl-workflow.md)
 
 ## 12. Quality Gate (GCL)
 
-This skill is registered in [`docs/gcl-spec.md` §8](../../docs/gcl-spec.md#8-per-skill-defaults) as
+This skill is registered in [`docs/gcl-spec.md` §8](../docs/gcl-spec.md#8-per-skill-defaults) as
 **GCL required** (`max_iter=2`). Every runtime execution of `terraform apply`, `terraform destroy`,
 reverse-engineering import, or NL2HCL generation that mutates state MUST pass a GCL loop before
 returning results to the user.

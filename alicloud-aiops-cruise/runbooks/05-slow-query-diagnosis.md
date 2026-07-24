@@ -8,7 +8,7 @@ risk_level: "中"
 execution_time_estimate: "5-15 分钟（10 个 RDS 以内）"
 ---
 
-> **脚本**: [`runbooks/scripts/slow-query-diagnosis.py`](scripts/slow-query-diagnosis.py) — 全自动执行本 runbook
+> **脚本**: `runbooks/scripts/slow-query-diagnosis.py` — 全自动执行本 runbook
 
 # 慢查询诊断与治理
 

@@ -193,7 +193,7 @@ aliyun actiontrail DescribeTrails
 
 ### Next Steps
 - [Core Concepts](references/core-concepts.md) — Understand ActionTrail architecture
-- [Common Operations](#execution-flows) — Create, manage, and query trails and events
+- [Common Operations](#execution-flows-agent-readable) — Create, manage, and query trails and events
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
 
 ## Capabilities at a Glance
@@ -1085,7 +1085,7 @@ client.StartLogging(startReq)
 ## Quality Gate (GCL)
 
 Participates in GCL per
-[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+[`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 
 - **GCL level:** optional (`max_iter=5`, `docs/gcl-spec.md` §8)
 - **Primary role:** Audit / event lookup (read-heavy)

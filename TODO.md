@@ -21,7 +21,7 @@ SkillOpt provides automated self-repair and dynamic parameter optimization for e
 | **M2 (B)** | `benchmark/alicloud_ops/` — dataloader + rollout + scorer + `run_milestone_b.sh` | ✅ |
 | **M3 (C)** | SkillOpt-Sleep nightly queue + L3 priority + draft PR (human merge) | 📋 |
 
-Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see [README](scripts/skill_evolution/README.md#three-milestones--what-each-one-delivers)).
+Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see README).
 
 ### M3 (C) — Sleep / nightly queue (planned)
 
@@ -42,7 +42,7 @@ ack, ask, **actiontrail**, alb, **advisor**, **agentrun**, **bailian**, **billin
 
 ### Integration Method
 
-**Preferred (2026-06+)**: Copy `alicloud-ecs-ops/scripts/skillopt-lib.sh` overlay stub — it sources shared core from [`alicloud-skillopt-ops`](../alicloud-skillopt-ops/SKILL.md). Or use the generator:
+**Preferred (2026-06+)**: Copy `alicloud-ecs-ops/scripts/skillopt-lib.sh` overlay stub — it sources shared core from `alicloud-skillopt-ops`. Or use the generator:
 
 ```bash
 # .scripts/gen-skillopt.sh <skill-dir> <log-tag> <cli-product> <product-name> <ram-action> <json-params> <resource-api> <smoke-action> <error-codes> <quota-error>
@@ -111,10 +111,7 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 ### Deferred cleanup (after `strategy-preflight` → `doctor` rename)
 
 - ✅ `DOCTOR_WORK` / `.runtime/doctor/work` — see above
-- 📋 **M1-b doc-link anchors (deferred 2026-07-24)**: M1 shipped CAT1–CAT5 (path-depth + dead links + `gcl-spec.md` reroute, commit `135e0ef`→`b75ee5e`). Verification surfaced ~150 additional broken intra-repo anchor links NOT in original M1 scope:
-  - **Class A (~34 links / 34 files)**: `references/*.md` point to `../../AGENTS.md#critic-test--regression-assessment-mandatory` and `../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate` — these anchors do NOT exist in AGENTS.md; correct target is `docs/gcl-spec.md#21-critic-test--regression-assessment-mandatory` / `#generator-critic-loop-gcl--implementation-spec`. Uniform, safe reroute (same root cause as M1 CAT3).
-  - **Class B (~114 links / 45 files)**: within-skill `../SKILL.md#operation-*` / `#phase-3-*` / `#api-and-response-conventions-*` anchors that don't match actual SKILL.md heading slugs — heterogeneous per-skill doc rot; needs individual investigation (some may be missing sections, not just wrong slugs).
-  - **Action**: open a separate GCL task (M1-b) to fix Class A (mechanical) and triage Class B (per-skill). NOTE: the broken-link checker in `gcl.log`/M1 prompts was anchor-blind — strip `#fragment` before `Path.resolve()` to avoid false "BROKEN" counts.
+- ✅ **M1-b doc-link anchors (completed 2026-07-24)**: All broken intra-repo doc links fixed via GCL in worktree `../aliyun-skills-m1b-links` (branch `feature/m1b-doc-links`, commits `f2beede` `fe95993` `153ebae`, merged to main). Scope: 37 Class A GCL anchor reroutes (`AGENTS.md#critic-test...` / `#12-generator-critic...` → `docs/gcl-spec.md`), 75 Class B broken anchors (fixed slug / reroute / plain-text), 76 broken_file path fixes (depth/prefix correction / plain-text conversion for absent targets). Final anchor-aware scanner: classA=0, classB=0, broken_file=0 across 2632 links. NOTE: the broken-link checker must strip `#fragment` before `Path.resolve()` and use the GitHub slug algorithm (lowercase; strip non-`[A-Za-z0-9\s-]`; each space→`-`) to avoid false "BROKEN" counts — this was the root cause of earlier miscounts.
 - ✅ `DOCTOR_LLM_*` env vars + legacy `STRATEGY_LLM_*` fallback in `strategy_synthesize.py`
 - _(unchanged)_ `docs/strategy-baseline.json` / `docs/strategy-report.md` — committed Layer 3 data files; rename not required
 - ✅ `docs/doctor-review-setup.md` (was `strategy-review-setup.md`)

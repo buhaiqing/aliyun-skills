@@ -322,10 +322,10 @@ bash -n scripts/recommend.sh           # 语法检查
 
 ## 📚 相关文档
 
-- [OPTIMIZATION_REVIEW.md](OPTIMIZATION_REVIEW.md) - 之前的优化复盘报告
-- [SKILL.md](../SKILL.md) - Skill 主文档
-- [references/core-concepts.md](../references/core-concepts.md) - 核心概念
-- [references/troubleshooting.md](../references/troubleshooting.md) - 故障排查
+- OPTIMIZATION_REVIEW.md - 之前的优化复盘报告
+- [SKILL.md](SKILL.md) - Skill 主文档
+- [references/core-concepts.md](references/core-concepts.md) - 核心概念
+- [references/troubleshooting.md](references/troubleshooting.md) - 故障排查
 
 ---
 

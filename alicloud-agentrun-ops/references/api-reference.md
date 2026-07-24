@@ -630,7 +630,7 @@ POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}
 GET wss://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/tty?protocol=json&tenantId={accountID}
 ```
 
-详见 [websocket-tty.md](websocket-tty.md)。
+详见 websocket-tty.md。
 
 ### 3.6 进程管理
 

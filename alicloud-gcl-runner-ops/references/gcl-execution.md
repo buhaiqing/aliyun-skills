@@ -18,7 +18,7 @@ metadata:
 
 # GCL Runner Execution Guide
 
-> Full GCL specification: [`AGENTS.md §12`](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+> Full GCL specification: [`AGENTS.md §12`](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec)
 > and [`docs/gcl-spec.md`](../../docs/gcl-spec.md).
 
 ## Overview

@@ -196,7 +196,7 @@ If a destructive action was run, verify that the Pre-flight Safety Gate was full
 
 ## GCL Critic — Test & Regression Assessment (MANDATORY)
 
-> **Accuracy over coverage** ([`AGENTS.md` §12](../../AGENTS.md#critic-test--regression-assessment-mandatory)) — applies to **every** Critic template in this file. Canonical block: [`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md).
+> **Accuracy over coverage** ([`AGENTS.md` §12](../../docs/gcl-spec.md#21-critic-test--regression-assessment-mandatory)) — applies to **every** Critic template in this file. Canonical block: [`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md).
 
 On each critique, the Critic MUST also evaluate:
 

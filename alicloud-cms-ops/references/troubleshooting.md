@@ -1244,6 +1244,6 @@ fi
 - [CMS API Error Codes](https://help.aliyun.com/zh/cms/cloudmonitor-1-0/developer-reference/api-cms-2019-01-01-overview)
 - [RAM Policies for CMS](https://help.aliyun.com/zh/ram/user-guide/grant-permissions-to-the-ram-user)
 - [CMS Quotas and Limits](https://help.aliyun.com/zh/cms/cloudmonitor-1-0/product-overview/quotas)
-- [SKILL.md Phase 3-H Summary](../SKILL.md#phase-3-h-dynamic-instance-level-alert-management-new) - Capability overview
-- [rubric.md HITL Scoring](rubric.md#3-phase-3-h--hitl-confidence-scoring-framework) - Confidence calculation details
+- SKILL.md Phase 3-H Summary - Capability overview
+- rubric.md HITL Scoring - Confidence calculation details
 - [prompt-templates.md](prompt-templates.md) - Complete GCL templates for all operations

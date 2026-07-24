@@ -905,7 +905,7 @@ Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com
 
 ## Quality Gate (GCL)
 
-Eleventh rollout of GCL per [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate). **This skill is the canonical PolarDB rubric** for all 4 PolarDB variants. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
+Eleventh rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec). **This skill is the canonical PolarDB rubric** for all 4 PolarDB variants. See [`references/rubric.md`](references/rubric.md) and [`references/prompt-templates.md`](references/prompt-templates.md).
 
 | Aspect | Setting |
 |---|---|

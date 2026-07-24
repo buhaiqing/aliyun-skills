@@ -1,7 +1,7 @@
 # Quality Gate (GCL) — ActionTrail Cross-Checker
 
 This skill participates in the Generator-Critic-Loop (GCL) defined in
-[`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+[`AGENTS.md` §12](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec)
 in a **non-destructive cross-checker role**. Per `AGENTS.md` §12.8, this
 skill is classified as `optional` (read-only audit). Product GCL artifacts
 (`references/rubric.md`, `references/prompt-templates.md`) were added in

@@ -23,7 +23,7 @@ metadata:
 
 # GCL ↔ ActionTrail Cross-Check (Phase 3-C)
 
-> **Authoritative source for the GCL contract is [`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).**
+> **Authoritative source for the GCL contract is [`AGENTS.md` §12](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).**
 > This reference explains **how the cross-check layer works** and **how to
 > integrate it** with CI, governance, and `alicloud-cms-ops` alarms.
 
