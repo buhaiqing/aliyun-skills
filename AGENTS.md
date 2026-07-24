@@ -839,3 +839,21 @@ Extracts structured failure patterns from GCL traces into a deduped JSON store. 
 - [ ] **决策一致性**：有没有违反已记录的决策？如果有，必须更新决策记录说明原因
 - [ ] **可追溯性**：新产生的文档是否从 `docs/ARCHITECTURE.md` 可追溯？
 - [ ] **下一次更快**：如果有人要做类似的事，能不能通过 `ARCHITECTURE.md` → SPEC → PLAN 这条链路快速找到所有上下文？
+
+### 18.6 文档/配置引用校验（可复用经验）
+
+> 修复"失效的相对链接"类任务时反复踩坑，沉淀为通用校验规范，避免下次重蹈。
+
+**R1 — GitHub 锚点 slug 算法（🔴 易错）**
+Markdown 标题转 GitHub 锚点的规则：`lower` → 删除所有**非** `[字母|数字|空格|连字符]` 的字符（含 `.` `&` `(` `)` `/` `—` `：` `≥` `🔴` `（）`，但**保留 CJK/Unicode 字母**）→ 每个空格替换为一个 `-`。
+- **关键陷阱**：`&`、`—`、`/` 等被**删除**而非折叠，其两侧的空格保留，因此会产生**双连字符** `--`。例如 `### 2.1 Critic Test & Regression Assessment (MANDATORY)` → `21-critic-test--regression-assessment-mandatory`；`# Generator-Critic-Loop (GCL) — Implementation Spec` → `generator-critic-loop-gcl--implementation-spec`。这两个 `--` 是**正确**的，不是 broken anchor。
+- **反模式**：用"折叠为单 `-`"模型校验锚点，会误报大量 broken link。任何锚点校验脚本必须实现上面的精确算法，并跳过围栏代码块（` ``` ` / `~~~`）和 `{{...}}` 模板占位符。
+
+**R2 — 校验范围必须覆盖非 `.md` 表面**
+"相对链接"不止出现在 `.md` → `.md`。`*.yaml` / `*.json` / `*.toml` / `*.sh` 中的文档引用（如 `example-config.yaml` 注释里的 `references/user-experience-spec.md`、wrapper 脚本里的 `SKILL.md` 路径）同样会失效。 scanners 若只扫 `.md`，会漏掉 `assets/example-config.yaml` 这类死链。校验脚本应同时遍历 yaml/yml/json/toml，并对 `.sh` 用"脚本目录 / 仓库根 / `$SKILL_DIR`(即 `alicloud-X-ops/` 根)"三向解析来判定是否真缺失。
+
+**R3 — 扇出验证会产生假阳性，必须以真值为准**
+多 Agent 并行校验时，验证 Agent 若对目标系统规则（如上面 slug 算法、或路径基准目录）有错误心智模型，会报告大量"broken"。**落地前必须独立复算**：直接 `Path.resolve()` 解析真实路径、直接运行真实 slug 算法，而不是仅凭 Agent 断言动手修复——在假阳性上"修复"会反过来制造 broken link。
+
+**R4 — 路径深度基线**
+相对路径基准目录 = 链接所在文件的目录。位于 `alicloud-X-ops/assets/`（比 skill 根深一层）的引用，到仓库根的 `alicloud-Y-ops/references/...` 需要 `../../`；位于 `alicloud-X-ops/SKILL.md`（skill 根）则只需 `../`。深度算错是常见的"看似修复实则仍 broken"来源。
