@@ -35,6 +35,10 @@ go.sum
 
 # ===== Python (Development tools only) =====
 
+# Node toolchain (markdownlint-cli2 devDependency; package-lock.json is
+# committed intentionally for reproducible local `npm run lint`)
+node_modules/
+
 # Virtual environments
 .venv/
 venv/
@@ -55,6 +59,9 @@ build/
 *.swp
 *.swo
 *~
+
+# ===== Node toolchain (markdownlint-cli2 devDependency; package-lock.json is committed intentionally) =====
+node_modules/
 
 # ===== OS Generated =====
 
