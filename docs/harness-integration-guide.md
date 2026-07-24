@@ -21,7 +21,7 @@
 7. [Complete Workflow](#7-complete-workflow)
 8. [How to Add Runtime Harness to a New Skill](#8-how-to-add-runtime-harness-to-a-new-skill)
 9. [Quality Standards](#9-quality-standards)
-10. [Environment Variables & Enable Flags](#10-environment-variables--enable-flags)
+10. [Environment Variables & Enable Flags](#10-environment-variables-enable-flags)
 11. [Multi-Skill Langfuse Session Testing](#11-multi-skill-langfuse-session-testing)
 
 ---
@@ -70,7 +70,7 @@ alicloud-runtime-harness-ops/        ← 🏗️ Shared framework (canonical, PR
 alicloud-skillopt-ops/               ← legacy alias (PR-8 shims only)
 ├── scripts/skillopt-{core-lib,paths}.sh → delegate to runtime-harness-ops
 └── test-skillopt-integration.sh     → delegates to test-harness-integration.sh
-```markdown
+```
 
 > **Directory rule (P0)**: `harness-lib.sh` / `skillopt-lib.sh` MUST live under `scripts/`, never `references/`.
 
@@ -170,7 +170,7 @@ export SKILLOPT_ENABLED=true
 export SKILLOPT_ENABLED=false
 export SKILLOPT_LANGFUSE_ENABLED=true
 ./scripts/ecs-skillopt-wrapper.sh DescribeRegions --skillopt-langfuse-enable --RegionId cn-hangzhou
-```markdown
+```
 
 ### 3.2 Other Global Variables
 
@@ -189,7 +189,7 @@ SKILLOPT_LANGFUSE_ENABLED=false           # remote Langfuse ingest
 [2026-06-16T10:30:00+0800] [ECS-SkillOpt] SkillOpt initialized: enabled=true, log_file=...
 [2026-06-16T10:30:01+0800] [ECS-SkillOpt] Attempting to repair error: Throttling.User for command: ecs DescribeInstances
 [2026-06-16T10:30:03+0800] [ECS-SkillOpt] Successfully repaired throttling error
-```markdown
+```
 
 ### 3.4 `skillopt_repair_error()` — Auto-Repair (Core)
 
@@ -257,7 +257,7 @@ Persists runtime statistics to a JSON file so SkillOpt can adapt based on histor
   "error_rate": 3.2,
   "query_count": 150
 }
-```markdown
+```
 
 ### 3.6 `skillopt_optimize_config()` — Pre-Execution Tuning
 
@@ -290,7 +290,7 @@ The last line exports all functions so they're available in child shells:
 
 ```bash
 export -f skillopt_init skillopt_log skillopt_repair_error skillopt_update_runtime skillopt_optimize_config skillopt_wrap
-```markdown
+```
 
 ---
 
@@ -312,7 +312,7 @@ A human/agent-readable document explaining what SkillOpt does for this specific 
 
 ### Structure Template
 
-```markdown
+```
 # Runtime Harness Integration for alicloud-[product]-ops
 
 ## Overview
@@ -415,7 +415,7 @@ Test 3: Wrapper script exists...                        ✓
 
 Test 4: SkillOpt core library exists...                 ✓
   → Overlay sources alicloud-skillopt-ops shared core (oss: shared runtime path check)
-```markdown
+```
 
 ### Running Tests
 
@@ -493,7 +493,7 @@ User invokes command
         │
         ▼
    Return exit code to caller
-```markdown
+```
 
 ### Log Output Example
 
@@ -532,7 +532,7 @@ Before adding SkillOpt to a skill, confirm:
 .scripts/gen-skillopt.sh alicloud-mongodb-ops MongoDB dds MongoDB 'dds:*' \
   'InstanceIds SecurityIpList Tag DBInstanceIds' '' DescribeRegions \
   'ResourceNotFound|InstanceNotFound' QuotaExceeded
-```markdown
+```
 
 Emits overlay stub + wrapper + backward-compat test + `references/skillopt-integration.md`. The lib sources `alicloud-skillopt-ops` shared core (no local `skillopt_wrap`).
 
@@ -586,7 +586,7 @@ chmod +x test-skillopt-backward-compatibility.sh
 
 ### Verification Checklist
 
-```markdown
+```
 - [ ] `skillopt-lib.sh` has correct product name, log prefix, and error codes
 - [ ] `skillopt-lib.sh` JSON parameter list matches product API docs
 - [ ] `skillopt-lib.sh` resource verification API exists for the product
@@ -596,7 +596,7 @@ chmod +x test-skillopt-backward-compatibility.sh
 - [ ] Wrapper and test scripts have executable permissions
 - [ ] `test-*.sh` passes all 5 tests (or minimum 3 for partial integration)
 - [ ] Original CLI commands still work (backward compatibility verified)
-```markdown
+```
 
 ---
 
@@ -774,7 +774,7 @@ Common failure: HTTP `207` with per-item errors because top-level `id`/`timestam
 | Pitfall | Symptom | Fix |
 |--------|---------|-----|
 | Default metadata written as `\{\}` | `jq: invalid JSON text passed to --argjson` | Use `local metadata="${3:-{}}"` |
-| Last `.env` line has no newline | `LANGFUSE_SECRET_KEY is not set` | Use `while read ... || [[ -n "$line" ]]` |
+| Last `.env` line has no newline | `LANGFUSE_SECRET_KEY is not set` | Use `while read ...  ( [[ -n "$line" ]]`)|
 | `source .env` is not enough in wrapper scripts | Variables missing in child process | Explicitly export required env vars or load `.env` inside `skillopt_init()` |
 | `export -f` under zsh | Shell errors during `source scripts/skillopt-lib.sh` | Guard with `if [ -n "$BASH_VERSION" ]` |
 | Trace output sent as stringified JSON only | Langfuse Output is hard to read | Try `jq '.'` first, fallback to `jq -R '.'` |
@@ -809,7 +809,7 @@ export ALIBABA_CLOUD_ACCESS_KEY_ID ALIBABA_CLOUD_ACCESS_KEY_SECRET ALIBABA_CLOUD
  --skillopt-langfuse-enable \
  --skillopt-session-id sess-debug-$(date +%s) \
  <safe read-only params>
-```markdown
+```
 
 Then verify Langfuse directly by trace id. Do not claim success based only on local JSON files or wrapper exit code.
 

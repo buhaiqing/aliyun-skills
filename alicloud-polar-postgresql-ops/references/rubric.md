@@ -59,7 +59,7 @@ canonical PolarDB rubric.
 | `^drop\s+schema\b` | DESTRUCTIVE-MASS | `DROP SCHEMA legacy;` |
 | `^reindex\s+(system\s+)?\w+` | DESTRUCTIVE-LIMITED (locks indexes) | `REINDEX TABLE users;` |
 | `^cluster\s+\w+` | DESTRUCTIVE-LIMITED (rewrites table) | `CLUSTER users;` |
-| `^truncate\s+\w+\s+(restart|continue)\s+identity` | DESTRUCTIVE-MASS (resets sequences) | `TRUNCATE users RESTART IDENTITY;` |
+| `^truncate\s+\w+\s+(restart|continue)\s+identity` | DESTRUCTIVE-MASS (resets sequences)  (`TRUNCATE users RESTART IDENTITY;`)|
 | `^select\s+.*\bfor\s+update\s*$` (no LIMIT, broad filter) | LOCK-RISK | Long-running FOR UPDATE blocks writers |
 
 ### A3. Engine-Specific Credential Surface

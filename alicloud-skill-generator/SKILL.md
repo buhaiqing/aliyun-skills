@@ -215,7 +215,7 @@ C1-C6 全通过？
 
 | # | Check | Command | Pass Criteria | Auto-Fix Template |
 |---|-------|---------|--------------|-------------------|
-| C1 | Frontmatter | `head -3 SKILL.md | grep "^---"` | Starts with `---`, has `name`, `description`, `license`, `compatibility`, `metadata` | Use `alicloud-skill-template.md` frontmatter |
+| C1 | Frontmatter | `head -3 SKILL.md | grep "^---"` | Starts with `---`, has `name`, `description`, `license`, `compatibility`, `metadata`  (Use `alicloud-skill-template.md` frontmatter)|
 | C2 | SHOULD/SHOULD NOT | `grep -c "SHOULD Use" SKILL.md` | ≥ 1 match for each | Add Trigger & Scope section from template |
 | C2b | Product Skill Mission | `grep -c "Product Skill Mission" SKILL.md` | ≥ 1 match | Add `## Product Skill Mission` from [alicloud-skill-template.md](references/alicloud-skill-template.md#product-skill-mission) |
 | C3 | Five Core Standards | `grep -c "Five Core Standards" SKILL.md` | ≥ 1 match | Add Five Core Standards table from template |

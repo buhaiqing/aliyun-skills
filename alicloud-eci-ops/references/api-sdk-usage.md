@@ -82,9 +82,9 @@ github.com/alibabacloud-go/eci-20180808/client
 | Field | Values | Default |
 |-------|--------|---------|
 | `RestartPolicy` | `Always` / `Never` / `OnFailure` | **`Always`** |
-| `ActiveDeadlineSeconds` | int | — | ECI max lifetime (after which killed) |
-| `ScheduleStrategy` | `VSwitchOrdered` / `VSwitchRandom` | — | Multi-AZ |
-| `TerminationGracePeriodSeconds` | int | 30 | Shutdown grace period |
+| `ActiveDeadlineSeconds` | int | —  (ECI max lifetime (after which killed))|
+| `ScheduleStrategy` | `VSwitchOrdered` / `VSwitchRandom` | —  (Multi-AZ)|
+| `TerminationGracePeriodSeconds` | int | 30  (Shutdown grace period)|
 
 ### Spot (verified)
 
@@ -202,15 +202,15 @@ Same shape as `Container` (minus probes). Standard K8s init pattern works.
 | `EipISP` | `BGP` (default) / `BGP_PRO` |
 | `EipCommonBandwidthPackage` | Bind to existing shared bandwidth package |
 | `IngressBandwidth` / `EgressBandwidth` | Per-direction bandwidth limit (Bps) |
-| `Ipv6AddressCount` | int (fixed 1) | IPv6 address |
-| `Ipv6GatewayBandwidthEnable` | boolean | IPv6 public gateway |
-| `Ipv6GatewayBandwidth` | string | IPv6 public bandwidth (Mbps) |
-| `PrivateIpAddress` | string | Specify private IPv4 |
-| `FixedIp` | string (boolean) | Enable fixed IP |
-| `FixedIpRetainHour` | int | Fixed IP retention (default 48h) |
-| `HostAliase` | array of `{Ip, Hostname[]}` | Hostname aliases |
+| `Ipv6AddressCount` | int (fixed 1)  (IPv6 address)|
+| `Ipv6GatewayBandwidthEnable` | boolean  (IPv6 public gateway)|
+| `Ipv6GatewayBandwidth` | string  (IPv6 public bandwidth (Mbps))|
+| `PrivateIpAddress` | string  (Specify private IPv4)|
+| `FixedIp` | string (boolean)  (Enable fixed IP)|
+| `FixedIpRetainHour` | int  (Fixed IP retention (default 48h))|
+| `HostAliase` | array of `{Ip, Hostname[]}`  (Hostname aliases)|
 | `DnsPolicy` | `None` / `Default` |
-| `DnsConfig.NameServer` / `Search` / `Option` | arrays | DNS config |
+| `DnsConfig.NameServer` / `Search` / `Option` | arrays  (DNS config)|
 
 ### Metadata (verified)
 
@@ -221,7 +221,7 @@ Same shape as `Container` (minus probes). Standard K8s init pattern works.
 | `RamRoleName` | string | Instance RAM role |
 | `ClientToken` | string | Idempotency (≤64 ASCII) |
 | `HostName` | string | Hostname |
-| `CorePattern` | string | Coredump path (not starting with `|`) |
+| `CorePattern` | string | Coredump path (not starting with ` (`))|
 | `ShareProcessNamespace` | boolean | Share PID namespace |
 | `NtpServer` | array of string | NTP servers (max 21) |
 

@@ -272,7 +272,7 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
 | Q8.2 | TTL 表完整 | `grep -cE 'DescribeMetricList\|DescribeInstances' runbooks/scripts/_shared.py` | ≥ 4 |
 | Q8.3 | 4 个脚本全部接入缓存 | `grep -c 'q_cached(' runbooks/scripts/*.py` | ≥ 11 (6+2+2+1) |
 | Q8.4 | `--no-cache` 参数支持 | `grep -c '\\-\\-no-cache' runbooks/scripts/*.py` | ≥ 1 |
-| Q8.5 | 启动清理逻辑 | `grep -c 'CACHE_DIR\\|cache.*mtime' runbooks/scripts/_shared.py` | ≥ 2 |
+| Q8.5 | 启动清理逻辑 | `grep -c 'CACHE_DIR\\|cache.*mtime' runbooks/scripts/_shared.py`  (≥ 2)|
 | Q8.6 | cache-strategy.md 存在 | `test -s references/cache-strategy.md` | 通过 |
 | Q8.7 | 对照实验报告 | `test -s audit-results/benchmarks/cache-vs-nocache.md` | 通过 |
 | Q8.8 | API 调用减 ≥ 50% | 对照实验数据 | ≥ 50% |

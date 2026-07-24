@@ -26,7 +26,7 @@
 |------|--------|------|---------|
 | Q1.1 | Python 语法 | `python3 -m py_compile scripts/*.py` | PASS 全部通过 |
 | Q1.2 | 参数解析 | `python3 script.py --help` | 输出版本号+参数列表 PASS |
-| Q1.3 | 凭证不泄露 | `grep -E 'LTAI|AKIA|SecretKey|secret' scripts/*.py` | PASS 0 匹配 (纯 os.environ) |
+| Q1.3 | 凭证不泄露 | `grep -E 'LTAI|AKIA (SecretKey secret' scripts/*.py` PASS 0 匹配 (纯 os.environ))|
 | Q1.4 | 幂等生效 | `python3 script.py --describe` | PASS 输出执行计划，不实际执行 |
 | Q1.5 | 自动加载 `.env` | 脚本自动搜索 `../../.env` | PASS 无需手动 source |
-| Q1.6 | 无硬编码 | `grep -E 'region.*cn-|PageSize.*=' scripts/*.py` | PASS 所有值用变量/环境变量 |
+| Q1.6 | 无硬编码 | `grep -E 'region.*cn-|PageSize.*=' scripts/*.py`  (PASS 所有值用变量/环境变量)|

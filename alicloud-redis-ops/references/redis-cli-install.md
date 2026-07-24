@@ -50,7 +50,7 @@
 
 ```bash
 cat alicloud-redis-ops/scripts/redis-cli-install.sh   # 或 bat / less (如已安装)
-```markdown
+```
 
 ---
 
@@ -95,7 +95,7 @@ cat alicloud-redis-ops/scripts/redis-cli-install.sh   # 或 bat / less (如已�
 │
 └─ 在专有云 / 金融云 / 政务云
     └─ 99% 用「离线模式」（请联系你的云架构师确认）
-```markdown
+```
 
 **一句话总结**：
 
@@ -159,7 +159,7 @@ echo "127.0.0.1 mirrors.cloud.aliyuncs.com" >> /etc/hosts
 [14:32:01] [INSTALL] pkg_manager=apt pkg=redis-tools
 [14:32:38] [RESULT] INSTALL=SUCCESS
 [14:32:38] [DIAG] install_duration=37s             ← 走的公网官方源
-```markdown
+```
 
 #### 副作用？
 
@@ -182,7 +182,7 @@ done
 
 # Alpine
 mv /etc/apk/repositories.bak.redis-install /etc/apk/repositories
-```markdown
+```
 
 ---
 
@@ -229,7 +229,7 @@ docker run --rm -v $(pwd):/out alpine:3.19 sh -c '
   cp src/redis-cli /out/redis-cli-7.2-musl-amd64
 '
 # 产物：./redis-cli-7.2-musl-amd64（约 1.5MB，静态链接，几乎所有 Linux 通用）
-```markdown
+```
 
 **Step 2：上传到内网可达的位置**
 
@@ -251,7 +251,7 @@ cat >> .env <<'EOF'
 # 适用：专有云 / 无公网环境 / 合规审计要求
 REDIS_CLI_BIN_URL=https://my-bucket.oss-cn-hangzhou-internal.aliyuncs.com/bin/redis-cli-7.2-musl-amd64
 EOF
-```markdown
+```
 
 > 注意：`.env` 文件**已在 .gitignore 中**，不会被提交。如果你需要团队共享 URL，
 > 把它放到 `.env.example` 里作为注释模板。
@@ -267,7 +267,7 @@ file /tmp/test-redis-cli  # 应输出 ELF 64-bit LSB executable
 # 4.2 跑一次合并脚本，看日志里有这两行：
 #   [INSTALL] strategy=offline url=https://...
 #   [RESULT] INSTALL=SUCCESS
-```markdown
+```
 
 #### 三种配置方式对比
 
@@ -301,7 +301,7 @@ file /tmp/test-redis-cli  # 应输出 ELF 64-bit LSB executable
 [14:32:01] [INSTALL] strategy=offline url=https://my-bucket.../redis-cli-7.2-musl-amd64
 [14:32:02] [RESULT] INSTALL=SUCCESS
 [14:32:02] [RESULT] REDIS_CLI_VERSION=7.2.4
-```markdown
+```
 
 **失败的常见原因**：
 
@@ -328,7 +328,7 @@ file /tmp/test-redis-cli  # 应输出 ELF 64-bit LSB executable
 4. 源码编译（自动装 gcc make）         → 阿里云源码镜像 → 官方源
    ↓ (全部失败)
 5. exit 20/21/22 + 失败诊断日志
-```markdown
+```
 
 > **关键**：四层兜底**全自动**。用户只在「特殊场景」需要主动开能力 2（离线模式）。
 > 能力 1（镜像加速）**永远是被动开启的**，没有"用户配置"概念。

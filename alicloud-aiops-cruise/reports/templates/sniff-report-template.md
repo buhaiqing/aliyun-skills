@@ -26,9 +26,9 @@ phase: "Phase 1: 拓扑初判"
 
 | 子网 | CIDR | 资源 |
 |---|---|---|
-{% for subnet in subnets %}
+{% for subnet in subnets %} | |
 | {{subnet.name}} | {{subnet.cidr}} | {{subnet.resources \| join(", ")}} |
-{% endfor %}
+{% endfor %} | |
 
 ---
 
@@ -55,33 +55,33 @@ NAT (出网) ── 安全组防护
 
 | 实例ID | 名称 | 规格 | 区域 | 状态 | 标签 |
 |---|---|---|---|---|---|
-{% for ecs in ecs_instances %}
+{% for ecs in ecs_instances %} | | | | |
 | {{ecs.id}} | {{ecs.name}} | {{ecs.type}} | {{ecs.region}} | {{ecs.status}} | {{ecs.tags}} |
-{% endfor %}
+{% endfor %} | | | | |
 
 ### SLB 实例
 
 | 实例ID | 名称 | 规格 | 地址类型 | 带宽 |
 |---|---|---|---|---|
-{% for slb in slb_instances %}
+{% for slb in slb_instances %} | | | |
 | {{slb.id}} | {{slb.name}} | {{slb.spec}} | {{slb.address_type}} | {{slb.bandwidth}} |
-{% endfor %}
+{% endfor %} | | | |
 
 ### RDS 实例
 
 | 实例ID | 名称 | 引擎 | 规格 | 存储 |
 |---|---|---|---|---|
-{% for rds in rds_instances %}
+{% for rds in rds_instances %} | | | |
 | {{rds.id}} | {{rds.name}} | {{rds.engine}} | {{rds.spec}} | {{rds.storage}} |
-{% endfor %}
+{% endfor %} | | | |
 
 ### Redis 实例
 
 | 实例ID | 名称 | 规格 | 最大连接数 |
 |---|---|---|---|
-{% for redis in redis_instances %}
+{% for redis in redis_instances %} | | |
 | {{redis.id}} | {{redis.name}} | {{redis.spec}} | {{redis.max_connections}} |
-{% endfor %}
+{% endfor %} | | |
 
 ### 安全组 (高危规则检查)
 
@@ -100,9 +100,9 @@ NAT (出网) ── 安全组防护
 
 | 资源类型 | 资源ID | 名称 | 原因 |
 |---|---|---|---|
-{% for r in unclassified_resources %}
+{% for r in unclassified_resources %} | | |
 | {{r.type}} | {{r.id}} | {{r.name}} | {{r.reason}} |
-{% endfor %}
+{% endfor %} | | |
 
 > [WARN] 以上资源无法自动归类，请人工确认归属后继续 Phase 2。
 {% else %}

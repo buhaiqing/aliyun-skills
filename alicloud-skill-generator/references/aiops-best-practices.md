@@ -44,7 +44,7 @@
 [发现异常] → [验证确认] → [关联分析] → [根因定位] → [修复建议]
      ↑                                                      |
      └──────────────── 反馈优化 ─────────────────────────────┘
-```markdown
+```
 
 ### 1.3 跨 Skill 协同原则
 
@@ -73,11 +73,11 @@
 
 每个异常模式必须包含以下字段：
 
-```markdown
+```
 | Pattern | Metrics Involved | Detection Logic | Severity | Interpretation |
 |---------|-----------------|-----------------|----------|----------------|
 | [模式名] | [涉及指标列表] | [判定逻辑表达式] | Critical/Warning | [业务含义] |
-```markdown
+```
 
 ### 2.3 实现要求
 
@@ -90,7 +90,7 @@
 
 生成的多指标巡检操作流（`SKILL.md` 中）必须包含以下结构：
 
-```markdown
+```
 ### Operation: Multi-Metric Anomaly Inspection
 
 对指定资源执行多指标联合巡检，识别复合异常模式。
@@ -112,7 +112,7 @@
 
 #### Recovery & Cross-Skill Delegation
 （每种模式对应的委托 Skill 和 DAS 建议）
-```markdown
+```
 
 ---
 
@@ -140,7 +140,7 @@
     │
     └── Step 5: 生成统一诊断报告
         汇总所有 Skill 发现，给出根因和修复建议
-```markdown
+```
 
 ### 3.2 命名空间到 Skill 的路由表（模板）
 
@@ -174,11 +174,11 @@
 
 每个具备跨 Skill 协同能力的 Skill 必须在 `integration.md` 中定义委托矩阵：
 
-```markdown
+```
 | 告警类型 | 指标 | 主诊断 Skill | 次诊断 Skill | DAS 委托 |
 |----------|------|-------------|-------------|----------|
 | [告警名] | [指标] | [Skill] | [Skill 或 —] | Recommended/Optional |
-```markdown
+```
 
 ### 4.2 委托协议
 
@@ -192,7 +192,7 @@
     ├── 5. 若 DAS = "Recommended" → 始终调用 DAS
     ├── 6. 若 DAS = "Optional" 且严重级别 = Critical → 调用 DAS
     └── 7. 汇总所有输出生成统一报告
-```markdown
+```
 
 ### 4.3 诊断结果关联
 
@@ -209,7 +209,7 @@
 
 ```json
 [Discovery] → [Metric Collection] → [Anomaly Detection] → [Cross-Skill Diagnosis] → [Report Generation]
-```markdown
+```
 
 ### 5.2 各阶段要求
 
@@ -240,7 +240,7 @@ func calculateSlope(points []DataPoint) float64 {
     }
     return (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
 }
-```markdown
+```
 
 ---
 
@@ -271,7 +271,7 @@ func calculateSlope(points []DataPoint) float64 {
 
 每个产品 Skill 应在 `references/knowledge-base.md` 中维护故障模式库：
 
-```markdown
+```
 ### Pattern: [产品]-[序号] — [故障名称]
 
 | 属性 | 内容 |
@@ -284,7 +284,7 @@ func calculateSlope(points []DataPoint) float64 {
 | 诊断步骤 | [1. 步骤A 2. 步骤B ...] |
 | 修复方案 | [1. 临时方案 2. 长期方案] |
 | 预防措施 | [1. 措施A 2. 措施B ...] |
-```markdown
+```
 
 ### 7.2 知识库应用流程
 
@@ -323,7 +323,7 @@ func calculateSlope(points []DataPoint) float64 {
               ┌────────────────┐
               │ Unified Report │
               └────────────────┘
-```markdown
+```
 
 ### 8.2 Metrics → Logs 联动规则
 
@@ -378,7 +378,7 @@ func calculateSlope(points []DataPoint) float64 {
 
 ### 9.2 报告输出格式
 
-```markdown
+```
 ## 诊断摘要
 （一句话概括）
 
@@ -393,7 +393,7 @@ func calculateSlope(points []DataPoint) float64 {
 
 ## 风险评估
 （不修复的后果评估）
-```markdown
+```
 
 ---
 
@@ -462,7 +462,7 @@ func calculateSlope(points []DataPoint) float64 {
         ├── 检查变更记录（配置变更、发布、扩缩容）
         ├── 输出最终根因判断及置信度
         └── 如仍不确定 → 明确标注不确定性并给出排查建议
-```markdown
+```
 
 ### 11.3 每轮反思的批判性问题
 
@@ -480,7 +480,7 @@ Agent 在每轮反思时必须回答以下问题：
 
 ### 11.4 复盘输出格式
 
-```markdown
+```
 ## 诊断复盘记录
 
 ### 第一轮诊断
@@ -502,7 +502,7 @@ Agent 在每轮反思时必须回答以下问题：
 
 ### 知识库更新建议
 - [是否新增/更新 Pattern]
-```markdown
+```
 
 ---
 

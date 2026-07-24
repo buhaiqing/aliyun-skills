@@ -8,7 +8,7 @@
 |---------------------|-------------|------|
 | `ApiErrorRateInsight` 突增 | `* WHERE errorMessage != 'success' AND errorCode` | 确认 API 错误来源、用户和资源 |
 | `IpInsight` 新 IP | `* WHERE sourceIpAddress = "新的 IP"` | 确认新 IP 的所有操作详情 |
-| `ApiCallRateInsight` 突增 | `* WHERE eventTime > time | count(1) by eventName, userIdentity.userName` | 识别调用突增的用户和操作类型 |
+| `ApiCallRateInsight` 突增 | `* WHERE eventTime > time | count(1) by eventName, userIdentity.userName`  (识别调用突增的用户和操作类型)|
 | `TrailConcealmentInsight` | `* WHERE eventName LIKE 'DisableTrail' OR eventName LIKE 'DeleteTrail'` | 定位谁在尝试关闭审计 |
 | `PolicyChangeInsight` | `* WHERE eventName LIKE 'Create%'Policy' OR eventName LIKE 'Attach%'Policy'` | 确认权限变更详情 |
 

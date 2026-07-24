@@ -4,10 +4,10 @@
 
 | Code / HTTP | Meaning | Agent Action |
 |-------------|---------|--------------|
-| `EntityNotExists.Folder` | 404 | 文件夹不存在 | 验证 FolderId |
-| `EntityNotExists.ResourceGroup` | 404 | 资源组不存在 | 验证 ResourceGroupId |
-| `NoPermission` | 403 | 无权限 | 检查 RAM 权限 |
-| `InvalidParameter` | 400 | 参数无效 | 检查请求参数 |
+| `EntityNotExists.Folder` | 404 | 文件夹不存在  (验证 FolderId)|
+| `EntityNotExists.ResourceGroup` | 404 | 资源组不存在  (验证 ResourceGroupId)|
+| `NoPermission` | 403 | 无权限  (检查 RAM 权限)|
+| `InvalidParameter` | 400 | 参数无效  (检查请求参数)|
 | `InternalError` / 500 | Server-side error | Retry with backoff; then HALT |
 | `Throttling` / 429 | Rate limit exceeded | Back off exponentially |
 | `Forbidden.RAM` / 403 | Insufficient RAM permissions | Add RAM policy |

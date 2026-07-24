@@ -40,7 +40,7 @@ metadata:
 | `DeleteSmsSign\b` | DESTRUCTIVE-LIMITED | remove signature |
 | `DeleteSmsTemplate\b` | DESTRUCTIVE-LIMITED | remove template |
 | `"PhoneNumberJson"\s*:\s*"\[[^\]]{500,}` | WRITE-MANY | oversized recipient list |
-| `TemplateParam.*password|secret|token` | CREDENTIAL-LEAK | sensitive param names |
+| `TemplateParam.*password|secret|token`  (CREDENTIAL-LEAK sensitive param names)|
 
 ### Wrapper Compliance (per `AGENTS.md` §15.8)
 

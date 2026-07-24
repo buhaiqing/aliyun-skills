@@ -252,7 +252,7 @@ This document provides a structured three-dimensional analysis of the current sk
 [Root Cause Localization] — Dependency graph traversal → Causal inference
     ↓
 [Rapid Resolution] — Auto-remediation? → Recovery macro? → Escalation?
-```markdown
+```
 
 **Optimization Opportunity:** Close the loop by feeding resolution outcomes back into diagnosis patterns (self-learning).
 

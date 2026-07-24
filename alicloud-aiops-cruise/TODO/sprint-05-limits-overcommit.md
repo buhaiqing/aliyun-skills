@@ -67,10 +67,10 @@
 
 | 条件 | 说明 |
 |:----:|------|
-| SAFE PASS | < 80% | 有充足余量 |
-| WARNING WARN | 80% ~ 120% | 正常超分范围，需关注 |
-| CRITICAL CRITICAL | 120% ~ 200% | 显著超分，高负载有风险 |
-| CRITICALCRITICAL CRITICAL+ | > 200% | 极端超分，必须治理 |
+| SAFE PASS | < 80%  (有充足余量)|
+| WARNING WARN | 80% ~ 120%  (正常超分范围，需关注)|
+| CRITICAL CRITICAL | 120% ~ 200%  (显著超分，高负载有风险)|
+| CRITICALCRITICAL CRITICAL+ | > 200%  (极端超分，必须治理)|
 
 ### 集成测试验证结果（2026-06-06）
 
