@@ -318,7 +318,7 @@ aliyun advisor describe-advices --product Ecs
 aliyun advisor describe-advices --advice-id {{user.advice_id}}
 
 # Get a single check's results
-aliyun advisor describe-advices --check-id {{user.check_id}
+aliyun advisor describe-advices --check-id {{user.check_id}}
 ```
 
 #### SDK Execution (JIT Go Fallback)
@@ -384,7 +384,7 @@ aliyun advisor refresh-advisor-check --product Ecs
 # Single resource
 aliyun advisor refresh-advisor-check \
   --product Ecs \
-  --resource-id {{user.resource_id}
+  --resource-id {{user.resource_id}}
 
 # With cost dimension
 aliyun advisor refresh-advisor-check \
@@ -423,7 +423,7 @@ aliyun advisor refresh-advisor-check \
 aliyun advisor describe-cost-optimization-overview
 
 # Specific check plan
-aliyun advisor describe-cost-optimization-overview --check-plan-id {{user.check_plan_id}
+aliyun advisor describe-cost-optimization-overview --check-plan-id {{user.check_plan_id}}
 ```
 
 #### SDK Execution (JIT Go Fallback)
