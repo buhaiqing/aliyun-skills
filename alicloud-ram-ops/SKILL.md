@@ -86,7 +86,7 @@ before and after application.
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-skillopt-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | SkillOpt |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-skillopt-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 

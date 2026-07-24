@@ -281,6 +281,7 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 | **Fallback** | Use native `aliyun eci <subcommand> [params]` **only** when the wrapper script is missing or cannot be sourced |
 | **SkillOpt Enabled** | Set `SKILLOPT_ENABLED=true` to enable automated self-repair, retries, and Langfuse tracing |
 | **Session ID** | Pass `--skillopt-session-id <session-id>` to enable multi-skill trace correlation |
+| **SkillOpt Docs** | [skillopt-integration.md](references/skillopt-integration.md) |
 
 ## Changelog
 

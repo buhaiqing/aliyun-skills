@@ -90,6 +90,8 @@ and failure recovery.
   --force
 ```
 
+**SkillOpt Integration**: See [references/skillopt-integration.md](references/skillopt-integration.md) for wrapper configuration, error handling, and tracing.
+
 ## Well-Architected Assessment
 
 | Pillar | Key Guidance |
