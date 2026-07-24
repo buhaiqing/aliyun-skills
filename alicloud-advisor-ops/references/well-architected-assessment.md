@@ -41,7 +41,7 @@ aliyun advisor describe-advices-page \
 # 3. Delegate to alicloud-ecs-ops (or relevant skill) for remediation
 # 4. Re-trigger inspection to confirm fix
 aliyun advisor refresh-advisor-resource --product Ecs --resource-id sg-xxx
-```
+```markdown
 
 ### Key Check IDs (Security)
 
@@ -72,7 +72,7 @@ aliyun advisor describe-advices-page \
   --page-number 1 \
   --page-size 100 \
   | jq '.Advices[] | select(.CheckId | contains("Snapshot") or contains("Backup") or contains("Single"))'
-```
+```markdown
 
 ### Key Check IDs (Stability)
 
@@ -108,7 +108,7 @@ aliyun advisor describe-cost-check-advices \
   --product Ecs \
   | jq '.Advices[] | select(.CheckId == "Ecs.IdleInstance")'
 # → delegate to alicloud-ecs-ops for DeleteInstance or StopInstance
-```
+```markdown
 
 ### Key Check IDs (Cost)
 
@@ -123,7 +123,7 @@ aliyun advisor describe-cost-check-advices \
 
 ### Cost Optimization Decision Tree
 
-```
+```text
 For each cost advice:
   Is the resource actively used? (check CMS metrics)
     No → Release / Delete
@@ -133,7 +133,7 @@ For each cost advice:
     Yes with high utilization:
       Check ReservedInstance / SavingsPlan coverage
       Consider subscription (1yr/3yr) for stable workloads
-```
+```markdown
 
 ## Efficiency (效率)
 
@@ -151,7 +151,7 @@ focus on **utilization**, not monetary savings:
 aliyun advisor describe-advices \
   --product Ecs
 # Filter client-side by description containing "low utilization" or similar
-```
+```markdown
 
 ## Performance (性能)
 
@@ -172,7 +172,7 @@ aliyun advisor describe-advices-page \
 
 # For each advice, drill into the underlying metric
 # Delegate to alicloud-cms-ops with the metric from the advice
-```
+```markdown
 
 ## Cross-Pillar Trade-offs
 
@@ -217,7 +217,7 @@ aliyun actiontrail LookupEvents \
   --ServiceName Ecs \
   --StartTime 2026-06-06T00:00:00Z \
   --EndTime 2026-06-06T23:59:59Z
-```
+```markdown
 
 ## Reporting and Dashboards
 

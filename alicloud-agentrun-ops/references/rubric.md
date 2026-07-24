@@ -59,4 +59,5 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 
 ## 3. Changelog
+
 1.0.0 | 2026-06-04 | AgentRun GCL rubric (Phase 5, recommended).

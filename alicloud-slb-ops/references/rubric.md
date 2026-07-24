@@ -66,4 +66,5 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 Critic independently re-queries `DescribeLoadBalancerListeners` and finds 2 active listeners → Safety = 0.
 
 ## 4. Changelog
+
 1.0.0 | 2026-06-04 | SLB GCL rubric (Phase 5, recommended, max_iter=3). Cascade for DeleteLoadBalancer; >= 1 healthy backend for RemoveVServerGroup; bandwidth pre-check for ModifyInternetSpec.

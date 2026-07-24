@@ -2,7 +2,7 @@
 
 ## Architecture
 
-```
+```text
     ┌────────────────┐
     │  FC Execution  │
     └───────┬────────┘

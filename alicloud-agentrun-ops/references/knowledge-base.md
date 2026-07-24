@@ -11,7 +11,7 @@
 
 **Sandbox** 是其中的「沙箱即服务」，为 Agent 提供隔离执行环境（代码、浏览器、文件、终端）。
 
-```
+```text
 AgentRun = Agent 运行时 + Sandbox + 模型治理 + 工具/MCP 生态 + 凭证 + 可观测
 ```
 
@@ -121,7 +121,7 @@ AgentRun = Agent 运行时 + Sandbox + 模型治理 + 工具/MCP 生态 + 凭证
 
 **调用链（路径 B）**：
 
-```
+```text
 Agent → MCP Client → MCP Server(Sandbox) → Skill Loader → CLI Engine
 ```
 
@@ -139,14 +139,14 @@ Agent → MCP Client → MCP Server(Sandbox) → Skill Loader → CLI Engine
   }],
   "executionRoleArn": "acs:ram::...:role/with-oss-read"
 }
-```
+```text
 
 OSS 目录结构：
 
-```
+```text
 <bucket>/skills/<skill-name>/SKILL.md
                       └── RULES（可选）
-```
+```markdown
 
 ### 4.3 实例级 OSS 挂载（CreateSandbox）
 
@@ -195,9 +195,9 @@ OSS 目录结构：
 
 **CDP（Puppeteer / Playwright）**：
 
-```
+```yaml
 wss://{accountId}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/ws/automation?tenantId={accountId}
-```
+```text
 
 **VNC 实时画面**：`/ws/livestream`  
 **AIO 沙箱内本地 CDP**（预装 puppeteer/playwright）：`ws://localhost:5000/ws/automation`
@@ -219,18 +219,18 @@ wss://{accountId}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/ws/a
 
 | 主题 | URL |
 |------|-----|
-| AgentRun 总览 | https://help.aliyun.com/zh/functioncompute/fc/what-is-agentrun |
-| 动态挂载自定义 Skills | https://help.aliyun.com/zh/functioncompute/fc/dynamically-mount-custom-skills-for-sandboxes |
-| Sandbox Agent & Skills | https://help.aliyun.com/functioncompute/fc/using-sandbox-agent-skills-in-beta |
-| 工具市场 | https://help.aliyun.com/zh/functioncompute/fc/tool-marketplace |
-| 创建 Skills | https://help.aliyun.com/zh/functioncompute/fc/create-skills |
-| ActivateTemplateMCP | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-agentrun-2025-09-10-activatetemplatemcp |
-| 实例级 OSS 挂载 | https://help.aliyun.com/zh/functioncompute/fc/sandbox-supports-instance-level-dynamic-mount-of-oss-test-invitation |
-| Code Interpreter API | https://help.aliyun.com/zh/functioncompute/fc/sandbox-sandbox-code-interepreter |
-| AIO Sandbox | https://help.aliyun.com/zh/functioncompute/fc/aio-sandbox |
-| BrowserTool | https://help.aliyun.com/zh/functioncompute/fc/sandbox-browsertool |
-| Sandbox 深休眠（含 CPU/GPU 规格说明） | https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-hibernation-pause-and-resume-session |
-| CreateTemplateInput | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-agentrun-2025-09-10-struct-createtemplateinput |
+| AgentRun 总览 | <https://help.aliyun.com/zh/functioncompute/fc/what-is-agentrun> |
+| 动态挂载自定义 Skills | <https://help.aliyun.com/zh/functioncompute/fc/dynamically-mount-custom-skills-for-sandboxes> |
+| Sandbox Agent & Skills | <https://help.aliyun.com/functioncompute/fc/using-sandbox-agent-skills-in-beta> |
+| 工具市场 | <https://help.aliyun.com/zh/functioncompute/fc/tool-marketplace> |
+| 创建 Skills | <https://help.aliyun.com/zh/functioncompute/fc/create-skills> |
+| ActivateTemplateMCP | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-agentrun-2025-09-10-activatetemplatemcp> |
+| 实例级 OSS 挂载 | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-supports-instance-level-dynamic-mount-of-oss-test-invitation> |
+| Code Interpreter API | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-sandbox-code-interepreter> |
+| AIO Sandbox | <https://help.aliyun.com/zh/functioncompute/fc/aio-sandbox> |
+| BrowserTool | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-browsertool> |
+| Sandbox 深休眠（含 CPU/GPU 规格说明） | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-hibernation-pause-and-resume-session> |
+| CreateTemplateInput | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-agentrun-2025-09-10-struct-createtemplateinput> |
 
 ---
 

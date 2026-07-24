@@ -5,8 +5,8 @@
 - **Product**: R-kvstore (Redis / Tair / KVStore)
 - **API Version**: 2015-01-01
 - **Base Endpoint**: `r-kvstore.aliyuncs.com`
-- **Official Docs**: https://www.alibabacloud.com/help/en/redis
-- **OpenAPI Explorer**: https://api.aliyun.com/api/R-kvstore/2015-01-01
+- **Official Docs**: <https://www.alibabacloud.com/help/en/redis>
+- **OpenAPI Explorer**: <https://api.aliyun.com/api/R-kvstore/2015-01-01>
 
 ## SDK Operations Map
 
@@ -89,7 +89,8 @@ go get github.com/alibabacloud-go/r-kvstore-20150101/v2/client
 
 > **Token Efficiency (TE-6):** SKILL.md lists only 3–5 most commonly used fields per operation.
 > Complete response field lists are defined in the OpenAPI spec:
-> - **OpenAPI Explorer:** https://api.aliyun.com/api/R-kvstore/2015-01-01
+>
+> - **OpenAPI Explorer:** <https://api.aliyun.com/api/R-kvstore/2015-01-01>
 > - For each operation, see *Response Parameters* in the OpenAPI Explorer for the full field list.
 >
 > **Commonly used fields (SKILL.md)** focus on: `InstanceId`, `InstanceStatus`, `ConnectionDomain`, `Capacity`, `Bandwidth`, `Connections`, `RequestId`.

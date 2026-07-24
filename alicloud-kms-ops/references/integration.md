@@ -24,11 +24,12 @@ if ! command -v go &> /dev/null; then
     export GOPROXY="https://goproxy.cn,direct"
 fi
 go version
-```
+```bash
 
 ## JIT Go SDK Workflow
 
 1. **Initialize workspace:**
+
    ```bash
    mkdir -p /tmp/aliyun-sdk-workspace
    cd /tmp/aliyun-sdk-workspace
@@ -37,6 +38,7 @@ go version
    ```
 
 2. **Get dependencies:**
+
    ```bash
    go get github.com/alibabacloud-go/darabonba-openapi/v2/client
    go get github.com/alibabacloud-go/kms-20160120/v3/client
@@ -47,6 +49,7 @@ go version
 3. **Generate script** (Agent dynamically creates operation-specific `.go` file)
 
 4. **Execute:**
+
    ```bash
    go run ./main.go
    ```
@@ -73,9 +76,9 @@ All SDK imports should use the `v3` major version. Latest release: v3.4.0.
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
-```
+```markdown
 
 ### `.env` File Format
 
@@ -84,7 +87,7 @@ Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
 ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 - **Security**: `.env` MUST be in `.gitignore` — never commit credentials
 - **Multiple clouds**: Use platform-specific prefixes
@@ -135,13 +138,14 @@ func main() {
 
     fmt.Println(tea.ToString(resp.Body.Key.KeyId))
 }
-```
+```markdown
 
 > Use `os.Getenv("KEY")` for all credentials. Never hardcode secrets in scripts.
 
 ## Credential Security
 
 See main SKILL.md for credential masking rules. Key points for KMS:
+
 - KMS handles sensitive cryptographic operations — credential leaks are especially dangerous
 - JIT Go SDK scripts MUST NOT print Config structs to stdout or logs
 - Debug mode should warn about potential credential exposure

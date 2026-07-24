@@ -22,7 +22,7 @@ skill must define a quantified rubric with **5 core dimensions** and
 
 **Composite score formula:**
 
-```
+```text
 score = 0.30 * Correctness + 0.30 * Safety + 0.15 * Idempotency
       + 0.15 * Traceability + 0.10 * SpecCompliance
 ```
@@ -55,9 +55,11 @@ For the 3 side-effect operations (`RefreshAdvisorCheck`,
 
 - **Definition**: User explicit confirmation obtained before triggering.
 - **Detection regex** (in trace metadata or pre-call log):
-  ```
+
+  ```text
   user_confirmed|user_confirm|confirmation=("yes"|true|confirmed)
   ```
+
 - **Pass**: Confirmation present in trace → 1.0
 - **Fail**: No confirmation → 0.0 → **SAFETY_FAIL**
 - **Exception**: `RefreshAdvisorResource` may run without confirmation
@@ -90,6 +92,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
@@ -151,7 +154,7 @@ The Critic MUST apply these regex patterns to trace data:
 
 # 10. Multi-account assume role issues
 (?i)AssumeRoleFailed|AssumeAliyunId.*(?:Failed|Forbidden)
-```
+```text
 
 A failure on patterns 1, 2, or 3 → **SAFETY_FAIL** (immediate abort).
 A failure on patterns 4-10 → record as P1 finding in trace.
@@ -182,7 +185,7 @@ A failure on patterns 4-10 → record as P1 finding in trace.
   "ram_check_passed": true,
   "plugin_version": "0.4.0"
 }
-```
+```markdown
 
 **Critic scoring:**
 
@@ -223,7 +226,7 @@ A failure on patterns 4-10 → record as P1 finding in trace.
   "ram_check_passed": true,
   "plugin_version": "0.4.0"
 }
-```
+```markdown
 
 **Critic scoring:**
 

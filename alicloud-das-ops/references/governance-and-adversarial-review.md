@@ -3,6 +3,7 @@
 ## Adversarial Scenarios
 
 ### 1. Destructive without confirmation
+
 | Operation | Safety Gate |
 |-----------|-------------|
 | `CreateKillInstanceSessionTask` | Session list presentation + user confirmation |
@@ -11,18 +12,21 @@
 | `AddHDMInstance` | Monitoring overhead warning (idempotent, no confirmation required) |
 
 ### 2. Credential echo
+
 - No secret literals in any file
 - `{{env.*}}` placeholders used correctly
 - SDK examples use `os.Getenv` without printing values
 - `printResponse` only prints API response body
 
 ### 3. API hallucination
+
 - All operation IDs traceable to DAS 2020-01-16 OpenAPI
 - Response field paths verified against OpenAPI Explorer
 - Endpoint `das.cn-shanghai.aliyuncs.com` confirmed by official docs
 - `aliyun` CLI unsupported claim verified by official integration docs
 
 ### 4. Idempotency gap
+
 | Operation | Idempotent | Documented |
 |-----------|------------|------------|
 | `AddHDMInstance` | YES | YES |
@@ -35,19 +39,23 @@
 | `SetAutoScalingConfig` | YES (overwrites) | YES |
 
 ### 5. Throttling blindness
+
 - Exponential backoff documented for `Throttling` errors
 - Poll intervals documented (minimum 5s)
 - Max wait times documented to prevent infinite polling
 
 ### 6. Region drift
+
 - No hardcoded region in user-facing logic
 - `cn-shanghai` is DAS service requirement, not agent hardcoding
 - `{{env.ALIBABA_CLOUD_REGION_ID}}` used for context
 
 ### 7. Error recovery gap
+
 - All 5 documented error codes have recovery actions
 
 ### 8. Data safety gaps
+
 - `GetDBInstanceConnectivityDiagnosis` warns against production admin passwords
 - DAS Pro storage usage alerts prevent data loss
 - Session kill requires explicit user confirmation

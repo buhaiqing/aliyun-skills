@@ -13,7 +13,7 @@ to CMS CLI operations via a shell wrapper library.
 
 ## Architecture
 
-```
+```text
 User / Agent
      │
      ▼
@@ -30,6 +30,7 @@ scripts/skillopt-lib.sh
 ```
 
 Runtime metrics are written to:
+
 - Log: `${ALIBABA_CLOUD_LOG_DIR:-<skill>/.runtime}/cms-skillopt-YYYYMMDD.log`
 - JSON: `${ALIBABA_CLOUD_RUNTIME_DIR:-${SKILLS_DIR}/.runtime/metrics/alicloud-cms-ops}/cms-skillopt-runtime.json`
 
@@ -55,12 +56,14 @@ Runtime metrics are written to:
 Two layers run before command execution when SkillOpt is enabled:
 
 **Pre-execution (静态优化)**
+
 - If runtime `error_rate > 5%`: increase `SKILLOPT_RETRIES` by 1.
 - If runtime `query_count > 1000`:
   - If `--Period` is not set: add `--Period 300`.
   - If `--Period` is set and its value is less than 120: raise it to `120` (step-wise Period tuning to reduce API load while preserving data resolution).
 
 **Post-failure (动态修复)**
+
 - Error extraction from aliyun CLI JSON output (`Code` field) or text (`Error code: ...`).
 - Error-specific repair applied; result recorded to runtime JSON.
 
@@ -152,12 +155,14 @@ Enable the circuit breaker with `--skillopt-cb-enable` and configure thresholds:
 ### Behavior
 
 When the circuit is open:
+
 - All requests are blocked immediately (no API call made)
 - Error message returned: `CircuitBreakerOpen` with remaining cooldown time
 - Log entry: `cb: circuit open, Xs remaining before probe`
 - Bypass with `--skillopt-cb-disable` if needed
 
 When cooldown expires:
+
 - Circuit transitions to half-open state
 - Next request is allowed as a probe
 - Success → circuit closes, failure counter resets
@@ -224,6 +229,7 @@ skillopt_report "/path/to/report.md"
 ```
 
 **Report Contents:**
+
 - **Health Status**: Overall system health (Healthy/Warning/Critical) based on error rate
 - **Call Statistics**: Total calls, failures, repair success rate
 - **Optimization Status**: Current retry count, backoff strategy, Period tuning
@@ -231,6 +237,7 @@ skillopt_report "/path/to/report.md"
 - **Log File Info**: Path and size of today's log file
 
 **Health Thresholds:**
+
 - 🟢 **Healthy**: error_rate ≤ 5%
 - 🟡 **Warning**: 5% < error_rate ≤ 20%
 - 🔴 **Critical**: error_rate > 20%

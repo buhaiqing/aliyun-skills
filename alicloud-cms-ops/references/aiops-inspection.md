@@ -272,6 +272,7 @@ func main() {
 | CPU Spike | `alicloud-ecs-ops` | — | Optional |
 
 > **Delegation Protocol:** When a pattern is detected, the agent MUST:
+>
 > 1. Record the pattern and severity in the inspection report
 > 2. Invoke the primary skill to check resource status
 > 3. If severity is Critical or resource status is abnormal, invoke DAS skill for AI diagnosis
@@ -285,7 +286,7 @@ When a CMS alarm triggers, execute the automated cross-skill root-cause diagnosi
 
 ### Diagnosis Decision Tree
 
-```
+```text
 [CMS Alarm] → Step 1: Verify via DescribeMetricLast
   ├─ Normal → False positive; check rule config
   └─ Abnormal → Step 2: Check resource (delegate by namespace)
@@ -409,6 +410,7 @@ Execute periodic multi-resource, multi-metric proactive inspection to identify p
 ### Execution Flow
 
 1. **Discovery:** List all resources in the monitor group
+
    ```bash
    aliyun cms DescribeMonitorGroupInstances \
      --RegionId {{user.region}} \
@@ -416,6 +418,7 @@ Execute periodic multi-resource, multi-metric proactive inspection to identify p
    ```
 
 2. **Metric Collection:** Collect key metrics for each resource
+
    ```bash
    aliyun cms DescribeMetricList \
      --RegionId {{user.region}} \

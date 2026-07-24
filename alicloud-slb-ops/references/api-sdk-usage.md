@@ -6,8 +6,8 @@
 - **Version**: 2014-05-15
 - **Style**: RPC
 - **Endpoint**: `slb.aliyuncs.com` (global), or region-specific endpoints
-- **Docs**: https://www.alibabacloud.com/help/en/slb
-- **API Explorer**: https://api.aliyun.com/api/Slb/2014-05-15
+- **Docs**: <https://www.alibabacloud.com/help/en/slb>
+- **API Explorer**: <https://api.aliyun.com/api/Slb/2014-05-15>
 
 ## SDK Operations Map
 

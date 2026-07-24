@@ -21,6 +21,7 @@
 | **Exponential Smoothing** | 季节性波动 | 88-95% | Medium | < 60ms |
 
 > **推荐算法选择**:
+>
 > - 业务稳定增长 → Linear Regression
 > - 业务波动较大 → Weighted Moving Average
 > - 季节性业务 → Exponential Smoothing
@@ -64,7 +65,7 @@ aliyun polardb DescribeDBClusterAttribute \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --output cols=StorageUsed,StorageSpace,StorageType,DBClusterClass rows=DBCluster
-```
+```markdown
 
 ### Step 2: Parse and Prepare Data for Prediction
 
@@ -83,7 +84,7 @@ aliyun cms GetMetricStatisticsData \
   --Statistics Average \
   --Period 86400 \
   | jq '.Datapoints[] | {timestamp: .timestamp, value: .Average}'
-```
+```markdown
 
 ### Step 3: Execute Prediction Algorithm
 
@@ -119,7 +120,7 @@ aliyun cms GetMetricStatisticsData \
   --EndTime "$(date +%Y-%m-%dT%H:%M:%SZ)" \
   --Statistics Average,Maximum,Minimum \
   --Period 3600
-```
+```markdown
 
 ### JIT Go SDK (Prediction Engine)
 
@@ -588,7 +589,7 @@ func main() {
 		fmt.Println("⚠️ 预测模型需优化，建议增加历史数据样本")
 	}
 }
-```
+```markdown
 
 ## Output Format
 
@@ -633,11 +634,13 @@ func main() {
 
 ## 预警级别: `medium`
 
-```
+```text
+
 当前状态: 存储增长稳定，建议中期规划扩容
 风险评级: 中等风险
 建议时间窗: 40天内启动扩容流程
-```
+
+```markdown
 
 ## 扩容建议
 
@@ -656,7 +659,7 @@ func main() {
 | R²拟合度 | 0.92 | 高置信度 |
 
 > **验收结论**: ✅ 预测模型准确率 > 80%，符合验收标准
-```
+```markdown
 
 ### JSON Output Format
 
@@ -686,7 +689,7 @@ func main() {
   ],
   "validation_accuracy": 87.5
 }
-```
+```markdown
 
 ## Acceptance Criteria (验收标准)
 
@@ -723,7 +726,7 @@ func validatePredictionAccuracy(clusterId string) float64 {
 
     return accuracy // 要求 ≥ 80%
 }
-```
+```markdown
 
 ## Alert Threshold Configuration
 

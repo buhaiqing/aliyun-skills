@@ -6,14 +6,14 @@
 
 - **Product:** VPC (Virtual Private Cloud)
 - **API Version:** 2016-04-28
-- **OpenAPI Doc:** https://help.aliyun.com/zh/vpc/developer-reference/api-vpc-2016-04-28-overview
+- **OpenAPI Doc:** <https://help.aliyun.com/zh/vpc/developer-reference/api-vpc-2016-04-28-overview>
 - **Endpoint:** `vpc.aliyuncs.com`
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+```markdown
 
 ## Operations Map
 
@@ -162,11 +162,13 @@ aliyun vpc DescribeVpcs --RegionId cn-hangzhou --PageSize 50 --PageNumber 1
 ## Response Examples
 
 ### CreateVpc Response
+
 ```json
 {"RequestId": "D3362978-0AED-4E23-8AED-9020F0D9****", "VpcId": "vpc-bp1qpo0eug5el9mrwnbmv****"}
-```
+```markdown
 
 ### DescribeVpcs Response
+
 ```json
 {"RequestId": "9D4A5B0E-1A2D-4E5F-8C3B-D1E2F3A4B5C6", "TotalCount": 2, "PageSize": 10, "PageNumber": 1, "Vpcs": {"Vpc": [{"VpcId": "vpc-xxx", "VpcName": "my-vpc", "Status": "Available", "CidrBlock": "172.16.0.0/12", "IsDefault": false, "CreationTime": "2026-05-16T06:00:00Z", "RegionId": "cn-hangzhou"}]}}
 ```

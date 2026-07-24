@@ -7,6 +7,7 @@ This document provides executable FinOps patterns using BSSOpenApi APIs. Each pa
 ## Pattern 1: Cost Anomaly Detection
 
 ### Problem
+
 Monthly spend increased unexpectedly.
 
 ### Detection
@@ -37,11 +38,13 @@ fi
 ```
 
 ### Alert Criteria
+
 - MoM increase > 30% → P1 Alert
 - MoM increase > 50% → P0 Alert
 - New product appearing with > 1000 CNY → P1 Alert
 
 ### Remediation
+
 1. Identify top spend driver using `QueryBillOverview` product breakdown
 2. Dril down with `QueryBill` for product detail
 3. Check for new or changed resources via `QueryInstanceBill`
@@ -50,6 +53,7 @@ fi
 ## Pattern 2: Resource Expiration Warning
 
 ### Problem
+
 Resource packages, RI, or subscriptions expiring without renewal causing pay-as-you-go surge.
 
 ### Detection
@@ -89,11 +93,13 @@ done
 ```
 
 ### Alert Criteria
+
 - Resource package: remaining < 10% AND expiring in 30 days
 - Savings Plan: end date within 30 days AND pool value < 100 CNY
 - RI: end date within 30 days
 
 ### Remediation
+
 1. Renew resource packages with similar or larger spec
 2. Top up savings plans with appropriate commitment
 3. Purchase new RI to maintain coverage
@@ -102,6 +108,7 @@ done
 ## Pattern 3: RI/SCU Coverage Optimization
 
 ### Problem
+
 Pay-as-you-go charges for resources that could be covered by RI or SCU.
 
 ### Detection
@@ -144,11 +151,13 @@ done
 ```
 
 ### Alert Criteria
+
 - Overall coverage < 70% → P1 Alert
 - Per-product coverage < 50% → P0 Alert
 - Pay-as-you-go spend > 1000 CNY/month on RI-eligible services
 
 ### Remediation
+
 1. Use `DescribeResourceCoverageDetail` to identify specific uncovered products
 2. Purchase RI matching the uncovered instance types
 3. For ECS: match instance family, region, and quantity
@@ -158,6 +167,7 @@ done
 ## Pattern 4: Savings Plans Optimization
 
 ### Problem
+
 Savings plan pool depletion leading to pay-as-you-go charges.
 
 ### Detection
@@ -196,12 +206,14 @@ fi
 ```
 
 ### Alert Criteria
+
 - Pool value < 100 CNY → P1 Alert
 - Days to depletion < 7 days → P0 Alert
 - Utilization > 95% → P2 (consider increase)
 - Utilization < 70% → P2 (over-committed)
 
 ### Remediation
+
 1. Low pool: top up with additional savings plan purchase
 2. High utilization: increase commitment amount
 3. Low utilization: review if workload changed, adjust commitment
@@ -209,6 +221,7 @@ fi
 ## Pattern 5: Budget Alert
 
 ### Problem
+
 No automated budget tracking.
 
 ### Detection
@@ -240,6 +253,7 @@ fi
 ```
 
 ### Alert Criteria
+
 - 80% consumed → P2 (informational)
 - 90% consumed → P1 (warning)
 - 100% consumed → P0 (critical)
@@ -248,6 +262,7 @@ fi
 ## Pattern 6: Account Health Check
 
 ### Problem
+
 No regular account financial health assessment.
 
 ### Execution

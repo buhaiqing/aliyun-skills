@@ -20,9 +20,11 @@
 ## 2. RepeatList Parameters (Most Common Error Source)
 
 ### Definition
+
 Parameters that accept **multiple values** via indexed suffix `.N`.
 
 ### Correct Pattern
+
 ```bash
 # Single value
 --InstanceId.1 i-bp1234567890abcdef
@@ -31,9 +33,10 @@ Parameters that accept **multiple values** via indexed suffix `.N`.
 --InstanceId.1 i-xxx
 --InstanceId.2 i-yyy
 --InstanceId.3 i-zzz
-```
+```markdown
 
 ### Wrong Pattern (Causes MissingParam Error)
+
 ```bash
 # ❌ This does NOT work
 --InstanceId i-xxx
@@ -57,9 +60,11 @@ Parameters that accept **multiple values** via indexed suffix `.N`.
 ## 3. JSON Array Parameters
 
 ### Definition
+
 Parameters that accept **JSON-formatted arrays**.
 
 ### Correct Pattern
+
 ```bash
 # Single value
 --InstanceIds '["i-xxx"]'
@@ -70,9 +75,10 @@ Parameters that accept **JSON-formatted arrays**.
 # Nested objects in array
 --Tag.1.Key=env --Tag.1.Value=prod
 --Tag.2.Key=project --Tag.2.Value=test
-```
+```markdown
 
 ### Wrong Pattern
+
 ```bash
 # ❌ Comma-separated does NOT work
 --InstanceIds i-xxx,i-yyy
@@ -86,9 +92,11 @@ Parameters that accept **JSON-formatted arrays**.
 ## 4. Nested Object Parameters
 
 ### Definition
+
 Parameters that accept **key-value pairs** as nested objects.
 
 ### Correct Pattern
+
 ```bash
 # Tags (most common)
 --Tag.1.Key=Environment --Tag.1.Value=Production
@@ -98,9 +106,10 @@ Parameters that accept **key-value pairs** as nested objects.
 --SecurityGroupRule.1.IpProtocol=tcp
 --SecurityGroupRule.1.PortRange=80/80
 --SecurityGroupRule.1.SourceCidrIp=0.0.0.0/0
-```
+```markdown
 
 ### Wrong Pattern
+
 ```bash
 # ❌ Flat key-value does NOT work
 --Tag.Key=env --Tag.Value=prod
@@ -132,7 +141,7 @@ aliyun ecs RunCommand \
 aliyun ecs CreateInstance \
   --SecurityGroupId.1 sg-xxx \
   --SecurityGroupId.2 sg-yyy
-```
+```bash
 
 ### RDS (Relational Database Service)
 
@@ -160,7 +169,7 @@ aliyun r-kvstore CreateInstance \
   --RegionId cn-hangzhou \
   --InstanceClass redis.master.small.default \
   --InstanceName my-redis
-```
+```markdown
 
 ---
 
@@ -196,7 +205,7 @@ aliyun <product> Describe<Resources> --RegionId cn-hangzhou
 
 Before executing ANY `aliyun` CLI command:
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  CLI PRE-FLIGHT CHECKLIST                                       │
 ├─────────────────────────────────────────────────────────────────┤
@@ -218,7 +227,7 @@ Before executing ANY `aliyun` CLI command:
 │    → Check InvocationStatus for CloudShell commands              │
 │    → Decode Base64 Output if needed                             │
 └─────────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ---
 

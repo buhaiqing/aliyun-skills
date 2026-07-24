@@ -41,6 +41,7 @@
 **目标**：将 53 个 Skill 统一注册为可查询的 Tool Schema。
 
 **子任务**：
+
 - [ ] T1.1 设计 ToolSchema 数据模型（Python dataclass）
 - [ ] T1.2 实现 SKILL.md 解析器（frontmatter + Variables + Execution）
 - [ ] T1.3 实现 SKILL-MATRIX.md 解析器（capability 维度）
@@ -50,6 +51,7 @@
 - [ ] T1.7 编写单元测试（覆盖所有 53 个 Skill）
 
 **验证标准**：
+
 ```bash
 # 所有 Skill 解析成功，无异常
 python3 -m pytest agent_runtime/core/tests/test_registry.py -v
@@ -63,9 +65,10 @@ assert len(r.list_by_capability('monitoring')) >= 10
 assert len(r.list_by_keyword('连接数')) >= 2
 print('OK')
 "
-```
+```markdown
 
 **涉及文件**：
+
 - `agent_runtime/core/registry.py`（新增）
 - `agent_runtime/core/schema.py`（新增）
 - `agent_runtime/core/tests/test_registry.py`（新增）
@@ -77,6 +80,7 @@ print('OK')
 **目标**：从任意文本中提取产品、资源 ID、现象、严重级别。
 
 **子任务**：
+
 - [ ] T2.1 定义 Intent / Symptom 数据模型
 - [ ] T2.2 实现产品识别（关键词 + 资源 ID 正则）
 - [ ] T2.3 实现现象分类（现象词典匹配）
@@ -86,6 +90,7 @@ print('OK')
 - [ ] T2.7 编写单元测试
 
 **验证标准**：
+
 ```bash
 python3 -c "
 from agent_runtime.core.intent_parser import IntentParser
@@ -107,6 +112,7 @@ print('OK')
 ```
 
 **涉及文件**：
+
 - `agent_runtime/core/intent_parser.py`（新增）
 - `agent_runtime/core/symptom_dict.yaml`（新增，现象词典）
 - `agent_runtime/core/tests/test_intent_parser.py`（新增）
@@ -118,6 +124,7 @@ print('OK')
 **目标**：为 Intent 补充运行时上下文（标签、负责人、关联服务、最近变更）。
 
 **子任务**：
+
 - [ ] T3.1 实现资源标签查询（aliyun tag API）
 - [ ] T3.2 实现资源详情查询（各产品 Describe API）
 - [ ] T3.3 实现最近变更查询（ActionTrail LookupEvents）
@@ -125,6 +132,7 @@ print('OK')
 - [ ] T3.5 编写单元测试（mock API 响应）
 
 **验证标准**：
+
 ```bash
 python3 -m pytest agent_runtime/core/tests/test_context_enricher.py -v
 
@@ -138,9 +146,10 @@ assert result.resource_owners == {}  # 降级为空
 assert result.region is not None     # region 必须有
 print('OK')
 "
-```
+```markdown
 
 **涉及文件**：
+
 - `agent_runtime/core/context_enricher.py`（新增）
 - `agent_runtime/core/tests/test_context_enricher.py`（新增）
 
@@ -151,6 +160,7 @@ print('OK')
 **目标**：实现诊断模板的加载、匹配、实例化，并编写 Top 10 模板。
 
 **子任务**：
+
 - [ ] T4.1 设计诊断模板 YAML Schema
 - [ ] T4.2 实现模板加载器（从 diagnostic_templates/ 目录加载）
 - [ ] T4.3 实现模板匹配算法（symptom + product + specificity 评分）
@@ -169,6 +179,7 @@ print('OK')
 - [ ] T4.6 编写单元测试
 
 **验证标准**：
+
 ```bash
 # 模板加载
 python3 -c "
@@ -189,6 +200,7 @@ print(f'Matched: {plan.template_name}, {len(plan.steps)} steps')
 ```
 
 **涉及文件**：
+
 - `agent_runtime/core/task_planner.py`（新增）
 - `diagnostic_templates/*.yaml`（新增，10 个模板文件）
 - `agent_runtime/core/tests/test_task_planner.py`（新增）
@@ -200,6 +212,7 @@ print(f'Matched: {plan.template_name}, {len(plan.steps)} steps')
 **目标**：按 DAG 计划调度 Skill 执行，并行/串行，过 GCL 门禁。
 
 **子任务**：
+
 - [ ] T5.1 实现 DAG 拓扑排序（识别并行组）
 - [ ] T5.2 实现 asyncio 并行执行（同组 fan-out）
 - [ ] T5.3 集成 gcl_runner.py（每个 Step 执行前过 GCL）
@@ -211,6 +224,7 @@ print(f'Matched: {plan.template_name}, {len(plan.steps)} steps')
 - [ ] T5.9 编写单元测试 + 集成测试
 
 **验证标准**：
+
 ```bash
 # 单元测试
 python3 -m pytest agent_runtime/core/tests/test_execution_engine.py -v
@@ -220,9 +234,10 @@ python3 -m pytest agent_runtime/core/tests/test_execution_engine_integration.py 
 
 # 验证并行执行
 # 同 parallel_group 的步骤应同时启动（时间戳差值 < 1s）
-```
+```markdown
 
 **涉及文件**：
+
 - `agent_runtime/core/execution_engine.py`（新增）
 - `agent_runtime/core/gcl_gate.py`（新增，封装 gcl_runner.py）
 - `agent_runtime/core/tests/test_execution_engine.py`（新增）
@@ -234,6 +249,7 @@ python3 -m pytest agent_runtime/core/tests/test_execution_engine_integration.py 
 **目标**：交叉分析多步骤结果，推导因果链，计算置信度。
 
 **子任务**：
+
 - [ ] T6.1 实现推理规则引擎（YAML 规则 → Python 条件评估）
 - [ ] T6.2 实现置信度计算模型
 - [ ] T6.3 实现证据链组装
@@ -242,6 +258,7 @@ python3 -m pytest agent_runtime/core/tests/test_execution_engine_integration.py 
 - [ ] T6.6 编写单元测试
 
 **验证标准**：
+
 ```bash
 python3 -m pytest agent_runtime/core/tests/test_root_cause.py -v
 
@@ -258,6 +275,7 @@ print(f'Confidence: {result.confidence}')
 ```
 
 **涉及文件**：
+
 - `agent_runtime/core/root_cause.py`（新增）
 - `agent_runtime/core/inference_engine.py`（新增）
 - `agent_runtime/core/tests/test_root_cause.py`（新增）
@@ -269,12 +287,14 @@ print(f'Confidence: {result.confidence}')
 **目标**：跨多次 API 调用保持诊断上下文，支持暂停/恢复。
 
 **子任务**：
+
 - [ ] T7.1 实现 Session 数据模型
 - [ ] T7.2 实现 Session 持久化（文件 JSON）
 - [ ] T7.3 实现 Session TTL 管理
 - [ ] T7.4 编写单元测试
 
 **验证标准**：
+
 ```bash
 python3 -m pytest agent_runtime/core/tests/test_session.py -v
 
@@ -288,9 +308,10 @@ loaded = SessionStore.load(session.session_id)
 assert loaded.context == some_context
 print('OK')
 "
-```
+```markdown
 
 **涉及文件**：
+
 - `agent_runtime/core/session.py`（新增）
 - `agent_runtime/core/tests/test_session.py`（新增）
 
@@ -301,6 +322,7 @@ print('OK')
 **目标**：将诊断结果格式化为报告、回写工单、推送 IM、CI 回调。
 
 **子任务**：
+
 - [ ] T8.1 实现诊断报告模板（Jinja2 → Markdown）
 - [ ] T8.2 实现工单回写适配器（Jira API）
 - [ ] T8.3 实现 IM 推送适配器（企微/钉钉 Webhook）
@@ -309,6 +331,7 @@ print('OK')
 - [ ] T8.6 编写单元测试
 
 **验证标准**：
+
 ```bash
 python3 -m pytest agent_runtime/core/tests/test_output.py -v
 
@@ -322,6 +345,7 @@ print(report[:200])
 ```
 
 **涉及文件**：
+
 - `agent_runtime/core/output_adapter.py`（新增）
 - `agent_runtime/core/templates/report.md.j2`（新增）
 - `agent_runtime/core/callbacks.py`（新增）
@@ -334,6 +358,7 @@ print(report[:200])
 **目标**：实现 REST API 端点，对外提供诊断服务。
 
 **子任务**：
+
 - [ ] T9.1 FastAPI 应用骨架
 - [ ] T9.2 实现 POST /api/v1/diagnose（异步）
 - [ ] T9.3 实现 GET /api/v1/tasks/{task_id}
@@ -347,6 +372,7 @@ print(report[:200])
 - [ ] T9.11 编写集成测试
 
 **验证标准**：
+
 ```bash
 # 启动服务
 agent-runtime serve --mode rest --port 8080 &
@@ -367,9 +393,10 @@ curl http://localhost:8080/api/v1/tasks/{task_id}/result
 # {"status": "completed", "result": {...}}
 
 kill %1
-```
+```markdown
 
 **涉及文件**：
+
 - `agent_runtime/rest/server.py`（新增）
 - `agent_runtime/rest/routes/*.py`（新增）
 - `agent_runtime/rest/tests/test_api.py`（新增）
@@ -381,6 +408,7 @@ kill %1
 **目标**：实现 MCP Server，暴露 tools 给 LLM Agent。
 
 **子任务**：
+
 - [ ] T10.1 FastMCP Server 骨架
 - [ ] T10.2 实现 `diagnose` tool
 - [ ] T10.3 实现 `run_patrol` tool
@@ -390,6 +418,7 @@ kill %1
 - [ ] T10.7 编写集成测试
 
 **验证标准**：
+
 ```bash
 # 启动 MCP Server
 agent-runtime serve --mode mcp --port 5000 &
@@ -410,6 +439,7 @@ kill %1
 ```
 
 **涉及文件**：
+
 - `agent_runtime/mcp/server.py`（新增）
 - `agent_runtime/mcp/tools.py`（新增）
 - `agent_runtime/mcp/streaming.py`（新增）
@@ -422,6 +452,7 @@ kill %1
 **目标**：端到端验证整个诊断流程。
 
 **子任务**：
+
 - [ ] T11.1 编写 E2E 测试用例（告警 → 诊断 → 结果）
 - [ ] T11.2 编写 E2E 测试用例（工单 → 诊断 → 回写）
 - [ ] T11.3 编写 E2E 测试用例（对话 → 诊断 → 报告）
@@ -434,6 +465,7 @@ kill %1
 - [ ] T11.10 性能测试（诊断耗时 < 30s）
 
 **验证标准**：
+
 ```bash
 # 全量 E2E 测试
 python3 -m pytest tests/e2e/ -v
@@ -445,9 +477,10 @@ python3 -m pytest tests/e2e/test_performance.py -v
 # 一致性测试
 python3 tests/e2e/test_dual_mode_consistency.py
 # REST 和 MCP 诊断结果一致
-```
+```markdown
 
 **涉及文件**：
+
 - `tests/e2e/*.py`（新增）
 
 ---
@@ -457,6 +490,7 @@ python3 tests/e2e/test_dual_mode_consistency.py
 **目标**：编写用户文档和使用示例。
 
 **子任务**：
+
 - [ ] T12.1 更新 ARCHITECTURE.md（Phase 1 完成后标记状态）
 - [ ] T12.2 编写快速开始指南
 - [ ] T12.3 编写 REST API 文档（OpenAPI 自动生成 + 补充说明）
@@ -465,6 +499,7 @@ python3 tests/e2e/test_dual_mode_consistency.py
 - [ ] T12.6 编写 5 个常见场景的 Worked Example
 
 **涉及文件**：
+
 - `docs/quickstart.md`（新增）
 - `docs/mcp-integration.md`（新增）
 - `docs/diagnostic-template-guide.md`（新增）
@@ -473,7 +508,7 @@ python3 tests/e2e/test_dual_mode_consistency.py
 
 ## 3. 依赖关系图
 
-```
+```text
 T1 (Registry) ────┬──▶ T3 (Context) ──────────────────────────────┐
                   │                                                  │
                   ├──▶ T4 (Templates) ──▶ T5 (Engine) ──▶ T6 (RCA) ─┤
@@ -494,6 +529,7 @@ T2 (Intent) ─────┘                         │            │       
 ```
 
 **并行开发建议**：
+
 - Week 1-2: T1 + T2 并行（无依赖）
 - Week 2-3: T3 + T4 并行（依赖 T1, T2 完成）
 - Week 3-5: T5（核心，需要 T1, T4 完成）

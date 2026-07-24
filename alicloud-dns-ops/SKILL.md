@@ -48,6 +48,7 @@ rules, pre-flight checks, **dual-path execution** (official `aliyun` CLI primary
 **JIT Go SDK** fallback), response validation, and failure recovery.
 
 **Execution surface — CLI-primary with JIT Go SDK fallback:**
+
 - **Primary:** `aliyun alidns <Operation>` and `aliyun pvtz <Operation>` — static
   Go binary, covers domain resolution, record management, line routing, GTM,
   DNSSEC, PrivateZone, and DNS analytics.
@@ -59,6 +60,7 @@ rules, pre-flight checks, **dual-path execution** (official `aliyun` CLI primary
 **Core capabilities managed by this skill:**
 
 ### Public Authoritative DNS (Alidns)
+
 - **Domain Management** — Add domains, verify NS records, check domain status
 - **Record Management** — CRUD for A/AAAA/CNAME/MX/TXT/NS/SRV/CAA records
 - **Line-Based Routing** — ISP lines, geographic regions, custom lines
@@ -70,6 +72,7 @@ rules, pre-flight checks, **dual-path execution** (official `aliyun` CLI primary
 - **Batch Operations** — Bulk record management with result verification
 
 ### Private DNS (PrivateZone)
+
 - **PrivateZone Management** — Internal DNS zones for VPC environments
 - **Record Management** — Internal DNS records within PrivateZone
 - **VPC Binding** — Associate PrivateZones with VPC instances

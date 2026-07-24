@@ -150,7 +150,7 @@
 
 ### Pattern: CASCADE-001 — 单点 ECS 过载引发级联故障
 
-```
+```markdown
 [Timeline]
 T1: ECS i-001 CPUUtilization 飙升至 100%
 T2: SLB lb-001 DropConnection 增加（后端 i-001 无响应）
@@ -173,7 +173,7 @@ ECS i-001 单点过载 → SLB 健康检查失败 → 流量未切换 → 应用
 
 ### Pattern: CASCADE-002 — 数据库慢查询引发应用雪崩
 
-```
+```markdown
 [Timeline]
 T1: RDS rm-001 CPUUsage 升高（慢查询）
 T2: 应用响应时间增加

@@ -27,7 +27,7 @@ Agent 扩展模块 → [AGENTS.md](../AGENTS.md) §4 + [references/module-covera
 
 ## 生成物结构
 
-```
+```text
 generated/
 ├── main.tf          # 仅 module 调用
 ├── provider.tf
@@ -38,6 +38,6 @@ generated/
     ├── web-stack/
     ├── vpc-network/
     └── ...
-```
+```text
 
 逆向工程（`reverse_engineering.py`）仍生成裸 `resource` 块用于 `terraform import`，与 NL2HCL 路径分离。

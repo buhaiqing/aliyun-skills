@@ -15,14 +15,14 @@ MongoDB uses B-tree indexes as the primary index structure:
 - **Range Queries**: Supports efficient range scans due to ordered structure
 - **Compound Support**: Multiple fields in single index follow B-tree ordering
 
-```
+```text
 B-tree Index Structure:
            [50]
           /    \
       [25,40]  [75,90]
       /  |  \   /  |  \
     Leaf nodes contain document references
-```
+```markdown
 
 #### Index Types on Alibaba Cloud MongoDB
 
@@ -51,11 +51,13 @@ Every index adds overhead to write operations:
 | **Bulk Write** | Batch index updates | More efficient than individual |
 
 **Write Performance Formula**:
-```
+
+```text
 Write latency = Base latency + (Index count × Index update time)
-```
+```markdown
 
 **Recommendations**:
+
 - Limit indexes on high-write collections
 - Use partial/sparse indexes to reduce overhead
 - Consider write concern for index durability
@@ -70,31 +72,36 @@ Write latency = Base latency + (Index count × Index update time)
 The ESR rule defines optimal compound index field ordering:
 
 **Priority Order**:
+
 1. **E**quality fields first (exact match conditions)
 2. **S**ort fields second (ordering requirements)
 3. **R**ange fields last (comparison conditions)
 
 **Why ESR Works**:
+
 - Equality filters narrow the search space most efficiently
 - Sort fields should be after equality to avoid in-memory sorting
 - Range fields after sort prevents scanning non-sorted ranges
 
 **Example Query**:
+
 ```javascript
 db.users.find({ status: "active", age: { $gte: 18, $lte: 65 } })
          .sort({ created_at: -1 })
          .limit(100)
-```
+```text
 
 **Optimal Index (ESR Order)**:
+
 ```javascript
 // Equality: status = "active"
 // Sort: created_at descending
 // Range: age >= 18 AND age <= 65
 db.users.createIndex({ status: 1, created_at: -1, age: 1 })
-```
+```markdown
 
 **Index Field Explanation**:
+
 | Position | Field | Reason |
 |----------|-------|--------|
 | 1st | `status: 1` | Equality filter - most selective first |
@@ -108,6 +115,7 @@ Compound indexes support queries on index prefixes:
 **Index**: `{name: 1, age: -1, created_at: 1}`
 
 **Supported Queries**:
+
 | Query Pattern | Uses Index? | Notes |
 |---------------|-------------|-------|
 | `{name: "John"}` | Yes | First field prefix |
@@ -117,6 +125,7 @@ Compound indexes support queries on index prefixes:
 | `{created_at: ...}` | No | Not a prefix (skips name, age) |
 
 **Prefix Rules**:
+
 - Index supports leftmost prefix queries
 - Skipping fields breaks index usage
 - Order matters for compound queries
@@ -126,6 +135,7 @@ Compound indexes support queries on index prefixes:
 MongoDB can use multiple indexes for a single query (index intersection):
 
 **When Intersection Occurs**:
+
 ```javascript
 // Query with two separate conditions
 db.products.find({ category: "electronics", price: { $lt: 1000 } })
@@ -135,7 +145,7 @@ db.products.createIndex({ category: 1 })
 db.products.createIndex({ price: 1 })
 
 // MongoDB may intersect both indexes
-```
+```markdown
 
 **Intersection vs Compound Index**:
 
@@ -147,6 +157,7 @@ db.products.createIndex({ price: 1 })
 | **Write Overhead** | One index to update | Multiple indexes to update |
 
 **Recommendation**:
+
 - Prefer compound index when queries frequently combine conditions
 - Use intersection for infrequent combined queries with separate frequent queries
 
@@ -155,11 +166,13 @@ db.products.createIndex({ price: 1 })
 A covered query retrieves all data from the index without examining documents:
 
 **Requirements**:
+
 1. All query fields are in the index
 2. All returned fields are in the index
 3. Query excludes `_id` or `_id` is in index
 
 **Example**:
+
 ```javascript
 // Query
 db.orders.find(
@@ -173,9 +186,10 @@ db.orders.createIndex({ status: 1, customer_id: 1, total: 1 })
 // Verify covered query
 db.orders.explain("executionStats").find(...)
 // Look for: "totalDocsExamined": 0, "stage": "IXSCAN"
-```
+```markdown
 
 **Covered Query Benefits**:
+
 - No document reads (I/O reduction)
 - Faster response time
 - Reduced memory usage
@@ -184,31 +198,34 @@ db.orders.explain("executionStats").find(...)
 ### Compound Index Examples
 
 **Pattern 1: User Profile Queries**:
+
 ```javascript
 // Query pattern: name + age range + sort by created
 db.users.createIndex({ name: 1, created_at: -1, age: 1 })
 
 // Query pattern: status + department + sort by salary
 db.employees.createIndex({ status: 1, department: 1, salary: -1 })
-```
+```text
 
 **Pattern 2: Time-series Data**:
+
 ```javascript
 // Query pattern: device_id + time range + metric type
 db.metrics.createIndex({ device_id: 1, timestamp: -1, metric_type: 1 })
 
 // Query pattern: region + date + status
 db.logs.createIndex({ region: 1, date: -1, status: 1 })
-```
+```text
 
 **Pattern 3: E-commerce Search**:
+
 ```javascript
 // Query pattern: category + price range + sort by rating
 db.products.createIndex({ category: 1, rating: -1, price: 1 })
 
 // Query pattern: brand + availability + sort by discount
 db.inventory.createIndex({ brand: 1, availability: 1, discount: -1 })
-```
+```markdown
 
 ---
 
@@ -219,6 +236,7 @@ db.inventory.createIndex({ brand: 1, availability: 1, discount: -1 })
 TTL (Time-To-Live) indexes automatically remove documents after a specified time:
 
 **Key Characteristics**:
+
 - Single field index on date/date-array field
 - Documents expire after `expireAfterSeconds`
 - Background thread runs deletion every ~60 seconds
@@ -227,12 +245,14 @@ TTL (Time-To-Live) indexes automatically remove documents after a specified time
 ### TTL Delete Interval
 
 **Mechanism**:
+
 - TTL monitor thread runs every 60 seconds
 - Batch deletion removes expired documents
 - Deletion continues until thread yields or completes
 - High deletion volume may extend cleanup time
 
 **Timing Consideration**:
+
 | Factor | Impact |
 |--------|---------|
 | Document count | More docs = longer cleanup cycle |
@@ -254,24 +274,27 @@ TTL (Time-To-Live) indexes automatically remove documents after a specified time
 ### Creation via MongoDB Shell
 
 **Basic TTL Index**:
+
 ```javascript
 // Documents expire 1 hour after created_at value
 db.sessions.createIndex(
   { created_at: 1 },
   { expireAfterSeconds: 3600 }
 )
-```
+```text
 
 **Custom Expiration Time**:
+
 ```javascript
 // Documents expire at specific date stored in expire_at field
 db.events.createIndex(
   { expire_at: 1 },
   { expireAfterSeconds: 0 }  // Expire exactly at expire_at value
 )
-```
+```text
 
 **TTL with Partial Index**:
+
 ```javascript
 // Only expire documents matching filter
 db.logs.createIndex(
@@ -281,11 +304,12 @@ db.logs.createIndex(
     partialFilterExpression: { temp_log: true }
   }
 )
-```
+```markdown
 
 ### Monitoring TTL Deletion Rate
 
 **Key Metrics to Monitor**:
+
 ```javascript
 // Check TTL index exists
 db.collection.getIndexes()
@@ -300,15 +324,17 @@ db.serverStatus().metrics.ttl
     "passes": 245
   }
 }
-```
+```markdown
 
 **Alibaba Cloud Monitoring**:
+
 - Use DAS (Database Autonomy Service) for TTL monitoring
 - Monitor collection size trends
 - Track write/delete rate balance
 - Alert on unusual TTL delays
 
 **Troubleshooting TTL**:
+
 | Issue | Diagnosis | Resolution |
 |-------|-----------|------------|
 | Documents not deleted | Check field type (must be Date) | Ensure proper BSON Date format |
@@ -325,6 +351,7 @@ db.serverStatus().metrics.ttl
 MongoDB text indexes enable full-text search on string content:
 
 **Features**:
+
 - Tokenization of string content
 - Language-specific stemming
 - Case-insensitive matching
@@ -335,6 +362,7 @@ MongoDB text indexes enable full-text search on string content:
 ### Multi-language Support
 
 **Supported Languages**:
+
 ```javascript
 // Specify language during creation
 db.articles.createIndex(
@@ -345,9 +373,10 @@ db.articles.createIndex(
 // Available languages (partial list):
 // english, chinese, french, german, spanish, portuguese,
 // russian, japanese, korean, italian, dutch, norwegian, etc.
-```
+```text
 
 **Chinese Text Search**:
+
 ```javascript
 // Chinese text index (important for Alibaba Cloud users)
 db.posts.createIndex(
@@ -357,7 +386,7 @@ db.posts.createIndex(
     weights: { content: 10, title: 5 }
   }
 )
-```
+```markdown
 
 ### Text Index Limitations
 
@@ -373,30 +402,35 @@ db.posts.createIndex(
 ### $text Query Operator Usage
 
 **Basic Text Search**:
+
 ```javascript
 db.articles.find({ $text: { $search: "mongodb index optimization" } })
-```
+```text
 
 **Phrase Search**:
+
 ```javascript
 // Exact phrase (escape quotes)
 db.articles.find({ $text: { $search: "\"compound index\" optimization" } })
-```
+```text
 
 **Negation**:
+
 ```javascript
 // Exclude terms with minus sign
 db.articles.find({ $text: { $search: "mongodb -mysql" } })
-```
+```text
 
 **Language Override**:
+
 ```javascript
 db.articles.find(
   { $text: { $search: "optimisation", $language: "english" } }
 )
-```
+```text
 
 **Case/Diacritic Sensitivity**:
+
 ```javascript
 db.articles.find(
   {
@@ -407,11 +441,12 @@ db.articles.find(
     }
   }
 )
-```
+```markdown
 
 ### Relevance Scoring with Weights
 
 **Configure Field Weights**:
+
 ```javascript
 db.blog.createIndex(
   { title: "text", content: "text", tags: "text" },
@@ -424,15 +459,16 @@ db.blog.createIndex(
     default_language: "english"
   }
 )
-```
+```text
 
 **Project Relevance Score**:
+
 ```javascript
 db.blog.find(
   { $text: { $search: "mongodb performance" } },
   { score: { $meta: "textScore" }, title: 1, content: 1 }
 ).sort({ score: { $meta: "textScore" } })
-```
+```markdown
 
 ---
 
@@ -443,11 +479,13 @@ db.blog.find(
 Hashed indexes ensure uniform data distribution across shards:
 
 **Mechanism**:
+
 - MongoDB hashes the indexed field value
 - Hash determines shard assignment
 - Distributes documents evenly across shards
 
 **Hash Function**:
+
 - Uses MongoDB's internal hash function
 - Consistent hash across cluster
 - Deterministic: same value → same shard
@@ -455,22 +493,24 @@ Hashed indexes ensure uniform data distribution across shards:
 ### Hashed Index on Shard Key
 
 **Creation**:
+
 ```javascript
 // Create hashed shard key index
 db.users.createIndex({ user_id: "hashed" })
 
 // Shard collection using hashed shard key
 sh.shardCollection("mydb.users", { user_id: "hashed" })
-```
+```text
 
 **Sharding Commands**:
+
 ```javascript
 // Enable sharding for database
 sh.enableSharding("mydb")
 
 // Shard collection with hashed key
 sh.shardCollection("mydb.orders", { order_id: "hashed" })
-```
+```markdown
 
 ### Limitations: No Range Queries on Hashed Field
 
@@ -482,23 +522,26 @@ sh.shardCollection("mydb.orders", { order_id: "hashed" })
 | Compound `{_id: 1, other: 1}` | Not supported as shard key |
 
 **Workaround for Range Queries**:
+
 ```javascript
 // Create additional index for range queries
 db.users.createIndex({ user_id: 1 })  // Regular index for ranges
 
 // Shard key remains hashed
 sh.shardCollection("mydb.users", { user_id: "hashed" })
-```
+```markdown
 
 ### Creation Examples
 
 **Single Shard Key**:
+
 ```javascript
 db.logs.createIndex({ log_id: "hashed" })
 sh.shardCollection("app.logs", { log_id: "hashed" })
-```
+```markdown
 
 **Choosing Hashed Shard Key**:
+
 | Criteria | Recommendation |
 |----------|----------------|
 | High write volume | Hashed preferred (uniform writes) |
@@ -514,6 +557,7 @@ sh.shardCollection("app.logs", { log_id: "hashed" })
 ### Geospatial (2dsphere, 2d)
 
 **2dsphere Index** (GeoJSON, earth-like geometry):
+
 ```javascript
 // Create 2dsphere index
 db.places.createIndex({ location: "2dsphere" })
@@ -554,22 +598,24 @@ db.places.find({
     }
   }
 })
-```
+```text
 
 **2d Index** (Legacy, flat coordinate system):
+
 ```javascript
 // Legacy 2d index (flat coordinates)
 db.legacy.createIndex({ loc: "2d" })
 
 // Query with 2d index
 db.legacy.find({ loc: { $near: [121.47, 31.23], $maxDistance: 0.1 } })
-```
+```markdown
 
 ### Partial Index (Filter Expression)
 
 Partial indexes index only documents matching a filter expression:
 
 **Creation**:
+
 ```javascript
 // Index only active users
 db.users.createIndex(
@@ -582,14 +628,16 @@ db.orders.createIndex(
   { total: -1 },
   { partialFilterExpression: { total: { $gt: 10000 } } }
 )
-```
+```markdown
 
 **Benefits**:
+
 - Reduced storage overhead
 - Lower write cost (fewer documents indexed)
 - Better performance for filtered queries
 
 **Query Requirements**:
+
 - Query must match filter expression for index use
 - Filter should match common query patterns
 
@@ -598,6 +646,7 @@ db.orders.createIndex(
 Sparse indexes exclude documents without the indexed field (null/missing):
 
 **Creation**:
+
 ```javascript
 // Sparse index excludes documents without email
 db.users.createIndex({ email: 1 }, { sparse: true })
@@ -607,9 +656,10 @@ db.products.createIndex(
   { sku: 1, reviews: 1 },
   { sparse: true }
 )
-```
+```markdown
 
 **Behavior**:
+
 | Query | Sparse Index Used? |
 |-------|-------------------|
 | `{email: "test@example.com"}` | Yes |
@@ -622,6 +672,7 @@ db.products.createIndex(
 Indexes with specific collation for string comparison:
 
 **Creation**:
+
 ```javascript
 // Case-insensitive collation index
 db.names.createIndex(
@@ -634,9 +685,10 @@ db.products.createIndex(
   { product_name: 1 },
   { collation: { locale: "zh" } }
 )
-```
+```markdown
 
 **Collation Strength Levels**:
+
 | Level | Comparison | Example |
 |-------|------------|---------|
 | 1 | Base characters | "a" = "A" = "á" |
@@ -644,10 +696,11 @@ db.products.createIndex(
 | 3 | Base + accents + case | "a" ≠ "A" ≠ "á" |
 
 **Query with Collation**:
+
 ```javascript
 // Query must specify same collation
 db.names.find({ name: "john" }).collation({ locale: "en", strength: 2 })
-```
+```markdown
 
 ---
 
@@ -658,6 +711,7 @@ db.names.find({ name: "john" }).collation({ locale: "en", strength: 2 })
 Alibaba Cloud DAS (Database Autonomy Service) provides intelligent index analysis:
 
 **DAS Capabilities**:
+
 - Automatic slow query analysis
 - Index recommendation engine
 - Unused index detection
@@ -665,6 +719,7 @@ Alibaba Cloud DAS (Database Autonomy Service) provides intelligent index analysi
 - Real-time performance insights
 
 **Integration with alicloud-das-ops**:
+
 ```yaml
 # Call alicloud-das-ops skill for MongoDB index analysis
 workflow:
@@ -673,11 +728,12 @@ workflow:
   3. Retrieve index suggestions
   4. Evaluate recommendations
   5. Apply validated changes
-```
+```markdown
 
 ### Index Suggestions from Performance Insights
 
 **DAS Recommendation Types**:
+
 | Type | Description | Action |
 |------|-------------|--------|
 | **Missing Index** | Slow query needs new index | Create recommended index |
@@ -689,6 +745,7 @@ workflow:
 ### Unused Index Detection
 
 **MongoDB Shell Method**:
+
 ```javascript
 // Get index usage statistics (MongoDB 3.2+)
 db.collection.aggregate([
@@ -700,9 +757,10 @@ db.collection.aggregate([
   "name": "status_1",
   "accesses": { "ops": 1542, "since": ISODate("...") }
 }
-```
+```markdown
 
 **DAS Unused Index Analysis**:
+
 - Periodic analysis of index usage patterns
 - Threshold: < 100 accesses in 30 days
 - Automatic alert for potential removal
@@ -719,6 +777,7 @@ db.collection.aggregate([
 | **Rolling Build** | Recommended for sharded | Per-shard build |
 
 **Production Index Build Workflow**:
+
 ```javascript
 // Modern MongoDB (4.2+) - all builds are non-blocking
 db.collection.createIndex({ field: 1 })
@@ -738,9 +797,10 @@ db.currentOp(true).inprog.forEach(function(op) {
           " - Progress: " + op.progress);
   }
 });
-```
+```markdown
 
 **Alibaba Cloud Best Practices**:
+
 - Schedule builds during maintenance window
 - Use rolling builds for sharded clusters
 - Monitor build progress via DAS
@@ -754,6 +814,7 @@ db.currentOp(true).inprog.forEach(function(op) {
 ### Scenario 1: 查询慢但有索引 (Slow Query Despite Index)
 
 **Diagnosis**:
+
 ```javascript
 // Run explain to check index usage
 db.collection.explain("executionStats").find(query)
@@ -763,7 +824,7 @@ db.collection.explain("executionStats").find(query)
 // - totalDocsExamined: documents scanned
 // - totalKeysExamined: index entries scanned
 // - executionTimeMillis: query duration
-```
+```markdown
 
 **Common Causes and Solutions**:
 
@@ -776,6 +837,7 @@ db.collection.explain("executionStats").find(query)
 | Large result set | High `nReturned` | Add pagination limit |
 
 **Fix Examples**:
+
 ```javascript
 // Force specific index
 db.users.find({ status: "active" }).hint({ status: 1, created_at: -1 })
@@ -783,11 +845,12 @@ db.users.find({ status: "active" }).hint({ status: 1, created_at: -1 })
 // Add coverage fields
 db.orders.createIndex({ status: 1, customer_id: 1, total: 1 })
 // Now covers: find({status: "X"}, {_id:0, status:1, customer_id:1, total:1})
-```
+```markdown
 
 ### Scenario 2: 索引未命中 (Index Not Used)
 
 **Diagnosis**:
+
 ```javascript
 // Check explain plan
 var plan = db.collection.explain("executionStats").find(query);
@@ -796,7 +859,7 @@ printjson(plan.queryPlanner.winningPlan);
 // Look for:
 // - "stage": "COLLSCAN" → No index used (BAD)
 // - "stage": "IXSCAN" → Index used (GOOD)
-```
+```markdown
 
 **Common Causes**:
 
@@ -810,6 +873,7 @@ printjson(plan.queryPlanner.winningPlan);
 | Type mismatch | `{price: "100"}` when price is Number | Fix query data type |
 
 **Fix Examples**:
+
 ```javascript
 // Create matching index for non-prefix query
 db.users.createIndex({ age: 1 })
@@ -821,11 +885,12 @@ db.users.find({ status: { $in: ["pending", "inactive"] } })
 // Use prefix regex for index usage
 db.products.find({ name: /^Apple/ })
 // Not: { name: /Apple/ }
-```
+```markdown
 
 ### Scenario 3: 索引过多影响写入 (Too Many Indexes)
 
 **Diagnosis**:
+
 ```javascript
 // List all indexes
 db.collection.getIndexes()
@@ -835,9 +900,10 @@ db.collection.stats().indexSizes
 
 // Monitor write performance
 db.collection.stats().wiredTiger
-```
+```markdown
 
 **Symptoms**:
+
 - High write latency
 - Memory pressure
 - CPU spike during writes
@@ -854,6 +920,7 @@ db.collection.stats().wiredTiger
 | 5 | Consider partial indexes | Reduce scope of remaining |
 
 **Fix Examples**:
+
 ```javascript
 // Drop unused index
 db.collection.dropIndex("unused_index_name")
@@ -867,11 +934,12 @@ db.collection.createIndex(
 
 // Verify improvement
 db.collection.stats().indexSizes
-```
+```markdown
 
 ### Scenario 4: 索引构建阻塞 (Index Build Blocking)
 
 **Diagnosis**:
+
 ```javascript
 // Check current operations
 db.currentOp(true)
@@ -880,9 +948,10 @@ db.currentOp(true)
 // - createIndexes command
 // - Progress percentage
 // - Lock held duration
-```
+```markdown
 
 **Causes**:
+
 - Large collection size
 - High concurrent traffic
 - Resource constraints
@@ -898,6 +967,7 @@ db.currentOp(true)
 | Pre-production | Test build time on staging |
 
 **Safe Index Build Process**:
+
 ```javascript
 // 1. Schedule during low-traffic (maintenance window)
 // 2. For sharded clusters: rolling build per shard
@@ -909,7 +979,7 @@ db.killOp(<opId>)
 
 // 5. Use build in background (MongoDB < 4.2)
 db.collection.createIndex({ field: 1 }, { background: true })
-```
+```markdown
 
 ---
 
@@ -962,6 +1032,7 @@ db.collection.createIndex({ field: 1 }, { background: true })
 ### Monitoring Commands
 
 **Index Statistics**:
+
 ```javascript
 // Collection index details
 db.collection.getIndexes()
@@ -971,9 +1042,10 @@ db.collection.stats().indexSizes
 
 // Index usage statistics
 db.collection.aggregate([{ $indexStats: {} }])
-```
+```text
 
 **Query Performance Analysis**:
+
 ```javascript
 // Explain query plan
 db.collection.explain("executionStats").find(query)
@@ -987,9 +1059,10 @@ db.collection.explain("executionStats").find(query)
     "executionTimeMillis": N  // Query duration
   }
 }
-```
+```text
 
 **Efficiency Calculation**:
+
 ```javascript
 // Index efficiency formula
 // Ideal: totalDocsExamined ≈ nReturned
@@ -1006,17 +1079,19 @@ print("Efficiency ratio: " + ratio);
 // ratio < 1 → Excellent (covered or exact match)
 // ratio 1-10 → Good
 // ratio > 10 → Needs optimization
-```
+```markdown
 
 ### Alibaba Cloud Monitoring Integration
 
 **DAS Metrics Dashboard**:
+
 - Slow query frequency
 - Index usage heatmap
 - Space utilization trends
 - Real-time performance alerts
 
 **Alert Thresholds**:
+
 | Alert | Threshold | Action |
 |-------|-----------|--------|
 | Slow query rate | > 10/min | Investigate and optimize |
@@ -1057,7 +1132,7 @@ db.coll.createIndex({ location: "2dsphere" })
 
 // Unique
 db.coll.createIndex({ field: 1 }, { unique: true })
-```
+```markdown
 
 ### Index Management Commands
 
@@ -1076,7 +1151,7 @@ db.coll.hideIndex("index_name")
 
 // Unhide index
 db.coll.unhideIndex("index_name")
-```
+```markdown
 
 ### Query Optimization Commands
 
@@ -1089,7 +1164,7 @@ db.coll.explain("executionStats").find(query)
 
 // Check index stats
 db.coll.aggregate([{ $indexStats: {} }])
-```
+```markdown
 
 ---
 

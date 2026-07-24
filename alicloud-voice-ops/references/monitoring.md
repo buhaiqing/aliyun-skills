@@ -5,6 +5,7 @@
 Voice Messaging Service provides these metrics in CloudMonitor:
 
 ### Call Metrics
+
 | Metric | Description | Unit |
 |--------|-------------|------|
 | `CallTotalCount` | Total number of calls | Count |
@@ -14,6 +15,7 @@ Voice Messaging Service provides these metrics in CloudMonitor:
 | `CallDuration` | Average call duration | Seconds |
 
 ### Task Metrics
+
 | Metric | Description | Unit |
 |--------|-------------|------|
 | `TaskTotalCount` | Total number of batch tasks | Count |
@@ -23,6 +25,7 @@ Voice Messaging Service provides these metrics in CloudMonitor:
 ## Default Dashboards
 
 Alibaba Cloud provides a pre-built dashboard for Voice Messaging Service:
+
 1. Navigate to [CloudMonitor Console](https://cms.console.aliyun.com/)
 2. Select **Dashboard** > **Custom Dashboard** > **Voice Messaging Service**
 3. View metrics for:
@@ -52,19 +55,24 @@ Alibaba Cloud provides a pre-built dashboard for Voice Messaging Service:
 ## Logging
 
 ### API Logs
+
 All API calls are logged in ActionTrail:
+
 1. Navigate to [ActionTrail Console](https://actiontrail.console.aliyun.com/)
 2. View logs for Dyvmsapi operations
 3. Export logs to OSS or SLS for long-term storage
 
 ### Call Detail Logs
+
 Call details including recording URLs are available via:
+
 - `query-call-detail-by-call-id` API
 - Voice Service Console > Call Records
 
 ## Performance Monitoring
 
 Key performance metrics to track:
+
 - **API Response Time**: < 500ms (target)
 - **Call Setup Time**: < 3 seconds (target)
 - **Recording Availability**: 99.9% uptime

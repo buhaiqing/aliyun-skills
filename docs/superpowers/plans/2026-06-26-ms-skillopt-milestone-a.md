@@ -26,7 +26,7 @@
 
 ## File structure (Milestone A)
 
-```
+```text
 scripts/skill_evolution/
 ├── README.md                      # Operator guide + optional skillopt train cmd
 ├── export_trajectories.py         # L1 memory → sanitized trajectories.jsonl
@@ -46,9 +46,10 @@ scripts/skill_evolution/
     ├── trajectories.jsonl
     ├── trainable_seed.md
     └── dataset.jsonl
-```
+```markdown
 
 **Modify:**
+
 - [TODO.md](../../../TODO.md) — M1/M2/M3 tracker
 - [docs/runtime-harness-glossary.md](../../runtime-harness-glossary.md) — link to `scripts/skill_evolution/README.md`
 - [scripts/skill-change-critic-gate.sh](../../../scripts/skill-change-critic-gate.sh) — classify `scripts/skill_evolution/`
@@ -59,6 +60,7 @@ scripts/skill_evolution/
 ## Task 1: Trajectory export (`export_trajectories.py`)
 
 **Files:**
+
 - Create: `scripts/skill_evolution/export_trajectories.py`
 - Create: `scripts/skill_evolution/fixtures/memory_ecs.jsonl`
 - Create: `scripts/skill_evolution/export_trajectories_test.py`
@@ -86,6 +88,7 @@ Expected: `ImportError` or `AttributeError`
 - [ ] **Step 3: Implement `export_trajectories.py`**
 
 Key functions:
+
 - `resolve_skills_root()` — `ALIYUN_SKILLS_ROOT` or walk up to repo root
 - `sanitize_command(cmd: str) -> str` — mask `LTAI...`, `sk-lf-`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - `load_memory_entries(memory_root, skill) -> list[dict]` — read all `memory_root/{skill}/*.jsonl`
@@ -106,7 +109,7 @@ Key functions:
   "duration_ms": 120,
   "failure_pattern": null
 }
-```
+```bash
 
 CLI: `python3 export_trajectories.py --skill alicloud-ecs-ops [--memory-root PATH] [--out PATH]`
 
@@ -126,6 +129,7 @@ git commit -m "feat(skill-evolution): export Layer 1 memory to sanitized traject
 ## Task 2: Trainable seed extractor (`build_trainable_seed.py`)
 
 **Files:**
+
 - Create: `scripts/skill_evolution/build_trainable_seed.py`
 - Create: `scripts/skill_evolution/fixtures/skill_md_header.md`
 - Create: `scripts/skill_evolution/build_trainable_seed_test.py`
@@ -143,9 +147,10 @@ CLI: `python3 build_trainable_seed.py --skill alicloud-ecs-ops [--skill-md PATH]
 Default out: `.runtime/skill-evolution/{skill}/trainable_seed.md`
 
 Header comment in output:
+
 ```markdown
 <!-- trainable_seed.md — Milestone A export for Microsoft SkillOpt; NOT a drop-in SKILL.md replacement -->
-```
+```markdown
 
 - [ ] **Step 4: Run test — PASS**
 
@@ -156,6 +161,7 @@ Header comment in output:
 ## Task 3: Dataset builder (`build_dataset.py`)
 
 **Files:**
+
 - Create: `scripts/skill_evolution/build_dataset.py`
 - Create: `scripts/skill_evolution/fixtures/eval_queries_ecs.json`
 - Create: `scripts/skill_evolution/build_dataset_test.py`
@@ -167,6 +173,7 @@ Header comment in output:
 - Attach `trajectory_count` for skill from trajectories file (may be 0)
 
 Output line schema:
+
 ```python
 {
   "schema_version": "1.0",
@@ -189,6 +196,7 @@ CLI: `python3 build_dataset.py --skill alicloud-ecs-ops`
 ## Task 4: Orchestrator + operator docs
 
 **Files:**
+
 - Create: `scripts/skill_evolution/run_milestone_a.sh`
 - Create: `scripts/skill_evolution/README.md`
 - Create: `scripts/test-skill-evolution-milestone-a.sh`
@@ -210,7 +218,7 @@ if command -v skillopt >/dev/null 2>&1; then
 else
   echo "[HINT] pip install skillopt  # optional for offline training"
 fi
-```
+```bash
 
 - [ ] **Step 2: README.md** — document flywheel, outputs, manual merge policy (`best_skill.md` → PR into SKILL.md sections only), link glossary §1.1
 
@@ -229,7 +237,7 @@ bash -n ../skill_evolution/run_milestone_a.sh
 ```bash
 bash scripts/test-skill-evolution-milestone-a.sh
 python3 scripts/check_py310_compat.py
-```
+```markdown
 
 - [ ] **Step 5: Commit**
 
@@ -238,6 +246,7 @@ python3 scripts/check_py310_compat.py
 ## Task 5: Repo wiring (TODO + glossary + critic gate)
 
 **Files:**
+
 - Modify: [TODO.md](../../../TODO.md)
 - Modify: [docs/runtime-harness-glossary.md](../../runtime-harness-glossary.md)
 - Modify: [scripts/skill-change-critic-gate.sh](../../../scripts/skill-change-critic-gate.sh)

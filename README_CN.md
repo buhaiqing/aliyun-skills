@@ -27,7 +27,7 @@
 
 ## 项目结构
 
-```
+```text
 aliyun-skills/
 ├── README.md                          # 英文版
 ├── README_CN.md                       # 中文版（本文件）
@@ -57,7 +57,7 @@ aliyun-skills/
 ├── alicloud-polar-oracle-ops/         # PolarDB Oracle兼容版
 ├── alicloud-bailian-ops/              # 百炼 GenAI平台 - 大模型、Agent、RAG、Prompt
 └── alicloud-topo-discovery/          # [发现类 Skill] 网络拓扑与资源清单
-```
+```markdown
 
 ## 快速开始
 
@@ -78,7 +78,7 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 # 方式二：交互式配置
 aliyun configure
-```
+```markdown
 
 ### 3. 生成新 Skill
 
@@ -87,7 +87,8 @@ aliyun configure
 > "生成阿里云 ECS 的 Skill，名称 alicloud-ecs-ops，核心功能：实例生命周期管理、磁盘、快照"
 
 **生成结构**：
-```
+
+```text
 alicloud-ecs-ops/
 ├── SKILL.md
 ├── references/
@@ -119,26 +120,29 @@ aliyun ecs DescribeInstances --output cols=InstanceId,Status rows=Instances.Inst
 # 轮询等待
 aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
   --waiter expr='Instances.Instance[0].Status' to=Running timeout=300
-```
+```markdown
 
 ## aliyun CLI 安装
 
 **官方一键安装（自动检测 OS + 架构）：**
+
 ```bash
 /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
 ```
 
 `install.sh` 自动处理：
+
 - **macOS**: 下载 `universal` 包（Intel + Apple Silicon 通吃）
 - **Linux AMD64**: `aliyun-cli-linux-latest-amd64.tgz`
 - **Linux ARM64**: `aliyun-cli-linux-latest-arm64.tgz`
 - 安装到 `/usr/local/bin/aliyun`
 
 **其他方式：**
+
 ```bash
 # macOS Homebrew
 brew install aliyun-cli
-```
+```markdown
 
 ## 凭证配置
 
@@ -161,9 +165,10 @@ vim .env
 | `ALIBABA_CLOUD_REGION_ID` | 默认地域 | `cn-hangzhou` |
 
 **加载环境变量：**
+
 ```bash
 source .env
-```
+```bash
 
 ### 方式二：直接导出环境变量
 
@@ -177,9 +182,10 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 ```bash
 aliyun configure
-```
+```text
 
 **配置文件：**
+
 ```json
 {
   "current": "default",
@@ -206,7 +212,7 @@ aliyun configure
 ```bash
 # 检查 Markdown 格式
 npx markdownlint-cli2 "alicloud-*/SKILL.md"
-```
+```markdown
 
 验证：CLI 命令可执行、链接有效、示例正确。
 

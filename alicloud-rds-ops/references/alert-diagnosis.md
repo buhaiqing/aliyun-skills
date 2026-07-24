@@ -70,7 +70,7 @@ When multiple alerts fire simultaneously, use correlation analysis to identify t
 
 ### 2.2 Dimensional Analysis Decision Tree
 
-```
+```text
 收到多维度告警
 │
 ├─ CPU 高?
@@ -106,7 +106,7 @@ When multiple alerts fire simultaneously, use correlation analysis to identify t
    │  └─ 行动: 拆分大事务, 错峰写入
    └─ Slave 规格低? → 根因: 从库性能不足
       └─ 行动: 升级只读实例规格
-```
+```markdown
 
 ---
 
@@ -114,7 +114,7 @@ When multiple alerts fire simultaneously, use correlation analysis to identify t
 
 ### 3.1 MySQL Diagnostic Tree
 
-```
+```text
 MySQL 故障诊断
 │
 ├─ 性能问题
@@ -153,11 +153,11 @@ MySQL 故障诊断
    ├─ Lock wait timeout → 事务过长或锁竞争
    ├─ Deadlock found → 应用逻辑问题, 需重试机制
    └─ Metadata lock wait → DDL期间长事务阻塞
-```
+```markdown
 
 ### 3.2 PostgreSQL Diagnostic Tree
 
-```
+```text
 PostgreSQL 故障诊断
 │
 ├─ 性能问题
@@ -191,11 +191,11 @@ PostgreSQL 故障诊断
    ├─ pg_locks 中 granted = false → 锁等待
    ├─ locktype = 'relation', mode = 'AccessExclusiveLock' → DDL阻塞
    └─ deadlock detected → 应用事务顺序不一致
-```
+```markdown
 
 ### 3.3 SQL Server Diagnostic Tree
 
-```
+```text
 SQL Server 故障诊断
 │
 ├─ 性能问题
@@ -231,7 +231,7 @@ SQL Server 故障诊断
    ├─ Transaction Log 满 → 日志备份未运行或长事务
    ├─ Log Reuse Wait = 'LOG_BACKUP' → 需要日志备份
    └─ Log Reuse Wait = 'REPLICATION' → 复制未消费日志
-```
+```markdown
 
 ---
 
@@ -253,7 +253,7 @@ When analyzing metrics over time, identify these patterns to guide diagnosis:
 
 ### 4.2 Baseline Deviation Analysis
 
-```
+```text
 基线偏离分析流程
 │
 ├─ 获取当前指标值 (Current)
@@ -270,7 +270,7 @@ When analyzing metrics over time, identify these patterns to guide diagnosis:
    ├─ D-1 和 W-1 同时偏离 → 系统性问题 (配置变更/应用变更)
    ├─ 仅 D-1 偏离 → 短期问题 (单次查询/临时任务)
    └─ 仅 W-1 偏离 → 周期性业务变化 (周末/月末效应)
-```
+```markdown
 
 ---
 
@@ -282,7 +282,7 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
 
 #### Phase 1: Alert Triage (30 seconds)
 
-```
+```text
 1. 获取实例基本信息
    → DescribeDBInstanceAttribute
    → 确认 Engine, Version, Status, Class
@@ -295,11 +295,11 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
    ├─ 实例状态 != Running → 优先处理状态问题
    ├─ CPU > 95% 或 Disk > 90% → Critical, 立即深入诊断
    └─ 其他 → Warning, 标准诊断流程
-```
+```text
 
 #### Phase 2: Multi-Dimensional Correlation (60 seconds)
 
-```
+```text
 4. 根据告警类型, 执行关联检查
    ├─ CPU 告警 → 同时获取 Connections, IOPS, SlowLogs
    ├─ Disk 告警 → 同时获取 ResourceUsage, BinlogFiles, Backups
@@ -308,11 +308,11 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
 
 5. 应用关联矩阵 (Section 2.1)
    → 识别 Primary Root Cause vs Secondary Effects
-```
+```text
 
 #### Phase 3: Engine-Specific Deep Dive (90 seconds)
 
-```
+```text
 6. 根据 Engine 类型, 执行引擎特定诊断
    ├─ MySQL → 检查 InnoDB 状态, 锁等待, 复制状态
    ├─ PostgreSQL → 检查 VACUUM 状态, WAL 堆积, 连接状态
@@ -322,11 +322,11 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
    → DescribeSlowLogs (最近1小时)
    → DescribeErrorLogs (最近1小时)
    → DescribeSQLLogRecords (最近1小时, 按 latency 排序)
-```
+```text
 
 #### Phase 4: Root Cause Synthesis (30 seconds)
 
-```
+```text
 8. 综合分析所有数据, 生成诊断报告
    ├─ 根因分类: [查询性能] / [连接管理] / [资源配置] / [复制延迟] / [锁竞争]
    ├─ 影响评估: [仅性能下降] / [有宕机风险] / [数据一致性风险]
@@ -338,7 +338,7 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
    ├─ 影响评估
    ├─ 即时建议 (可立即执行)
    └─ 长期建议 (需计划执行)
-```
+```markdown
 
 ### 5.2 Diagnosis Report Template
 
@@ -385,8 +385,9 @@ When user reports an alert (e.g., "RDS CPU 告警"), Agent 执行以下自动化
 ```bash
 # 验证诊断结果
 {{verification_commands}}
-```
-```
+```text
+
+```markdown
 
 ---
 
@@ -425,14 +426,16 @@ aliyun rds DescribeErrorLogs \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **根因判断**:
+
 - 如果慢查询中某条 SQL 的 `MySQLTotalExecutionCounts` > 1000 且 `MySQLTotalExecutionTimes` > 10000ms → **根因: 热点慢查询**
 - 如果 `ActiveSessions` ≈ `Sessions` 且慢查询不多 → **根因: 连接泄漏**
 - 如果错误日志中有大量 `Lock wait timeout exceeded` → **根因: 锁竞争**
 
 **即时行动**:
+
 1. 如果是热点慢查询 → 建议 kill 该慢查询进程 (如可能), 建议加索引
 2. 如果是连接泄漏 → 建议重启应用连接池, 临时增加 max_connections
 3. 如果是锁竞争 → 建议找出持有锁的事务, 考虑终止长事务
@@ -468,14 +471,16 @@ aliyun rds DescribeErrorLogs \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "$(date -u -v-1d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **根因判断**:
+
 - 如果 `LogSize` >> `DataSize` → **根因: Binlog 堆积** (复制延迟或保留期过长)
 - 如果 `BackupSize` 极大且备份失败 → **根因: 数据量过大导致备份空间不足**
 - 如果错误日志有 `Disk full` → **根因: 磁盘物理满**
 
 **即时行动**:
+
 1. Binlog 堆积 → 检查复制延迟, 考虑清理过期 binlog
 2. 数据量大 → 建议扩容存储, 或归档历史数据
 3. 磁盘物理满 → 紧急扩容, 或删除不必要的日志文件
@@ -508,15 +513,17 @@ aliyun rds DescribeBinlogFiles \
   --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --output cols=LogFileName,FileSize rows=Items.BinLogFile[].{LogFileName,FileSize}
-```
+```markdown
 
 **根因判断**:
+
 - 如果主库 TPS 极高 → **根因: 主库写入压力过大, 从库跟不上**
 - 如果 Binlog 文件突然变大 → **根因: 大事务导致复制延迟**
 - 如果从库规格 < 主库规格 → **根因: 从库性能不足**
 - 如果 `SyncMode` = `Async` → **根因: 异步复制, 延迟是预期行为**
 
 **即时行动**:
+
 1. 主库写入压力大 → 建议拆分大事务, 错峰写入
 2. 大事务 → 建议将大事务拆分为小批次
 3. 从库规格低 → 建议升级只读实例规格

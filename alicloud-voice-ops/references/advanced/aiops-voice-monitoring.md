@@ -3,6 +3,7 @@
 ## Anomaly Detection
 
 ### Key Anomaly Metrics
+
 1. **Spike in Failed Calls**: > 2x average failure rate over 10 minutes
 2. **Drop in Answer Rate**: < 10% answer rate over 5 minutes
 3. **Sudden Increase in Latency**: > 2s average call setup time
@@ -11,6 +12,7 @@
 ### Auto-Remediation Actions
 
 When anomalies are detected, AIOps can automatically:
+
 1. **Pause Tasks**: Suspend batch tasks if failure rate is too high
 2. **Alert Administrators**: Send notifications via Voice/email/ DingTalk
 3. **Adjust Quotas**: Temporarily increase quotas for high-priority applications
@@ -19,7 +21,9 @@ When anomalies are detected, AIOps can automatically:
 ## Predictive Scaling
 
 ### Usage Prediction
+
 Use historical call volume data to predict future demand:
+
 ```python
 # Example: Simple linear regression for call volume prediction
 import pandas as pd
@@ -34,7 +38,9 @@ model.fit(X, y)
 ```
 
 ### Auto-Scaling
+
 Scale service instances based on predicted volume:
+
 1. Monitor real-time call volume metrics
 2. Predict future load using ML models
 3. Automatically add/remove service instances
@@ -42,14 +48,18 @@ Scale service instances based on predicted volume:
 ## Intelligent Troubleshooting
 
 ### Root Cause Analysis
+
 AIOps can automatically identify root causes of failures:
+
 1. **Network Issues**: High latency, packet loss
 2. **Configuration Errors**: Invalid template codes, expired caller IDs
 3. **Quota Limits**: Reached daily send quota
 4. **Recipient Issues**: Invalid phone numbers, blocked numbers
 
 ### Auto-Repair
+
 Automatically fix common issues:
+
 1. **Invalid Templates**: Re-push approved templates to cache
 2. **Quota Limits**: Request temporary quota increase
 3. **Call Failures**: Retry failed calls with backoff

@@ -120,7 +120,7 @@ with remediation steps. Do not auto-retry business errors.
 5. If a side-effect operation is needed and confirmation is missing,
    ASK FOR CONFIRMATION before executing.
 6. Return the final structured output (Markdown report + JSON summary).
-```
+```markdown
 
 <!-- legacy header was: ## Generator Prompt -->
 ---
@@ -166,18 +166,27 @@ results to the Generator's claims.
 
 For the operation(s) in the trace:
 
-```
+```bash
+
 # 1. Re-run the same read operation(s)
+
 aliyun advisor <Op> <args>
 
 # 2. Compare:
-#    - Does the request_id match? (Traceability)
-#    - Does the data shape match `references/cli-usage.md`? (Spec Compliance)
-#    - Are the field values the same / within a reasonable window?
-#      (Correctness, Idempotency)
-#    - For side-effect ops, is the confirmation present in the
-#      trace's `confirmation_seen` field? (Safety)
-```
+
+# - Does the request_id match? (Traceability)
+
+# - Does the data shape match `references/cli-usage.md`? (Spec Compliance)
+
+# - Are the field values the same / within a reasonable window?
+
+# (Correctness, Idempotency)
+
+# - For side-effect ops, is the confirmation present in the
+
+# trace's `confirmation_seen` field? (Safety)
+
+```yaml
 
 ## Scoring Output Format
 
@@ -219,13 +228,13 @@ Return a JSON object:
     "delta": "..." 
   }
 }
-```
+```markdown
 
 ## Trace Input (Critic Receives)
 
 ```json
 {trace.json}
-```
+```markdown
 
 ## Reference
 
@@ -242,6 +251,7 @@ Return a JSON object:
 4. Apply detection regexes.
 5. Score each dimension.
 6. Output the JSON result.
+
 ```
 
 ---
@@ -263,13 +273,13 @@ Return a JSON object:
     }
   ]
 }
-```
+```text
 
 **Critic's re-query:**
 
 ```bash
 aliyun advisor describe-advices --product Ecs
-```
+```text
 
 **Critic's JSON output:**
 
@@ -294,7 +304,7 @@ aliyun advisor describe-advices --product Ecs
     "delta": "Re-queried; 5 advices found, matches Generator's count"
   }
 }
-```
+```yaml
 
 ---
 

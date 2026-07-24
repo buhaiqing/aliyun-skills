@@ -375,6 +375,7 @@
 **诊断顺序：** SLB 5xx → RDS 连接暴涨 → ACK Pod 重启 → ACK 节点过载 → 扩容 Node Pool
 
 **修复方案：**
+
 1. ACK：扩容 Node Pool，增加节点
 2. RDS：临时增加连接数上限，清理异常连接
 3. SLB：调整健康检查阈值
@@ -393,6 +394,7 @@
 **诊断顺序：** Pod Pending → CNI 日志中 ENI 分配失败 → 查 VPC ENI 配额 → 扩容 ENI 配额
 
 **修复方案：**
+
 1. VPC：申请 ENI 配额提升
 2. ACK：添加新 VSwitch 扩展 IP 池
 3. CNI：配置备用 IP 池
@@ -410,6 +412,7 @@
 **诊断顺序：** 应用请求失败 → Ingress 日志 → SLB 后端状态 → 恢复 SLB 后端
 
 **修复方案：**
+
 1. SLB：恢复后端服务器健康
 2. ACK：重启 Ingress Controller Pod
 3. 应用：检查 Pod 健康状态
@@ -427,6 +430,7 @@
 **诊断顺序：** Pod 挂载失败 → CSI 日志 → OSS Bucket 状态 → 恢复 OSS 访问
 
 **修复方案：**
+
 1. OSS：恢复 Bucket 访问权限或配额
 2. ACK：重启 CSI Pod，清理挂载缓存
 3. PV：验证 PV 配置正确
@@ -444,7 +448,7 @@ echo "=== Node Health Check ==="
 kubectl get nodes -o wide
 kubectl describe nodes | grep -A5 "Conditions:"
 kubectl top nodes
-```
+```markdown
 
 ### 快速诊断脚本 2: Pod 异常排查
 
@@ -464,7 +468,7 @@ kubectl get pods -A | grep Pending | while read line; do
   echo "Describing $POD in $NS:"
   kubectl describe pod $POD -n $NS | grep -A10 "Events:"
 done
-```
+```markdown
 
 ### 快速诊断脚本 3: 网络连通性检查
 
@@ -478,7 +482,7 @@ echo ""
 echo "=== Service Endpoints ==="
 kubectl get svc -A | head -20
 kubectl get endpoints -A | head -20
-```
+```markdown
 
 ### 快速诊断脚本 4: 存储状态检查
 
@@ -491,13 +495,13 @@ kubectl get pv | grep -v Bound
 echo ""
 echo "=== CSI Driver Status ==="
 kubectl get pods -n kube-system | grep csi
-```
+```markdown
 
 ---
 
 ## 故障模式匹配流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    故障模式匹配流程                           │
 ├─────────────────────────────────────────────────────────────┤
@@ -528,7 +532,7 @@ kubectl get pods -n kube-system | grep csi
 │     ├── RDS 问题 → alicloud-rds-ops                          │
 │     └── OSS 问题 → alicloud-oss-ops                          │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ---
 
@@ -761,7 +765,7 @@ echo "### Optimization Recommendations ###"
 echo "1. Remove $IDLE_COUNT idle nodes → Save ¥$((IDLE_COUNT * 150))/month"
 echo "2. Review Pod resource requests for over-provisioning"
 echo "3. Clean up idle PVCs"
-```
+```markdown
 
 ---
 

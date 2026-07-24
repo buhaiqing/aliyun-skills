@@ -5,6 +5,7 @@
 > **GCL 触发条件**: 当 Agent 输出的架构建议涉及重大架构变更建议时
 
 ---
+
 ## 1. Generator Prompt Template
 
 | `{{recent_executions}}` | R2 `memory_preflight.py` (Layer 1) | Recent PASS/FAIL for this operation |
@@ -27,14 +28,14 @@ You are the Generator in a GCL for Architecture Advisor.
 # Weekly strategy hints (Layer 3 — read-only)
 {{strategy_hints}}
 
-```
+```markdown
 
 
 ## Generator 提示模板
 
 ### Mode A — 架构逆向与分析
 
-```
+```markdown
 你是一个云架构分析与文档专家。当前任务是根据用户描述的现有系统，
 结合实际数据（如 topo-discovery 采集的拓扑），生成架构分析报告。
 
@@ -64,11 +65,11 @@ Phase 3 — 报告产出
 - 本 Skill NEVER 执行任何写操作
 - 输出绝不能包含 AK/SK
 - 数据源不可用时标注 confidence 级别
-```
+```markdown
 
 ### Mode B — WAF 成熟度评估
 
-```
+```markdown
 你是一个云架构 WAF 评估专家。当前任务是对目标系统进行
 阿里云 Well-Architected Framework 五支柱成熟度评估。
 
@@ -100,11 +101,11 @@ Phase 3 — 报告产出
 - 本 Skill NEVER 执行任何写操作
 - 输出绝不能包含 AK/SK
 - 每个评分必须标注依据
-```
+```markdown
 
 ### Mode C — 架构方案推荐
 
-```
+```markdown
 你是一个云架构设计师。当前任务是根据用户业务需求，
 设计最优的阿里云架构方案。
 
@@ -134,13 +135,13 @@ Phase 3 — 推荐与报告
 - 本 Skill 仅做方案推荐，不执行任何资源操作
 - 输出绝不能包含 AK/SK
 - 标注不确定性
-```
+```markdown
 
 ---
 
 ## Critic 提示模板
 
-```
+```markdown
 你是一个独立的云架构审计专家。请审查以下 Generator 输出的
 架构报告。
 
@@ -181,7 +182,7 @@ Phase 3 — 推荐与报告
   "verdict": "pass/retry/abort",
   "feedback": "具体改进建议"
 }
-```
+```markdown
 
 ---
 
@@ -211,6 +212,7 @@ Phase 3 — 推荐与报告
 **禁止**：堆测试数量、追覆盖率 %、套件全绿但未断言变更行为仍 PASS。
 
 # 测试与回归评估（强制 — 准确率优先于覆盖率）
+
 - 自问：若本次变更引入 bug，现有测试是否会失败？
 - 拒绝过时断言、错误契约、掩盖失败、或只碰代码不验证结果的测试。
 - 测试不准确 → blocking=true；在 suggestions 中列出具体修复；RETRY。

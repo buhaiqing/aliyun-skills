@@ -44,6 +44,7 @@ monitor expiration, and revoke. This skill covers the **complete SSL certificate
 replacement workflow** end-to-end.
 
 **Key deployment targets:**
+
 | Product | CloudProduct Code | 说明 |
 |---------|------------------|------|
 | ALB | `ALB` | Application Load Balancer |
@@ -70,6 +71,7 @@ replacement workflow** end-to-end.
 ## Trigger & Scope
 
 ### SHOULD Use This Skill When
+
 - User mentions "SSL证书替换" / "证书替换" / "certificate replacement"
 - User mentions "证书部署" / "部署证书到XX" / "deploy certificate"
 - User mentions "证书续费" / "certificate renewal"
@@ -81,6 +83,7 @@ replacement workflow** end-to-end.
 - User asks to monitor certificate expiration
 
 ### SHOULD NOT Use This Skill When
+
 - Task is about **KMS encryption keys** → delegate to: `alicloud-kms-ops`
 - Task is about **RAM permissions** for certificates → delegate to: `alicloud-ram-ops`
 - Task is about **SLB/ALB/NLB full configuration** beyond certificate binding → delegate to respective skill
@@ -124,7 +127,7 @@ replacement workflow** end-to-end.
 Every CAS operation MUST emit structured diagnostic logs per
 [`docs/diagnostic-logging-standard.md`](../docs/diagnostic-logging-standard.md):
 
-```
+```text
 [HH:MM:SS] [PHASE] key=value
 ```
 
@@ -138,7 +141,8 @@ Every CAS operation MUST emit structured diagnostic logs per
 | `SUMMARY` | End of phase summary |
 
 **Example trace output:**
-```
+
+```text
 [13:45:01] [DIAG] PHASE=discovery SKILL=cert-ops REGION=cn-hangzhou
 [13:45:02] [EXEC] aliyun cas ListUserCertificateOrder --OrderType UPLOAD --ShowSize 50
 [13:45:03] [RESULT] Found=3 certs Domain=*.example.com Status=ISSUED
@@ -150,7 +154,8 @@ Every CAS operation MUST emit structured diagnostic logs per
 ```
 
 **ERROR TYPE — CAS specific (extend per product):**
-```
+
+```text
 [ERROR] TYPE=INVALID_PARAM   FIX=Verify param names per CAS API spec
 [ERROR] TYPE=RESOURCE_NOT_FOUND FIX=Run ListUserCertificateOrder to get valid CertId
 [ERROR] TYPE=CERT_EXPIRED    FIX=Upload a new certificate before deployment
@@ -178,7 +183,8 @@ Every CAS operation MUST emit structured diagnostic logs per
 ## GCL Trace Artifact
 
 GCL traces MUST be persisted to:
-```
+
+```text
 ./audit-results/gcl-trace-cert-ops-{ISO-timestamp}.json
 ```
 
@@ -187,6 +193,7 @@ Per [`AGENTS.md` §12.6`](../docs/gcl-spec.md#generator-critic-loop-gcl--impleme
 ## Quick Start
 
 ### Prerequisites
+
 ```bash
 # 1. Install CAS CLI plugin
 aliyun plugin install --names aliyun-cli-cas
@@ -199,6 +206,7 @@ aliyun cas ListUserCertificateOrder --ShowSize 10
 ```
 
 ### Your First Command — List All Certificates
+
 ```bash
 aliyun cas ListUserCertificateOrder \
   --OrderType CERT \
@@ -226,6 +234,7 @@ aliyun cas ListUserCertificateOrder \
 ### Phase 1: Discovery — Find the Certificate to Replace
 
 #### Step 1.1: List all certificates
+
 ```bash
 aliyun cas ListUserCertificateOrder \
   --OrderType CERT \
@@ -233,12 +242,14 @@ aliyun cas ListUserCertificateOrder \
 ```
 
 **Parse the response** — for each cert, record:
+
 - `CertificateId` → `{{user.cert_id}}`
 - `OrderId` → `{{user.order_id}}`
 - `Domain` — the domain name
 - `Status` — `ISSUED` (已签发) / `WILLEXPIRED` (即将过期) / `EXPIRED` (已过期) / `REVOKED` (已吊销)
 
 #### Step 1.2: Get certificate details (including expiration date)
+
 ```bash
 aliyun cas GetUserCertificateDetail \
   --CertId {{user.cert_id}}
@@ -258,6 +269,7 @@ aliyun cas GetUserCertificateDetail \
 | FirstDomain | `$.FirstDomain` | Primary domain |
 
 #### Step 1.3: Check which cloud products use this certificate
+
 ```bash
 aliyun cas ListCloudResources \
   --CertIds '["{{user.cert_id}}"]'
@@ -310,6 +322,7 @@ print('OK: Valid PEM certificate format')
 > **Security:** Private key must be PEM format too. Never log key content.
 
 #### Step 2.3: Check for duplicate names
+
 ```bash
 aliyun cas ListUserCertificateOrder \
   --OrderType UPLOAD \
@@ -323,6 +336,7 @@ If a cert with the same name exists → ask user to choose a different name.
 > **GCL REQUIRED:** This is a write operation. Run GCL before executing.
 
 **Upload non-SM2 (standard) certificate:**
+
 ```bash
 aliyun cas UploadUserCertificate \
   --Name "{{user.cert_name}}" \
@@ -331,6 +345,7 @@ aliyun cas UploadUserCertificate \
 ```
 
 **Upload SM2 (国密) certificate:**
+
 ```bash
 aliyun cas UploadUserCertificate \
   --Name "{{user.cert_name}}" \
@@ -341,6 +356,7 @@ aliyun cas UploadUserCertificate \
 ```
 
 #### Step 2.5: Validate upload — find the new cert's ID
+
 ```bash
 aliyun cas ListUserCertificateOrder \
   --OrderType UPLOAD \
@@ -368,6 +384,7 @@ Based on Phase 1.3 output (current deployment map), collect the `ResourceId` val
 for the target products.
 
 If redeploying to **different resources**, query available resources:
+
 ```bash
 aliyun cas ListCloudResources \
   --CloudProduct {{user.cloud_product}}
@@ -403,12 +420,14 @@ aliyun cas CreateDeploymentJob \
 #### Step 3.5: Monitor deployment progress
 
 Poll every 10 seconds until terminal state:
+
 ```bash
 aliyun cas DescribeDeploymentJobStatus \
   --JobId {{output.job_id}}
 ```
 
 **Valid states:**
+
 | State | Meaning | Action |
 |-------|---------|--------|
 | `pending` | 等待执行 | Wait 10s, poll again |
@@ -419,6 +438,7 @@ aliyun cas DescribeDeploymentJobStatus \
 | `canceled` | 已取消 | Investigate and retry |
 
 **Poll loop (30 × 10s = 5min max):**
+
 ```bash
 for i in $(seq 1 30); do
   STATUS=$(aliyun cas DescribeDeploymentJobStatus --JobId {{output.job_id}} | \
@@ -438,6 +458,7 @@ done
 ### Phase 4: Verify Deployment
 
 #### Step 4.1: Check deployment job details
+
 ```bash
 aliyun cas DescribeDeploymentJob \
   --JobId {{output.job_id}}
@@ -446,6 +467,7 @@ aliyun cas DescribeDeploymentJob \
 Present: total count, success count, failed count.
 
 #### Step 4.2: Verify per-resource deployment status
+
 ```bash
 aliyun cas ListDeploymentJobCert \
   --JobId {{output.job_id}}
@@ -456,17 +478,20 @@ For each resource — verify `Status = deployed`.
 #### Step 4.3: Product-specific verification
 
 **ALB/SLB:**
+
 ```bash
 aliyun alb DescribeLoadBalancerCertificates --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
   --LoadBalancerId "{{user.lb_id}}"
 ```
 
 **CDN:**
+
 ```bash
 aliyun cdn DescribeDomainCertificateInfo --DomainName "{{user.domain}}"
 ```
 
 **OSS:**
+
 ```bash
 aliyun oss GetBucketWebsite --Bucket {{user.bucket}}
 ```
@@ -483,6 +508,7 @@ aliyun oss GetBucketWebsite --Bucket {{user.bucket}}
 > **GCL REQUIRED + EXPLICIT USER CONFIRMATION MANDATORY.** Revocation is irreversible.
 
 **Confirm with user:**
+
 - Old cert: `{{user.old_cert_id}}` (domain: `{{user.domain}}`)
 - New cert: `{{output.new_cert_id}}`
 - Revocation reason: `certificate replacement`
@@ -493,6 +519,7 @@ aliyun cas RevokeCertificate \
 ```
 
 #### Step 5.2: Delete old certificate from CAS (after confirmation)
+>
 > **GCL REQUIRED + SAFETY GATE.**
 
 ```bash
@@ -552,6 +579,7 @@ CAS operations pass PEM certificate content and private keys. **These MUST NOT a
 | OSS HTTPS config | `alicloud-oss-ops` | OSS bucket HTTPS configuration |
 
 ### Changelog
+
 1.0.0 | 2026-06-25 | Initial GCL recommended section.
 
 ---
@@ -575,6 +603,7 @@ aliyun cas GetUserCertificateDetail \
 ```
 
 **提示词示例：**
+
 - "查看证书详情" / "证书信息" / "证书什么时候到期"
 - "查询这个证书的域名和有效期" / "看看证书状态"
 

@@ -17,23 +17,27 @@
 Implement in batches of 3-4 types. Each batch = 1 commit.
 
 ### Batch A: Network + Security (4 types, 3 days)
+
 1. NAT Gateway (#5)
 2. EIP (Elastic IP, #4)
 3. SecurityGroup (#7 — with rules)
 4. ACK (Container Service, #9)
 
 ### Batch B: Database + Storage (4 types, 3 days)
+
 5. PolarDB (#11)
 6. Redis (#12)
 7. OSS Bucket (#13)
 8. NAS FileSystem (#16)
 
 ### Batch C: IAM + Audit + Compute (3 types, 2 days)
+
 9. RAM Role (#10)
 10. KMS Key (#14)
 11. ActionTrail (#15)
 
 ### Batch D: Serverless + Network (2 types, 2 days)
+
 12. FC Service + Function (#17)
 13. VPN Connection + SAG (#18)
 
@@ -48,12 +52,14 @@ Each resource type follows the same pattern (12+1 = 13 repetitions):
 ### For each type `{rt}`:
 
 **Files:**
+
 - Create: `references/field-mappings/{rt}.md` — mapping table
 - Create: `tests/fixtures/{rt}.json` — minimal valid Aliyun API response
 - Create or modify: `tests/test_resource_mappings.py` — add test class
 - Modify: `scripts/lib/mappings.py` — add MAPPINGS[{rt}] entry
 
 **Steps:**
+
 1. Research API response structure (`aliyun {product} Describe{Type} --output json`)
 2. Write fixture JSON with representative fields
 3. Write field-mapping doc with HCL attribute table
@@ -71,55 +77,68 @@ Each resource type follows the same pattern (12+1 = 13 repetitions):
 ### Batch A
 
 **NAT Gateway** (`alicloud_nat_gateway`):
+
 - `Name→name`, `Description→description`, `NatType→nat_type`, `InternetChargeType→internet_charge_type`
 - Block: `nat_{name_slug}`. Import: `nat:{region}:{nat_gateway_id}`
 
 **EIP** (`alicloud_eip`):
+
 - `Name→name`, `Bandwidth→bandwidth(int)`, `InternetChargeType→internet_charge_type`, `InstanceChargeType→instance_charge_type`
 - Block: `eip_{name_slug}`. Import: `eip:{region}:{allocation_id}`
 
 **SecurityGroup** (`alicloud_security_group`):
+
 - `SecurityGroupName→name`, `Description→description`, `SecurityGroupType→security_group_type`
 - SecurityGroupRules (separate resource `alicloud_security_group_rule`): `Direction→direction`, `PortRange→port_range`, `SourceCidrIp→cidr_ip`, `Policy→policy`
 - Block: `sg_{name_slug}`. Import: `security_group:{region}:{sg_id}`
 - Rules: `sg_rule_{sg_name_slug}_{direction}_{port}`. Import: `security_group_rule:{region}:{sg_id}:{rule_id}`
 
 **ACK** (`alicloud_cs_kubernetes`):
+
 - `Name→name`, `ClusterType→cluster_type`, `Version→version`, `VpcId→vpc_id`, `VSwitchIds.VSwitchId[0]→vswitch_ids(list)`, `WorkerNumber→worker_number(int)`
 - Block: `ack_{name_slug}`. Import: `cs:{region}:{cluster_id}`
 
 ### Batch B
 
 **PolarDB** (`alicloud_polardb_cluster`): similar to RDS pattern.
+
 - `DBClusterDescription→description`, `DBType→db_type`, `DBVersion→db_version`, `DBNodeClass→db_node_class`, `DBNodeStorage→db_node_storage(int)`,
 
 **Redis** (`alicloud_redis_instance`):
+
 - `InstanceName→instance_name`, `InstanceClass→instance_class`, `EngineVersion→engine_version`, `ConnectionDomain→connection_domain`, `Port→port(int)`,
 
 **OSS Bucket** (`alicloud_oss_bucket`):
+
 - `Name→bucket`, `StorageClass→storage_class`, `LocationConstraint→location`,
 
 **NAS** (`alicloud_nas_file_system`):
+
 - `Description→description`, `StorageType→storage_type`, `ProtocolType→protocol_type`,
 
 ### Batch C
 
 **RAM Role** (`alicloud_ram_role`):
+
 - `RoleName→name`, `Description→description`, `Arn→arn`, `AssumeRolePolicyDocument→assume_role_policy`,
 
 **KMS Key** (`alicloud_kms_key`):
+
 - `KeyId→key_id`, `KeySpec→key_spec`, `KeyUsage→usage`, `Description→description`, `Origin→origin`,
 
 **ActionTrail** (`alicloud_actiontrail`):
+
 - `Name→name`, `OssBucketName→oss_bucket_name`, `OssKeyPrefix→oss_key_prefix`, `Status→status(bool, active/disabled)`,
 
 ### Batch D
 
 **FC** (`alicloud_fc_service` + `alicloud_fc_function`): 2 resources.
+
 - Service: `Name→name`, `Description→description`
 - Function: `Name→name`, `Runtime→runtime`, `MemorySize→memory_size(int)`,
 
 **VPN/SAG** (`alicloud_vpn_connection` + `alicloud_sag`):
+
 - VPN: `Name→name`, `LocalSubnet→local_subnet`, `RemoteSubnet→remote_subnet`,
 - SAG: `Name→name`, `CidrBlock→cidr_block`,
 

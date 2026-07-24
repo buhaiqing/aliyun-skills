@@ -22,7 +22,7 @@ AIOps 异常检测能力，用于自动识别 PolarDB MySQL 集群的性能异�
 
 ### Root Cause Chain Model
 
-```
+```text
 异常传播链路:
 ┌─────────────────────────────────────────────────────────────┐
 │ CPU Spike (突增)                                             │
@@ -33,7 +33,7 @@ AIOps 异常检测能力，用于自动识别 PolarDB MySQL 集群的性能异�
 │     ↓                                                        │
 │ [最终定位] → Connection Bottleneck (连接瓶颈)                │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ## Key Metrics for Anomaly Detection
 
@@ -98,7 +98,7 @@ aliyun cms GetMetricStatisticsData \
   --Statistics Average,Maximum \
   --Period 300 \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 #### Step 2: Fetch Slow Query Details for Correlation
 
@@ -110,7 +110,7 @@ aliyun polardb DescribeSlowLogRecords \
   --EndTime "{{user.end_time}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --output cols=SQLText,QueryTime,LockTime,RowsExamined,DBName rows=Items.SlowLogRecord[]
-```
+```text
 
 #### Step 3: Get Cluster Performance Overview
 
@@ -122,7 +122,7 @@ aliyun polardb DescribeDBClusterPerformance \
   --Key "CpuUsage,MemoryUsage,IopsUsage,ConnectionUsage,SlowQueries" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 ### JIT Go SDK (Fallback Path)
 
@@ -663,7 +663,7 @@ func print_analysis_report(chain *RootCauseChain) {
     
     fmt.Println("```")
 }
-```
+```markdown
 
 ## Output Format
 
@@ -700,22 +700,26 @@ graph TD
     style C fill:#ffa94d
     style G fill:#ff8787
     style H fill:#51cf66
-```
+```markdown
 
 ## 诊断证据
 
 ### Layer 1: 阈值检测
+
 - ✅ CPU利用率超过临界阈值 95% (当前 85.2%)
 - ✅ 慢查询数量超过警告阈值 50/h (当前 120/h)
 
 ### Layer 2: 趋势分析
+
 - ⚠️ CPU连续3个5分钟周期上升 15%+
 - ⚠️ 慢查询趋势: 基线 20/h → 当前 120/h (上升 500%)
 
 ### Layer 3: 突增检测
+
 - 🚨 CPU在1分钟内突增 52% (基线 33% → 当前 85.2%)
 
 ### 关联分析
+
 - 🔗 CPU异常时间点: 15:28:30
 - 🔗 慢查询开始时间: 15:27:45 (提前45秒)
 - 🔗 连接利用率峰值: 15:29:00 (滞后30秒)
@@ -725,6 +729,7 @@ graph TD
 **根本原因**: 复杂查询导致锁竞争，引发连接瓶颈
 
 **证据链路**:
+
 1. 慢查询 `SELECT * FROM orders WHERE create_time > '2026-01-01'` 
    - 执行时间: 12.5秒
    - 扫描行数: 850万行
@@ -745,16 +750,19 @@ graph TD
 ## 优化建议
 
 ### 立即执行 (P0)
+
 1. **SQL限流**: 对 `SELECT * FROM orders` 启用SQL限流
 2. **索引优化**: 为 `orders.create_time` 添加索引
 3. **连接释放**: 检查应用连接池配置，优化连接释放逻辑
 
 ### 短期优化 (P1)
+
 1. **增加只读节点**: 分流读请求至只读节点
 2. **调整max_connections**: 根据业务峰值调整连接上限
 3. **启用并行查询**: 对大表查询启用并行执行
 
 ### 长期规划 (P2)
+
 1. **数据归档**: 冷数据迁移降低表扫描开销
 2. **读写分离**: 优化应用层读写分离策略
 3. **DAS深度诊断**: 委托DAS进行自动化SQL优化建议
@@ -765,7 +773,8 @@ graph TD
 - [ ] 创建索引 `CREATE INDEX idx_create_time ON orders(create_time)`
 - [ ] 检查连接池参数 `SHOW VARIABLES LIKE 'max_connections'`
 - [ ] 增加只读节点分流负载
-```
+
+```markdown
 
 ## Anomaly Chain Diagram (Mermaid)
 
@@ -792,7 +801,7 @@ graph TD
     style B1 fill:#ffa94d,stroke:#e67700
     style F1 fill:#ff8787,stroke:#e03131
     style G1 fill:#51cf66,stroke:#2f9e44
-```
+```markdown
 
 ## Acceptance Criteria (验收标准)
 
@@ -948,7 +957,7 @@ func (e *CorrelationEngine) matchRule(rule CorrelationRule, events []AnomalyEven
     
     return nil
 }
-```
+```markdown
 
 ---
 
@@ -1029,7 +1038,7 @@ func analyzeReplicationLagCauses(clusterId string) []string {
     
     return causes
 }
-```
+```text
 
 **CLI Command for P008 Detection**
 
@@ -1049,7 +1058,7 @@ aliyun cms GetMetricStatisticsData \
 aliyun polardb DescribeDBNodes \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ---
 
@@ -1133,7 +1142,7 @@ func calculateNodeStats(metrics []NodeMetric) (max, min, avg float64) {
     avg = sum / float64(len(metrics))
     return max, min, avg
 }
-```
+```text
 
 **CLI Command for P009 Detection**
 
@@ -1154,7 +1163,7 @@ for nodeId in $(aliyun polardb DescribeDBNodes \
       --Period 300 \
       --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
 done
-```
+```markdown
 
 ---
 
@@ -1227,7 +1236,7 @@ func analyzeStorageBottleneck(clusterId string, latency float64) []string {
     
     return causes
 }
-```
+```markdown
 
 ---
 
@@ -1312,7 +1321,7 @@ func analyzeGDNLagCauses(clusterId string, gdnInfo GDNInfo) []string {
     
     return causes
 }
-```
+```text
 
 **CLI Command for P011 Detection**
 
@@ -1332,7 +1341,7 @@ aliyun cms GetMetricStatisticsData \
 aliyun polardb DescribeGlobalDatabaseNetwork \
   --GDNId "{{user.gdn_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ---
 
@@ -1420,7 +1429,7 @@ func analyzeElasticityFrequency(clusterId string, changes int, config Serverless
     
     return causes
 }
-```
+```text
 
 **CLI Command for P012 Detection**
 
@@ -1440,7 +1449,7 @@ aliyun cms GetMetricStatisticsData \
 aliyun polardb DescribeDBClusterServerlessConf \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ---
 
@@ -1619,7 +1628,7 @@ func (c *ExtendedRootCauseChain) analyzeServerlessElasticity(
         "调整弹性策略参数",
         "检查定时任务影响")
 }
-```
+```markdown
 
 ---
 

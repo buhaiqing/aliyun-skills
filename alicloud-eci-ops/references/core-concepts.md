@@ -7,7 +7,7 @@ runtime. Each ECI is a **ContainerGroup** — a pod-equivalent unit that runs
 in your VPC, billed per-second by vCPU + memory (+ optional GPU), with
 **no node to manage**.
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                          User VPC                               │
 │  ┌──────────────────────────────────────────────────────────┐  │
@@ -128,7 +128,7 @@ For private registry (e.g. ACR), pass credentials:
 
 ## Billing Model
 
-```
+```text
 Per-second cost = (Cpu × vCPU_price) + (Memory_GB × mem_price) + (Gpu × gpu_price)
                 + (volume costs, if any)
 ```
@@ -139,6 +139,7 @@ Per-second cost = (Cpu × vCPU_price) + (Memory_GB × mem_price) + (Gpu × gpu_p
 - **Volume costs** depend on volume type (NAS, OSS, cloud disk)
 
 **Optimization levers:**
+
 - `RestartPolicy=Never` to avoid infinite restart
 - Right-size `Cpu` / `Memory` to actual usage
 - Use ECI Spot for fault-tolerant batch

@@ -30,6 +30,7 @@ Choosing the right family is the most important decision in NAS deployment.
 | **CPFS SE** | `cpfsse` | Zone-redundant, provisioned | `advance_100` (100 MB/s/TiB) | Mission-critical HPC, zone-redundant parallel FS | Pay-as-you-go (GiB + MB/s) |
 
 > **Decision flow:**
+>
 > - Generic shared storage for web/containers? → **General-purpose (`standard`)**
 > - Low-latency / high-IOPS single file system? → **Extreme (`extreme`)**
 > - HPC / AI / parallel workloads? → **CPFS (`cpfs`)**
@@ -40,7 +41,7 @@ Choosing the right family is the most important decision in NAS deployment.
 A NAS file system is not directly addressable. Clients mount it through a
 **mount target**, which binds the file system to a specific VPC and vSwitch.
 
-```
+```text
                             ┌─────────────────────┐
                             │   NAS File System   │
                             │ 31a8e4xxxxxx (NFS)  │
@@ -58,7 +59,7 @@ A NAS file system is not directly addressable. Clients mount it through a
    │ ECS-A1   │                  │ ECS-B1    │                  │ ECS-A2    │
    │ mount    │                  │ mount     │                  │ mount     │
    └──────────┘                  └───────────┘                  └───────────┘
-```
+```markdown
 
 **Key rules:**
 
@@ -77,12 +78,12 @@ A NAS file system is not directly addressable. Clients mount it through a
 
 Alibaba Cloud NAS uses a two-level permission system:
 
-```
+```text
 AccessGroup (e.g., "web-app-group")
   ├── AccessRule #1: 10.0.0.0/8    RDWR  root_squash  priority=1
   ├── AccessRule #2: 10.1.0.0/16   RDONLY root_squash  priority=2
   └── AccessRule #3: 192.168.0.0/16 RDWR  all_squash   priority=3
-```
+```markdown
 
 - **AccessGroup** (权限组) — Container of rules. Bound to a mount target.
 - **AccessRule** (权限规则) — Authorizes a source CIDR with `RWAccessType`
@@ -130,7 +131,7 @@ aliyun nas DescribeRegions
 
 # Discover supported zones in a region
 aliyun nas DescribeZones --RegionId cn-hangzhou
-```
+```markdown
 
 ## Service Activation
 
@@ -139,7 +140,7 @@ region before creating file systems. Activation is a one-time operation:
 
 ```bash
 aliyun nas OpenNASService --RegionId cn-hangzhou
-```
+```markdown
 
 Activation returns an `OrderId` even though no money is charged. Subsequent
 `OpenNASService` calls in the same region are idempotent.
@@ -161,7 +162,7 @@ Activation returns an `OrderId` even though no money is charged. Subsequent
 
 ## Cross-Product Relationships
 
-```
+```text
                     ┌─────────────────────┐
                     │    Alibaba Cloud    │
                     │       NAS FS        │
@@ -174,7 +175,7 @@ Activation returns an `OrderId` even though no money is charged. Subsequent
    │(Mount │  │(Mount   │  │(SSE-KMS │  │(Per-  │  │(Cross-region   │
    │Target)│  │ Client) │  │ encrypt)│  │ mission│  │ replication)   │
    └───────┘  └─────────┘  └─────────┘  └────────┘  └────────────────┘
-```
+```markdown
 
 - **VPC**: required for mount targets
 - **ECS / containers**: required as mount clients

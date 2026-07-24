@@ -6,9 +6,9 @@ Alibaba Cloud WAF 3.0 provides **Layer 7 (application layer)** protection for we
 
 ### Traffic Flow
 
-```
+```text
 Client → DNS (CNAME to WAF) → WAF Instance → Origin Server (ECS/SLB/ALB/OSS)
-```
+```markdown
 
 ### Key Components
 
@@ -34,6 +34,7 @@ Client → DNS (CNAME to WAF) → WAF Instance → Origin Server (ECS/SLB/ALB/OS
 ### CNAME Configuration
 
 After adding a domain to WAF:
+
 1. WAF returns a CNAME (e.g., `waf123456.waf100001.com`)
 2. User updates DNS: domain CNAME → WAF CNAME
 3. All traffic flows through WAF before reaching origin

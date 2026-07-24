@@ -31,6 +31,7 @@ metadata:
 | **Spec Compliance** | 15% | 0 / 0.5 / 1 | ≥ 0.5 | — |
 
 **Abort Conditions:**
+
 - Safety = 0 → Immediate ABORT, no partial result
 - Correctness = 0 on destructive op → ABORT
 
@@ -47,6 +48,7 @@ metadata:
 | DESTROY-005 | No auto-approve in production | `--auto-approve` is banned for prod environment |
 
 **Scoring:**
+
 - Pass all checks → Safety = 1
 - Fail any DESTROY-001/002/005 → Safety = 0 (ABORT)
 - Fail DESTROY-003/004 → Safety = 0.5 (WARN, requires override)
@@ -61,6 +63,7 @@ metadata:
 | APPLY-004 | Detect destructive changes | Plan must be parsed for `-/destroy` markers |
 
 **Scoring:**
+
 - Pass all → Safety = 1
 - Fail APPLY-001/004 → Safety = 0.5
 - Fail APPLY-002/003 with prod → Safety = 0 (ABORT)
@@ -102,6 +105,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
@@ -120,6 +124,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 | `import` | State-based | `terraform plan` shows no drift post-import |
 
 **Scoring:**
+
 - Idempotent pattern implemented → 1
 - Partial / requires manual verification → 0.5
 - No idempotency guarantee → 0
@@ -155,7 +160,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
     "blocking": false
   }
 }
-```
+```markdown
 
 ### 4.2 Required Trace Fields
 
@@ -258,7 +263,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
   "decision": "ABORT",
   "reason": "Safety=0: DESTROY-004 state backup not performed"
 }
-```
+```markdown
 
 ### Example 3: NL2HCL With Minor Issues (RETRY)
 
@@ -297,16 +302,16 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 #### 视觉标识 (控制台输出)
 
-```
+```text
 ╔════════════════════════════════════════════════════════════════╗
 ║                    🔍 DRY-RUN MODE (干运行模式)                  ║
 ║         此执行仅用于预览和验证，不会创建或修改任何资源            ║
 ╚════════════════════════════════════════════════════════════════╝
-```
+```markdown
 
 #### 每个执行步骤的标识
 
-```
+```json
 [DRY-RUN] [11:23:45] [INIT] 执行 terraform init -backend=false
 [DRY-RUN] [11:23:46] [VALIDATE] 执行 terraform validate
 [DRY-RUN] [11:23:48] [PLAN] 执行 terraform plan
@@ -314,7 +319,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 #### 结果摘要标识
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     DRY-RUN 结果摘要                             │
 ├─────────────────────────────────────────────────────────────────┤
@@ -325,7 +330,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 │    🔴 删除: 0 个资源                                            │
 │  注意: 以上仅为预览，实际执行请在确认后操作                        │
 └─────────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ### 9.2 与正式执行的区分
 
@@ -361,13 +366,13 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 export TF_DRY_RUN="true"
 export TF_BACKEND_CONFIG="false"
 export TF_EXECUTION_MODE="preview"
-```
+```markdown
 
 ### 9.5 错误处理标识
 
 即使 dry-run 失败，也必须明确标识：
 
-```
+```json
 ╔════════════════════════════════════════════════════════════════╗
 ║              ❌ DRY-RUN FAILED (验证失败)                        ║
 ║         配置存在问题，请在修复后重试                              ║
@@ -396,9 +401,10 @@ dry_run_mode:
     header: "DRY-RUN MODE"
     prefix: "[DRY-RUN]"
     visual_indicator: "🔍"
-```
+```yaml
 
 ---
 
 **Version History:**
+
 - v1.0.0 (2026-06-08): Initial rubric for Terraform IaC skill with NL2HCL and Reverse Engineering support

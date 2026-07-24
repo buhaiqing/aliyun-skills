@@ -7,6 +7,7 @@
 **目标**：在 `gcl_runner.py` 的 `parse_openai_llm_usage` 函数中新增 `cache_tokens` 和 `cache_hit_ratio` 字段解析，支持 5 个模型厂商。
 
 **厂商支持**：
+
 | 厂商 | provider 值 | cache_tokens 字段 |
 |------|-------------|-------------------|
 | 阿里云百炼 | `alibaba` | `usage.prompt_tokens_details.cached_tokens` |
@@ -33,6 +34,7 @@
 **文件**: `gcl_runner.py` line 1595-1616
 
 **改动内容**:
+
 1. 新增参数 `provider: str`
 2. 解析 `cache_tokens`:
    - `deepseek` → `usage.prompt_cache_hit_tokens`
@@ -48,6 +50,7 @@
 **文件**: `gcl_runner_test.py`
 
 **测试用例**:
+
 | # | 测试名称 | 输入 | 期望输出 |
 |---|----------|------|----------|
 | 1 | `test_cache_tokens_alibaba` | 百炼 usage | `cache_tokens=800, cache_hit_ratio=0.533` |
@@ -67,6 +70,7 @@
 ## 4. 数据结构变更
 
 **修改前**:
+
 ```python
 {
     "model": "qwen-plus",
@@ -74,9 +78,10 @@
     "completion_tokens": 300,
     "total_tokens": 1500,
 }
-```
+```text
 
 **修改后**:
+
 ```python
 {
     "model": "qwen-plus",
@@ -93,13 +98,13 @@
 
 ## 5. 依赖关系
 
-```
+```text
 Task 1 (修改 parse_openai_llm_usage)
     ↓
 Task 3 (更新调用处) ──并行──▶ Task 2 (新增单元测试)
     ↓
 全量测试验证
-```
+```markdown
 
 ---
 

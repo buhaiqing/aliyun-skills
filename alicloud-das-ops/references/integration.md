@@ -7,6 +7,7 @@
 All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Critical for DAS:**
+
 - Pre-flight: Network, disk, permissions, Go runtime
 - Multi-version fallback (go1.24→1.23→1.22→1.21)
 - Multi-mirror fallback (4 mirrors)
@@ -19,8 +20,8 @@ All installation flows MUST follow the **Enhanced Self-Healing Framework** defin
 - **API Version:** `2020-01-16` (RPC style)
 - **Endpoint:** `das.cn-shanghai.aliyuncs.com` (public), `das.vpc-proxy.aliyuncs.com` (VPC)
 - **Service Region:** `cn-shanghai` (fixed, regardless of instance region)
-- **OpenAPI Explorer:** https://next.api.aliyun.com/api/DAS/2020-01-16/overview
-- **Error Center:** https://error-center.aliyun.com/product/DAS
+- **OpenAPI Explorer:** <https://next.api.aliyun.com/api/DAS/2020-01-16/overview>
+- **Error Center:** <https://error-center.aliyun.com/product/DAS>
 
 ## Go SDK
 
@@ -83,7 +84,7 @@ DAS is **NOT** supported by `aliyun` CLI as of 2026-05-14. All operations requir
 
 ### Diagnosis Flow
 
-```
+```text
 CMS alarm → identify namespace+metric → invoke primary skill (rds-ops etc.)
 → if DAS diagnosis recommended/severity=Critical → invoke alicloud-das-ops
 → DAS: CreateDiagnosticReport + GetPfsSqlSamples + CreateLatestDeadLockAnalysis + CreateCacheAnalysisJob
@@ -93,6 +94,7 @@ CMS alarm → identify namespace+metric → invoke primary skill (rds-ops etc.)
 ## DAS Pro (Enterprise Edition)
 
 Advanced features (SQL Insight, auto-SQL optimization, auto-space, auto-scaling, extended retention):
+
 1. Active Pro license for the instance
 2. Sufficient storage quota (`GetDasProServiceUsage`)
 3. Account balance for pay-as-you-go charges

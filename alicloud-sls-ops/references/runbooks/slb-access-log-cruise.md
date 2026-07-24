@@ -8,6 +8,7 @@
 ## 意图
 
 对 SLB 七层访问日志进行多维度异常巡检，发现：
+
 1. **错误率异常**：5xx 状态码突增
 2. **响应时间劣化**：RT 突增或慢请求增多
 3. **上游故障**：upstream_status 非 200 分布
@@ -90,6 +91,7 @@ wait  # 等待所有并行任务完成
 ```
 
 **Query A: 每日聚合（含错误率和 RT）**
+
 ```sql
 * | SELECT 
   date_trunc('day', __time__) as day,
@@ -102,12 +104,14 @@ GROUP BY day ORDER BY day
 ```
 
 **Query B: 状态码分布**
+
 ```sql
 * | SELECT status, count(1) as cnt
 GROUP BY status ORDER BY cnt DESC LIMIT 20
 ```
 
 **Query C: 慢请求采样（>1s，按状态分组）**
+
 ```sql
 request_time > 1 | SELECT 
   status,
@@ -157,6 +161,7 @@ for row in rows:
 当检测到异常时，按需执行：
 
 **A. 上游故障定位**
+
 ```sql
 status >= 500 | SELECT 
   upstream_addr, upstream_status,
@@ -166,6 +171,7 @@ ORDER BY cnt DESC LIMIT 10
 ```
 
 **B. 异常时段细分**
+
 ```sql
 * | SELECT 
   date_trunc('hour', __time__) as hr,
@@ -176,6 +182,7 @@ GROUP BY hr, status ORDER BY hr
 ```
 
 **C. 按域名/Path 拆分**
+
 ```sql
 * | SELECT 
   host, request_uri,

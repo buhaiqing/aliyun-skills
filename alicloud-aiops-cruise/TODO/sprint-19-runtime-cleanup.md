@@ -13,11 +13,13 @@
 
 Sprint 18 实现了 `.runtime/` 统一根目录 + 共享 lib, 并迁移了核心脚本 (configdrift.sh / __init__.sh / baseline-manager.py)。
 但仍有大量硬编码 `audit-results` 路径散落在其他 skill:
+
 - alicloud-gcl-runner-ops/scripts/*.py (5 个)
 - alicloud-aiops-cruise/runbooks/scripts/_shared.py (CACHE_DIR)
 - alicloud-aiops-cruise/runbooks/scripts/*.py (7 个 runbook 脚本的 --output-dir 默认值)
 
 此外, `.runtime/` 缺少:
+
 - 过期数据清理工具
 - 大小监控 + 报警
 
@@ -41,6 +43,7 @@ Sprint 18 实现了 `.runtime/` 统一根目录 + 共享 lib, 并迁移了核心
 - PASS gcl_runner_test.py: 测试目录 -> 用 tmp_path
 
 **新默认路径**:
+
 ```python
 from runtime_root import RuntimeRoot  # 在 aiops-cruise/scripts/lib/
 GCL_AUDIT_DIR = str(RuntimeRoot("gcl-runner-ops").audit_dir)
@@ -50,6 +53,7 @@ GCL_AUDIT_DIR = str(RuntimeRoot("gcl-runner-ops").audit_dir)
 ### PASS T3: 迁移 _shared.py 的 CACHE_DIR
 
 **新代码** (行 280):
+
 ```python
 # Sprint 19: 改用 RUNTIME_ROOT 共享路径
 import sys
@@ -62,6 +66,7 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)  # 立即创建
 ### PASS T4: 迁移 runbooks 7 个脚本的 --output-dir
 
 **新默认值** (从 RUNTIME_ROOT 解析):
+
 ```python
 def default_output_dir():
     """Sprint 19: 改用 RUNTIME_ROOT/audit/aiops-cruise/runbooks/"""
@@ -78,6 +83,7 @@ def default_output_dir():
 **目标**: 提供一键清理 `.runtime/` 中过期数据的工具。
 
 **接口**:
+
 ```bash
 # 默认: 清理 > 90 天的 baseline + 清理 > 7 天的 audit + 清理 > 30 天的 logs
 python3 -m alicloud_aiops_cruise.scripts.lib.runtime_cleanup
@@ -92,6 +98,7 @@ python3 -m alicloud_aiops_cruise.scripts.lib.runtime_cleanup \
 ```
 
 **实现**: `alicloud-aiops-cruise/scripts/lib/runtime_cleanup.py` (200 行)
+
 - baseline: 标记过期 (复用 baseline-manager 的 retention 逻辑)
 - audit/logs: 直接删除 `*.expired` 重命名模式
 - max-total-size: 报警 + 二次清理 (从最旧开始删)

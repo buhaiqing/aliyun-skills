@@ -100,7 +100,7 @@ Reusable health check configuration:
 
 ## Key Resource Relationships
 
-```
+```text
 ALB Instance
 ├── Zone Mapping (1..N zones, each with VSwitch)
 ├── Security Group (0..N)
@@ -135,6 +135,7 @@ ALB is available in most Alibaba Cloud regions. Use `DescribeRegions` and `Descr
 | Subscription | Monthly/yearly prepaid, no longer available for new purchases (2024-12-01) |
 
 **LCU (Load Capacity Unit):** ALB is billed based on LCU consumption. Each LCU includes:
+
 - 25 new connections per second
 - 3,000 active connections per minute
 - 1 GB of data transfer per hour

@@ -51,6 +51,7 @@ This document provides a structured three-dimensional analysis of the current sk
 **Current Level: 2 (Reactive)**
 
 **Strengths:**
+
 - Basic error code tables exist in `troubleshooting.md` templates
 - Generic retry logic with exponential backoff documented
 - HALT vs retry distinction present in failure recovery tables
@@ -58,24 +59,28 @@ This document provides a structured three-dimensional analysis of the current sk
 **Gaps Identified:**
 
 #### Gap FD-1: Incomplete Error Taxonomy
+
 - **Severity:** High
 - **Evidence:** Template troubleshooting.md only lists 3 generic error codes (`InvalidParameter`, `Forbidden.RAM`, `InternalError`)
 - **Impact:** Generated skills miss product-specific errors (e.g., `InvalidInstanceId.NotFound` for ECS, `InvalidDBInstanceId.NotFound` for RDS)
 - **Recommendation:** Build product-specific error code libraries from OpenAPI `x-alibaba-cloud-error-codes` extensions
 
 #### Gap FD-2: Missing Pre-flight Anomaly Detection
+
 - **Severity:** High
 - **Evidence:** Pre-flight checks focus on credentials and region, but not on resource state anomalies
 - **Impact:** Skills attempt operations on resources in invalid states (e.g., deleting an already-deleting instance)
 - **Recommendation:** Add resource state validation to pre-flight checks; document state machine diagrams per product
 
 #### Gap FD-3: No Health Check Patterns
+
 - **Severity:** Medium
 - **Evidence:** No systematic health check or readiness probe patterns
 - **Impact:** Skills cannot distinguish between transient and persistent failures
 - **Recommendation:** Add `health-check` operation pattern to template; include dependency validation (VPC exists before ECS create)
 
 #### Gap FD-4: Limited Cross-Product Error Correlation
+
 - **Severity:** Medium
 - **Evidence:** Each skill operates in isolation; no delegation error handling
 - **Impact:** When ECS skill delegates to VPC skill, VPC failures are not properly propagated
@@ -113,6 +118,7 @@ This document provides a structured three-dimensional analysis of the current sk
 **Current Level: 2 (Manual)**
 
 **Strengths:**
+
 - Diagnostic order section exists in troubleshooting template (4 steps)
 - Related resource listing mentioned
 - RequestId tracking for support escalation
@@ -120,24 +126,28 @@ This document provides a structured three-dimensional analysis of the current sk
 **Gaps Identified:**
 
 #### Gap RC-1: No Causal Chain Analysis
+
 - **Severity:** High
 - **Evidence:** Troubleshooting template lists steps linearly without causal relationships
 - **Impact:** User must manually correlate ECS failure with VPC, security group, or disk issues
 - **Recommendation:** Add dependency graph visualization to `core-concepts.md`; include "likely causes" matrix
 
 #### Gap RC-2: Missing Log Correlation Patterns
+
 - **Severity:** High
 - **Evidence:** No guidance on which logs to check or how to correlate timestamps
 - **Impact:** Cannot determine if failure is API-level, network-level, or resource-level
 - **Recommendation:** Add log correlation section to `troubleshooting.md`; document CloudMonitor log queries
 
 #### Gap RC-3: No Resource Relationship Mapping
+
 - **Severity:** Medium
 - **Evidence:** Skills treat resources as isolated; no parent-child or dependency mapping
 - **Impact:** Cannot trace "ECS unreachable" to "VPC route table misconfiguration"
 - **Recommendation:** Include resource relationship diagrams in `core-concepts.md`; add `describe-dependencies` helper flow
 
 #### Gap RC-4: Absence of Change Correlation
+
 - **Severity:** Medium
 - **Evidence:** No mention of recent changes (config, policy, quota) as diagnostic input
 - **Impact:** Cannot identify if failure is caused by recent RAM policy change or quota adjustment
@@ -175,6 +185,7 @@ This document provides a structured three-dimensional analysis of the current sk
 **Current Level: 3 (Standardized)**
 
 **Strengths:**
+
 - Pre-flight → Execute → Validate → Recover flow pattern established
 - Retry logic with exponential backoff standardized
 - Safety gates for destructive operations present
@@ -182,30 +193,35 @@ This document provides a structured three-dimensional analysis of the current sk
 **Gaps Identified:**
 
 #### Gap RR-1: No Auto-Remediation Patterns
+
 - **Severity:** High
 - **Evidence:** Recovery table specifies "HALT" or "retry" but no automatic fixes
 - **Impact:** Common issues (throttling, stale credentials, region mismatch) require manual intervention
 - **Recommendation:** Add auto-remediation tier to recovery table: safe automatic fixes vs mandatory HALT
 
 #### Gap RR-2: Slow JIT SDK Fallback
+
 - **Severity:** High
 - **Evidence:** First JIT build takes ~45s (Go download + dependencies)
 - **Impact:** User experiences significant delay when CLI does not support operation
 - **Recommendation:** Implement pre-compiled SDK binary cache; optimize dependency resolution
 
 #### Gap RR-3: Missing One-Click Recovery Flows
+
 - **Severity:** Medium
 - **Evidence:** Recovery requires multiple manual steps even for common scenarios
 - **Impact:** Mean Time To Recovery (MTTR) remains high
 - **Recommendation:** Design "recovery macros" — compound operations for common failure scenarios
 
 #### Gap RR-4: No Escalation Path Standardization
+
 - **Severity:** Medium
 - **Evidence:** "HALT with correlation id" is vague; no clear escalation workflow
 - **Impact:** Users don't know how to escalate or what information to provide
 - **Recommendation:** Standardize escalation template with required info, support channels, and severity classification
 
 #### Gap RR-5: Insufficient Parallel Operation Support
+
 - **Severity:** Low
 - **Evidence:** Flows assume sequential execution; no batch or parallel patterns
 - **Impact:** Bulk operations (e.g., start 100 instances) are inefficient
@@ -228,7 +244,7 @@ This document provides a structured three-dimensional analysis of the current sk
 
 ### 4.1 Diagnosis → Localization → Resolution Pipeline
 
-```
+```json
 [Fault Detected]
     ↓
 [Fault Diagnosis] — Error taxonomy match → Severity classification
@@ -236,7 +252,7 @@ This document provides a structured three-dimensional analysis of the current sk
 [Root Cause Localization] — Dependency graph traversal → Causal inference
     ↓
 [Rapid Resolution] — Auto-remediation? → Recovery macro? → Escalation?
-```
+```markdown
 
 **Optimization Opportunity:** Close the loop by feeding resolution outcomes back into diagnosis patterns (self-learning).
 

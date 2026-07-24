@@ -100,6 +100,7 @@ You are the Critic in a GCL for Alibaba Cloud VPC. Read-only.
 ```
 
 ## Anti-Patterns
+
 - ❌ `DeleteVpc` without dependency cascade
 - ❌ `DeleteNatGateway` with active entries
 - ❌ EIP ops without `alicloud-eip-ops` GCL delegation
@@ -124,4 +125,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial VPC GCL prompt templates (Phase 1, seventh skill).

@@ -68,7 +68,7 @@
   0. 退出
 
 请输入选项 (0-3): 
-```
+```markdown
 
 ---
 
@@ -98,7 +98,8 @@
    - 记录所有调整日志
 
 5. **详细的日志输出**
-   ```
+
+   ```json
    [INFO] Validating component availability in cn-hangzhou...
    [INFO]   Checking ECS instance type availability: ecs.g6.8xlarge in cn-hangzhou...
    [SUCCESS]     ✓ Instance type ecs.g6.8xlarge is available
@@ -166,7 +167,7 @@
 # - 参数顺序错误
 # - 拼写错误
 # - 不知道有哪些可选值
-```
+```markdown
 
 #### 使用后（交互式向导）
 
@@ -188,7 +189,7 @@
 # ✓ 有默认值提示
 # ✓ 实时验证输入
 # ✓ 配置可视化确认
-```
+```markdown
 
 ---
 
@@ -206,7 +207,7 @@ validate_number()       # 验证数字
 collect_assessment_params()   # Mode A/B 参数收集
 collect_recommendation_params() # Mode C 参数收集
 main()                  # 主循环
-```
+```markdown
 
 ### 2. 优雅的降级策略
 
@@ -220,7 +221,7 @@ get_fallback_ecs_type() {
         *)               echo "ecs.g6.xlarge" ;;  # 兜底方案
     esac
 }
-```
+```markdown
 
 ### 3. 容错处理
 
@@ -230,7 +231,7 @@ result=$(aliyun ecs DescribeInstanceTypes ...) || {
     log_warn "⚠ Failed to query. Assuming available."
     return 0  # 不阻断流程
 }
-```
+```markdown
 
 ### 4. 彩色输出
 
@@ -244,7 +245,7 @@ readonly NC='\033[0m'
 
 echo -e "${GREEN}✓ Success${NC}"
 echo -e "${RED}✗ Error${NC}"
-```
+```markdown
 
 ---
 
@@ -302,7 +303,7 @@ bash -n scripts/interactive-wizard.sh  # 语法检查
 # 测试 recommend.sh 可用性检查
 bash -n scripts/recommend.sh           # 语法检查
 ./scripts/recommend.sh --scenario ecommerce --dau 100000 --region cn-hangzhou
-```
+```markdown
 
 ### 集成测试
 

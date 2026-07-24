@@ -5,7 +5,7 @@
 
 ## TL;DR (Decision Tree)
 
-```
+```text
 用户要在 RDS MySQL 实例里执行 SQL（尤其是一个含多条语句的 .sql 文件）
 │
 ├─ 问：能否用 `aliyun rds` 直接执行？
@@ -21,7 +21,7 @@
     └─ ⚠️ `aliyun rds-data` + 插件 `aliyun-cli-rds-data`（见 §Path B）
         · 每次调用一条 `--sql`
         · `batch-execute-statement` 面向批量 INSERT/UPDATE 参数集，不是通用 SQL 文件执行器
-```
+```markdown
 
 | 需求 | 推荐方式 | CLI 产品 |
 |------|----------|----------|
@@ -65,7 +65,7 @@ aliyun rds DescribeDBInstanceNetInfo \
 aliyun rds ModifySecurityIps \
   --DBInstanceId "{{user.db_instance_id}}" \
   --SecurityIps "10.0.0.0/8,172.16.0.0/12"
-```
+```markdown
 
 ### A.3 执行 SQL 文件
 
@@ -86,7 +86,7 @@ mysql -h "$RDS_HOST" -P "$RDS_PORT" -u "$RDS_USER" -p"$RDS_PASS" "$RDS_DB" \
 
 # 方式 3：不指定库名（脚本内自行 USE / CREATE DATABASE）
 mysql -h "$RDS_HOST" -P "$RDS_PORT" -u "$RDS_USER" -p"$RDS_PASS" < "$SQL_FILE"
-```
+```markdown
 
 **安全提示：** 生产环境优先 `-p` 交互输入或从环境变量读取密码，避免在 shell 历史里明文
 `--password=xxx`。Agent 不得将用户密码写入日志或提交到版本库。
@@ -115,7 +115,7 @@ mysql -h "$RDS_HOST" -P "$RDS_PORT" -u "$RDS_USER" -p"$RDS_PASS" < "$SQL_FILE"
 ```bash
 aliyun plugin install --names aliyun-cli-rds-data
 aliyun rds-data --help   # 应看到 execute-statement、batch-execute-statement 等
-```
+```markdown
 
 | 错误调用 | 正确调用 |
 |----------|----------|
@@ -141,7 +141,7 @@ aliyun rds CreateSecret \
   --Username "{{user.account_name}}" \
   --Password "{{user.account_password}}" \
   --ResourceGroupId "<从 DescribeDBInstanceAttribute 获取>"
-```
+```markdown
 
 从 `DescribeSecrets` 响应取 `SecretArn`（格式示例）：
 
@@ -157,7 +157,7 @@ aliyun sts GetCallerIdentity
 export RESOURCE_ARN="acs:rds:{{user.region}}:{{account_id}}:dbinstance/{{user.db_instance_id}}"
 export SECRET_ARN="<从 DescribeSecrets 的 SecretArn>"
 export DATABASE="{{user.db_name}}"
-```
+```markdown
 
 ### B.4 执行单条 SQL
 
@@ -168,7 +168,7 @@ aliyun rds-data execute-statement \
   --secret-arn "$SECRET_ARN" \
   --database "$DATABASE" \
   --sql "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()"
-```
+```markdown
 
 可选：查询结果 JSON 化 `--format-records-as JSON`；超时后继续执行
 `--continue-after-timeout true`（见 `execute-statement --help`）。
@@ -205,7 +205,7 @@ aliyun rds-data commit-transaction \
   --secret-arn "$SECRET_ARN" \
   --transaction-id "$TXN"
 # 失败时：rollback-transaction
-```
+```markdown
 
 ### B.6 从 `.sql` 文件执行（Agent 自行拆分，慎用）
 
@@ -229,7 +229,7 @@ while IFS= read -r -d ';' stmt; do
     --database "$DATABASE" \
     --sql "$stmt" || exit 1
 done < <(tr '\n' ' ' < "$SQL_FILE" | sed 's/;/;\n/g')
-```
+```markdown
 
 **Agent 规则：** 若文件含 `DELIMITER`、`CREATE PROCEDURE`、事件或复杂转义 → **强制 Path A**，
 不要自动拆分。
@@ -245,7 +245,7 @@ aliyun rds-data batch-execute-statement \
   --database "$DATABASE" \
   --sql "INSERT INTO users (id, name) VALUES (:id, :name)" \
   --parameter-sets '[[1,"alice"],[2,"bob"]]'
-```
+```markdown
 
 官方说明：该 API **通常用于 INSERT/UPDATE 批量**，不是通用 SQL 脚本运行器。
 

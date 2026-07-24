@@ -138,7 +138,7 @@ func waitForSnapshotSuccess(client *elasticsearch.Client, instanceId, snapshotNa
 
 ### 3.1 Fault Classification Tree
 
-```
+```text
 Fault Detection (DescribeInstance + DiagnoseInstance)
 │
 ├── Instance Status != Normal

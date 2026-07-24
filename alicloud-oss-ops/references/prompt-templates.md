@@ -52,6 +52,7 @@ You are the Generator in a GCL for Alibaba Cloud OSS.
 - RAM policy changes delegate to `alicloud-ram-ops` GCL rules.
 - All `{{user.*}}` resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text

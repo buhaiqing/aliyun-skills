@@ -22,7 +22,7 @@ ossutil --version
 curl -O https://gosspublic.alicdn.com/ossutil/1.7.18/ossutilmac64
 chmod 755 ossutilmac64
 sudo mv ossutilmac64 /usr/local/bin/ossutil
-```
+```markdown
 
 ### `ossutil` Configuration
 
@@ -32,7 +32,7 @@ sudo mv ossutilmac64 /usr/local/bin/ossutil
 ```bash
 ossutil config
 # Enter: endpoint, access key ID, access key secret, STSToken (empty for AK auth)
-```
+```markdown
 
 > **MUST NOT** include real SK in scripts. Use the config file with
 > `chmod 600 ~/.ossutilconfig`.
@@ -55,7 +55,7 @@ if ! command -v go &> /dev/null; then
 fi
 
 go version
-```
+```markdown
 
 ### JIT Go SDK Workflow (OSS V2 SDK)
 
@@ -71,7 +71,7 @@ go get github.com/aliyun/aliyun-oss-go-sdk/oss
 go get github.com/alibabacloud-go/oss-20190517/v4/client
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/tea/tea
-```
+```markdown
 
 ## SDK Package Reference
 
@@ -120,9 +120,10 @@ read-only policy for a single bucket:
     }
   ]
 }
-```
+```markdown
 
 > **Note:** Cross-account OSS access requires **both**:
+>
 > 1. The destination RAM user has `oss:Action` permission.
 > 2. The destination bucket's **bucket policy** explicitly allows the source
 >    account's UID / RAM user.
@@ -157,7 +158,7 @@ read-only policy for a single bucket:
     chmod 755 ossutil64 && sudo mv ossutil64 /usr/local/bin/ossutil
     ossutil cp build/artifact.zip \
       oss://my-bucket/ci-builds/${{ github.sha }}/artifact.zip
-```
+```markdown
 
 ### Terraform (state storage backend)
 
@@ -170,7 +171,7 @@ terraform {
     tablestorage_endpoint = "https://my-terraform-locks.cn-hangzhou.ots.aliyuncs.com"
   }
 }
-```
+```markdown
 
 ## Common Patterns
 
@@ -180,7 +181,7 @@ Use case: Email link that allows download for 1 hour.
 
 ```bash
 ossutil sign oss://my-bucket/reports/q1.pdf --timeout 3600
-```
+```markdown
 
 ### Batch Upload with `ossutil`
 
@@ -190,7 +191,7 @@ ossutil sync /local/data/ oss://my-bucket/data/
 
 # With pattern filter
 ossutil sync /local/logs/ oss://my-bucket/logs/ --include "*.log.gz"
-```
+```markdown
 
 ### Audit Recent Access (via logging)
 
@@ -201,15 +202,15 @@ aliyun oss PutBucketLogging --Bucket my-bucket \
 
 # Tail recent access logs
 ossutil cat oss://log-bucket/access/2026-06-04-*
-```
+```markdown
 
 ## Environment Variable Loading
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > ossutil config > aliyun config > defaults (lowest)
-```
+```markdown
 
 **SkillOpt wrapper** (`scripts/oss-skillopt-wrapper.sh`) and `scripts/skillopt-lib.sh` auto-load:
 
@@ -226,6 +227,6 @@ ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
 OSS_BUCKET=my-bucket
 OSS_ENDPOINT=oss-cn-hangzhou.aliyuncs.com
-```
+```markdown
 
 > **Security:** `.env` MUST be in `.gitignore`. Never commit credentials.

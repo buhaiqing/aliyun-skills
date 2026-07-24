@@ -5,6 +5,7 @@
 ## 1. Framework Overview
 
 Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
+
 - **安全 (Security)**: Identity, access control, data protection
 - **稳定 (Stability)**: Fault tolerance, disaster recovery, change management
 - **成本 (Cost)**: Resource optimization, cost visibility, right-sizing
@@ -26,6 +27,7 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
 | **凭证管理** | AK/SK rotation, STS temporary credentials | ✅ Prefer STS over long-term AK |
 
 **Security Checklist**:
+
 - [ ] RAM policy grants minimum required actions (see [security-enhancement.md](security-enhancement.md) §1 for layered policies)
 - [ ] AK/SK stored securely (KMS, environment variables)
 - [ ] Credential format validated before signing (see [security-enhancement.md](security-enhancement.md) §2.1)
@@ -36,6 +38,7 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
 - [ ] Input validation before all API calls (see [security-enhancement.md](security-enhancement.md) §3)
 
 **RAM Policy Template (Operator — Recommended)**:
+
 ```json
 {
   "Version": "1",
@@ -68,7 +71,7 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
     }
   ]
 }
-```
+```markdown
 
 > See [security-enhancement.md](security-enhancement.md) for full Read-Only / Operator / Admin / Data-Plane-Only policy templates.
 
@@ -83,6 +86,7 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
 | **会话管理** | Idle timeout, deep hibernation | ✅ Configure appropriate timeout |
 
 **Stability Checklist**:
+
 - [ ] Poll sandbox status before operations
 - [ ] Handle TERMINATED sandboxes gracefully (create new)
 - [ ] Implement exponential backoff for 5xx errors
@@ -90,14 +94,16 @@ Alibaba Cloud Well-Architected Framework evaluates systems across five pillars:
 - [ ] Stop sandbox after task completion
 
 **State Monitoring**:
+
 ```yaml
 states:
   CREATING: Wait (poll interval 5s, max 120s)
   READY: Proceed with operations
   TERMINATED: Create new sandbox
-```
+```markdown
 
 **Recovery Matrix**:
+
 | Failure | Recovery Action |
 |---|---|
 | Sandbox TERMINATED unexpectedly | Create new sandbox, restore state |
@@ -116,6 +122,7 @@ states:
 | **模板复用** | Shared templates across workloads | ✅ Reduce template creation overhead |
 
 **Cost Checklist**:
+
 - [ ] CPU/memory sized for workload (avoid over-provisioning)
 - [ ] Idle timeout set appropriately (1800-3600s recommended)
 - [ ] Active sandbox count monitored
@@ -123,6 +130,7 @@ states:
 - [ ] Template reuse maximized
 
 **Cost Optimization Matrix**:
+
 | Resource | Optimization Strategy | Expected Savings |
 |---|---|---|
 | CPU | Use 2 cores for light workloads | 50% CPU cost |
@@ -131,6 +139,7 @@ states:
 | Sandbox Cleanup | Daily cleanup of TERMINATED | Reduced quota pressure |
 
 **Resource Sizing Guide**:
+
 | Workload Type | CPU | Memory | Idle Timeout |
 |---|---|---|---|
 | Simple scripts | 1-2 | 1024-2048 MB | 1800s |
@@ -149,6 +158,7 @@ states:
 | **MCP集成** | Standardized tool interface | ✅ MCP service for AI agents |
 
 **Efficiency Checklist**:
+
 - [ ] Automation scripts for CRUD operations
 - [ ] Template library (3-5 common templates)
 - [ ] Context reuse for multi-step code execution
@@ -156,6 +166,7 @@ states:
 - [ ] MCP service enabled for AI agent integration
 
 **Efficiency Metrics**:
+
 | Metric | Target | Optimization |
 |---|---|---|
 | Template creation time | < 10s | Pre-create templates |
@@ -174,6 +185,7 @@ states:
 | **资源利用率** | CPU/memory usage monitoring | ✅ Health check before execution |
 
 **Performance Checklist**:
+
 - [ ] Region matches dependent services (database, storage)
 - [ ] Sandbox health checked before code execution
 - [ ] Execution timeout configured appropriately
@@ -181,6 +193,7 @@ states:
 - [ ] File operations batched where possible
 
 **Performance Targets**:
+
 | Operation | Target | Measurement |
 |---|---|---|
 | CreateTemplate | < 5s | API response time |
@@ -190,6 +203,7 @@ states:
 | File read/write | < 1s | Per file operation |
 
 **Performance Optimization**:
+
 | Bottleneck | Solution |
 |---|---|
 | Slow sandbox creation | Pre-create pool of READY sandboxes |
@@ -226,9 +240,10 @@ states:
 **Minimum Acceptable Score**: 3.0 average across pillars
 
 **Score Calculation**:
-```
+
+```text
 Overall = (Security + Stability + Cost + Efficiency + Performance) / 5
-```
+```markdown
 
 ---
 
@@ -264,6 +279,7 @@ Overall = (Security + Stability + Cost + Efficiency + Performance) / 5
 **AgentRun-Specific Well-Architected Compliance**:
 
 ### Security
+
 - [ ] ACS3-HMAC-SHA256 signing implemented correctly
 - [ ] RAM policy follows least-privilege principle
 - [ ] AK/SK stored in secure location (KMS/env vars)
@@ -271,24 +287,28 @@ Overall = (Security + Stability + Cost + Efficiency + Performance) / 5
 - [ ] Sandbox lifecycle limited to < 6 hours
 
 ### Stability
+
 - [ ] Sandbox status polled before operations
 - [ ] Exponential backoff for 5xx/429 errors
 - [ ] Sandbox recreation logic for TERMINATED state
 - [ ] Template update validation before apply
 
 ### Cost
+
 - [ ] CPU/memory right-sized for workload
 - [ ] Idle timeout configured (1800-3600s)
 - [ ] TERMINATED sandboxes cleaned up regularly
 - [ ] Template reuse maximized
 
 ### Efficiency
+
 - [ ] Automation for all CRUD operations
 - [ ] Context reuse for multi-step execution
 - [ ] Template library available
 - [ ] MCP service enabled (if applicable)
 
 ### Performance
+
 - [ ] Region matches dependent services
 - [ ] Health check before code execution
 - [ ] Parallel sandbox operations supported

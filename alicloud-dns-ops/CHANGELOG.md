@@ -5,6 +5,7 @@
 ### Added
 
 #### Core Features
+
 - **Public Authoritative DNS (Alidns)**
   - Domain management (Add, List, Get, Delete)
   - Record management (Add, List, Update, Delete, Enable, Disable)
@@ -22,6 +23,7 @@
   - Forwarding rules for cross-VPC DNS
 
 #### Skill Structure
+
 - `SKILL.md` — Main skill documentation with triggers, pre-flight, variables
 - `references/cli-usage.md` — Complete CLI command reference
 - `references/core-concepts.md` — DNS architecture and concepts
@@ -38,6 +40,7 @@
 - `TODO.md` — Development roadmap and integration checklist
 
 #### Self-Repair Features
+
 - Input validation for all record types (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)
 - TTL validation (60-86400 seconds)
 - Weight validation (1-100)
@@ -47,6 +50,7 @@
 - Automatic rollback support
 
 #### Integration
+
 - SkillOpt core library integration
 - Runtime Harness tracing support
 - Langfuse session tracking
@@ -55,6 +59,7 @@
 - Cross-skill delegation patterns
 
 #### Safety Features
+
 - Pre-flight validation checks
 - Credential masking in outputs
 - Destructive operation protection
@@ -62,12 +67,14 @@
 - Audit logging via ActionTrail
 
 #### Testing
+
 - Backward compatibility test framework
 - Integration test patterns
 - Unit test examples
 - Performance benchmarks
 
 ### Security
+
 - RAM least-privilege policy requirements
 - MFA for DNS management accounts
 - ActionTrail audit logging
@@ -75,6 +82,7 @@
 - 90-day audit trail retention
 
 ### Documentation
+
 - Comprehensive README with examples
 - Architecture diagrams
 - Integration patterns
@@ -85,6 +93,7 @@
 ## [Unreleased]
 
 ### Planned
+
 - HTTPDNS enterprise integration
 - DNS analytics dashboards
 - Batch operations support

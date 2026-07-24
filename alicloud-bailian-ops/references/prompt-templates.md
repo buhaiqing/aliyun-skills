@@ -83,9 +83,12 @@ For each operation, provide:
 
 <!-- legacy header was: ## Generator (G) Template -->
 bash
+
 # CLI command with placeholders
+
 aliyun bailian <Operation> --<Param> "{{user.value}}"
-```
+
+```markdown
 
 ### Validation
 1. Step to validate success
@@ -202,7 +205,7 @@ issues:
     fix: "..."
 
 verdict: PASS|RETRY|ABORT
-```
+```markdown
 
 ## Anti-Patterns to Flag
 
@@ -245,7 +248,7 @@ if all(d == 1 for d in critic.dimensions.values()):
 # Otherwise: feedback to Generator and continue
 feedback = generate_feedback(critic.issues)
 continue_loop(feedback)
-```
+```yaml
 
 ---
 

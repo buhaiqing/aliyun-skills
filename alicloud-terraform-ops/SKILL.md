@@ -86,9 +86,11 @@ Terraform IaC skill for Alibaba Cloud infrastructure lifecycle management. Decla
 > 以下所有代码块中的 `aliyun terraform ...` 命令在执行时应替换为 `./scripts/terraform-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun terraform` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## 1. Overview
 
 This skill enables GitOps-style infrastructure management using Terraform:
+
 - **Declarative**: Define desired state in HCL, let Terraform figure out how to get there
 - **Multi-environment**: Workspaces or directory-based isolation for dev/staging/prod
 - **State-managed**: OSS backend for remote state storage and locking
@@ -98,6 +100,7 @@ This skill enables GitOps-style infrastructure management using Terraform:
 ## 2. Triggers
 
 Use this skill when:
+
 - User mentions "Terraform", "IaC", "infrastructure as code", "基础设施即代码"
 - User needs multi-environment management (dev/staging/prod)
 - User wants to create/destroy complete environments
@@ -147,7 +150,7 @@ terraform apply tfplan
 
 # 4. Destroy when needed
 terraform destroy
-```
+```markdown
 
 ### 5.2 Multi-Environment Strategy
 
@@ -169,14 +172,14 @@ terraform apply
 
 预置模板见 `environments/`（`dev` / `staging` / `prod`）。运行时工作目录为 **`.runtime/terraform-ops/environments/<env>/`**（gitignored，首次 apply 自动从模板复制）。
 
-```
+```text
 environments/                              # 模板（进 Git）
 .runtime/terraform-ops/
 ├── nl2hcl/<env>/                          # NL2HCL 生成物
 ├── import/<batch>/                        # 逆向工程 HCL
 ├── environments/<env>/                    # apply/destroy 工作区
 └── pr-store/                              # HITL Mode B
-```
+```markdown
 
 ### 5.3 Module Usage
 
@@ -215,7 +218,7 @@ terraform {
     tablestore_table    = "terraform_state_lock"
   }
 }
-```
+```markdown
 
 ## 6. Post-execution Validation
 
@@ -266,7 +269,7 @@ resource "alicloud_instance" "web" {
     prevent_destroy = var.environment == "prod"
   }
 }
-```
+```markdown
 
 ### 9.2 Plan Review Requirement
 
@@ -298,11 +301,13 @@ Full five-pillar guide: [references/well-architected-assessment.md](references/w
 将自然语言描述转换为可执行的 Terraform HCL 配置。
 
 **Trigger examples:**
+
 - "帮我创建一个 VPC，包含两个可用区的交换机，以及一个 NAT 网关"
 - "生成 Terraform 配置：3 台 ECS 挂载到 SLB，后端连接 RDS MySQL"
 - "用 Terraform 搭建一个带有 Redis 缓存的 Web 服务架构"
 
 **Output:**
+
 - `main.tf` - 资源配置
 - `variables.tf` - 变量定义
 - `outputs.tf` - 输出定义
@@ -310,6 +315,7 @@ Full five-pillar guide: [references/well-architected-assessment.md](references/w
 - `README.md` - 使用说明
 
 **Process:**
+
 1. Parse natural language intent
 2. Identify required resources and dependencies
 3. Generate HCL with best practices (tags, naming conventions)
@@ -317,6 +323,7 @@ Full five-pillar guide: [references/well-architected-assessment.md](references/w
 5. **Dry-run support**: Execute `terraform plan` to preview changes without applying
 
 **Dry-run Mode:**
+
 - Preview resource creation before actual deployment
 - Show estimated costs and risk warnings
 - Validate configuration without backend initialization
@@ -324,12 +331,14 @@ Full five-pillar guide: [references/well-architected-assessment.md](references/w
 
 **Dry-Run 标识规范:**
 所有 dry-run 输出均包含清晰的视觉标识:
-```
+
+```text
 ╔════════════════════════════════════════════════════════════════╗
 ║                    🔍 DRY-RUN MODE (干运行模式)                  ║
 ║         此执行仅用于预览和验证，不会创建或修改任何资源            ║
 ╚════════════════════════════════════════════════════════════════╝
-```
+```markdown
+
 每条日志行前缀: `[DRY-RUN]`
 
 Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
@@ -339,22 +348,26 @@ Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 从现有阿里云资源逆向生成 Terraform 配置，实现存量资源纳管。
 
 **Trigger examples:**
+
 - "把这些 ECS 实例导入到 Terraform 管理"
 - "生成现有 VPC 的 Terraform 配置"
 - "帮我把这个 RDS 实例转成 HCL 代码"
 - "已有资源生成 terraform import 脚本"
 
 **Input formats:**
+
 - Resource IDs (e.g., `i-bp1xxxxxxxxxx`, `vpc-bp1xxxxxxxx`)
 - `aliyun` CLI output (JSON)
 - Console screenshot/resource list
 
 **Output (runtime, gitignored under `.runtime/terraform-ops/`):**
+
 - `import/<batch>/` — HCL configuration files
 - `import.sh` — Import script for `terraform import`
 - `import.tf` — Generated resource blocks
 
 **Process:**
+
 1. Query resource details via `aliyun` CLI
 2. Map cloud resource attributes to Terraform schema
 3. Generate HCL with lifecycle rules
@@ -363,6 +376,7 @@ Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 6. Execute import and verify with `terraform plan`
 
 **Dry-run Mode:**
+
 - Generate HCL and validate syntax before actual import
 - Detect configuration drift before state modification
 - Preview import result without changing Terraform state
@@ -370,12 +384,14 @@ Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 
 **Dry-Run 标识规范:**
 所有 dry-run 输出均包含清晰的视觉标识:
-```
+
+```text
 ╔════════════════════════════════════════════════════════════════╗
 ║                    🔍 DRY-RUN MODE (干运行模式)                  ║
 ║         此执行仅用于预览和验证，未修改 Terraform 状态            ║
 ╚════════════════════════════════════════════════════════════════╝
 ```
+
 每条日志行前缀: `[DRY-RUN]`
 
 Full spec: [references/reverse-engineering.md](references/reverse-engineering.md)
@@ -385,12 +401,14 @@ Full spec: [references/reverse-engineering.md](references/reverse-engineering.md
 人工介入 (Human-in-the-Loop) 工作流程，支持三种协作模式：
 
 **模式 A: 交互式 CLI (默认)** ✅ 已实现
+
 - 命令行实时问答确认
 - 适用于开发/测试环境快速迭代
 - 支持五级环境差异化确认策略 (int/dev/uat/performance/production)
 - **实现**: `scripts/hitl_mode_a.py`
 
 **模式 B: PR 式审核** ✅ 已实现
+
 - Git PR 驱动的异步审批流程
 - 自动生成 PLAN.md 变更摘要
 - 评论指令系统 (/approve, /plan, /apply)
@@ -398,6 +416,7 @@ Full spec: [references/reverse-engineering.md](references/reverse-engineering.md
 - **实现**: `scripts/hitl_mode_b.py`
 
 **模式 C: CheckPoint 暂停** ✅ 已实现
+
 - 会话状态持久化，支持中断恢复
 - 资源分级标记 ([PASS]/[WARN]/[SKIP])
 - 批量选择、分步执行
@@ -405,6 +424,7 @@ Full spec: [references/reverse-engineering.md](references/reverse-engineering.md
 - **实现**: `scripts/hitl_mode_c.py`
 
 **CheckPoint 机制:**
+
 | 检查点 | 触发时机 | 人工操作 | 环境要求 |
 |--------|----------|----------|----------|
 | CP1 意图确认 | NL2HCL 解析后 | 确认/修改资源清单 | **全部环境: 必须** |
@@ -451,7 +471,7 @@ python alicloud-gcl-runner-ops/scripts/gcl_runner.py \
   --op Apply \
   --command "terraform apply tfplan" \
   --rubric alicloud-terraform-ops/references/rubric.md
-```
+```markdown
 
 Setup and env vars: [references/integration.md](references/integration.md).
 

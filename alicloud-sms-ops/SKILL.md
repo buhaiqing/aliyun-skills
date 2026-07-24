@@ -48,7 +48,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```bash
 # SendSms:                $.Code, $.Message, $.RequestId, $.BizId
 # SendBatchSms:           $.Code, $.Message, $.RequestId, $.BizId
 # QuerySendDetails:       $.SmsSendDetailDTOs.SmsSendDetailDTO[].{SendStatus,SendTime,Receiver,TemplateCode,Content}
@@ -61,7 +61,7 @@ metadata:
 # DeleteSmsTemplate:      $.RequestId
 # ModifySmsSign:          $.RequestId
 # ModifySmsTemplate:      $.RequestId
-```
+```markdown
 
 ## Overview
 
@@ -201,10 +201,12 @@ as fallback), response validation, and failure recovery.
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to send, manage, and monitor Alibaba Cloud SMS Service
 using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
@@ -212,12 +214,14 @@ using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 - [ ] SMS template approved (for sending SMS)
 
 ### Verify Setup
+
 ```bash
 # Check CLI and credentials
 aliyun dysmsapi QuerySendStatistics --RegionId cn-hangzhou --StartDate "$(date -d "7 days ago" +%Y-%m-%d 2>/dev/null || date -v-7d +%Y-%m-%d)" --EndDate "$(date +%Y-%m-%d)"
 ```
 
 ### Your First Command
+
 ```bash
 # Example: Send a single SMS
 aliyun dysmsapi SendSms \
@@ -225,9 +229,10 @@ aliyun dysmsapi SendSms \
   --SignName "阿里云" \
   --TemplateCode "SMS_123456789" \
   --TemplateParam '{"code":"1234"}'
-```
+```markdown
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand SMS Service architecture
 - [Common Operations](#execution-flows-agent-readable) — Send, manage signatures/templates, query reports
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
@@ -268,7 +273,7 @@ Every operation: **Pre-flight → Execute (SDK/API and `aliyun`) → Validate �
 
 ### Operation: Send Single SMS
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Send Single SMS)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -328,9 +333,10 @@ aliyun dysmsapi SendSms \
 
 ### Operation: Send Batch SMS
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Send Batch SMS)
 
 Same as **Send Single SMS** above, plus:
+
 - Verify phone number list is valid (max 100 numbers)
 - Verify template parameters are compatible with batch sending
 
@@ -343,7 +349,7 @@ aliyun dysmsapi SendBatchSms \
   --SignNameJson "{{user.sign_names_json}}" \
   --TemplateCode "{{user.template_code}}" \
   --TemplateParamJson "{{user.template_params_json}}"
-```
+```markdown
 
 > **Note:** `SignNameJson` can be a single-element array (same signature for all)
 > or per-number array. `TemplateParamJson` must match phone count.
@@ -405,7 +411,7 @@ aliyun dysmsapi QuerySendDetails \
 aliyun dysmsapi QuerySendStatistics \
   --StartDate "$(date -d "7 days ago" +%Y-%m-%d 2>/dev/null || date -v-7d +%Y-%m-%d)" \
   --EndDate "$(date +%Y-%m-%d)"
-```
+```markdown
 
 
 
@@ -423,7 +429,7 @@ aliyun dysmsapi QuerySendStatistics \
 
 ### Operation: Add SMS Signature
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Add SMS Signature)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -467,7 +473,7 @@ aliyun dysmsapi AddSmsSign \
 ```bash
 # Query signature status
 aliyun dysmsapi QuerySmsSign --SignName "{{user.sign_name}}"
-```
+```markdown
 
 
 
@@ -508,7 +514,7 @@ aliyun dysmsapi DeleteSmsSign --SignName "{{user.sign_name}}"
 
 ### Operation: Modify SMS Signature
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Modify SMS Signature)
 
 Same as **Add SMS Signature** above.
 
@@ -519,7 +525,7 @@ aliyun dysmsapi ModifySmsSign \
   --SignName "{{user.sign_name}}" \
   --SignSource "{{user.sign_source}}" \
   --MoreData '["file://{{user.sign_file}}"]'
-```
+```markdown
 
 
 
@@ -529,6 +535,7 @@ aliyun dysmsapi ModifySmsSign \
 2. Modified signature enters review status.
 
 #### Failure Recovery
+
 | Error pattern | Max retries | Agent Action |
 |---------------|-------------|--------------|
 | `isv.SMS_SIGN_NAME_ILLEGAL` | 0 | HALT; fix sign name format |
@@ -541,7 +548,7 @@ aliyun dysmsapi ModifySmsSign \
 
 ### Operation: Add SMS Template
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Add SMS Template)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -587,7 +594,7 @@ aliyun dysmsapi AddSmsTemplate \
 ```bash
 # Query template status
 aliyun dysmsapi QuerySmsTemplate --TemplateCode "{{user.template_code}}"
-```
+```markdown
 
 
 
@@ -630,7 +637,7 @@ aliyun dysmsapi DeleteSmsTemplate --TemplateCode "{{user.template_code}}"
 
 ### Operation: Modify SMS Template
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Modify SMS Template)
 
 Same as **Add SMS Template** above.
 
@@ -643,7 +650,7 @@ aliyun dysmsapi ModifySmsTemplate \
   --TemplateType "{{user.template_type}}" \
   --TemplateContent "{{user.template_content}}" \
   --Remark "{{user.remark}}"
-```
+```markdown
 
 
 
@@ -653,6 +660,7 @@ aliyun dysmsapi ModifySmsTemplate \
 2. Modified template enters review status.
 
 #### Failure Recovery
+
 | Error pattern | Max retries | Agent Action |
 |---------------|-------------|--------------|
 | `isv.SMS_TEMPLATE_ILLEGAL` | 0 | HALT; fix template content |
@@ -666,7 +674,7 @@ aliyun dysmsapi ModifySmsTemplate \
 
 This is a specialized operation for sending verification codes (common use case).
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Send Verification Code SMS)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -733,30 +741,38 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 Generated skills MUST follow these 6 rules. See meta-skill SKILL.md for detailed examples.
 
 ### TE-1: API Query > Static Tables
+
 Use API commands instead of hardcoding version/port/quota tables.
+
 ```markdown
 aliyun dysmsapi QuerySendStatistics
 | Date | Send Count | Success Count |
-```
+```markdown
 
 ### TE-2: No docstrings in code
+
 Inline comments only. No function-level docstring.
+
 ```go
 // DO: inline comment only
 func sendSms() { ... }
 ```
 
 ### TE-3: Compact error tables
+
 | Error Code | Agent Action |
 |------------|-------------|
 
 ### TE-4: Centralized JSON paths
+
 File-top comment block; one per resource type.
 
 ### TE-5: YAML anchors in example-config.yaml
+
 Use `&dev` / `&prod` to eliminate repeated fields.
 
 ### TE-6: Eliminate cross-file duplicate flows
+
 SKILL.md already has full flow, no Complete Workflow in config or SDK files.
 
 ---
@@ -798,7 +814,9 @@ Phase 5 extension rollout for `recommended` skills per [`AGENTS.md` §12](../doc
 ## RAM Policy Examples
 
 ### Minimal Least-Privilege Policy
+
 This policy grants full access to all SMS Service APIs for a specific RAM user:
+
 ```json
 {
   "Version": "1",
@@ -823,10 +841,12 @@ This policy grants full access to all SMS Service APIs for a specific RAM user:
     }
   ]
 }
-```
+```markdown
 
 ### Restricted Least-Privilege Policy
+
 This policy grants only the minimum permissions required for sending SMS and querying reports:
+
 ```json
 {
   "Version": "1",
@@ -846,7 +866,9 @@ This policy grants only the minimum permissions required for sending SMS and que
 ```
 
 ### Resource-Level Restriction Policy
+
 This policy restricts access to specific SMS signatures and templates:
+
 ```json
 {
   "Version": "1",
@@ -864,4 +886,4 @@ This policy restricts access to specific SMS signatures and templates:
     }
   ]
 }
-```
+```text

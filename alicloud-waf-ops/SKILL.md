@@ -81,6 +81,7 @@ and failure recovery.
 **Fallback Path**: Only use native `aliyun waf-openapi` commands when the wrapper script is confirmed missing or `scripts/skillopt-lib.sh` cannot be sourced.
 
 ### Wrapper Usage Example
+
 ```bash
 # List all protected domains via SkillOpt wrapper
 ./scripts/waf-skillopt-wrapper.sh waf-openapi DescribeDomainList \
@@ -240,6 +241,7 @@ aliyun waf-openapi DescribeDomainList \
 ### Why Enhanced Pre-flight Check?
 
 Based on real-world execution failures, this enhanced check addresses:
+
 1. **CLI plugin installation issues** (WAF requires `aliyun-cli-waf-openapi` plugin)
 2. **Environment variable loading** (automatic .env file detection)
 3. **Go SDK version compatibility** (preventing runtime errors)
@@ -273,6 +275,7 @@ bash scripts/preflight-check.sh
 ### WAF-Specific Checks
 
 1. **Plugin Installation**:
+
    ```bash
    # Check if WAF plugin is installed
    aliyun plugin list | grep waf-openapi
@@ -287,6 +290,7 @@ bash scripts/preflight-check.sh
    - **International**: Choose nearest supported region
 
 3. **Instance Validation**:
+
    ```bash
    # Verify WAF instance exists
    aliyun waf-openapi DescribeInstanceInfo \
@@ -298,6 +302,7 @@ bash scripts/preflight-check.sh
 ### Integration with Execution Flows
 
 **Every operation MUST start with:**
+
 ```bash
 # Step 1: Run pre-flight check
 bash scripts/preflight-check.sh

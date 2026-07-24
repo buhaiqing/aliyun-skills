@@ -5,6 +5,7 @@
 **Primary path:** `aliyun dts` CLI (static Go binary, no runtime dependencies)
 
 **Recommended:** Install DTS CLI plugin
+
 ```bash
 aliyun plugin install --names aliyun-cli-dts
 ```
@@ -20,7 +21,7 @@ if ! command -v go &> /dev/null; then
     [ "$ARCH" = "x86_64" ] && ARCH="amd64"
     [ "$ARCH" = "aarch64" ] && ARCH="arm64"
     mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
+    curl -fsSL "<https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.g>z" | tar -xz -C /tmp/go-runtime
     export PATH="/tmp/go-runtime/go/bin:$PATH"
     export GOPATH="/tmp/go-workspace"
     export GOCACHE="/tmp/go-cache"
@@ -37,7 +38,7 @@ cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script
 
 # Set China CDN proxy (faster download)
-export GOPROXY="https://goproxy.cn,direct"
+export GOPROXY="<https://goproxy.cn,direc>t"
 
 # Core dependencies
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -94,7 +95,7 @@ func main() {
 |---------|---------------|
 | DTS | `github.com/alibabacloud-go/dts-20200101/v1/client` |
 
-> Find package at: https://github.com/alibabacloud-go/dts-20200101
+> Find package at: <https://github.com/alibabacloud-go/dts-20200101>
 
 ## Environment Variables
 

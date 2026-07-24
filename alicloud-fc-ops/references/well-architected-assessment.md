@@ -3,21 +3,25 @@
 ## 2.1 安全支柱 Security
 
 ### RAM Execution Role
+
 - FC functions MUST use a dedicated RAM role (not account AccessKey)
 - Minimum permissions principle: grant only required actions (e.g., `oss:GetObject` not `oss:*`)
 - RAM policies MUST be attached to the execution role, NOT the caller
 
 ### Network Security
+
 - Use VPC binding when accessing VPC resources (RDS, Redis)
 - Configure security groups with egress rules (allow 443 for API calls)
 - For public HTTP triggers, enable authentication
 
 ### Code Security
+
 - Code package uploaded to SSE-S3 encrypted or CMK encrypted OSS bucket
 - Function-level IAM prevents unauthorized invocation
 - Environment variables with sensitive values should use KMS encryption
 
 ### Credential Rotation
+
 - STS temporary credentials preferred over long-lived AccessKey
 - Rotate execution role credentials per security policy
 - **MANDATORY:** Never log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET` or any credential value. Mask to first 4 chars + `****` (e.g., `abcd****`) in all output channels
@@ -62,6 +66,7 @@
 FC pricing rule: **higher memory = more CPU = faster execution = potentially lower GB-s cost**
 
 Memory → CPU mapping (Alibaba Cloud):
+
 | Memory (MB) | vCPU |
 |-------------|------|
 | 128-409 | 0.01-0.3 |

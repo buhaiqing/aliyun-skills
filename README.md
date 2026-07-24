@@ -29,7 +29,7 @@ This project is a collection of Alibaba Cloud operations Agent Skills, providing
 
 > **Note**: There is no root-level `go.mod` — Go is used via the JIT SDK setup (`alicloud-jit-setup.sh`) and per-skill `scripts/` only. There is also no committed `.env.example`; credentials are configured via `aliyun configure` or by exporting env vars (see [Credential Configuration](#credential-configuration)).
 
-```
+```text
 aliyun-skills/
 ├── README.md                          # English version
 ├── README_CN.md                       # Chinese version
@@ -98,7 +98,7 @@ aliyun-skills/
 ├── alicloud-voice-ops/                # Voice / Intelligent Speech Interaction
 ├── alicloud-vpc-ops/                  # Virtual Private Cloud (VPC)
 └── alicloud-waf-ops/                  # Web Application Firewall (WAF)
-```
+```markdown
 
 > A standard product Skill (`alicloud-<product>-ops/`) contains: `SKILL.md`, `references/` (`core-concepts.md`, `cli-usage.md`, `api-sdk-usage.md`, `troubleshooting.md`, `rubric.md`, `prompt-templates.md`, `monitoring.md`, etc.), `assets/` (`example-config.yaml`, `eval_queries.json`), and per-skill `scripts/` + `test-*.sh` where applicable.
 
@@ -121,7 +121,7 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 # Method 2: Interactive configuration
 aliyun configure
-```
+```markdown
 
 ### 3. Generate a New Skill
 
@@ -130,7 +130,8 @@ Reference the generator in an Agent Runtime, then provide a prompt:
 > "Generate a Skill for Alibaba Cloud ECS, name alicloud-ecs-ops, core features: instance lifecycle management, disks, snapshots"
 
 **Generated structure**:
-```
+
+```text
 alicloud-ecs-ops/
 ├── SKILL.md
 ├── references/
@@ -162,26 +163,29 @@ aliyun ecs DescribeInstances --output cols=InstanceId,Status rows=Instances.Inst
 # Polling with waiter
 aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
   --waiter expr='Instances.Instance[0].Status' to=Running timeout=300
-```
+```markdown
 
 ## Installing aliyun CLI
 
 **Official one-click install (auto-detects OS + architecture):**
+
 ```bash
 /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
 ```
 
 `install.sh` handles automatically:
+
 - **macOS**: Downloads the `universal` package (Intel + Apple Silicon compatible)
 - **Linux AMD64**: `aliyun-cli-linux-latest-amd64.tgz`
 - **Linux ARM64**: `aliyun-cli-linux-latest-arm64.tgz`
 - Installs to `/usr/local/bin/aliyun`
 
 **Alternative methods:**
+
 ```bash
 # macOS Homebrew
 brew install aliyun-cli
-```
+```markdown
 
 ## Credential Configuration
 
@@ -204,9 +208,10 @@ vim .env
 | `ALIBABA_CLOUD_REGION_ID` | Default region | `cn-hangzhou` |
 
 **Load environment variables:**
+
 ```bash
 source .env
-```
+```bash
 
 ### Method 2: Export Environment Variables Directly
 
@@ -220,9 +225,10 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 ```bash
 aliyun configure
-```
+```text
 
 **Configuration file:**
+
 ```json
 {
   "current": "default",
@@ -249,7 +255,7 @@ aliyun configure
 ```bash
 # Check Markdown formatting
 npx markdownlint-cli2 "alicloud-*/SKILL.md"
-```
+```markdown
 
 Verify: CLI commands are executable, links are valid, examples are correct.
 

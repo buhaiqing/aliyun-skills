@@ -24,6 +24,7 @@ metadata:
 Supports both traditional `aliyun cms` commands and modern `aliyun cms2` commands for CloudMonitor 1.0 and 2.0 features.
 
 ### Traditional CMS (1.0) vs CMS2 (2.0)
+
 - **Traditional CMS (`aliyun cms`)**: Uses API version 2019-01-01, covers basic monitoring features
 - **CMS2 (`aliyun cms2`)**: Uses API version 2024-03-30, includes advanced features like APM, RUM, Prometheus Service, and more
 
@@ -216,11 +217,12 @@ aliyun cms EnableMetricRuleBlackList \
 aliyun cms DeleteMetricRuleBlackList \
   --BlackListId {{output.blacklist_id}} \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
 ### Scenario 1: Silence EIP outbound bandwidth drop alert for 24h
+
 ```bash
 aliyun cms CreateMetricRuleBlackList \
   --Name "EIP-eip-uf6xii12c69nz0x5e718o-临时静默-24h" \
@@ -230,9 +232,10 @@ aliyun cms CreateMetricRuleBlackList \
   --Scope "USER" \
   --EffectiveTime "2026-06-05T15:00:00Z/2026-06-06T15:00:00Z" \
   --RegionId cn-shanghai
-```
+```markdown
 
 ### Scenario 2: Silence multiple ECS CPU alerts in a group
+
 ```bash
 aliyun cms CreateMetricRuleBlackList \
   --Name "ECS-维护窗口-CPU静默" \
@@ -243,12 +246,14 @@ aliyun cms CreateMetricRuleBlackList \
   --ScopeValue "245146569" \
   --EffectiveTime "2026-06-05T02:00:00Z/2026-06-05T06:00:00Z" \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ## Success Criteria
+
 - `output.blacklist_id` is returned and non-empty
 - `DescribeMetricRuleBlackList` confirms the policy exists with status "ENABLED"
 - For temporary silence: `EffectiveTime` matches requested range
+
 ```
 
 ### Critic: Verify alarm blacklist creation
@@ -304,6 +309,7 @@ For `CreateMetricRuleBlackList`:
 ## Phase 3-D: Alert Threshold Tuning (告警阈值调优)
 
 ### Use Case
+
 告警规则过于敏感（频繁误报）或过于迟钝（漏报），需要调整阈值、统计周期或连续触发次数。
 
 ### Generator: Modify alert thresholds
@@ -378,11 +384,12 @@ aliyun cms PutResourceMetricRule \
 aliyun cms DescribeMetricAlarmList \
   --AlarmName "{{user.alarm_name}}" \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
 ### Scenario 1: Raise CPU threshold from 80% to 90% to reduce noise
+
 ```bash
 # Backup first
 aliyun cms DescribeMetricAlarmList --AlarmName "ECS-CPU-Critical" --RegionId cn-hangzhou > /tmp/backup-cpu.json
@@ -401,9 +408,10 @@ aliyun cms PutResourceMetricRule \
   --ContactGroups '["ops-team"]' \
   --SilenceTime 3600 \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 2: Adjust memory threshold with multiple levels
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleId "rule-yyy" \
@@ -422,9 +430,10 @@ aliyun cms PutResourceMetricRule \
   --ContactGroups '["ops-team","dba-team"]' \
   --SilenceTime 7200 \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 3: Extend evaluation period to reduce false positives
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleId "rule-zzz" \
@@ -438,13 +447,15 @@ aliyun cms PutResourceMetricRule \
   --Period 300 \
   --ContactGroups '["dba-oncall"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ## Success Criteria
+
 - Backup JSON file created before any modification
 - `DescribeMetricAlarmList` confirms new thresholds are applied
 - Rule state remains "Enabled" after update
 - Notification channels unchanged (unless explicitly modified)
+
 ```
 
 ### Critic: Verify threshold changes
@@ -489,6 +500,7 @@ If Generator reports failure or verification fails:
 ## Phase 3-E: Notification Channel Management (告警通知渠道管理)
 
 ### Use Case
+
 修改告警规则的通知方式（联系人组、Webhook、钉钉、短信等），或调整静默期。
 
 ### Generator: Update notification channels
@@ -553,29 +565,32 @@ aliyun cms PutResourceMetricRule \
 aliyun cms DescribeMetricAlarmList \
   --AlarmName "{{user.alarm_name}}" \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
 ### Scenario 1: Add webhook for auto-ticketing
+
 ```bash
 aliyun cms PutMetricRuleTargets \
   --RuleId "rule-xxx" \
   --RegionId cn-hangzhou \
   --ContactGroups '["ops-team"]' \
   --Webhook "https://jira.example.com/webhook/create-ticket"
-```
+```markdown
 
 ### Scenario 2: Change contact group for shift handover
+
 ```bash
 aliyun cms PutMetricRuleTargets \
   --RuleId "rule-yyy" \
   --RegionId cn-hangzhou \
   --ContactGroups '["ops-night-shift"]' \
   --Webhook ""
-```
+```markdown
 
 ### Scenario 3: Adjust silence time to prevent alert spam
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleId "rule-zzz" \
@@ -583,13 +598,15 @@ aliyun cms PutResourceMetricRule \
   --SilenceTime 14400 \
   --EmailSubject "[{{level}}] {{metricName}} alert for {{instanceId}}" \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ## Success Criteria
+
 - Backup created before modification
 - New contact groups are reflected in `DescribeMetricAlarmList`
 - Webhook URL is HTTPS and reachable
 - Silence time is between 0-86400 seconds (1 day max)
+
 ```
 
 ### Critic: Verify notification channel changes
@@ -628,6 +645,7 @@ If verification fails, restore from backup and re-test.
 ## Phase 3-F: Event Alert Handling (事件告警处理)
 
 ### Use Case
+
 处理系统事件告警（如实例重启、磁盘故障、安全事件等），区别于指标告警。
 
 ### Generator: Manage event-based alerts
@@ -700,11 +718,12 @@ aliyun cms DescribeEventList \
 aliyun cms DescribeEventRuleList \
   --NamePrefix "{{user.rule_name}}" \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
 ### Scenario 1: Monitor ECS instance reboot events
+
 ```bash
 # Create event rule for instance reboot
 aliyun cms PutEventRule \
@@ -721,9 +740,10 @@ aliyun cms PutEventRuleTargets \
   --RuleName "ECS-Instance-Reboot-Alert" \
   --ContactGroups '["ops-team"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 2: Alert on RDS failover events
+
 ```bash
 aliyun cms PutEventRule \
   --RuleName "RDS-Failover-Critical" \
@@ -737,9 +757,10 @@ aliyun cms PutEventRuleTargets \
   --RuleName "RDS-Failover-Critical" \
   --ContactGroups '["dba-oncall","ops-manager"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 3: Query recent events to validate pattern
+
 ```bash
 aliyun cms DescribeEventList \
   --EventType "ecs" \
@@ -747,13 +768,15 @@ aliyun cms DescribeEventList \
   --EndTime "2026-06-05T23:59:59Z" \
   --RegionId cn-hangzhou \
   --PageSize 100
-```
+```markdown
 
 ## Success Criteria
+
 - Event pattern is valid and matches expected event types
 - Rule status is "ENABLED" after creation
 - Notification targets configured successfully
 - Recent events query returns expected results (pattern validation)
+
 ```
 
 ### Critic: Verify event alert configuration
@@ -795,6 +818,7 @@ You are the Critic in a GCL for Alibaba Cloud CMS Event Alert Management. Read-o
 ## Phase 3-G: Composite Expression Alerts (复合表达式告警)
 
 ### Use Case
+
 创建多条件复合告警（如：CPU > 80% AND Memory > 90%），支持复杂业务场景。
 
 ### Generator: Create composite expression alerts
@@ -865,11 +889,12 @@ aliyun cms PutResourceMetricRule \
 aliyun cms DescribeMetricAlarmList \
   --AlarmName "{{user.rule_name}}" \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
 ### Scenario 1: CPU and Memory combined alert
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleName "ECS-High-Resource-Usage" \
@@ -884,9 +909,10 @@ aliyun cms PutResourceMetricRule \
   --Resources '[{"instanceId":"i-xxx"},{"instanceId":"i-yyy"}]' \
   --ContactGroups '["ops-team"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 2: Instance-specific thresholds
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleName "ECS-CPU-Conditional" \
@@ -901,9 +927,10 @@ aliyun cms PutResourceMetricRule \
   --Resources '[{"instanceId":"i-xxx"},{"instanceId":"i-yyy"},{"instanceId":"i-zzz"}]' \
   --ContactGroups '["ops-team"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 3: Count-based alert (N instances threshold breach)
+
 ```bash
 aliyun cms PutResourceMetricRule \
   --RuleName "ECS-Multi-Instance-CPU" \
@@ -918,14 +945,16 @@ aliyun cms PutResourceMetricRule \
   --Resources '[{"instanceId":"i-1"},{"instanceId":"i-2"},{"instanceId":"i-3"},{"instanceId":"i-4"},{"instanceId":"i-5"}]' \
   --ContactGroups '["ops-manager"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ## Success Criteria
+
 - Expression syntax is valid (parentheses matched, operators correct)
 - All referenced metrics exist in the namespace
 - All referenced instances exist
 - Rule evaluates without error in DescribeMetricAlarmList
 - Historical data simulation shows expected trigger behavior
+
 ```
 
 ### Critic: Verify composite expression alerts
@@ -975,6 +1004,7 @@ You are the Critic in a GCL for Alibaba Cloud CMS Composite Expression Alerts. R
 ## Phase 3-H: Dynamic Instance-Level Alert Management (基于实例级别的动态告警管理)
 
 ### Use Case
+
 需要先查询实例列表（按标签、规格、状态筛选），再动态应用到告警规则。避免硬编码实例 ID，实现批量、可维护的告警配置。
 
 ### Generator: Dynamic instance targeting
@@ -1019,11 +1049,13 @@ Transform query result to CMS Resources format:
 
 // EIP instances
 [{"instanceId":"eip-xxx"}, {"instanceId":"eip-yyy"}]
-```
+```markdown
 
 ## Variable Mapping
+
 - `{{user.product}}`: Product type (ecs, rds, eip, slb, redis)
 - `{{user.filters}}`: JSON filter criteria:
+
   ```json
   {
     "tags": [{"Key": "env", "Value": "production"}],
@@ -1032,7 +1064,8 @@ Transform query result to CMS Resources format:
     "vpc_id": "vpc-xxx",
     "zone_id": "cn-hangzhou-a"
   }
-  ```
+```markdown
+
 - `{{user.alarm_template}}`: Base alarm rule template name
 - `{{user.namespace}}`: Product namespace
 - `{{user.metric_name}}**: Metric to monitor
@@ -1040,6 +1073,7 @@ Transform query result to CMS Resources format:
 - `{{user.max_instances}}**: Maximum instances per rule (default 50, CMS limit)
 
 ## Safety Rules
+
 - **Empty instance list** → HALT before creating alarm
 - **Instance count > max_instances** → Split into multiple alarm rules
 - **Cross-product mixing** → Reject (e.g., ECS + RDS in same rule)
@@ -1064,7 +1098,9 @@ Transform query result to CMS Resources format:
 | **历史成功率** | > 90% | 相同过滤模式过去执行成功 |
 
 **自信度评分** (Confidence Score):
+
 ```
+
 confidence = (
   (instance_count_in_range ? 25 : 0) +
   (filter_explicit ? 20 : 0) +
@@ -1076,7 +1112,8 @@ confidence = (
 
 if confidence >= 80: AUTO-PROCESS
 if confidence < 80: HITL_REQUIRED
-```
+
+```markdown
 
 ### HITL Trigger Conditions (人工复核触发条件)
 
@@ -1136,7 +1173,7 @@ Risk Level: {{risk_level}}
 [5] ⏰ 定时执行 - 延迟到指定时间执行
 
 请选择 [1-5]:
-```
+```markdown
 
 ### Auto-Correction with Confidence Threshold
 
@@ -1189,7 +1226,7 @@ Risk Level: {{risk_level}}
     }
   }
 }
-```
+```markdown
 
 ## Product-Agnostic Discovery Pattern
 
@@ -1213,7 +1250,7 @@ aliyun {{user.product}} {{output.query_command}} \
   {{#if user.filters.status}}--{{output.status_param}} '{{user.filters.status}}'{{/if}} \
   --PageSize 100 \
   --output cols={{output.id_field}},{{output.name_field}} rows={{output.jmespath}}
-```
+```markdown
 
 ### Cross-Skill Delegation 映射
 
@@ -1277,7 +1314,7 @@ aliyun cms PutResourceMetricRule \
   --Period {{user.period}} \
   --ContactGroups '{{user.contact_groups}}' \
   --RegionId {{user.region_id}}
-```
+```markdown
 
 ## Example Scenarios
 
@@ -1319,7 +1356,7 @@ aliyun cms PutResourceMetricRule \
   --Period 60 \
   --ContactGroups '["ops-team"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 2: Zero instances detected - auto-correction
 
@@ -1374,9 +1411,10 @@ if [ "$COUNT" -eq 0 ]; then
 fi
 
 # 继续创建告警...
-```
+```markdown
 
 ### Scenario 3: Multi-filter targeting - High-memory RDS instances
+
 ```bash
 # Query specific RDS instances
 OUTPUT=$(aliyun rds DescribeDBInstances \
@@ -1403,7 +1441,7 @@ aliyun cms PutResourceMetricRule \
   --Period 300 \
   --ContactGroups '["dba-team"]' \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### Scenario 4: HITL triggered - Critical production environment
 
@@ -1468,7 +1506,7 @@ if [ "$COUNT" -gt 0 ]; then
 fi
 
 # 继续执行...
-```
+```markdown
 
 ### Scenario 5: Auto-processing with confidence check
 
@@ -1539,9 +1577,10 @@ else
   echo "🛑 HITL triggered (score $CONFIDENCE < 80)"
   # HITL workflow...
 fi
-```
+```markdown
 
 ## Success Criteria
+
 - Instance query returns non-empty list
 - Resources JSON format is valid for CMS API
 - Alarm rule created with correct instance count
@@ -1551,11 +1590,13 @@ fi
 ## Instance Discovery
 
 > **Note**: Do NOT rely on hardcoded instance ID prefixes. Use the dynamic discovery mechanism:
+>
 > - Step 1: Call `DescribeDimensionResourceList` or `DescribeProductResourceList` to get actual resource IDs
 > - Step 2: These APIs return valid `resourceValue` values that can be directly used in `--Resources` JSON
 > - Step 3: For unknown products, first query available dimensions via `DescribeProductResourceList`
 >
 > This approach is product-agnostic and handles any Alibaba Cloud service automatically.
+
 ```
 
 ### Critic: Verify dynamic instance targeting
@@ -1677,13 +1718,14 @@ Critic MUST trigger optimization review when:
 - [ ] 告警阈值是否适合该实例集合（不同规格实例可能需要不同阈值）
 - [ ] 是否需要按实例规格分组（如高内存 vs 低内存实例）
 - [ ] 通知渠道是否与实例重要性匹配
-```
+```markdown
 
 ### Optimization Recommendations
 
 当发现优化点时，Critic 应提供具体建议：
 
 #### 场景 1: 过滤器过严（实例数 = 0）
+
 ```text
 🚨 问题: 过滤条件过于严格，未匹配到任何实例
 
@@ -1699,9 +1741,10 @@ Critic MUST trigger optimization review when:
 回滚方案:
 - 暂时移除过滤条件，使用全量实例列表
 - 手动指定关键实例 ID（临时方案）
-```
+```markdown
 
 #### 场景 2: 过滤器过宽（实例数 > 100）
+
 ```text
 🚨 问题: 过滤器过于宽泛，匹配到 {{count}} 个实例，超过建议值 100
 
@@ -1719,9 +1762,10 @@ Critic MUST trigger optimization review when:
 - 当前查询时间: {{query_time}}s
 - 建议查询时间: < 5s
 - CMS Resources 字段大小限制: 64KB（约 500 个实例 ID）
-```
+```markdown
 
 #### 场景 3: 重叠监控（同一实例多规则）
+
 ```text
 🚨 问题: 检测到 {{overlap_count}} 个实例同时出现在多条告警规则中
 
@@ -1742,9 +1786,10 @@ Critic MUST trigger optimization review when:
 
 避免:
 - 同一实例同一指标多条 Critical 规则（会导致重复告警）
-```
+```markdown
 
 #### 场景 4: 缺少状态过滤
+
 ```text
 ⚠️  警告: 过滤器未包含状态条件，可能包含 Stopped/Deleted 实例
 
@@ -1760,7 +1805,7 @@ Critic MUST trigger optimization review when:
 风险:
 - Stopped 实例的告警永远不会触发（浪费规则资源）
 - Deleted 实例会导致告警规则状态异常
-```
+```markdown
 
 ### Auto-Optimization Workflow
 
@@ -1801,9 +1846,11 @@ Step 3: 自动调优建议
   ```
 
 Step 4: 人工确认
+
 - 将建议提交给运维人员确认
 - 提供一键应用优化建议的命令
-```
+
+```markdown
 
 ### Optimization Trace Format
 
@@ -1848,7 +1895,7 @@ Step 4: 人工确认
     }
   }
 }
-```
+```yaml
 
 ## Phase Summary: When to Use Which
 
@@ -1883,6 +1930,7 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | CMS GCL prompt templates — Enhanced from Phase 5 lean to
   Phase 3-B full. New: Phantom alarm Generator rules (pre-create checks),
   Phantom alarm Critic checks (post-create verification, INSUFFICIENT_DATA
@@ -1910,6 +1958,7 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 ## Phase 3-I: APM and Application Monitoring (CMS2 Advanced Feature)
 
 ### Use Case
+
 Monitor application performance metrics (Java, Golang, Python, Node.js, etc.) using Alibaba Cloud APM (Application Performance Monitoring).
 
 ### Generator: Create APM monitoring rules
@@ -1964,6 +2013,7 @@ aliyun cms2 apm configuration describe \
 ## Example Scenarios
 
 ### Scenario 1: Monitor Java application performance
+
 ```bash
 # Create APM monitoring for a Java application
 aliyun cms2 apm configuration create \
@@ -1976,11 +2026,13 @@ aliyun cms2 apm configuration create \
 ```
 
 ### Scenario 2: List all APM services
+
 ```bash
 aliyun cms2 apm service list --RegionId cn-hangzhou
 ```
 
 ### Scenario 3: Delete APM monitoring configuration
+
 ```bash
 aliyun cms2 apm configuration delete \
   --RegionId cn-hangzhou \
@@ -1988,11 +2040,13 @@ aliyun cms2 apm configuration delete \
 ```
 
 ## Success Criteria
+
 - APM service is created/verified successfully
 - Instance IDs are valid and accessible
 - Thresholds are applied correctly
 - Notification channels are configured
-```
+
+```markdown
 
 ### Critic: Verify APM monitoring configuration
 
@@ -2019,11 +2073,12 @@ You are the Critic in a GCL for Alibaba Cloud CMS APM Monitoring. Read-only.
   - High error rate thresholds (> 5%)
   - Low CPU/memory thresholds (< 50%)
   - No notification channels configured
-```
+```markdown
 
 ## Phase 3-J: RUM and Frontend Monitoring (CMS2 Advanced Feature)
 
 ### Use Case
+
 Monitor frontend application performance (web, mobile apps,小程序) using Alibaba Cloud RUM (Real User Monitoring).
 
 ### Generator: Create RUM monitoring rules
@@ -2078,6 +2133,7 @@ aliyun cms2 rum configuration describe \
 ## Example Scenarios
 
 ### Scenario 1: Monitor web application performance
+
 ```bash
 # Create RUM monitoring for a web application
 aliyun cms2 rum configuration create \
@@ -2090,11 +2146,13 @@ aliyun cms2 rum configuration create \
 ```
 
 ### Scenario 2: List all RUM services
+
 ```bash
 aliyun cms2 rum service list --RegionId cn-hangzhou
 ```
 
 ### Scenario 3: Delete RUM monitoring configuration
+
 ```bash
 aliyun cms2 rum configuration delete \
   --RegionId cn-hangzhou \
@@ -2102,11 +2160,13 @@ aliyun cms2 rum configuration delete \
 ```
 
 ## Success Criteria
+
 - RUM service is created/verified successfully
 - Application domain is valid and accessible
 - Thresholds are applied correctly
 - Notification channels are configured
-```
+
+```markdown
 
 ### Critic: Verify RUM monitoring configuration
 
@@ -2133,11 +2193,12 @@ You are the Critic in a GCL for Alibaba Cloud CMS RUM Monitoring. Read-only.
   - High page load time thresholds (> 3s)
   - High error rate thresholds (> 1%)
   - No notification channels configured
-```
+```markdown
 
 ## Phase 3-K: Prometheus Service Integration (CMS2 Advanced Feature)
 
 ### Use Case
+
 Integrate Alibaba Cloud Prometheus Service for metrics collection and monitoring.
 
 ### Generator: Create Prometheus Service integration
@@ -2194,6 +2255,7 @@ aliyun cms2 prometheus instance describe \
 ## Example Scenarios
 
 ### Scenario 1: Create standard Prometheus instance
+
 ```bash
 # Create standard Prometheus instance with 30 days retention
 aliyun cms2 prometheus instance create \
@@ -2207,11 +2269,13 @@ aliyun cms2 prometheus instance create \
 ```
 
 ### Scenario 2: List all Prometheus instances
+
 ```bash
 aliyun cms2 prometheus instance list --RegionId cn-hangzhou
 ```
 
 ### Scenario 3: Delete Prometheus instance
+
 ```bash
 aliyun cms2 prometheus instance delete \
   --RegionId cn-hangzhou \
@@ -2219,11 +2283,13 @@ aliyun cms2 prometheus instance delete \
 ```
 
 ## Success Criteria
+
 - Prometheus instance is created/verified successfully
 - Instance type and retention days match requested settings
 - Replica count is correct
 - VPC configuration is valid
-```
+
+```markdown
 
 ### Critic: Verify Prometheus Service configuration
 
@@ -2251,6 +2317,6 @@ You are the Critic in a GCL for Alibaba Cloud CMS Prometheus Service. Read-only.
   - High replica count (> 3)
   - Long data retention period (> 90 days)
   - No notification channels configured
-```
+```markdown
 
 ## Phase Summary: When to Use Which

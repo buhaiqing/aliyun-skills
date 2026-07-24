@@ -31,7 +31,7 @@ capabilities.
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    DNS Operations Architecture                   │
 ├─────────────────────────────────────────────────────────────────┤
@@ -110,7 +110,7 @@ capabilities.
 
 ## Skill Structure
 
-```
+```text
 alicloud-dns-ops/
 ├── SKILL.md                    # Main skill documentation
 ├── README.md                   # This file

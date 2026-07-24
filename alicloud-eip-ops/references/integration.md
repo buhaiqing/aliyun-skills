@@ -4,7 +4,7 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/vpc-20160428/v3/client
 ```
 
@@ -93,7 +93,7 @@ go run ./main.go
 
 ## Delegation Workflow
 
-```
+```text
 [EIP 告警触发]
     │
     ├── 1. 识别告警类型（带宽/连接/黑hole/解绑失败）

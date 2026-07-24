@@ -51,6 +51,7 @@
 | CloudAssistant RunCommand | FAIL 被拒 | RAM 无权限 | `ecs:RunCommand` |
 
 **两个前置条件**才能完整解锁此能力：
+
 1. **RAM 层面**：授权 `ecs:RunCommand` 或直接使用本地 kubectl（推荐）
 2. **K8s RBAC 层面**：为当前 RAM 用户（UID: 208985268734007001
 
@@ -63,6 +64,7 @@
 ### 阈值定义
 
 | 等级 | CPU Limits / capacity | Memory Limits / capacity | 含义 |
+
 | 条件 | 说明 |
 |:----:|------|
 | SAFE PASS | < 80% | 有充足余量 |
@@ -72,7 +74,7 @@
 
 ### 集成测试验证结果（2026-06-06）
 
-```
+```text
 PASS TC-01: 回溯模式一（days=7）通过
 PASS TC-02: 回溯模式一（days=30）通过
 PASS TC-03: 回溯模式二（指定时段）通过
@@ -141,7 +143,7 @@ assert "过去 7 天" in r["window"]
 r = backtrack_cms("cn-hangzhou", "c35166695291649498d2d18153b3cbba0", [], days=30)
 assert r["days"] == 30
 assert "过去 30 天" in r["window"]
-```
+```markdown
 
 #### TC-02: `backtrack_cms` 模式二 — 指定时段
 
@@ -154,7 +156,7 @@ assert r["days"] == 7  # days 参数保留，但不用于计算窗口
 assert "2026-05-01" in r["window"]
 assert "2026-05-07" in r["window"]
 assert "~" in r["window"]
-```
+```markdown
 
 #### TC-03: `backtrack_cms` 无节点/无集群 — 空输入
 
@@ -163,7 +165,7 @@ from _shared import backtrack_cms
 r = backtrack_cms("cn-hangzhou", "", [])
 assert r["oversale_trend"] == []
 assert r["spikes"] == []
-```
+```markdown
 
 #### TC-04: `check_audit_log_enabled` 运行时嗅探
 
@@ -173,7 +175,7 @@ r = check_audit_log_enabled("cn-hangzhou", "c35166695291649498d2d18153b3cbba0")
 assert "audit_enabled" in r      # 一定返回这个字段
 assert isinstance(r["audit_enabled"], bool)  # 布尔值不抛异常
 # audit_enabled 当前为 false，但测试只验证接口可用性
-```
+```markdown
 
 #### TC-05: `format_backtrack_report` 输出格式
 
@@ -193,7 +195,7 @@ assert "## [BACK]" in r          # 含回溯章节标题
 assert "趋势异常" in r        # 含趋势小节
 assert "CPU超卖率" in r       # 含具体指标名
 assert "突变事件" in r        # 含突变小节
-```
+```markdown
 
 #### TC-06: 完整集成场景 — 用户自然语言映射
 

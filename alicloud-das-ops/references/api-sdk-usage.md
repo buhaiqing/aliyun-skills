@@ -5,7 +5,7 @@
 - **Service**: DAS
 - **API Version**: 2020-01-16
 - **Base Endpoint**: `das.aliyuncs.com`
-- **Official Docs**: https://www.alibabacloud.com/help/en/das
+- **Official Docs**: <https://www.alibabacloud.com/help/en/das>
 
 ## SDK Operations Map
 
@@ -25,11 +25,13 @@ go get github.com/alibabacloud-go/das-20200116/client
 ## Request / Response Notes
 
 ### Common Patterns
+
 - **Pagination**: `PageNumber`, `PageSize` parameters
 - **Filters**: Use `Describe*` APIs with filter parameters
 - **Async Operations**: Long-running operations return `RequestId` for polling
 
 ### Response Codes
+
 - **Success**: HTTP 200, JSON with `RequestId`
 - **Client Error**: HTTP 4xx, check error message
 - **Server Error**: HTTP 5xx, retry with backoff

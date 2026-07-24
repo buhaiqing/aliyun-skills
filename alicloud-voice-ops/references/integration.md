@@ -26,15 +26,17 @@ if ! command -v go &> /dev/null; then
 fi
 
 go version
-```
+```markdown
 
 > **Go version strategy:**
+>
 > - **JIT download:** Go 1.24+ (latest stable)
 > - **Script compatibility:** Go 1.21+ (minimum)
 
 ### JIT Go SDK Workflow
 
 1. **Initialize workspace:**
+
    ```bash
    mkdir -p /tmp/aliyun-sdk-workspace
    cd /tmp/aliyun-sdk-workspace
@@ -42,6 +44,7 @@ go version
    ```
 
 2. **Get dependencies:**
+
    ```bash
    # Set proxy for China CDN mirror (faster download)
    export GOPROXY="https://goproxy.cn,direct"
@@ -53,11 +56,13 @@ go version
    
    # Voice Service SDK
    go get github.com/alibabacloud-go/dyvmsapi-20170525/v3/client
-   ```
+
+```text
 
 3. **Generate script** (Agent dynamically creates operation-specific .go file)
 
 4. **Execute:**
+
    ```bash
    go run ./main.go
    ```
@@ -66,7 +71,7 @@ go version
 
 ```bash
 go get github.com/alibabacloud-go/dyvmsapi-20170525/v3/client
-```
+```markdown
 
 ### SDK Script Example
 
@@ -114,9 +119,9 @@ func main() {
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
-```
+```markdown
 
 ### `.env` File Format
 

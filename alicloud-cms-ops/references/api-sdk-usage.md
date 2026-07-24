@@ -36,17 +36,20 @@
 ### DescribeMetricList
 
 **Required fields:**
+
 - `RegionId`
 - `Namespace`
 - `MetricName`
 
 **Optional fields:**
+
 - `Period` — 15, 60, 300, 900, 3600
 - `StartTime` / `EndTime` — ISO 8601 format
 - `Dimensions` — JSON array string
 - `Statistics` — Average, Minimum, Maximum, Value
 
 **Response:**
+
 ```json
 {
   "Success": true,
@@ -66,6 +69,7 @@
 ### PutMetricAlarm
 
 **Required fields:**
+
 - `RegionId`
 - `AlarmName`
 - `Namespace`
@@ -76,6 +80,7 @@
 - `Period`
 
 **Optional fields:**
+
 - `Dimensions` — JSON object string (not array)
 - `EvaluationCount` — default 3
 - `ContactGroups` — JSON array string
@@ -83,6 +88,7 @@
 - `EffectiveInterval` — "HH:MM-HH:MM"
 
 **Response:**
+
 ```json
 {
   "Success": true,
@@ -93,6 +99,7 @@
 ### Pagination
 
 List APIs support pagination:
+
 - `PageSize` — default 10, max 100
 - `PageNumber` — starts at 1
 

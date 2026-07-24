@@ -48,7 +48,7 @@ Think of the Runtime Harness as an **auto-pilot for cloud CLI commands** (legacy
 
 Each `alicloud-*-ops` skill can include **4 optional files** that work together:
 
-```
+```text
 alicloud-[product]-ops/
 ├── references/
 │   └── skillopt-integration.md      ← 📖 Manual — explains what it does
@@ -70,7 +70,7 @@ alicloud-runtime-harness-ops/        ← 🏗️ Shared framework (canonical, PR
 alicloud-skillopt-ops/               ← legacy alias (PR-8 shims only)
 ├── scripts/skillopt-{core-lib,paths}.sh → delegate to runtime-harness-ops
 └── test-skillopt-integration.sh     → delegates to test-harness-integration.sh
-```
+```markdown
 
 > **Directory rule (P0)**: `harness-lib.sh` / `skillopt-lib.sh` MUST live under `scripts/`, never `references/`.
 
@@ -107,7 +107,7 @@ A bash function library (not a standalone script) that provides self-repair and 
 
 Product `harness-lib.sh` (or legacy `skillopt-lib.sh` symlink) is a **thin overlay** (~150–200 lines of product-specific repair + `skillopt_wrap`). Shared logic lives in `alicloud-runtime-harness-ops/scripts/harness-core-lib.sh`.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  alicloud-runtime-harness-ops/scripts/harness-core-lib.sh   │
 ├─────────────────────────────────────────────────────────────┤
@@ -170,7 +170,7 @@ export SKILLOPT_ENABLED=true
 export SKILLOPT_ENABLED=false
 export SKILLOPT_LANGFUSE_ENABLED=true
 ./scripts/ecs-skillopt-wrapper.sh DescribeRegions --skillopt-langfuse-enable --RegionId cn-hangzhou
-```
+```markdown
 
 ### 3.2 Other Global Variables
 
@@ -185,11 +185,11 @@ SKILLOPT_LANGFUSE_ENABLED=false           # remote Langfuse ingest
 
 ### 3.3 `skillopt_log()` — Structured Logging
 
-```
+```json
 [2026-06-16T10:30:00+0800] [ECS-SkillOpt] SkillOpt initialized: enabled=true, log_file=...
 [2026-06-16T10:30:01+0800] [ECS-SkillOpt] Attempting to repair error: Throttling.User for command: ecs DescribeInstances
 [2026-06-16T10:30:03+0800] [ECS-SkillOpt] Successfully repaired throttling error
-```
+```markdown
 
 ### 3.4 `skillopt_repair_error()` — Auto-Repair (Core)
 
@@ -197,7 +197,7 @@ This is the heart of SkillOpt. It receives the error code, the original command,
 
 #### How it works
 
-```
+```text
 Error occurs → Extract error code (e.g. "Throttling.User")
                       ↓
             ┌── case "$error_code" ──┐
@@ -257,7 +257,7 @@ Persists runtime statistics to a JSON file so SkillOpt can adapt based on histor
   "error_rate": 3.2,
   "query_count": 150
 }
-```
+```markdown
 
 ### 3.6 `skillopt_optimize_config()` — Pre-Execution Tuning
 
@@ -290,7 +290,7 @@ The last line exports all functions so they're available in child shells:
 
 ```bash
 export -f skillopt_init skillopt_log skillopt_repair_error skillopt_update_runtime skillopt_optimize_config skillopt_wrap
-```
+```markdown
 
 ---
 
@@ -380,7 +380,7 @@ fi
 
 # Wrap the command with SkillOpt
 skillopt_wrap "[product] $@"
-```
+```bash
 
 The only difference between skills is the **product prefix** (e.g. `ecs`, `mongodb`, `cs` for ACK).
 
@@ -415,7 +415,7 @@ Test 3: Wrapper script exists...                        ✓
 
 Test 4: SkillOpt core library exists...                 ✓
   → Overlay sources alicloud-skillopt-ops shared core (oss: shared runtime path check)
-```
+```markdown
 
 ### Running Tests
 
@@ -449,7 +449,7 @@ bash test-skillopt-backward-compatibility.sh
 
 ### End-to-End Flow
 
-```
+```text
 User invokes command
         │
         ▼
@@ -493,11 +493,11 @@ User invokes command
         │
         ▼
    Return exit code to caller
-```
+```markdown
 
 ### Log Output Example
 
-```
+```json
 [2026-06-16T10:30:00+0800] [ECS-SkillOpt] SkillOpt initialized: enabled=true
 [2026-06-16T10:30:00+0800] [ECS-SkillOpt] Running dynamic configuration optimization
 [2026-06-16T10:30:00+0800] [ECS-SkillOpt] Executing: aliyun ecs DescribeInstances ...
@@ -517,6 +517,7 @@ User invokes command
 ### Prerequisites
 
 Before adding SkillOpt to a skill, confirm:
+
 - The skill uses `aliyun <product>` CLI commands
 - The product has documented API error codes (at least 5-6 common ones)
 - You have access to test with the product's CLI
@@ -531,7 +532,7 @@ Before adding SkillOpt to a skill, confirm:
 .scripts/gen-skillopt.sh alicloud-mongodb-ops MongoDB dds MongoDB 'dds:*' \
   'InstanceIds SecurityIpList Tag DBInstanceIds' '' DescribeRegions \
   'ResourceNotFound|InstanceNotFound' QuotaExceeded
-```
+```markdown
 
 Emits overlay stub + wrapper + backward-compat test + `references/skillopt-integration.md`. The lib sources `alicloud-skillopt-ops` shared core (no local `skillopt_wrap`).
 
@@ -562,6 +563,7 @@ Emits overlay stub + wrapper + backward-compat test + `references/skillopt-integ
 #### Step 3: Create `scripts/[product]-skillopt-wrapper.sh`
 
 Copy the 18-line template, changing:
+
 - Comment header
 - Usage examples
 - `skillopt_wrap "[product] $@"` prefix
@@ -569,6 +571,7 @@ Copy the 18-line template, changing:
 #### Step 4: Create `test-skillopt-backward-compatibility.sh`
 
 Copy the 50-line test template, changing:
+
 - Product name in comments
 - CLI command (`DescribeInstances` → product-specific Describe*)
 - Wrapper script filename
@@ -593,7 +596,7 @@ chmod +x test-skillopt-backward-compatibility.sh
 - [ ] Wrapper and test scripts have executable permissions
 - [ ] `test-*.sh` passes all 5 tests (or minimum 3 for partial integration)
 - [ ] Original CLI commands still work (backward compatibility verified)
-```
+```markdown
 
 ---
 
@@ -674,7 +677,7 @@ Validates that **cms + ecs + oss** share one `HARNESS_SESSION_ID` and traces app
 
 # Local traces always written; --local skips Langfuse HTTP verification only
 ./scripts/test-multi-skill-session.sh --local
-```
+```text
 
 **Pass criteria (full mode, 11 checks)**:
 
@@ -692,22 +695,27 @@ Gray rollout (ACK/DAS/ALB/CEN): `scripts/test-langfuse-gray-skills.sh`.
 Through the hardening of `alicloud-cms-ops`, we established five critical robust execution rules for all SkillOpt core libraries (`skillopt-lib.sh`) and wrappers:
 
 1. **Parameter Array Integrity (No Space-Delimited Strings)**:
+
  - *Issue*: Storing CLI parameters as flat space-separated strings (e.g., `params="$*"`) breaks argument slicing when parameters contain inner spaces (like JSON parameters `--Dimensions '[{"instanceId":"i-123"}]'`).
  - *Rule*: Always capture and pass parameters using shell arrays (`SKILLOPT_PARAMS` and `SKILLOPT_REMAINING`) or standard Bash array variables. Never serialize/deserialize arrays as space-separated strings.
 
 2. **Double-Execution Side-Effect Protection**:
+
  - *Issue*: Blindly re-running failing commands via `err_output="$(aliyun $cmd $opt 2>&1)"` to extract the error code causes mutating commands (e.g., `Put*`, `Delete*`) to run twice, which is dangerous.
  - *Rule*: For mutating actions, **never** retry or auto-repair. Maintain a read-only list (`Describe*`, `List*`, `Get*`, `Query*`) using `skillopt_is_readonly_action()`. Run the API command exactly once, capturing stdout/stderr to a temporary file, and only proceed to repair if the action is read-only.
 
 3. **Float Throttling Prevention (Retries Cap)**:
+
  - *Issue*: Dynamically incrementing `SKILLOPT_RETRIES` on high error rate without a boundary can lead to an infinite request storm, degrading cloud performance.
  - *Rule*: Put a strict hard cap on the dynamic optimization of retries (e.g., maximum 6 retries).
 
 4. **Shell Strict Mode Compatibility (`set -u`)**:
+
  - *Issue*: In strict mode (`set -uo pipefail`), dereferencing empty arrays triggers a fatal interpreter crash (`unbound variable`).
  - *Rule*: Always expand optional/empty arrays using the safe expansion format: `${MY_ARRAY[@]+"${MY_ARRAY[@]}"}`.
 
 5. **Standard Output Passthrough on Repair Success**:
+
  - *Issue*: Swallowing command output or failing to return the JSON response upon a successful repair prevents the calling agent or user from receiving the requested data.
  - *Rule*: Always capture the underlying `aliyun` command output and print the correct stdout/stderr payload on successful repairs.
 
@@ -801,7 +809,7 @@ export ALIBABA_CLOUD_ACCESS_KEY_ID ALIBABA_CLOUD_ACCESS_KEY_SECRET ALIBABA_CLOUD
  --skillopt-langfuse-enable \
  --skillopt-session-id sess-debug-$(date +%s) \
  <safe read-only params>
-```
+```markdown
 
 Then verify Langfuse directly by trace id. Do not claim success based only on local JSON files or wrapper exit code.
 
@@ -820,6 +828,7 @@ Then verify Langfuse directly by trace id. Do not claim success based only on lo
 > first verifying wrapper absence are a **P0 violation** — regardless of how simple the operation appears.
 >
 > Failure pattern to avoid:
+>
 > ```bash
 > # ❌ WRONG — bypasses wrapper without checking
 > aliyun oss ls
@@ -843,6 +852,7 @@ Rationale: The wrapper provides automated self-repair (throttling backoff, Inval
 **Root cause pattern**: When `SKILLOPT_ENABLED != "true"` (default), `skillopt_wrap()` MUST NOT call `aliyun` directly. Direct execution bypasses `SKILLOPT_LAST_OUTPUT` capture, causing Langfuse trace `output` to be `undefined` / empty.
 
 **Correct pattern** (all skillopt-lib.sh implementations MUST follow):
+
 ```bash
 if [[ "$SKILLOPT_ENABLED" != "true" ]]; then
  local rc=0
@@ -858,6 +868,7 @@ fi
 ```
 
 **Banned pattern** (causes silent trace data loss):
+
 ```bash
 # WRONG — output goes to stdout but SKILLOPT_LAST_OUTPUT remains empty
 if [[ "$SKILLOPT_ENABLED" != "true" ]]; then
@@ -865,6 +876,6 @@ if [[ "$SKILLOPT_ENABLED" != "true" ]]; then
  local rc=$?
  skillopt_trace_end ... "$SKILLOPT_LAST_OUTPUT" # ← empty!
 fi
-```
+```text
 
 **Why**: `skillopt_run_aliyun` captures both stdout and stderr to a temp file, assigns it to `SKILLOPT_LAST_OUTPUT`, and returns the exit code. `skillopt_trace_end` persists this output to the **local** trace JSON (always) and mirrors to Langfuse when enabled. Without this capture, local trace `output` and optional Langfuse payload stay empty.

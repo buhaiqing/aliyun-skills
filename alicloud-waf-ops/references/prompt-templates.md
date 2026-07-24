@@ -35,6 +35,7 @@ convention (`{{env.*}}` / `{{user.*}}` / `{{output.*}}`); bare `{...}` is
 (primary path) or the JIT Go SDK (fallback). Capture a full execution trace.
 
 **Placeholders:**
+
 - `{{user.request}}` — The natural-language task
 - `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` — Runtime env var
 - `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` — Runtime env var (never print)
@@ -128,6 +129,7 @@ and capture a full execution trace.
 Generate integer/decimal scores and up to 3 concrete improvement suggestions.
 
 **Placeholders:**
+
 - `{{output.rubric}}` — Loaded from `references/rubric.md`
 - `{{output.generator_output}}` — The JSON payload returned by the Generator above
 - `{{output.trace}}` — Complete trace of the current GCL run (excluding secret keys)

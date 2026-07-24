@@ -14,7 +14,7 @@
 
 ## File Structure
 
-```
+```text
 alicloud-topo-discovery/
 ├── scripts/lib/
 │   ├── baseline_git.py       [NEW] GitBackend class
@@ -27,13 +27,14 @@ alicloud-topo-discovery/
 └── tests/
     ├── test_baseline_git.py   [NEW]
     └── test_baseline_oss.py   [NEW]
-```
+```markdown
 
 ---
 
 ## Task 1: Git Backend (2 days)
 
 **Interface** (same as LocalBackend):
+
 ```python
 class GitBackend:
     def __init__(self, root_dir, repo_url=None, branch="main", commit_user="topo-discovery"):
@@ -43,6 +44,7 @@ class GitBackend:
 ```
 
 **Behavior:**
+
 - Each `write_baseline` commits to `baselines/YYYY-MM-DD/` sub-path in the repo
 - Auto-commits with message `baseline: YYYY-MM-DD (N resources)`
 - Push on commit (configurable `--push`)
@@ -50,6 +52,7 @@ class GitBackend:
 - Uses `git` CLI (stdlib, no pygit2 dependency)
 
 **Tests (8):**
+
 - Initialize repo, write baseline, verify commit exists
 - Write two baselines, verify both exist as separate commits
 - List baselines matches dates
@@ -62,14 +65,16 @@ class GitBackend:
 ## Task 2: OSS Backend (2 days)
 
 **Interface:**
+
 ```python
 class OSSBackend:
     def __init__(self, bucket, prefix="baselines/", endpoint=None, ak_id=None, ak_secret=None):
     def write_baseline(self, snapshot: Path) -> str    # OSS object key
     def list_baselines(self) -> List[date]
-```
+```text
 
 **Behavior:**
+
 - Uploads export directory as `{prefix}/{YYYY-MM-DD}/` objects
 - Uses OSS SDK with multipart upload for large snapshots
 - Falls back to primary AK env vars if no dedicated OSS creds
@@ -77,6 +82,7 @@ class OSSBackend:
 - **No ServerSide encryption** (per spec, relies on bucket policy)
 
 **Tests (7):**
+
 - Upload works (mocked)
 - Prefix configurable
 - Multipart for large files
@@ -90,6 +96,7 @@ class OSSBackend:
 ## Task 3: CI/CD Templates (1 day)
 
 **GitHub Actions** (`.github/workflows/topology-baseline.yml`):
+
 ```yaml
 name: Topology Baseline
 on:
@@ -149,4 +156,4 @@ Total: ~5 working days (within spec's 1.5-2 weeks estimate).
 pytest alicloud-topo-discovery/tests/test_baseline_git.py -v  # 8 tests
 pytest alicloud-topo-discovery/tests/test_baseline_oss.py -v # 7 tests
 pytest alicloud-topo-discovery/tests/ -q                      # ~108 total
-```
+```text

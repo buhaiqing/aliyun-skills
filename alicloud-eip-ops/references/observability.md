@@ -32,6 +32,7 @@ aliyun log GetLogs \
 ## 降级策略
 
 若 SLS/FlowLog 不可用：
+
 1. 直接检查 EIP 绑定目标的安全组规则
 2. 使用 `ping`/`curl` 测试 EIP 连通性
 3. 检查 EIP 绑定目标（ECS/NAT/SLB）的状态和日志

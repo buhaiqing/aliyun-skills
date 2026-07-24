@@ -34,6 +34,7 @@ execution_time_estimate: "5-12 分钟"
 > **性能瓶颈定位的核心方法论：**
 >
 > 用户说"慢"时，99% 的根因在以下几层之一（按概率排序）：
+>
 > 1. **数据库层（~55%）**：慢 SQL -> CPU 打满 -> 请求排队 -> 系统响应慢
 > 2. **计算层（~25%）**：ECS CPU/内存不足 -> 应用线程阻塞 -> 请求堆积
 > 3. **缓存层（~10%）**：Redis 大 key/命中率低 -> 穿透到 DB -> DB 压力
@@ -41,11 +42,13 @@ execution_time_estimate: "5-12 分钟"
 > 5. **均衡层（~2%）**：SLB 并发连满 / 健康检查异常 -> 请求分配不均
 >
 > **定位策略：对比法**
+>
 > - 比较各层的响应延迟（P50/P95/P99）
 > - 如果 DB 层最慢 -> 查 DB；如果 ECS 层最慢 -> 查 ECS
 > - 不用全量采集，**哪层慢就深入哪层**
 >
 > **三个关键延迟指标：**
+>
 > - **入口（EIP->SLB）**：公网延迟，通常 < 50ms
 > - **应用/计算（SLB->ECS）**：应用处理时间，通常 < 200ms
 > - **数据层（ECS->RDS/Redis）**：SQL 执行时间，通常 < 50ms
@@ -92,7 +95,7 @@ else
   WINDOW_END=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 fi
 echo "[INFO] 诊断窗口: $WINDOW_START -> $WINDOW_END"
-```
+```markdown
 
 ### Phase 1: 拓扑发现 + 链路构建
 
@@ -145,7 +148,7 @@ echo "  ECS:  $(echo "$ECS_IDS" | wc -l) 台"
 echo "  RDS:  $(echo "$RDS_IDS" | wc -l) 个"
 echo "  Redis: $(echo "$REDIS_IDS" | wc -l) 个"
 echo "  NAT:  $(echo "$NAT_IDS" | wc -l) 个"
-```
+```markdown
 
 ### Phase 2: 逐层延迟采集（瓶颈定位核心）
 
@@ -192,7 +195,7 @@ for EIP_ID in $EIP_IDS; do
     echo "  PASS EIP 带宽充足"
   fi
 done
-```
+```markdown
 
 #### Step 2.2: 分发层（SLB/ALB）— 连接数 + 延迟
 
@@ -242,7 +245,7 @@ for LB_ID in $SLB_IDS; do
     echo "  PASS SLB 状态正常"
   fi
 done
-```
+```markdown
 
 #### Step 2.3: 计算层（ECS）— CPU/内存/网络/IOPS
 
@@ -405,7 +408,7 @@ done
 if [ "$ECS_BOTTLENECK" = "NO" ]; then
   echo "  PASS ECS 层无瓶颈"
 fi
-```
+```markdown
 
 #### Step 2.4: 数据层（RDS/PolarDB）— CPU/连接/慢查询
 
@@ -474,7 +477,7 @@ for DB_ID in $RDS_IDS; do
     echo "  PASS RDS 状态正常"
   fi
 done
-```
+```markdown
 
 #### Step 2.5: 缓存层（Redis）— 内存/命中率/大key
 
@@ -524,7 +527,7 @@ for REDIS_ID in $REDIS_IDS; do
     echo "  PASS Redis 状态正常"
   fi
 done
-```
+```markdown
 
 #### Step 2.6: 出网层（NAT）— SNAT 连接数
 
@@ -562,13 +565,13 @@ for NAT_ID in $NAT_IDS; do
     echo "  PASS NAT 状态正常"
   fi
 done
-```
+```markdown
 
 ### Phase 3: 链路关联推理 + 瓶颈判定
 
 #### Step 3.1: 瓶颈归因决策树
 
-```
+```text
 用户报障"慢"
 │
 ├── EIP 带宽打满 (>80%)?
@@ -606,7 +609,7 @@ done
     ├── 查 ActionTrail 近期配置变更
     ├── 查应用日志/ARMS APM
     └── 结论: "阿里云基础设施正常，建议查应用层"
-```
+```markdown
 
 #### Step 3.2: 生成瓶颈定位报告
 
@@ -644,7 +647,7 @@ else
   BOTTLENECK_LAYER="无（全链路正常）"
   BOTTLENECK_REASON="全链路基础设施指标在安全阈值内，建议查应用层"
 fi
-```
+```text
 
 **Markdown（给人读）：**
 
@@ -713,7 +716,7 @@ ${OPTIMIZATION_SUGGESTIONS}
 ═══════════════════════════════════════════════════════
   JSON: audit-results/bottleneck-$CUSTOMER-$(date +%Y%m%d).json
   耗时: $EXECUTION_DURATION | runbook: v1.0.0
-```
+```text
 
 **JSON（持久化到 `audit-results/`）：**
 
@@ -740,7 +743,7 @@ cat > "audit-results/bottleneck-${CUSTOMER}-$(date +%Y%m%d).json" << BTN_JSON
 }
 BTN_JSON
 echo "[RESULT] JSON报告已持久化到 audit-results/"
-```
+```markdown
 
 ---
 

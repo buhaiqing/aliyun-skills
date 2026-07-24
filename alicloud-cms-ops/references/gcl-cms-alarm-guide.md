@@ -28,7 +28,7 @@ metadata:
 
 ## 1. Architecture
 
-```
+```text
 cron (hourly)
   │
   ├── gcl_actiontrail_crosscheck.py          (Phase 3-C)
@@ -61,6 +61,7 @@ changes.
 | `GCL-Timing-Anomaly` | `summary.by_finding_type.TIMING_ANOMALY` | > 10 | P4 — INFO | Weekly review |
 
 **Idempotent update logic:**
+
 - When `gcl_cms_alarm_setup.py` runs, it reads the latest report.
 - If `PHANTOM_PASS > 0` and the P1 alarm already exists → skip (already alerted).
 - If `PHANTOM_PASS == 0` and the P1 alarm exists → delete the alarm (issue resolved).
@@ -132,6 +133,7 @@ The 5 phantom alarms can be visualized as a **GCL Phantom Gauge**:
 | Per-skill findings | `gcl_skill_findings` top-N | `topk(5, gcl_skill_findings)` | Heatmap |
 
 Data sources:
+
 - CMS custom metrics from `PutMetricAlarm` feedback.
 - Direct `crosscheck-report-*.json` file parsing (for faster drill-down).
 
@@ -155,6 +157,7 @@ Data sources:
 ---
 
 ## 8. Changelog
+
 1.0.0 | 2026-06-04 | Phase 3-B phantom alarm integration guide. 5 alarm thresholds
   (P1-P4), CLI setup script, cron integration, alert response playbook,
   Grafana dashboard template. Companion to `scripts/gcl_cms_alarm_setup.py`.

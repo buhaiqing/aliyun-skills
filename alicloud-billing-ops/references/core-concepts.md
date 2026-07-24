@@ -5,6 +5,7 @@
 BSSOpenApi (Billing Support System Open API) is Alibaba Cloud's unified billing management service. It provides programmatic access to account balances, bills, orders, resource packages, savings plans, RI utilization, transactions, and vouchers.
 
 **Key characteristics:**
+
 - **Region-independent:** Most operations default to `cn-hangzhou` as the API endpoint
 - **BillingCycle format:** `YYYY-MM` (e.g., `2026-05`)
 - **Timezone:** All timestamps are in **UTC+8 (Asia/Shanghai)**
@@ -15,7 +16,7 @@ BSSOpenApi (Billing Support System Open API) is Alibaba Cloud's unified billing 
 
 ### Billing Entities
 
-```
+```text
 Account
 ├── AccountBalance          # 账户余额 (credit + available + cash)
 ├── Bills                   # 账单体系
@@ -52,6 +53,7 @@ Account
 ### Dependency Graph
 
 Billing operations are self-contained; they do not depend on other cloud resources. However:
+
 - Bills reference `InstanceID` from product resources (ECS, RDS, etc.)
 - Orders reference `ProductCode` and `ProductType`
 - Savings Plans / RI reference `InstanceFamily` and `Region`
@@ -59,15 +61,19 @@ Billing operations are self-contained; they do not depend on other cloud resourc
 ## Key Concepts
 
 ### BillingCycle
+
 Format `YYYY-MM`, represents the accounting period. Bills are usually settled by day 3-5 of the following month.
 
 ### Pagination
+
 Most query operations support:
+
 - `PageNum` (default: 1)
 - `PageSize` (default: 20, max: 100 for most APIs)
 - `TotalCount` returned in response for total pages calculation
 
 ### Bill Granularity
+
 | API | Granularity | Group By |
 |-----|------------|----------|
 | QueryBillOverview | Month | Product, SubscriptionType |
@@ -78,6 +84,7 @@ Most query operations support:
 | QuerySplitItemBill | Split-Item-Level | SplitItemID, Tag |
 
 ### Charge Types
+
 | Code | Meaning |
 |------|---------|
 | `Subscription` | 包年包月 (Prepaid) |
@@ -101,6 +108,7 @@ All BSSOpenApi operations default to `cn-hangzhou`. The `RegionId` parameter, if
 ## Security Model
 
 ### RAM Permissions
+
 Minimum policy for read-only billing access:
 
 ```json
@@ -123,6 +131,7 @@ Minimum policy for read-only billing access:
 **Warning:** Billing APIs expose financial data. Grant with least privilege.
 
 ### Credential Masking (MANDATORY)
+
 - NEVER log `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - Use existence checks: `test -n "$var" && echo "set"`
 - JIT Go SDK: use `os.Getenv()` directly; avoid `fmt.Printf("%+v", config)`

@@ -17,7 +17,7 @@
 
 ## 访问路径决策树
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    ACK 巡检访问路径决策树                                 │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -118,7 +118,7 @@ aliyun cs DescribeClusterUserKubeconfig \
 # 配置并验证
 export KUBECONFIG=/tmp/ack-{{user.cluster_id}}.conf
 kubectl version
-```
+```text
 
 **成功标准:** `kubectl version` 返回 client 和 server 版本
 
@@ -136,9 +136,10 @@ aliyun cs DescribeClusterDetail --ClusterId {{user.cluster_id}}          # 集�
 aliyun cs GET /clusters/{{user.cluster_id}}/nodes                         # 节点列表
 aliyun cs GET /clusters/{{user.cluster_id}}/addons                        # 插件状态
 aliyun cs DescribeUserClusterNamespaces --ClusterId {{user.cluster_id}}   # 命名空间列表（需 RBAC）
-```
+```markdown
 
 **无法查询的内容:**
+
 - Pod 列表和状态
 - Service 详情
 - Deployment/StatefulSet 状态
@@ -161,9 +162,10 @@ aliyun ecs RunCommand \
   --InstanceId i-bp1xxxxx \
   --CommandContent "kubectl get pods --all-namespaces --kubeconfig /root/.kube/config" \
   --Type RunShellScript
-```
+```markdown
 
 **前置条件:**
+
 - 节点已安装 kubectl
 - 节点已配置 kubeconfig（通常 ACK 节点默认配置）
 - 当前账号有 ECS RunCommand 权限
@@ -195,7 +197,7 @@ aliyun ecs RunCommand \
 1. **授权 RBAC 权限**: `aliyun cs GrantPermissions --ClusterId xxx`
 2. **配置 VPN 访问**: 连接至 VPC 内网后重试
 3. **使用 Cloud Assistant**: 在节点上执行 kubectl 命令
-```
+```markdown
 
 ---
 
@@ -319,7 +321,7 @@ fi
 echo "═══════════════════════════════════════════════════════════"
 
 exit 0
-```
+```markdown
 
 ---
 
@@ -357,7 +359,7 @@ fi
 echo ""
 echo "=== Phase 3: 生成巡检报告 ==="
 # ...
-```
+```markdown
 
 ---
 

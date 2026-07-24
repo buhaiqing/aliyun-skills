@@ -56,14 +56,17 @@ metadata:
 > 以下所有代码块中的 `aliyun cs ...` 命令在执行时应替换为 `./scripts/ask-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cs` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## ✅ OpenAPI 验证状态 (VERIFIED 2026-06-02)
 
 > **Status: 已通过** `https://api.aliyun.com/meta/v1/products/CS/versions/2015-12-15/api-docs.json`
+>
 > + `aliyun cs CreateCluster --help` + `aliyun cs DescribeClusterUserKubeconfig --help`
 > 验证。详见 [`references/openapi-verify-checklist.md`](references/openapi-verify-checklist.md)
 > 和 [`references/api-sdk-usage.md`](references/api-sdk-usage.md)。
 >
 > **重大修正（修正训练知识错误）：**
+>
 > - ⚠️ **ASK 不是 `cluster_type=Ask`**，而是 `cluster_type=ManagedKubernetes` + `profile=Serverless`
 > - 输入字段是 `vpcid`（无分隔符），不是 `vpc_id`
 > - `pod_vswitch_ids` 在 OpenAPI spec 中**已废弃**；使用 `vswitch_ids`
@@ -88,6 +91,7 @@ rules, pre-flight checks, **dual-path execution** (official **`aliyun` CLI**
 primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 
 **Execution surface — CLI-primary with JIT Go SDK fallback:**
+
 - **Primary:** `aliyun cs POST /clusters --body '{...cluster_type: "ManagedKubernetes", profile: "Serverless"...}'`
   — static Go binary, covers ASK CRUD, describe, kubeconfig, addon.
 - **Fallback:** JIT Go SDK (`github.com/alibabacloud-go/cs-20151215/v4/client`)
@@ -96,6 +100,7 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 - **Console click-paths** are not an agent execution surface in `SKILL.md`.
 
 **Core resources managed by this skill:**
+
 - **ASK Cluster** — serverless cluster object, identified by `cluster_id`.
   In DescribeClusters response: `cluster_type=ManagedKubernetes` +
   `profile=Serverless`.
@@ -105,6 +110,7 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
   (`logtail-ds`, etc.) behave differently on ECI and may not apply.**
 
 **Out of scope (explicit delegation):**
+
 - **ManagedKubernetes / Kubernetes clusters** → [`alicloud-ack-ops`](../alicloud-ack-ops/SKILL.md)
 - **Raw ECI ContainerGroup operations outside K8s context** → [`alicloud-eci-ops`](../alicloud-eci-ops/SKILL.md)
 - **VPC / VSwitch / NAT Gateway / SLB underlying resources** → their own skills
@@ -226,12 +232,14 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 ## Quick Start
 
 ### What This Skill Does
+
 This skill creates, describes, deletes, and manages Alibaba Cloud Serverless
 Kubernetes (ASK) clusters via `aliyun cs ...` (primary) or JIT Go SDK (fallback).
 It also handles kubeconfig retrieval, ECI profile consideration, and ECI
 quota pre-flight checks.
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
@@ -240,20 +248,22 @@ quota pre-flight checks.
       at the top of this file before first CreateCluster
 
 ### Verify Setup
+
 ```bash
 aliyun version
 test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" && echo "✅ AK set"
 test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" && echo "✅ SK set (length only)"
 aliyun cs GET /clusters --RegionId "$ALIBABA_CLOUD_REGION_ID" | head -20
-```
+```markdown
 
 ### Your First Command
+
 ```bash
 # List existing ASK clusters in region
 aliyun cs GET /clusters --RegionId $ALIBABA_CLOUD_REGION_ID \
   --output cols=cluster_id,name,cluster_type,state \
   rows=clusters[?cluster_type=='ManagedKubernetes' && profile=='Serverless'].{cluster_id:cluster_id,name:name,cluster_type:cluster_type,state:state}
-```
+```markdown
 
 > **Note:** Filter by `profile=Serverless` identifies ASK clusters.
 
@@ -323,7 +333,7 @@ aliyun cs POST /clusters \
       {\"key\": \"owner\", \"value\": \"platform\"}
     ]
   }"
-```
+```markdown
 
 > **Required fields (verified):** `name`, `region_id`, `vpcid` (note: input
 > field is `vpcid`, **not** `vpc_id`), `vswitch_ids`.
@@ -361,7 +371,7 @@ tuning:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（60×30s → running）
-```
+```markdown
 
 3. On success, report `cluster_id`, `state`, and `api_server_endpoint`.
 4. On terminal failure (`failed`, `deleting`, timeout), go to
@@ -394,7 +404,7 @@ aliyun cs GET /clusters/{{user.cluster_id}}
 aliyun cs GET /clusters --RegionId {{user.region}} \
   --output cols=cluster_id,name,cluster_type,state,current_version \
   rows=clusters[?cluster_type=='Ask'].{cluster_id:cluster_id,name:name,cluster_type:cluster_type,state:state,current_version:current_version}
-```
+```markdown
 
 #### Present to User
 
@@ -426,7 +436,7 @@ aliyun cs GET /k8s/{{user.cluster_id}}/user_config
 # Internal endpoint kubeconfig (VPC-only access; default for ASK)
 aliyun cs GET /k8s/{{user.cluster_id}}/user_config \
   --PrivateIpAddress true
-```
+```markdown
 
 #### Present to User
 
@@ -436,7 +446,7 @@ Save output to `~/.kube/config` or custom path:
 aliyun cs GET /k8s/{{user.cluster_id}}/user_config > ~/.kube/ask-{{user.cluster_id}}
 export KUBECONFIG=~/.kube/ask-{{user.cluster_id}}
 kubectl get nodes
-```
+```markdown
 
 > **⚠️ Kubeconfig contains a client certificate and is a secret.** Mask
 > the file when sharing; chmod 600; do not commit to git.
@@ -452,7 +462,7 @@ kubectl get nodes
 kubectl get --raw=/healthz
 kubectl get nodes
 kubectl get ns
-```
+```markdown
 
 ---
 
@@ -485,7 +495,7 @@ aliyun cs POST /clusters/{{user.cluster_id}}/deletion_protection \
 # Disable deletion protection (user must confirm)
 aliyun cs POST /clusters/{{user.cluster_id}}/deletion_protection \
   --body '{"deletion_protection": false}'
-```
+```markdown
 
 > **Note:** Exact endpoint paths and field names may vary; verify with
 > `aliyun cs POST --help` and the OpenAPI verify checklist.
@@ -528,7 +538,7 @@ aliyun cs POST /clusters/{{user.cluster_id}}/addons \
     "name": "nginx-ingress-controller",
     "version": "v1.10.0"
   }'
-```
+```markdown
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
@@ -555,7 +565,7 @@ aliyun cs DELETE /clusters/{{user.cluster_id}}
 
 # Force delete (when resources are still bound; use with caution)
 # aliyun cs DELETE /clusters/{{user.cluster_id}} --force true
-```
+```markdown
 
 > **Note:** Force delete may leave orphaned SLBs, disks, or PVCs. Prefer
 > cleaning up resources first.
@@ -617,6 +627,7 @@ ASK 是 K8s 集群，标准 K8s 诊断流程（Pod / Service / Ingress / PVC）�
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary):
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
    ```
@@ -626,15 +637,18 @@ ASK 是 K8s 集群，标准 K8s 诊断流程（Pod / Service / Ingress / PVC）�
    (复用相同的 self-healing 流程)
 
 3. **Configure Credentials**:
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+
    > **IMPORTANT:** Mask SK in console output:
    > `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`.
 
 4. **Verify**:
+
    ```bash
    aliyun cs GET /clusters --RegionId $ALIBABA_CLOUD_REGION_ID
    ```
@@ -669,12 +683,13 @@ performance guidance specific to ASK.
 | **面向风险的应急快恢** | ECI Pods are ephemeral — use external persistence (RDS, OSS) for state. **RTO:** cluster recreation in ~3-5 min, ECI Pod scheduling ~30s. **RPO:** 0 for stateless; external DB for stateful. |
 
 #### DR Runbook
-```
+
+```text
 Phase 1: Verify — Check cluster API health, ECI Pod readiness, ECI quota
 Phase 2: Restore — Recreate cluster (if needed), reapply manifests,
           workloads auto-schedule to new ECI Pods
 Phase 3: Validate — Pod scheduling, service connectivity, application health
-```
+```markdown
 
 ### 成本 (Cost)
 
@@ -744,7 +759,7 @@ kubectl get pods -A -o json | jq -r '
 
 echo ""
 echo "Note: Real cost = sum over time of (cpu_request * vcpu_price) + (mem_request * mem_price)"
-```
+```markdown
 
 ### Operation: Idle ECI Pod Detection
 
@@ -798,6 +813,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Most-scrutinized | `DeleteCluster` (check + disable DeletionProtection first; backup kubeconfig) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for ask-ops.
 
 ---

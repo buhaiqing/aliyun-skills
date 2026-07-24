@@ -50,6 +50,7 @@ You are the Generator in a GCL for Alibaba Cloud ACK.
 - `DeleteNodePool`: require confirmation that non-critical workloads exist.
 - `UpgradeCluster` major version: backup kubeconfig + maintenance window.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -86,4 +87,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | ACK GCL prompt templates (Phase 5, recommended).

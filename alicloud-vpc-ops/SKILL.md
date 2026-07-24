@@ -42,7 +42,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```bash
 # Create VPC:           $.VpcId
 # Describe VPCs:        $.Vpcs.Vpc[].VpcId
 # Create VSwitch:       $.VSwitchId
@@ -54,7 +54,7 @@ metadata:
 # Create VPN GW:        $.VpnGatewayId
 # Create NetworkACL:    $.NetworkAclId
 # Create FlowLog:       $.FlowLogId
-```
+```markdown
 
 ## Overview
 
@@ -181,7 +181,7 @@ Every operation: **Pre-flight → Execute → Validate → Recover**. Do not ski
 
 **Needs:** Region, VPC name (opt), CIDR (opt, default 172.16.0.0/12). **Expect:** VPC → `Available` in ~5s.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create VPC)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -212,7 +212,7 @@ aliyun vpc DescribeVpcs \
   --RegionId "{{user.region}}" \
   --VpcId "{{output.vpc_id}}" \
   --output cols=VpcId,Status,CidrBlock rows=Vpcs.Vpc[].{VpcId:VpcId,Status:Status,CidrBlock:CidrBlock}
-```
+```markdown
 
 3. On success, report VPC ID, CIDR, and status to the user.
 4. On terminal failure, go to **Failure Recovery**.
@@ -247,7 +247,7 @@ aliyun vpc DescribeVSwitches \
   --RegionId "{{user.region}}" \
   --VSwitchId "{{output.vswitch_id}}" \
   --output cols=VSwitchId,Status,ZoneId,CidrBlock rows=VSwitches.VSwitch[].{VSwitchId:VSwitchId,Status:Status,ZoneId:ZoneId,CidrBlock:CidrBlock}
-```
+```bash
 
 ### Operation: Create NAT Gateway
 
@@ -277,7 +277,7 @@ aliyun vpc DescribeNatGateways \
   --RegionId "{{user.region}}" \
   --NatGatewayId "{{output.nat_gateway_id}}" \
   --waiter expr='NatGateways.NatGateway[0].Status' to=Available timeout=300 interval=5
-```
+```bash
 
 ### Operation: Allocate EIP
 
@@ -304,7 +304,7 @@ aliyun vpc DescribeEipAddresses \
   --RegionId "{{user.region}}" \
   --AllocationId "{{output.eip_allocation_id}}" \
   --output cols=AllocationId,Status,IpAddress rows=EipAddresses.EipAddress[].{AllocationId:AllocationId,Status:Status,IpAddress:IpAddress}
-```
+```bash
 
 ### Operation: AssociateEipAddress
 
@@ -327,7 +327,7 @@ Available `InstanceType` values: `EcsInstance`, `Nat`, `SLBInstance`, `HaVip`, `
 aliyun vpc DescribeEipAddresses \
   --RegionId "{{user.region}}" \
   --AllocationId "{{user.eip_id}}"
-```
+```bash
 
 Verify `Status` transitions to `InUse` and `InstanceId` matches.
 
@@ -360,7 +360,7 @@ aliyun vpc CreateForwardEntry \
   --InternalIp "{{user.internal_ip}}" \
   --InternalPort "{{user.internal_port}}" \
   --ForwardEntryName "{{user.forward_entry_name}}"
-```
+```bash
 
 ### Operation: Describe VPC
 
@@ -395,7 +395,7 @@ aliyun vpc DescribeNatGateways --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
 # List all VSwitches in a VPC
 aliyun vpc DescribeVSwitches --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" --VpcId "{{user.vpc_id}}" \
   --output cols=VSwitchId,VSwitchName,Status,ZoneId,CidrBlock rows=VSwitches.VSwitch[].{VSwitchId:VSwitchId,VSwitchName:VSwitchName,Status:Status,ZoneId:ZoneId,CidrBlock:CidrBlock}
-```
+```markdown
 
 ### Operation: Delete VPC
 
@@ -420,7 +420,7 @@ aliyun vpc DescribeHaVips --RegionId "{{user.region}}" --VpcId "{{user.vpc_id}}"
 aliyun vpc DeleteVpc \
   --RegionId "{{user.region}}" \
   --VpcId "{{user.vpc_id}}"
-```
+```bash
 
 #### Post-execution Validation
 
@@ -447,7 +447,7 @@ Empty result = confirmed deleted.
 aliyun vpc DeleteNatGateway \
   --RegionId "{{user.region}}" \
   --NatGatewayId "{{user.nat_gateway_id}}"
-```
+```bash
 
 ### Operation: Release EIP
 
@@ -469,7 +469,7 @@ aliyun vpc UnassociateEipAddress \
 aliyun vpc ReleaseEipAddress \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --AllocationId "{{user.eip_id}}"
-```
+```markdown
 
 ## Failure Recovery
 
@@ -605,6 +605,7 @@ in a GCL loop before the result is returned to the user.
 | EIP ops | **Delegate to `alicloud-eip-ops` GCL** (production marker, 2-step unbind, DNS audit, traffic pre-check) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Seventh rollout: `## Quality Gate (GCL)` + `references/rubric.md` + `references/prompt-templates.md`. Dependency-cascade pattern; EIP cross-skill delegation.
 
 ---

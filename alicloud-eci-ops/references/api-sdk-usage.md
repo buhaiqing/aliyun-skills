@@ -7,7 +7,7 @@
 ## OpenAPI
 
 - Spec: **ECI-2018-08-08** (verified)
-- Documentation: https://www.alibabacloud.com/help/en/eci
+- Documentation: <https://www.alibabacloud.com/help/en/eci>
 - **Product code:** `eci` (separate from `cs`)
 
 ## SDK Operations Map (verified from `aliyun help eci`)
@@ -38,7 +38,7 @@
 
 ## SDK Package
 
-```
+```text
 github.com/alibabacloud-go/eci-20180808/client
 ```
 
@@ -245,7 +245,7 @@ Same shape as `Container` (minus probes). Standard K8s init pattern works.
 
 ## DescribeContainerGroups — VERIFIED CLI Params
 
-```
+```text
 --RegionId                 Required, string
 --ContainerGroupIds        JSON array, max 20
 --ContainerGroupName       string

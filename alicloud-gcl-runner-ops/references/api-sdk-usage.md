@@ -5,7 +5,7 @@
 - **Service**: GCL
 - **API Version**: N/A
 - **Base Endpoint**: `gcl.aliyuncs.com`
-- **Official Docs**: https://www.alibabacloud.com/help/en/gcl
+- **Official Docs**: <https://www.alibabacloud.com/help/en/gcl>
 
 ## SDK Operations Map
 
@@ -24,11 +24,13 @@ go get github.com/alibabacloud-go/gcl-N/A/client
 ## Request / Response Notes
 
 ### Common Patterns
+
 - **Pagination**: `PageNumber`, `PageSize` parameters
 - **Filters**: Use `Describe*` APIs with filter parameters
 - **Async Operations**: Long-running operations return `RequestId` for polling
 
 ### Response Codes
+
 - **Success**: HTTP 200, JSON with `RequestId`
 - **Client Error**: HTTP 4xx, check error message
 - **Server Error**: HTTP 5xx, retry with backoff

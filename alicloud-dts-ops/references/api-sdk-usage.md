@@ -61,7 +61,8 @@
 ## Common JSON Paths
 
 ### DescribeDtsJobs
-```
+
+```bash
 $.DtsJobList[].DtsJobId         → Task ID
 $.DtsJobList[].DtsJobName       → Task name
 $.DtsJobList[].Status           → Current status
@@ -74,14 +75,16 @@ $.PageNumber                    → Current page
 ```
 
 ### ConfigureDtsJob
-```
+
+```bash
 $.DtsJobId      → New job ID
 $.InstanceId    → DTS instance ID
 $.ErrCode       → Error code (if failed)
 ```
 
 ### DescribeDtsJobDetail
-```
+
+```bash
 $.DtsJobId              → Task ID
 $.Status                → Current status
 $.JobType               → Task type
@@ -97,19 +100,22 @@ $.SynchronizationDetails       → Sync details (for sync jobs)
 ```
 
 ### DescribeConnectionStatus
-```
+
+```bash
 $.ConnectDetail[].Status        → "Success" / "Failed"
 $.ConnectDetail[].ErrorMessage  → Error message (if failed)
 ```
 
 ### DescribeDTSIP
-```
+
+```bash
 $.IPList         → Array of CIDR blocks
 ```
 
 ## Pagination
 
 DescribeDtsJobs uses page-based pagination:
+
 - `PageSize` (default 30, max 100)
 - `PageNumber` (starts at 1)
 - Response: `$.PageNumber`, `$.TotalRecordCount`, `$.DtsJobList[]`

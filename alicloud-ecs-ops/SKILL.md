@@ -133,7 +133,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```markdown
 # Create/Describe Instance: $.Instances.Instance[].{InstanceId,Status,RegionId,ZoneId,InstanceName}
 # Create Disk:              $.DiskId
 # Describe Disks:           $.Disks.Disk[].{DiskId,Status}
@@ -260,6 +260,7 @@ tracing across skills.
 | "全栈巡检: ECS + RDS + SLB" | `alicloud-cms-ops` (统一监控) | `alicloud-ecs-ops`, `alicloud-rds-ops`, `alicloud-slb-ops` | — | auxiliary skills run read-only under one session |
 
 > **Routing policy** (apply in order):
+>
 > 1. **主 (primary)** owns the failure semantics — if the primary fails, the whole
 >    composite fails; auxiliary failures are reported but do not block.
 > 2. **辅 (auxiliary)** runs only after primary preconditions succeed; may run in
@@ -274,6 +275,7 @@ tracing across skills.
 > commands directly across skills.
 >
 > **Example workflow** (verbatim shell, for "ECS 上的应用连不上 RDS"):
+>
 > ```bash
 > export HARNESS_SESSION_ID="sess-$(uuidgen)"
 > # Primary: ECS status + SG + network probe
@@ -434,7 +436,7 @@ Every operation: **Pre-flight → Execute (SDK/API and `aliyun`) → Validate �
 
 ### Operation: Create Instance
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Instance)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -491,10 +493,12 @@ aliyun ecs CreateInstance \
 | `InternalError` / 5xx | 3 | 2s, 4s, 8s | Retry; then HALT with RequestId |
 
 > **RequestId Extraction:** On any API error, extract `RequestId` from the response for support correlation:
+>
 > ```bash
 > # CLI: RequestId is in the JSON error response
 > aliyun ecs DescribeInstances ... 2>&1 | jq -r '.RequestId // .requestId // "unknown"'
 > ```
+>
 > ```go
 > // SDK: RequestId is in the error response
 > if err != nil {
@@ -566,7 +570,7 @@ aliyun ecs DescribeInstances --RegionId "{{user.region}}" \
 
 ### Operation: Run Instances (Batch Create)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Run Instances (Batch Create))
 
 Same as **Create Instance** above.
 
@@ -758,7 +762,7 @@ Poll **DescribeInstances** until instance is absent (returns empty list or `Inst
 
 ### Operation: Create Disk
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Disk)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -1012,6 +1016,7 @@ aliyun ecs DescribeSecurityGroupAttribute \
 | "安全组巡检", "SecOps", "暴露面分析", "安全组审计" | 从安全运营视角全面巡检安全组 | 资产盘点、暴露面检测、变更追踪、关联分析、规则统计、冲突检测、基线合规评估 |
 
 **Capabilities:**  
+
 - 资产盘点：安全组数量、规则数量、所属VPC  
 - 暴露面分析：0.0.0.0/0 高危端口检测（Critical/High/Medium/Low分级）  
 - 变更追踪：集成ActionTrail审计谁在何时改了什么  
@@ -1273,6 +1278,7 @@ If CloudMonitor shows `InternetOutRate`/`IntranetOutRate` at ceiling, `VPCPublic
 #### Step 7: Escalation
 
 If all above checks pass but connectivity still fails:
+
 - Collect `RequestId` from all API calls.
 - Check instance system logs via ECS console (VNC) if available.
 - Contact Alibaba Cloud support with `RequestId`, instance ID, and timestamp.
@@ -1285,7 +1291,7 @@ If all above checks pass but connectivity still fails:
 
 ### Operation: Run Command (Cloud Assistant)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Run Command (Cloud Assistant))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -1431,6 +1437,7 @@ aliyun ecs DescribeInvocationResults \
 | Error Info | `$.Invocation.InvocationResults.InvocationResult[].ErrorInfo` | Error details if failed |
 
 > **Output Decoding:** The `Output` field is base64-encoded. Decode before presenting to user:
+>
 > ```bash
 > echo "$OUTPUT" | base64 -d
 > ```
@@ -1458,7 +1465,7 @@ aliyun ecs StopInvocation \
 
 Send a local file to one or more ECS instances via Cloud Assistant.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Send File (Cloud Assistant))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -1635,9 +1642,11 @@ aliyun ecs DescribeCloudAssistantStatus \
 - **Naming:** Use consistent naming conventions (e.g., `{{project}}-{{env}}-{{role}}-{{seq}}`).
 - **Encryption:** Enable disk encryption (`Encrypted=true`) for all data disks containing sensitive data.
 - **DryRun:** Use `DryRun=true` on `CreateInstance` and `RunInstances` to validate parameters before actual creation:
+
   ```bash
   aliyun ecs CreateInstance ... --DryRun true
   ```
+
 - **Recycle Bin Awareness:** Deleted instances enter Recycle Bin by default. Set `--Force true` only when permanent deletion is explicitly required.
 - **UserData Validation:** Always base64-encode UserData. Test initialization scripts in a staging environment before production deployment.
 

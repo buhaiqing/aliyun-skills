@@ -36,20 +36,24 @@ metadata:
 ## Quick Start
 
 ### What This Skill Does
+
 Scaffolds new or updates existing `alicloud-[product]-ops` skills in this repository, based on official Alibaba Cloud OpenAPI specs. This is a **meta-skill** — it generates runbooks for agents, not operational execution against cloud accounts.
 
 ### Prerequisites
+
 - [ ] Access to OpenAPI/Swagger spec for the target Alibaba Cloud product
 - [ ] Read access to this repository's template files
 - [ ] Network access to Alibaba Cloud documentation URLs
 
 ### Your First Generation
-```
+
+```yaml
 Input: "Generate alicloud-ecs-ops for ECS instances, disks, and snapshots"
 Output: alicloud-ecs-ops/ directory with SKILL.md and references/
-```
+```markdown
 
 ### Next Steps
+
 - [Generation Workflow](#evaluation-driven-generation-workflow) — Step-by-step generation process
 - [Anti-Pattern Checklist](#anti-pattern-checklist) — Common mistakes to avoid
 - [P0/P1 Checklist](#p0--must-pass) — Quality gates for generated skills
@@ -71,11 +75,13 @@ Generated skills are **agent-readable runbooks**: triggers, env vs user placehol
 Each product skill follows the dual mission in `AGENTS.md` §0.3 — **domain colleague** (context + collaboration) and **harnessed delivery** (GCL, SkillOpt, observable execution). Memory / Reflexion / LLM-evolution pipelines are platform-owned, not skill-owned.
 
 ### Technology Stack
+
 - **CLI:** `aliyun` (Go binary, static, no dependencies) — primary execution path
 - **SDK:** Alibaba Cloud Go SDK (`github.com/alibabacloud-go/<product>`) — JIT fallback
 - **JIT execution:** `go run` (script mode, dynamic generation)
 
 ### Repository Scope
+
 All generated layout and policies apply **only** to the `aliyun-skills` monorepo unless explicitly stated elsewhere.
 
 ---
@@ -96,12 +102,14 @@ If the user wants **operational execution** (e.g. "create a resource"), load the
 ## When to Use / Not Use
 
 ### Use When
+
 - A new Alibaba Cloud product needs a **first** ops skill in **this repo**
 - An existing skill lacks P0 elements (triggers, placeholders, flows, recovery, destructive gates)
 - OpenAPI or official docs changed; the skill should be **realigned** (bump version/changelog)
 - A contributor needs the **standard directory layout** for a new `alicloud-[product]-ops`
 
 ### Do NOT Use When
+
 - One-off debugging with no intent to maintain a reusable skill
 - Non–Alibaba-Cloud application work
 - You only need billing/IAM execution — use dedicated ops skills when they exist
@@ -151,26 +159,31 @@ If the user wants **operational execution** (e.g. "create a resource"), load the
 Every generated skill MUST satisfy these five standards. Reference them throughout the generation workflow.
 
 ### Standard 1: Clear Boundaries (边界明确)
+
 - **SHOULD use** conditions: precise, with keywords and intent matching
 - **SHOULD NOT use** conditions: explicit negative cases that prevent misfire
 - **Delegation rules**: clear pointers to related skills
 
 ### Standard 2: Structured I/O (输入输出结构化)
+
 - Input parameters defined with types and sources (`{{env.*}}`, `{{user.*}}`)
 - Output fields defined with JSON paths from OpenAPI response schemas
 - Placeholder conventions: `{{env.*}}` (from runtime, NEVER ask user), `{{user.*}}` (interactive collect), `{{output.*}}` (from API response)
 
 ### Standard 3: Explicit Actionable Steps (步骤明确可执行)
+
 - Every operation: Pre-flight → Execute → Validate → Recover
 - Steps are numbered, imperative, specific — not descriptive summaries
 - CLI and SDK paths documented separately when both apply
 
 ### Standard 4: Complete Failure Strategies (失败策略完备)
+
 - Error taxonomy with product-specific error codes (≥ 10)
 - Each error pattern: max retries, backoff strategy, agent action, UX feedback
 - HALT vs retry distinction; credential, quota, and business errors clearly separated
 
 ### Standard 5: Absolute Single Responsibility (职责绝对单一)
+
 - One skill = one product = one primary resource model
 - Cross-product delegation: document in Trigger & Scope, do NOT duplicate full flows
 - Naming: `alicloud-[product]-ops` (lowercase, hyphenated)
@@ -184,7 +197,7 @@ Every generated skill MUST satisfy these five standards. Reference them througho
 
 ### Self-Check Flowchart
 
-```
+```text
 生成完成 → 执行宪章检查 (C1-C5)
   ↓
 C1-C6 全通过？
@@ -212,6 +225,7 @@ C1-C6 全通过？
 | **C7** | **Compound Engineering**（复利工程） | 检查决策是否已记录、废弃文档是否已清理、模板是否可复用 | CE1-CE6 全部确认 | 见 [AGENTS.md §0.3 复利工程](../AGENTS.md#03-复利工程--compound-engineering-最高优先级) 和 [§18.5 检查清单](../AGENTS.md#185-复利检查清单-每次完成任务后强制执行) |
 
 > **C7 说明**：生成新 Skill 或更新现有 Skill 后，必须自问：
+>
 > - 这次有没有产生废弃文档需要清理？
 > - 这次的设计决策有没有记录到 `docs/ARCHITECTURE.md`？
 > - 这次用到的模板/方法能不能复用到下次？
@@ -245,7 +259,7 @@ metadata:
     - ALIBABA_CLOUD_ACCESS_KEY_SECRET
     - ALIBABA_CLOUD_REGION_ID
 ---
-```
+```markdown
 
 ```markdown
 # C2-C5: Missing sections (填充到 Overview 之后)
@@ -303,6 +317,7 @@ Before and during generation, check against these common anti-patterns:
 > 目标：在保持 Agent 可执行性的前提下，最小化每个生成技能的 Token 消耗。
 
 ### TE-1: 用 API 查询替代硬编码静态数据
+
 ```markdown
 # ❌ BAD: 硬编码引擎版本/配额表（50+ 行）
 | Engine | Port |
@@ -317,11 +332,14 @@ aliyun [product] Describe[EngineVersions]
 |--------|------|
 | MySQL | 3306 |
 | PostgreSQL | 5432 |
-```
+```markdown
+
 **预计算约**: ~200-500 Token
 
 ### TE-2: 省略不必要的文档说明
+
 Alibaba Cloud 使用 Go SDK，用 `#` 注释代替函数级 docstring：
+
 ```go
 // ❌ BAD
 func createResource(client *ecs.Client) (*ecs.CreateInstanceResponse, error) {
@@ -336,9 +354,11 @@ func createResource(client *ecs.Client) (*ecs.CreateInstanceResponse, error) {
     // Create instance with required params from OpenAPI
 }
 ```
+
 **预计算约**: ~100-200 Token/函数
 
 ### TE-3: 错误表 → 紧凑格式
+
 ```markdown
 # ❌ BAD: 每个错误 8-15 行描述
 #### InvalidParameter
@@ -350,10 +370,12 @@ Resolution: ...
 |------------|-------------|
 | InvalidParameter | FIX — align with OpenAPI |
 | QuotaExceeded | HALT — request increase |
-```
+```markdown
+
 **预计算约**: ~300-500 Token/文件
 
 ### TE-4: JSON paths 集中声明（不重复）
+
 ```markdown
 # ❌ BAD: 每个操作后单独列 JSON paths
 ## Create
@@ -366,9 +388,11 @@ JSON path: $.Status
 # Create: $.ResourceId
 # Describe: $.{Status,ResourceId,RegionId}
 ```
+
 **预计算约**: ~50-100 Token/文件
 
 ### TE-5: YAML anchors 消除重复字段
+
 ```yaml
 # ❌ BAD: Dev/Prod 各写 15 行重复字段
 # ✅ GOOD: 共享 anchors
@@ -380,19 +404,23 @@ x-prod: &prod
 instance:
   <<: *prod
   instance_name: "prod-web-01"
-```
+```markdown
+
 **预计算约**: ~200-400 Token/文件
 
 ### TE-6: 消除跨文件重复流程
+
 - SKILL.md 已有完整 Pre-flight → Execute → Validate → Recover
 - `assets/example-config.yaml` 中的完整流程示例和 SDK 文件中的 Complete Setup 函数是重复内容 → 删除
 
 ### TE-7: 专业内容分层
+
 - AIOps/FinOps 等深度分析放 `references/advanced/`，仅在用户触发深度诊断时加载
 - SQL 执行等安全敏感操作放在 `references/advanced/sql-execution.md`，标注为 **Security-Sensitive**，要求在 Pre-flight Checks 中增加显式确认行
 - **收益**：每个 agent 会话节省 ~3,000-8,000 tokens（取决于 advanced/ 内容量）
 
 ### TE Boundary — Non-compressible Content
+
 | 可压缩 | 不可压缩 |
 |--------|---------|
 | DocStrings、静态表格、重复流程 | Agent 可执行命令本身（参数、JSON paths） |
@@ -409,7 +437,7 @@ This workflow follows the **"fail first, evaluate first"** principle: define wha
 
 ### Workflow Checklist
 
-```
+```json
 [ ] Step 1: Define Evaluation Targets — What does success look like?
 [ ] Step 2: Analyze Sources — Extract operations, fields, errors from OpenAPI
     ↓ [Feedback Loop: Sources complete? If gaps found → research, then return]
@@ -430,6 +458,7 @@ This workflow follows the **"fail first, evaluate first"** principle: define wha
 Before generating anything, define **3-5 evaluation cases** for the target skill. Each case has a clear PASS/FAIL criterion.
 
 **Template:**
+
 ```markdown
 | ID | Scenario | Expected Behavior | PASS Condition |
 |----|----------|-----------------|----------------|
@@ -441,7 +470,7 @@ Before generating anything, define **3-5 evaluation cases** for the target skill
 | E6 | Backup before destructive operation | Skill reminds user to backup or validates existing backup | Pre-backup reminder in Delete/Modify flows |
 | E7 | Cost optimization suggestion | Skill detects idle resource pattern and recommends right-sizing | Cost assessment section present in skill |
 | E8 | Well-Architected security check | Skill documents minimum RAM permissions for operations | IAM section in `well-architected-assessment.md` |
-```
+```markdown
 
 **Purpose:** These cases anchor the generation process. Every feature in the generated skill must trace back to at least one evaluation case.
 
@@ -460,6 +489,7 @@ Extract from OpenAPI and official docs:
 - **API version drift** (updating existing skills): Compare current OpenAPI against `metadata.api_profile`; flag changed signatures, deprecations, new parameters
 
 **Validation checkpoint:** Before proceeding, confirm:
+
 - [ ] All operationIds are real (not invented)
 - [ ] JSON paths are from actual response schemas
 - [ ] Error codes are documented in OpenAPI or official docs
@@ -503,6 +533,7 @@ Base: [alicloud-skill-template.md](references/alicloud-skill-template.md).
 Replace all `[Placeholder]` with product-specific content derived from Step 2. Every field, JSON path, and CLI command MUST be traceable to OpenAPI or verified CLI output.
 
 **Frontmatter requirements:**
+
 | Field | Rule |
 |-------|------|
 | `name` | `alicloud-[product]-ops` — lowercase, hyphens, ≤ 64 chars |
@@ -511,6 +542,7 @@ Replace all `[Placeholder]` with product-specific content derived from Step 2. E
 | `cli_support_evidence` | Cite confirmation via `aliyun help <product>` or official docs |
 
 **Validation checkpoint (Five Core Standards):**
+
 - [ ] **Boundary**: SHOULD/SHOULD NOT use conditions complete?
 - [ ] **I/O**: All placeholders (`{{env.*}}`, `{{user.*}}`, `{{output.*}}`) correctly typed?
 - [ ] **Steps**: Every operation has Pre-flight → Execute → Validate → Recover?
@@ -564,14 +596,18 @@ Replace all `[Placeholder]` with product-specific content derived from Step 2. E
    - 末尾注释：列出关键输出 JSON path（如 `// $.DBInstanceId -> 新建实例 ID`）
 4. **生成 `README.md`**：前置条件（Go 版本 + 3 个环境变量）+ Snippet 列表 + 运行示例 + 安全约束
 5. **验证（沙箱可用时强制）**：
+
    ```bash
    cd assets/code-snippets
    go mod tidy && go vet ./...
-   ```
+
+```text
+
    - 失败 → 修复 `go.mod` 版本号或 import 路径，重试
    - 成功 → 在 `SKILL.md` Reference Directory 添加 `assets/code-snippets/README.md` 链接
 
 **关键约束（违反即 P0 失败）：**
+
 - ❌ `cli-first` / `dual-path` skill 也生成 snippets → ✅ 仅 `sdk-only` 触发
 - ❌ 多 operation 挤在一个 `main.go` → ✅ 每 operation 一独立 `.go`
 - ❌ snippet 硬编码 AK/SK 或在日志打印 SK → ✅ 始终 `os.Getenv` + 禁止 SK 回显
@@ -586,6 +622,7 @@ Run the [P0/P1 Checklist](#p0--must-pass) below against the generated skill. Run
 **Skill Change Critic Gate (RT-6, mandatory when behavior/scripts change):** per AGENTS.md §11.1 — `classify` → `template` (agent fills `tests_accurate` + `accuracy_rationale`) → `verify --run` must exit 0 before marking Step 6 done. Pure docs/formatting with zero behavioral delta may document skip in verdict only.
 
 **For any failure:**
+
 1. Identify the gap
 2. Return to Step 4 (SKILL.md) or Step 5 (references)
 3. Fix the gap
@@ -600,6 +637,7 @@ Run the [P0/P1 Checklist](#p0--must-pass) below against the generated skill. Run
 Run the [Anti-Pattern Checklist](#anti-pattern-checklist) above against the generated skill. Every item must pass.
 
 **If an anti-pattern is detected:**
+
 - Document the instance
 - Fix according to the "Correction" column
 - Re-run the P0/P1 checklist
@@ -634,6 +672,7 @@ Create an `assets/eval_queries.json` file with ~20 queries (10 should-trigger, 1
 ```
 
 **Query design tips:**
+
 - **Should-trigger**: Vary phrasing (formal/casual/typos), explicitness (names product vs describes need), detail level (terse vs context-heavy)
 - **Should-not-trigger**: Focus on **near-misses** — queries sharing keywords but needing different skills (e.g., "Create an ECS instance" for a generator skill — shares "create" and "ECS" but is operational, not skill generation)
 - **Realism**: Include file paths (`~/Downloads/`), personal context (`"my manager asked..."`), casual language, abbreviations
@@ -657,26 +696,32 @@ Create an `assets/eval_queries.json` file with ~20 queries (10 should-trigger, 1
 ## Before You Generate: Decisions
 
 ### Extend vs New Directory
+
 - **Extend** same product and resource model (new operation section, paths, troubleshooting rows)
 - **New** `alicloud-[product]-ops` when the **service/API surface** or **primary resource** is distinct
 
 ### Naming
+
 - Pattern: `alicloud-[product]-ops` (lowercase, hyphenated)
 - Search the repo for collisions before creating
 
 ### Dependencies
+
 - Cross-product chains: document **delegation** in Trigger & Scope
 - Avoid duplicating another product's full flows
 
 ### Sources of Truth
+
 - **OpenAPI + official docs** beat forums and chat logs
 - Pin an API/SDK profile in skill `metadata` or `references/integration.md`
 
 ### Secrets
+
 - Only `{{env.*}}` **names** and documentation; never real keys or customer data
 - Credential masking is MANDATORY — see [references/execution-environment.md](references/execution-environment.md#5-credential-security-mandatory)
 
 ### CLI-First with JIT Go SDK Fallback
+
 - Primary path: `aliyun` CLI (static Go binary, covers 90%+ APIs)
 - Fallback path: JIT Go SDK (dynamic script + `go run`)
 - Execution environment details: [references/execution-environment.md](references/execution-environment.md)

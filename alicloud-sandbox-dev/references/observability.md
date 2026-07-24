@@ -4,11 +4,11 @@
 
 ## 1. 架构总览
 
-```
+```text
 Sidecar ──► /metrics (Prometheus 抓取)
         ──► OTLP Exporter ──► Collector ──► Jaeger/Tempo
         ──► Structured Logs ──► Loki/ELK
-```
+```markdown
 
 ## 2. Prometheus 指标
 
@@ -117,7 +117,7 @@ func MetricsMiddleware(next http.Handler) http.Handler {
 func RegisterMetrics(mux *http.ServeMux) {
     mux.Handle("/metrics", promhttp.Handler())
 }
-```
+```markdown
 
 ### 2.2 Go 指标使用示例
 
@@ -144,7 +144,7 @@ func HandleWebSocket(...) {
     defer metrics.WebsocketConnections.Dec()
     // ...
 }
-```
+```markdown
 
 ### 2.3 Python (FastAPI) 指标
 
@@ -195,7 +195,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
             status_code=response.status_code
         ).inc()
         return response
-```
+```markdown
 
 ## 3. OpenTelemetry 链路追踪
 
@@ -238,7 +238,7 @@ func InitTracer(ctx context.Context, endpoint string) (*sdktrace.TracerProvider,
 
 	return tp, nil
 }
-```
+```markdown
 
 ### 3.2 使用 Tracer
 
@@ -257,7 +257,7 @@ func (s *Server) controlPlaneHandler(...) {
     // ... 代理逻辑
     span.SetStatus(codes.OK, "") // 或 codes.Error
 }
-```
+```markdown
 
 ### 3.3 Python OTel 设置
 
@@ -273,7 +273,7 @@ def setup_otel(endpoint="otlp-collector:4317"):
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
     return trace.get_tracer(__name__)
-```
+```markdown
 
 ## 4. 结构化日志
 
@@ -290,7 +290,7 @@ logger.Info("sidecar started",
     zap.String("region", cfg.Auth.Region),
     zap.String("account_id", cfg.Auth.AccountID),
 )
-```
+```markdown
 
 ### 4.2 Python (structlog)
 
@@ -310,7 +310,7 @@ structlog.configure(
 
 logger = structlog.get_logger()
 logger.info("sidecar started", port=8080, region="cn-hangzhou")
-```
+```markdown
 
 ## 5. 关键指标清单
 
@@ -358,4 +358,4 @@ logger.info("sidecar started", port=8080, region="cn-hangzhou")
     }
   ]
 }
-```
+```text

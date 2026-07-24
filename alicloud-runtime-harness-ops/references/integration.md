@@ -2,14 +2,14 @@
 
 ## Architecture (canonical)
 
-```
+```text
 alicloud-[product]-ops/scripts/harness-lib.sh   ← product overlay (repair, wrap, report)
     │
     ├─ source alicloud-runtime-harness-ops/scripts/harness-paths.sh
     └─ source alicloud-runtime-harness-ops/scripts/harness-core-lib.sh
             ├─ skillopt_init / log / metrics / local trace (always) / Langfuse mirror / circuit breaker
             └─ scripts/harness_runtime.py (Langfuse span-create when enabled)
-```
+```markdown
 
 **Legacy**: `skillopt-lib.sh` symlink and `alicloud-skillopt-ops/scripts/skillopt-{paths,core-lib}.sh` shims delegate to the paths above.
 
@@ -34,7 +34,7 @@ fi
 _HARNESS_SHARED_ROOT="${HARNESS_SHARED_ROOT:-${_SKILLOPT_SKILLS_ROOT}/alicloud-runtime-harness-ops}"
 source "${_HARNESS_SHARED_ROOT}/scripts/harness-paths.sh"
 source "${_HARNESS_SHARED_ROOT}/scripts/harness-core-lib.sh"
-```
+```markdown
 
 ## Legacy source block (still works via shims)
 
@@ -42,14 +42,14 @@ source "${_HARNESS_SHARED_ROOT}/scripts/harness-core-lib.sh"
 _SKILLOPT_SHARED_ROOT="${SKILLOPT_SHARED_ROOT:-${_SKILLOPT_SKILLS_ROOT}/alicloud-skillopt-ops}"
 source "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-paths.sh"
 source "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-core-lib.sh"
-```
+```markdown
 
 ## Multi-Skill Session Test
 
 ```bash
 cd "${ALIYUN_SKILLS_ROOT:-$(git rev-parse --show-toplevel)}"
 ./scripts/test-multi-skill-session.sh
-```
+```markdown
 
 ## Integration Test (shared framework)
 
@@ -57,4 +57,4 @@ cd "${ALIYUN_SKILLS_ROOT:-$(git rev-parse --show-toplevel)}"
 export ALIYUN_SKILLS_ROOT="$(git rev-parse --show-toplevel)"
 bash alicloud-runtime-harness-ops/test-harness-integration.sh
 # Expected: all [PASS], exit 0 (47 checks; subshell counter shows 20 — known quirk)
-```
+```text

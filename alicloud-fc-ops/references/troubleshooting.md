@@ -42,14 +42,17 @@ Follow this sequence when troubleshooting FC issues:
 ## Common Issues
 
 ### "Function execution timed out"
+
 - **Root cause**: execution time > configured timeout
 - **Fix**: Increase `timeout` setting; optimize code; check external API latency
 
 ### "Function ran out of memory"
+
 - **Root cause**: memory usage > configured `memorySize`
 - **Fix**: Increase `memorySize`; profile memory with CloudMonitor metrics
 
 ### "Cold start latency is high"
+
 - **Root cause**: Function init takes time (package download, runtime start, ENI setup)
 - **Fix**:
   - Provisioned instances eliminate cold start
@@ -58,10 +61,12 @@ Follow this sequence when troubleshooting FC issues:
   - Avoid VPC binding if not needed (+200-300ms ENI setup)
 
 ### "Function invocations are throttled"
+
 - **Root cause**: Account-level or function-level concurrency limit reached
 - **Fix**: Request concurrency quota increase; set provisioned instances; review `maxConcurrency`
 
 ### "Async invocation failed"
+
 - **Root cause**: Function error or DLQ misconfigured
 - **Fix**:
   - Check `maximumRetryAttempts` (set >= 2)

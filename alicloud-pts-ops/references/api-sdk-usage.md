@@ -6,7 +6,7 @@
 
 - **Service Endpoint:** `pts.{region}.aliyuncs.com`
 - **API Version:** 2020-10-20
-- **Documentation:** https://help.aliyun.com/zh/pts/performance-test-pts-3-0/developer-reference/api-pts-2020-10-20-overview
+- **Documentation:** <https://help.aliyun.com/zh/pts/performance-test-pts-3-0/developer-reference/api-pts-2020-10-20-overview>
 
 ## Go SDK
 

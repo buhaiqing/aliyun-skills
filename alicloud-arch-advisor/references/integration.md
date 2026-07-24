@@ -6,7 +6,7 @@
 
 ## 1. 集成架构
 
-```
+```text
                     alicloud-arch-advisor (咨询层)
                              │
                ┌─────────────┼─────────────┬──────────────┐
@@ -113,7 +113,7 @@
     ]
   }
 }
-```
+```markdown
 
 ### 4.2 WAF 评分 JSON
 
@@ -171,7 +171,7 @@
     }
   ]
 }
-```
+```markdown
 
 ---
 
@@ -226,7 +226,7 @@
 
 ## 局限性
 {标注数据源不可用部分 + confidence 级别}
-```
+```markdown
 
 ---
 
@@ -236,14 +236,14 @@
 
 每次委托调用必须记录：
 
-```
+```json
 [arch-advisor] → [topo-discovery] GetTopology
   TraceID: trace-20260607-001
   Request: {region: "cn-hangzhou", product: ["ECS", "RDS", "SLB"]}
   Response: {resources: [...], dependencies: [...]}
   Duration: 3.2s
   Status: success
-```
+```markdown
 
 ### 6.2 常见委托失败
 
@@ -270,7 +270,7 @@ aliyun advisor GetProductList
 
 # 验证 cms-ops
 aliyun cms DescribeMetricMetaList --Namespace acs_ecs_dashboard
-```
+```markdown
 
 ---
 

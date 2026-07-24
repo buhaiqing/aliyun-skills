@@ -5,8 +5,8 @@
 - **Product**: RDS
 - **API Version**: 2014-08-15
 - **Base Endpoint**: `rds.aliyuncs.com`
-- **Official Docs**: https://www.alibabacloud.com/help/en/rds
-- **OpenAPI Explorer**: https://api.aliyun.com/api/Rds/2014-08-15
+- **Official Docs**: <https://www.alibabacloud.com/help/en/rds>
+- **OpenAPI Explorer**: <https://api.aliyun.com/api/Rds/2014-08-15>
 
 ## SDK Operations Map
 

@@ -12,11 +12,13 @@ showing how to compose SLS with other Alibaba Cloud services.
 **Use case:** Collect logs from ECS instances via Logtail
 
 **Pattern:**
+
 1. Use `alicloud-ecs-ops` to verify ECS instance status
 2. Configure Logtail on ECS to collect logs to SLS
 3. Use SLS to query and analyze logs
 
 **Example:**
+
 ```bash
 # 1. Check ECS instance status
 aliyun ecs DescribeInstances --RegionId cn-hangzhou --InstanceIds '["i-xxx"]'
@@ -29,18 +31,20 @@ aliyun ecs RunCommand --RegionId cn-hangzhou --InstanceId "i-xxx" \
 aliyun sls POST /logstores --header "x-log-apiversion=0.9.0" \
   --body '{"logstore":"ecs-logs","ttl":30,"shardCount":2}' \
   --project "my-project"
-```
+```markdown
 
 ### SLS + SLB (alicloud-slb-ops)
 
 **Use case:** Collect SLB access logs to SLS for analysis
 
 **Pattern:**
+
 1. Use `alicloud-slb-ops` to enable SLB access logging
 2. Configure SLB to send logs to SLS
 3. Use SLS to analyze access patterns
 
 **Example:**
+
 ```bash
 # 1. Enable SLB access logging (via SLB API)
 # Refer to alicloud-slb-ops for detailed steps
@@ -57,11 +61,13 @@ aliyun sls GET /logstores/slb-access-logs/logs \
 **Use case:** Collect RDS slow query logs and error logs
 
 **Pattern:**
+
 1. Use `alicloud-rds-ops` to enable RDS log collection
 2. Configure RDS to send logs to SLS
 3. Use SLS to analyze database performance
 
 **Example:**
+
 ```bash
 # 1. Enable RDS slow query log collection (via RDS API)
 # Refer to alicloud-rds-ops for detailed steps
@@ -71,18 +77,20 @@ aliyun sls GET /logstores/rds-slow-logs/logs \
   --header "x-log-apiversion=0.9.0" \
   --query "from * | select query_time, lock_time, rows_examined limit 100" \
   --project "my-project"
-```
+```markdown
 
 ### SLS + Redis (alicloud-redis-ops)
 
 **Use case:** Collect Redis slow logs and access logs
 
 **Pattern:**
+
 1. Use `alicloud-redis-ops` to enable Redis log collection
 2. Configure Redis to send logs to SLS
 3. Use SLS to analyze Redis performance
 
 **Example:**
+
 ```bash
 # 1. Enable Redis slow log collection (via Redis API)
 # Refer to alicloud-redis-ops for detailed steps
@@ -99,10 +107,12 @@ aliyun sls GET /logstores/redis-slow-logs/logs \
 **Use case:** Query ActionTrail audit logs via SLS
 
 **Pattern:**
+
 1. Use `alicloud-actiontrail-ops` to configure ActionTrail to send logs to SLS
 2. Use SLS to query audit logs
 
 **Example:**
+
 ```bash
 # 1. Configure ActionTrail to send logs to SLS (via ActionTrail API)
 # Refer to alicloud-actiontrail-ops for detailed steps
@@ -112,18 +122,20 @@ aliyun sls GET /logstores/actiontrail-logs/logs \
   --header "x-log-apiversion=0.9.0" \
   --query "from * | select event_name, user_name, event_time limit 100" \
   --project "my-project"
-```
+```markdown
 
 ### SLS + CMS (alicloud-cms-ops)
 
 **Use case:** Monitor SLS metrics and create alerts
 
 **Pattern:**
+
 1. Use `alicloud-cms-ops` to monitor SLS metrics
 2. Create CloudMonitor alarms for SLS health
 3. Use SLS dashboards for log visualization
 
 **Example:**
+
 ```bash
 # 1. Query SLS metrics in CloudMonitor
 # Refer to alicloud-cms-ops for detailed steps
@@ -138,35 +150,38 @@ aliyun sls POST /dashboards --header "x-log-apiversion=0.9.0" \
 
 ### Pattern 1: Log Collection Pipeline
 
-```
+```text
 ECS/Containers → Logtail → SLS → Index → Query/Alerts
-```
+```markdown
 
 **Components:**
+
 - **Logtail:** Log collection agent (installed on ECS or configured in Kubernetes)
 - **SLS:** Log storage and indexing
 - **Query/Alerts:** Log analysis and notification
 
 ### Pattern 2: Multi-Source Aggregation
 
-```
+```text
 ECS Logs ─┐
 SLB Logs ─┼→ SLS → Unified Query → Dashboard
 RDS Logs ─┘
 ```
 
 **Components:**
+
 - **Multiple sources:** Different log types from various services
 - **SLS:** Centralized log storage
 - **Dashboard:** Unified visualization
 
 ### Pattern 3: Real-Time Processing
 
-```
+```text
 Logs → SLS → Consumer Group → Real-Time Processing → OSS/MaxCompute
-```
+```markdown
 
 **Components:**
+
 - **Consumer Group:** Real-time log consumption
 - **Processing:** Stream processing application
 - **Archive:** Long-term storage

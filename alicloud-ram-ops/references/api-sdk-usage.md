@@ -2,7 +2,7 @@
 
 ## OpenAPI
 
-- Spec: https://help.aliyun.com/zh/ram/developer-reference/api-ram-2015-05-01-overview
+- Spec: <https://help.aliyun.com/zh/ram/developer-reference/api-ram-2015-05-01-overview>
 - Base path: `https://ram.aliyuncs.com/`
 - API version: `2015-05-01`
 - Signature style: RPC

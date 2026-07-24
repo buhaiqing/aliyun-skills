@@ -10,7 +10,7 @@ and best practices for DNS operations.
 
 ### Public Authoritative DNS (Alidns)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    DNS Resolution Flow                   │
 ├─────────────────────────────────────────────────────────┤
@@ -23,6 +23,7 @@ and best practices for DNS operations.
 ```
 
 **Key Components:**
+
 - **Domain Management** — Add, verify, and manage domains
 - **Record Management** — CRUD for DNS records (A, AAAA, CNAME, MX, TXT, NS, SRV, CAA)
 - **Line-Based Routing** — ISP and geographic routing
@@ -34,7 +35,7 @@ and best practices for DNS operations.
 
 ### Private DNS (PrivateZone)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                  PrivateZone Architecture                │
 ├─────────────────────────────────────────────────────────┤
@@ -47,6 +48,7 @@ and best practices for DNS operations.
 ```
 
 **Key Components:**
+
 - **PrivateZone Management** — Internal DNS zones for VPC environments
 - **Record Management** — Internal DNS records within PrivateZone
 - **VPC Binding** — Associate PrivateZones with VPC instances
@@ -143,7 +145,7 @@ and best practices for DNS operations.
 
 ### GTM Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    GTM Architecture                      │
 ├─────────────────────────────────────────────────────────┤
@@ -168,7 +170,7 @@ and best practices for DNS operations.
 
 ### DNSSEC Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    DNSSEC Architecture                   │
 ├─────────────────────────────────────────────────────────┤
@@ -211,7 +213,7 @@ and best practices for DNS operations.
 
 ### Resolution Flow
 
-```
+```markdown
 1. User Query → Recursive Resolver
 2. Recursive Resolver → Root DNS Server
 3. Root Server → TLD DNS Server (.com, .cn, etc.)
@@ -263,7 +265,7 @@ and best practices for DNS operations.
 
 ### Pattern 1: Web Application
 
-```
+```text
 www.example.com → CNAME → example.slb.aliyuncs.com
 app.example.com → A → 1.2.3.4
 static.example.com → CNAME → example.com.kunlun.com
@@ -271,7 +273,7 @@ static.example.com → CNAME → example.com.kunlun.com
 
 ### Pattern 2: Internal Services
 
-```
+```text
 api.internal.example.com → A → 10.0.0.1
 db.internal.example.com → A → 10.0.0.2
 cache.internal.example.com → A → 10.0.0.3
@@ -279,7 +281,7 @@ cache.internal.example.com → A → 10.0.0.3
 
 ### Pattern 3: Disaster Recovery
 
-```
+```text
 Primary: www.example.com → A → 1.2.3.4 (weight 70)
 Backup: www.example.com → A → 5.6.7.8 (weight 30)
 GTM: Health checks with automatic failover
@@ -287,7 +289,7 @@ GTM: Health checks with automatic failover
 
 ### Pattern 4: Multi-Region
 
-```
+```text
 Asia: www.example.com → A → 1.2.3.4 (line: asia)
 Europe: www.example.com → A → 2.3.4.5 (line: europe)
 Americas: www.example.com → A → 3.4.5.6 (line: namerica)

@@ -12,7 +12,7 @@
 
 ## 1. 目录结构
 
-```
+```text
 alicloud-[product]-ops/
 └── assets/
     └── code-snippets/                # 仅 sdk-only 适用，dual-path/cli-first 不生成
@@ -25,9 +25,10 @@ alicloud-[product]-ops/
         ├── modify_<resource>.go
         ├── delete_<resource>.go
         └── ...                       # 其它 product-specific operation
-```
+```markdown
 
 **文件命名规范：**
+
 - `<verb>_<resource>.go`（如 `create_instance.go`、`describe_db_instances.go`）
 - 全部小写、下划线分隔
 - 动词需与 OpenAPI OperationId 的动词部分对齐（Create / Describe / Modify / Delete / List / Get / Start / Stop / Restart / Upgrade 等）
@@ -71,6 +72,7 @@ func NewClient(endpoint string) (*client.Client, error) {
 ```
 
 > **强制约束：**
+>
 > - **绝不**在代码中硬编码、打印或回显 `ALIBABA_CLOUD_ACCESS_KEY_SECRET`（遵守 credential-masking）
 > - Endpoint 优先用 `os.Getenv("ALIBABA_CLOUD_REGION_ID")` 拼接区域 endpoint
 > - Client 工厂签名统一为 `NewClient(endpoint string) (*client.Client, error)`
@@ -130,7 +132,7 @@ func main() {
     // $.DBInstanceId   -> 新建实例 ID
     // $.RequestId      -> 用于工单/日志关联
 }
-```
+```markdown
 
 **模板字段填写检查表：**
 
@@ -182,7 +184,7 @@ func atoiOr(s string, def int) int {
 
 // 用法
 DataNodeAmount: tea.Int32(int32(atoiOr(os.Getenv("DATA_NODE_AMOUNT"), 3))),
-```
+```text
 
 **Endpoint 也从 env 拼接**（单 region 产品例外）：
 
@@ -210,7 +212,7 @@ require (
     github.com/alibabacloud-go/tea v1.x.x
     github.com/alibabacloud-go/<product-package>/<version> v<x.x.x>   // 必须与 OpenAPI 版本一致
 )
-```
+```markdown
 
 > `go.sum` 由 `go mod tidy` 生成；不在模板中提供。
 > **SDK 包版本必须与 skill frontmatter 的 `api_profile` 字段一致**（如 `RDS 2014-08-15`
@@ -248,7 +250,7 @@ ALIBABA_CLOUD_REGION_ID=cn-hangzhou \
   go run create_<resource>.go \
     -DBInstanceClass rds.mysql.s1.large \
     -DBInstanceStorage 20
-```
+```bash
 
 > ⚠️ 上述 flag 是示例；实际参数请参考 [references/api-sdk-usage.md](../../references/api-sdk-usage.md)。
 
@@ -267,6 +269,7 @@ ALIBABA_CLOUD_REGION_ID=cn-hangzhou \
 2. **错误处理**：所有 snippet 遇到错误立即 `log.Fatalf` 退出，并保留 SDK 原始错误信息（含 RequestId）
 3. **可执行性**：每个 `.go` 都应能 `go run` 成功；不依赖其它 snippet 的内部函数（除 `main.go` 的 `NewClient`）
 4. **升级 SDK**：升级 package 版本时同步修改 `go.mod` 与 `references/integration.md`
+
 ```
 
 ---
@@ -284,10 +287,13 @@ ALIBABA_CLOUD_REGION_ID=cn-hangzhou \
    - 末尾注释 `// $.<JsonPath> -> <用途>` 列出关键输出路径
 4. **生成 `README.md`**，自动填入 Snippet 列表（基于上一步的元数据）
 5. **运行验证**（如沙箱可用）：
+
    ```bash
    cd assets/code-snippets
    go mod tidy && go vet ./...
-   ```
+
+```markdown
+
    若失败 → 修复 `go.mod` 版本号或 import 路径，重试
 
 ---

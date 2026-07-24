@@ -16,6 +16,7 @@ aliyun actiontrail <OperationName> --Parameter1 value1 --Parameter2 value2
 - Use `jq` for complex JSON transformations after `aliyun` commands
 - Use `[]?` to safely handle empty/null arrays: `.TrailList[]?`
 - Example:
+
 ```bash
 aliyun actiontrail DescribeTrails | jq '{trails: [.TrailList[]? | {name: .TrailName, bucket: .BucketName}]}'
 ```

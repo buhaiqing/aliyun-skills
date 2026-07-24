@@ -47,7 +47,7 @@
 
 ### 1.2 自愈决策树原则
 
-```
+```json
 [异常发生]
     │
     ├── Step 1: 错误分类
@@ -67,7 +67,7 @@
     │
     └── Step 6: 用户指导
         提供明确的错误信息和修复建议
-```
+```markdown
 
 ---
 
@@ -127,14 +127,14 @@
 ```bash
 # 预检1: 检查网络连通性
 echo "=== Pre-flight Check: Network Connectivity ==="
-if ! curl -fsSL --connect-timeout 5 https://aliyuncli.alicdn.com/ > /dev/null 2>&1; then
+if ! curl -fsSL --connect-timeout 5 <https://aliyuncli.alicdn.com/> > /dev/null 2>&1; then
     echo "⚠️  Network connectivity check failed"
     echo "Attempting alternative CDN endpoints..."
     
     # 尝试备用CDN
     ALT_CDN_ENDPOINTS=(
-        "https://cli.aliyun.com/"
-        "https://aliyun-cli.oss-cn-hangzhou.aliyuncs.com/"
+        "<https://cli.aliyun.com>/"
+        "<https://aliyun-cli.oss-cn-hangzhou.aliyuncs.com>/"
     )
     
     for endpoint in "${ALT_CDN_ENDPOINTS[@]}"; do
@@ -232,7 +232,7 @@ else
 fi
 
 echo "✅ System compatible: $OS $ARCH_SUFFIX"
-```
+```text
 
 #### Phase 2: 智能下载阶段 (增强)
 
@@ -242,9 +242,9 @@ download_aliyun_cli() {
     local attempt=1
     local max_attempts=5
     local mirrors=(
-        "https://aliyuncli.alicdn.com/install.sh"
-        "https://cli.aliyun.com/install.sh"
-        "https://aliyun-cli.oss-cn-hangzhou.aliyuncs.com/install.sh"
+        "<https://aliyuncli.alicdn.com/install.s>h"
+        "<https://cli.aliyun.com/install.s>h"
+        "<https://aliyun-cli.oss-cn-hangzhou.aliyuncs.com/install.s>h"
     )
     
     while [ $attempt -le $max_attempts ]; do
@@ -297,7 +297,7 @@ if ! download_aliyun_cli; then
     echo "Proceeding to JIT Go SDK fallback path..."
     proceed_to_go_sdk_fallback
 fi
-```
+```text
 
 #### Phase 3: 安装执行阶段 (增强)
 
@@ -320,7 +320,7 @@ else
     echo "Self-healing: Attempting manual installation..."
     
     # 手动下载binary
-    BINARY_URL="https://aliyuncli.alicdn.com/aliyun-cli-${OS}-${ARCH_SUFFIX}-latest.tgz"
+    BINARY_URL="<https://aliyuncli.alicdn.com/aliyun-cli-${OS}-${ARCH_SUFFIX}-latest.tg>z"
     
     if curl -fsSL "$BINARY_URL" -o /tmp/aliyun-cli.tgz; then
         # 解压
@@ -345,7 +345,7 @@ else
         proceed_to_go_sdk_fallback
     fi
 fi
-```
+```text
 
 #### Phase 4: 安装验证阶段 (增强)
 
@@ -410,7 +410,7 @@ else
     rm -f "$INSTALL_PATH/aliyun"
     proceed_to_cli_install_retry
 fi
-```
+```markdown
 
 ### 3.2 Go Runtime JIT下载增强自愈流程
 
@@ -452,10 +452,10 @@ bootstrap_go_runtime_enhanced() {
     
     # 镜像源列表
     GO_MIRRORS=(
-        "https://go.dev/dl"
-        "https://dl.google.com/go"
-        "https://mirrors.aliyun.com/golang"  # 国内镜像
-        "https://golang.google.cn/dl"        # 国内镜像
+        "<https://go.dev/d>l"
+        "<https://dl.google.com/g>o"
+        "<https://mirrors.aliyun.com/golan>g"  # 国内镜像
+        "<https://golang.google.cn/d>l"        # 国内镜像
     )
     
     # 下载尝试
@@ -485,7 +485,7 @@ bootstrap_go_runtime_enhanced() {
                             export GOPATH="/tmp/go-workspace"
                             export GOCACHE="/tmp/go-cache"
                             export GOMODCACHE="/tmp/go-modcache"
-                            export GOPROXY="https://goproxy.cn,direct"
+                            export GOPROXY="<https://goproxy.cn,direc>t"
                             
                             # 验证Go版本
                             ACTUAL_VERSION=$(go version | awk '{print $3}')
@@ -575,9 +575,9 @@ download_sdk_dependencies_enhanced() {
     
     # GOPROXY镜像列表
     GOPROXY_MIRRORS=(
-        "https://goproxy.cn,direct"
-        "https://goproxy.io,direct"
-        "https://proxy.golang.org,direct"
+        "<https://goproxy.cn,direc>t"
+        "<https://goproxy.io,direc>t"
+        "<https://proxy.golang.org,direc>t"
         "direct"
     )
     
@@ -615,7 +615,7 @@ download_sdk_dependencies_enhanced() {
     ERROR_CODE="DEP_NET_TIMEOUT"
     return 1
 }
-```
+```markdown
 
 ---
 
@@ -623,7 +623,7 @@ download_sdk_dependencies_enhanced() {
 
 ### 4.1 降级路径决策树
 
-```
+```json
 [CLI安装失败]
     │
     ├── 尝试自愈(最多5次)
@@ -649,7 +649,7 @@ download_sdk_dependencies_enhanced() {
     │       │
     │       └── 降级路径3: 用户手动修复
     │           提供详细的错误信息和修复建议
-```
+```markdown
 
 ### 4.2 用户指导模板
 
@@ -673,7 +673,7 @@ download_sdk_dependencies_enhanced() {
 #### Option 1: Manual Installation (Recommended)
 ```bash
 # Step 1: Download CLI manually
-curl -fsSL https://aliyuncli.alicdn.com/aliyun-cli-latest.tgz -o /tmp/aliyun-cli.tgz
+curl -fsSL <https://aliyuncli.alicdn.com/aliyun-cli-latest.tgz> -o /tmp/aliyun-cli.tgz
 
 # Step 2: Extract
 tar -xzf /tmp/aliyun-cli.tgz -C /tmp
@@ -684,19 +684,22 @@ sudo chmod +x /usr/local/bin/aliyun
 
 # Step 4: Verify
 aliyun version
-```
+```text
 
 #### Option 2: Use JIT Go SDK Mode
+
 ```bash
 # The Agent will automatically use Go SDK fallback
 # Ensure Go runtime is available or will be JIT downloaded
-```
+```markdown
 
 #### Option 3: Use Alibaba Cloud Console
-- Console URL: https://ecs.console.aliyun.com/
+
+- Console URL: <https://ecs.console.aliyun.com/>
 - Manual operation guide: {{console_guide_url}}
 
 ### Diagnostic Information
+
 - **OS:** {{os}}
 - **Architecture:** {{arch}}
 - **Network:** {{network_status}}
@@ -705,11 +708,14 @@ aliyun version
 - **Request ID:** {{request_id}} (for support escalation)
 
 ### Support Escalation
+
 If the issue persists after following recommended actions:
+
 1. Collect diagnostic information above
-2. Create a support ticket: https://workorder.console.aliyun.com/
+2. Create a support ticket: <https://workorder.console.aliyun.com/>
 3. Include Request ID: {{request_id}}
-```
+
+```markdown
 
 ---
 
@@ -780,7 +786,7 @@ health_check_aliyun_cli() {
         return 1
     fi
 }
-```
+```markdown
 
 ### 5.2 Go Runtime健康检查
 
@@ -841,7 +847,7 @@ health_check_go_runtime() {
         return 1
     fi
 }
-```
+```markdown
 
 ---
 
@@ -877,7 +883,7 @@ log_self_healing_event() {
 log_self_healing_event "CLI_INSTALL" "NET_TIMEOUT" "MIRROR_SWITCH" "SUCCESS" "15s"
 log_self_healing_event "GO_DOWNLOAD" "GO_DOWNLOAD_FAIL" "VERSION_FALLBACK" "SUCCESS" "45s"
 log_self_healing_event "DEP_DOWNLOAD" "DEP_NET_TIMEOUT" "PROXY_SWITCH" "FAIL" "120s"
-```
+```markdown
 
 ---
 

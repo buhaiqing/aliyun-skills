@@ -38,27 +38,31 @@ The execution environment follows a **CLI-first with JIT Go SDK fallback** strat
 The official installer (`install.sh`) automatically detects OS (`uname`) and architecture (`uname -m`) and downloads the correct binary.
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
+/bin/bash -c "$(curl -fsSL <https://aliyuncli.alicdn.com/install.s>h)"
 ```
 
 Or download and run manually:
+
 ```bash
-curl -fsSL https://aliyuncli.alicdn.com/install.sh -o /tmp/install-aliyun.sh
+curl -fsSL <https://aliyuncli.alicdn.com/install.sh> -o /tmp/install-aliyun.sh
 bash /tmp/install-aliyun.sh
 ```
 
 The installer downloads from the Alibaba Cloud CDN:
+
 - **macOS**: `aliyun-cli-macosx-latest-universal.tgz` (Intel + Apple Silicon)
 - **Linux AMD64**: `aliyun-cli-linux-latest-amd64.tgz`
 - **Linux ARM64**: `aliyun-cli-linux-latest-arm64.tgz` (ARM/Graviton instances)
 - Binary is installed to `/usr/local/bin/aliyun`
 
 **Alternative — Homebrew (macOS only):**
+
 ```bash
 brew install aliyun-cli
 ```
 
 **Verification after bootstrap:**
+
 ```bash
 aliyun version
 ```
@@ -66,6 +70,7 @@ aliyun version
 ### Self-Healing Installation
 
 See [enhanced-self-healing-framework.md](enhanced-self-healing-framework.md) for complete self-healing installation procedures including:
+
 1. Pre-flight checks (network, disk, permissions, system compatibility)
 2. Intelligent error classification
 3. Multi-path self-healing (mirror switch, timeout adjustment, cache clear)
@@ -81,6 +86,7 @@ When `aliyun` CLI is unavailable or does not support a specific API, **JIT build
 ### Step 3.1: Bootstrap Go Runtime
 
 **Check existing Go runtime:**
+
 ```bash
 if command -v go &> /dev/null; then
     GO_VERSION=$(go version | awk '{print $3}')
@@ -93,6 +99,7 @@ fi
 ```
 
 **JIT download Go 1.24+ (auto-detects OS and architecture):**
+
 ```bash
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
@@ -100,20 +107,21 @@ ARCH=$(uname -m)
 [ "$ARCH" = "aarch64" ] && ARCH="arm64"
 
 mkdir -p /tmp/go-runtime
-curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
+curl -fsSL "<https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.g>z" | tar -xz -C /tmp/go-runtime
 
 export PATH="/tmp/go-runtime/go/bin:$PATH"
 export GOPATH="/tmp/go-workspace"
 export GOCACHE="/tmp/go-cache"
 export GOMODCACHE="/tmp/go-modcache"
-export GOPROXY="https://goproxy.cn,direct"
+export GOPROXY="<https://goproxy.cn,direc>t"
 ```
 
 **Go version strategy:**
+
 - **Primary:** Go 1.24+ (latest stable, optimal performance)
 - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
 - **Mirrors:** `https://go.dev/dl`, `https://dl.google.com/go`, `https://mirrors.aliyun.com/golang`, `https://golang.google.cn/dl`
-- **Module proxy:** `GOPROXY=https://goproxy.cn,direct` (China CDN mirror)
+- **Module proxy:** `GOPROXY=<https://goproxy.cn,direct`> (China CDN mirror)
 
 ### Step 3.2: Initialize Go Workspace
 
@@ -136,17 +144,18 @@ go get github.com/alibabacloud-go/ecs-20140526/v4/client
 ```
 
 **Multi-GOPROXY strategy (self-healing):**
+
 ```bash
 GOPROXY_MIRRORS=(
-    "https://goproxy.cn,direct"      # China CDN (primary)
-    "https://goproxy.io,direct"      # Alternative China CDN
-    "https://proxy.golang.org,direct" # Official proxy
+    "<https://goproxy.cn,direc>t"      # China CDN (primary)
+    "<https://goproxy.io,direc>t"      # Alternative China CDN
+    "<https://proxy.golang.org,direc>t" # Official proxy
     "direct"                          # Direct download (fallback)
 )
 ```
 
 > **SDK package naming:** `github.com/alibabacloud-go/<product>-<YYYYMMDD>/v<version>/client`
-> Find package names at: https://github.com/alibabacloud-go or SDK Center
+> Find package names at: <https://github.com/alibabacloud-go> or SDK Center
 
 ### Step 3.4: Generate and Execute SDK Script
 
@@ -190,6 +199,7 @@ func main() {
 ```
 
 Execute:
+
 ```bash
 cd /tmp/aliyun-sdk-workspace
 go run ./main.go
@@ -264,6 +274,7 @@ ALIBABA_CLOUD_REGION_ID=cn-hangzhou
 ```
 
 **Safety rules:**
+
 - **NEVER** commit `.env` files to version control
 - **NEVER** write `.env` values into generated skill documents
 - Generated skills continue using `{{env.*}}` placeholders
@@ -286,6 +297,7 @@ All generated skills MUST enforce these credential security rules across **every
 | **Credential verification** | Verify existence only; never `echo` or print the value | `✅ ALIBABA_CLOUD_ACCESS_KEY_SECRET is set` |
 
 **Masking patterns (use one of the following):**
+
 - `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>`
 - `AccessKeySecret=***`
 - `"accessKeySecret": "***"`
@@ -305,6 +317,7 @@ All generated skills MUST enforce these credential security rules across **every
 | 4 (lowest) | Default profile | `default` profile from config file |
 
 **Supported env var aliases (in fallback order):**
+
 - **AK**: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABACLOUD_ACCESS_KEY_ID`, `ALICLOUD_ACCESS_KEY_ID`, `ACCESS_KEY_ID`
 - **Secret**: `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `ALIBABACLOUD_ACCESS_KEY_SECRET`, `ALICLOUD_ACCESS_KEY_SECRET`, `ACCESS_KEY_SECRET`
 - **Region**: `ALIBABA_CLOUD_REGION_ID`, `ALIBABACLOUD_REGION_ID`, `ALICLOUD_REGION_ID`, `REGION_ID`, `REGION`
@@ -346,6 +359,7 @@ go run /tmp/aliyun-sdk-workspace/verify.go
 > **SECURITY:** The verification code above **ONLY checks for existence** of credentials. **NEVER** log, print, or expose secret values. Use masked placeholders for any credential status output.
 
 If all verification paths fail:
+
 - HALT with clear message: "Credentials invalid or environment not set up"
 - Suggest: Check `.env` file or run `aliyun configure`
 

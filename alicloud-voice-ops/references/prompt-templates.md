@@ -50,6 +50,7 @@ You are the Generator in a GCL for Alibaba Cloud Voice Messaging (dyvmsapi).
 - All CLI via `./scripts/voice-skillopt-wrapper.sh`.
 - All `{{user.*}}` resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text

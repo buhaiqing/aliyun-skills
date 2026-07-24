@@ -62,6 +62,7 @@ add a resolver helper, `import yaml`, and two keys at the two build sites.
 ## 3. Spec — `[FINAL_SPEC]`
 
 ### 3.1 New module-level import
+
 ```python
 import yaml  # added near line 104-111 (alongside re/subprocess/json)
 ```
@@ -69,6 +70,7 @@ import yaml  # added near line 104-111 (alongside re/subprocess/json)
 ### 3.2 New helper `resolve_skill_version`
 
 Signature:
+
 ```python
 def resolve_skill_version(
     skill: str, skills_root: Path | None = None
@@ -84,6 +86,7 @@ def resolve_skill_version(
 ```
 
 Behavior (mirror jdcloud):
+
 1. `root = skills_root or resolve_skills_root()`
 2. `path = root / skill / "SKILL.md"`. If missing → go to git fallback.
 3. Read text; extract frontmatter between leading `---` lines; `yaml.safe_load`.
@@ -100,6 +103,7 @@ or adjacent to `_resolve_default_audit_dir`).
 ### 3.3 Wire into trace build sites
 
 At **both** build sites, insert right after the existing `rubric_version` key:
+
 ```python
 skill_version, version_source = resolve_skill_version(skill, skills_root)
 trace = {
@@ -111,11 +115,13 @@ trace = {
     ...
 }
 ```
+
 Both sites already have `skill` and `skills_root` in scope (lines 2209 / 2773).
 If `skills_root` is `None` at a site, `resolve_skill_version` falls back to
 `resolve_skills_root()` internally — no extra plumbing required.
 
 ### 3.4 Persistence untouched
+
 `persist_trace` already `json.dumps(trace)` — the two new keys serialize
 automatically. No change needed there.
 
@@ -173,12 +179,15 @@ Proposed in `alicloud-gcl-runner-ops/tests/` (or alongside existing tests):
 ## 7. Verification
 
 - Run a real GCL run against `alicloud-ecs-ops`:
+
   ```bash
   python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py --skill alicloud-ecs-ops ...
   ```
+
 - Locate the generated file:
   `alicloud-gcl-runner-ops/audit-results/gcl-trace-*.json`
 - Assert both fields are present and sourced correctly:
+
   ```bash
   python3 - <<'PY'
   import json, glob
@@ -189,6 +198,7 @@ Proposed in `alicloud-gcl-runner-ops/tests/` (or alongside existing tests):
   print("OK", t["skill_version"], t["version_source"])
   PY
   ```
+
 - Confirm `rubric_version` still present and unchanged in value.
 - `ruff check alicloud-gcl-runner-ops/scripts/gcl_runner.py` → clean.
 - Full test suite passes (incl. the 4 new tests).
@@ -198,6 +208,7 @@ Proposed in `alicloud-gcl-runner-ops/tests/` (or alongside existing tests):
 ## 12. Execution Results (2026-07-23)
 
 ### Implementation shipped
+
 - `alicloud-gcl-runner-ops/scripts/gcl_runner.py`:
   - Added `import yaml` at module level.
   - Added `_FRONTMATTER_END` regex, `_find_frontmatter()` (skips leading HTML
@@ -210,6 +221,7 @@ Proposed in `alicloud-gcl-runner-ops/tests/` (or alongside existing tests):
 - `gcl_runner_test.py`: added `ResolveSkillVersionTests` (4 cases).
 
 ### Two skills had INVALID frontmatter YAML — fixed
+
 - `alicloud-dms-ops/SKILL.md`: `description:`/`compatibility:`/`cli_support_evidence:`
   folded scalars and the `environment:` list were mis-indented (content at column 1
   instead of indented). Re-indented; now parses, `metadata.version = "1.3.0"`.
@@ -218,6 +230,7 @@ Proposed in `alicloud-gcl-runner-ops/tests/` (or alongside existing tests):
   items and added a `metadata:` block with `version: "1.0.0"`.
 
 ### Verification
+
 - `resolve_skill_version` over all 45 `alicloud-*-ops` skills: **45/45 resolve
   `skill_md`** (0 git fallbacks).
 - Real `gcl_runner.py --skill alicloud-ecs-ops ...` → trace contains

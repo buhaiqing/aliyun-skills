@@ -14,9 +14,10 @@ Use `DescribeTrailDeliveryMetricData` to monitor trail delivery health:
 
 ```bash
 aliyun actiontrail DescribeTrailDeliveryMetricData --TrailName {{user.trail_name}}
-```
+```markdown
 
 Key metrics:
+
 - **Delivery success rate**: Percentage of events successfully delivered
 - **Delivery latency**: Time between event occurrence and delivery
 - **Event volume**: Number of events delivered per time period
@@ -28,9 +29,10 @@ Regularly check trail status to ensure logging is active:
 
 ```bash
 aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
-```
+```markdown
 
 Key indicators:
+
 - `IsLogging`: Whether the trail is actively delivering events
 - `LatestDeliveryTime`: Timestamp of the most recent successful delivery
 - `LatestNotificationTime`: Timestamp of the most recent notification
@@ -51,19 +53,22 @@ When ActionTrail delivers events to SLS, you can set up alerts:
 ### Example SLS Alert Queries
 
 **Detect root account login:**
+
 ```sql
 * | SELECT count(*) as login_count WHERE eventType = 'ConsoleSignin' AND userIdentity.type = 'root-account'
-```
+```text
 
 **Detect failed API calls:**
+
 ```sql
 * | SELECT eventName, count(*) as error_count WHERE errorMessage != 'success' GROUP BY eventName
-```
+```text
 
 **Detect resource deletion:**
+
 ```sql
 * | SELECT eventName, resourceName, userIdentity.userName WHERE eventName LIKE 'Delete%'
-```
+```markdown
 
 ## ActionTrail Governance Metrics
 
@@ -71,9 +76,10 @@ Use `GetGovernanceMetrics` to assess your ActionTrail configuration maturity:
 
 ```bash
 aliyun actiontrail GetGovernanceMetrics
-```
+```markdown
 
 This API returns metrics on:
+
 - Whether trails are configured
 - Whether multi-region trails exist
 - Whether SLS delivery is configured
@@ -107,7 +113,7 @@ aliyun actiontrail EnableInsight --InsightType AkInsight
 aliyun actiontrail EnableInsight --InsightType PolicyChangeInsight
 aliyun actiontrail EnableInsight --InsightType PasswordChangeInsight
 aliyun actiontrail EnableInsight --InsightType TrailConcealmentInsight
-```
+```markdown
 
 ### Query Insight Events
 
@@ -120,7 +126,7 @@ aliyun actiontrail LookupInsightEvents \
   --InsightType ApiCallRateInsight \
   --StartTime "2026-05-01T00:00:00Z" \
   --EndTime "2026-05-15T23:59:59Z"
-```
+```markdown
 
 ## Dashboards
 
@@ -174,7 +180,7 @@ aliyun actiontrail LookupInsightEvents \
 
 ## Alert-Driven Diagnostic Decision Tree
 
-```
+```json
 [ActionTrail Alert/Insight Event]
     │
     ├── Step 1: Verify event — Check Insight event details and timestamp
@@ -190,4 +196,4 @@ aliyun actiontrail LookupInsightEvents \
     │       └── If trail disabled → Re-enable trail immediately
     │
     └── Step 5: Generate security incident report
-```
+```text

@@ -16,7 +16,7 @@
 
 ## File Structure (新增/修改 by Plan 1)
 
-```
+```text
 alicloud-topo-discovery/
 ├── SKILL.md                              [MODIFY] --assume-role, export-hcl entry
 ├── references/
@@ -48,7 +48,7 @@ alicloud-topo-discovery/
     ├── conftest.py
     ├── fixtures/{vpc,vswitch,ecs,rds,slb}.json
     └── test_{manifest_validator,manifest_builder,sensitive_masker,provider_locker,field_mapper,dependency_inference,export_hcl,baseline_local,sts_helper}.py
-```
+```markdown
 
 **Repo-level:** `pyproject.toml` [MODIFY: add dev deps], `pytest.ini` [NEW]
 

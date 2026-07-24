@@ -47,6 +47,7 @@ checks, **dual-path execution** (official **`aliyun` CLI** primary, **JIT Go SDK
 fallback), response validation, and failure recovery.
 
 **Execution surface — CLI-primary with JIT Go SDK fallback:**
+
 - **Primary:** `aliyun cs <Operation>` — static Go binary, covers cluster CRUD,
   node pool operations, and scaling.
 - **Fallback:** JIT Go SDK (`github.com/alibabacloud-go/cs-20151215/v4/client`)
@@ -55,6 +56,7 @@ fallback), response validation, and failure recovery.
 - **Console click-paths** are not an agent execution surface in `SKILL.md`.
 
 **Core resources managed by this skill (ManagedKubernetes / Kubernetes only):**
+
 - **Cluster** — the Kubernetes control plane and managed infrastructure.
 - **Node Pool** — homogeneous groups of worker nodes with shared configuration.
 - **Addon** — cluster components (e.g., ingress, metrics-server, logtail).
@@ -186,7 +188,7 @@ Every operation: **Pre-flight → Execute (CLI primary / SDK fallback) → Valid
 
 ### Operation: Create Cluster
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Cluster)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -213,7 +215,7 @@ aliyun cs POST /clusters \
     \"service_cidr\": \"172.16.0.0/16\",
     \"pod_cidr\": \"10.0.0.0/8\"
   }"
-```
+```markdown
 
 > **Note:** ACK CreateCluster uses a **POST /clusters** REST-style API. The
 > `aliyun` CLI supports this via `POST /clusters` or `aliyun cs CreateCluster`
@@ -245,7 +247,7 @@ When CLI does not support a specific cluster parameter or new API version:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（CreateCluster → running, 60×30s）
-```
+```markdown
 
 3. On success, report `cluster_id`, `state`, and `api_server_endpoint`.
 4. On terminal failure (`failed`, `deleting`, timeout), go to **Failure Recovery**.
@@ -271,7 +273,7 @@ aliyun cs GET /clusters/{{user.cluster_id}}
 
 # List all clusters in region
 aliyun cs GET /clusters --RegionId {{user.region}}
-```
+```markdown
 
 #### Present to User
 
@@ -310,9 +312,9 @@ aliyun cs POST /clusters/{{user.cluster_id}}/nodes \
 #   --ClusterId {{user.cluster_id}} \
 #   --Count {{user.node_count}} \
 #   --VswitchIds {{user.vswitch_ids}}
-```
+```markdown
 
-#### Validation
+#### Validation (Scale Out Cluster (Add Nodes))
 
 Poll `DescribeClusterNodes` until new nodes reach `Ready` state (or ECS
 `Running` and Kubernetes node Ready via `kubectl` if kubeconfig available).
@@ -339,9 +341,9 @@ aliyun cs POST /clusters/{{user.cluster_id}}/nodepools \
       \"max_size\": {{user.max_size}}
     }
   }"
-```
+```markdown
 
-#### Validation
+#### Validation (Create Node Pool)
 
 Extract `{{output.node_pool_id}}` from `$.nodepool_id`. Poll
 `GET /clusters/{{user.cluster_id}}/nodepools/{{output.node_pool_id}}` until
@@ -364,9 +366,9 @@ aliyun cs PUT /clusters/{{user.cluster_id}}/upgrade \
     \"version\": \"{{user.target_version}}\",
     \"upgrade_mode\": \"standard\"
   }"
-```
+```markdown
 
-#### Validation
+#### Validation (Upgrade Cluster)
 
 Poll `GET /clusters/{{user.cluster_id}}` until `state == "running"` and
 `current_version == {{user.target_version}}`. Max wait: 3600s.
@@ -382,7 +384,7 @@ aliyun cs GET /k8s/{{user.cluster_id}}/user_config
 # Internal endpoint kubeconfig (VPC-only access)
 aliyun cs GET /k8s/{{user.cluster_id}}/user_config \
   --PrivateIpAddress true
-```
+```markdown
 
 #### Present to User
 
@@ -392,7 +394,7 @@ Save output to `~/.kube/config` or custom path:
 aliyun cs GET /k8s/{{user.cluster_id}}/user_config > ~/.kube/ack-{{user.cluster_id}}
 export KUBECONFIG=~/.kube/ack-{{user.cluster_id}}
 kubectl get nodes
-```
+```markdown
 
 ---
 
@@ -420,9 +422,9 @@ aliyun cs PUT /clusters/{{user.cluster_id}}/nodepools/{{user.node_pool_id}} \
 # Enable auto-scaling (if supported)
 # aliyun cs PUT /clusters/{id}/nodepools/{pool_id} \
 #   --body "{\"auto_scaling\": {\"enable\": true, \"min_size\": 1, \"max_size\": 10}}"
-```
+```markdown
 
-#### Validation
+#### Validation (Modify Node Pool)
 
 Poll `GET /clusters/{id}/nodepools/{pool_id}` until node count matches desired
 size and `status.state == "active"`.
@@ -443,7 +445,7 @@ size and `status.state == "active"`.
 
 ```bash
 aliyun cs DELETE /clusters/{{user.cluster_id}}/nodepools/{{user.node_pool_id}}
-```
+```markdown
 
 #### Post-execution Validation
 
@@ -481,7 +483,7 @@ aliyun cs GET /clusters/{{user.cluster_id}}/addons
 #     \"name\": \"{{user.addon_name}}\",
 #     \"version\": \"{{user.addon_version}}\"
 #   }"
-```
+```markdown
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
@@ -505,7 +507,7 @@ aliyun cs DELETE /clusters/{{user.cluster_id}}
 
 # Force delete (when resources are still bound; use with caution)
 # aliyun cs DELETE /clusters/{{user.cluster_id}} --force true
-```
+```markdown
 
 > **Note:** Force delete may leave orphaned SLBs, disks, or PVCs. Prefer
 > cleaning up resources first.
@@ -541,7 +543,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 #### 诊断流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Pod 异常诊断流程                          │
 ├─────────────────────────────────────────────────────────────┤
@@ -567,7 +569,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 │  ├── 验证 Pod 状态恢复                                       │
 │  └── 记录修复结果                                            │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 #### 常见 Pod 异常诊断表
 
@@ -589,7 +591,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 #### 诊断流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Service 异常诊断流程                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -613,7 +615,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 │  ├── 测试 Service DNS 解析                                   │
 │  └── 检查 Pod DNS 配置                                       │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 #### 常见 Service 异常诊断表
 
@@ -634,7 +636,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 #### 诊断流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Ingress 异常诊断流程                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -658,7 +660,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 │  ├── 检查健康检查配置                                        │
 │  └── 委托 alicloud-slb-ops 处理                              │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 #### 常见 Ingress 异常诊断表
 
@@ -679,7 +681,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 #### 诊断流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    PVC/PV 异常诊断流程                        │
 ├─────────────────────────────────────────────────────────────┤
@@ -703,7 +705,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 │  ├── 检查云盘状态和容量                                      │
 │  └── 委托 alicloud-ecs-ops 处理云盘问题                      │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 #### 常见 PVC/PV 异常诊断表
 
@@ -731,7 +733,7 @@ Poll `GET /clusters/{{user.cluster_id}}` until **404** or `state == "deleted"`
 
 #### 委托示例
 
-```
+```markdown
 # 节点 ECS 异常委托
 节点 i-ecs-xxx 状态异常，请委托 alicloud-ecs-ops 检查：
 - InstanceId: i-ecs-xxx
@@ -743,7 +745,7 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 - LoadBalancerId: lb-xxx
 - 异常现象: 后端服务器状态异常
 - 背景: Ingress 返回 502，Service 正常
-```
+```markdown
 
 ---
 
@@ -752,11 +754,12 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 在执行任何需要 kubectl 访问的巡检或诊断操作前，**必须**先执行前置检查，确认集群访问方式和权限。
 
 > **为什么需要前置检查？**
+>
 > - 企业 ACK 集群默认只有内网端点（安全最佳实践）
 > - 子账号默认没有集群 RBAC 权限（最小权限原则）
 > - 避免因网络/权限问题导致巡检中断
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Inspection Pre-flight Check（巡检前置检查）)
 
 | 检查项 | 方法 | 预期结果 | 失败处理 |
 |--------|------|---------|---------|
@@ -807,11 +810,13 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary):
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
    ```
 
 2. **Bootstrap Go runtime** (JIT SDK fallback): See [integration.md](references/integration.md) for full self-healing install. Quick start:
+
    ```bash
    if ! command -v go &> /dev/null; then
        OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m)
@@ -823,14 +828,17 @@ Ingress 关联的 SLB lb-xxx 后端健康检查失败，请委托 alicloud-slb-o
    ```
 
 3. **Configure Credentials**:
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+
    > **IMPORTANT:** When outputting to console, use masking: `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`.
 
 4. **Verify**:
+
    ```bash
    aliyun cs GET /clusters
    ```
@@ -921,6 +929,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Most-scrutinized | `DeleteCluster` (irreversible; backup kubeconfig + check DeletionProtection), `DeleteNodePool` (last pool with critical workloads) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for ack-ops.
 
 ---

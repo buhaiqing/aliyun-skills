@@ -142,7 +142,7 @@
 
 ### 5.1 Instance Not Starting
 
-```
+```text
 Instance stuck in "Activating"
 │
 ├── Check VPC/VSwitch
@@ -165,7 +165,7 @@ Instance stuck in "Activating"
 
 ### 5.2 Cluster Health Degraded
 
-```
+```text
 Cluster health != green
 │
 ├── Cluster yellow (unassigned replicas)
@@ -193,7 +193,7 @@ Cluster health != green
 
 ### 6.1 Instance Creation Checklist
 
-```
+```text
 Pre-flight:
 □ VPC created in target region
 □ VSwitch created in each zone (multi-zone)
@@ -219,7 +219,7 @@ Post-creation:
 
 ### 6.2 Upgrade Checklist
 
-```
+```text
 Pre-upgrade:
 □ Current version documented
 □ Target version validated (supported)

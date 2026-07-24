@@ -15,6 +15,7 @@ defined in
 [`alicloud-skill-generator/references/enhanced-self-healing-framework.md`](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
+
 - **Pre-flight Checks:** Network, disk, permissions, system compatibility
 - **Intelligent Error Classification:** Network / permission / resource / configuration
 - **Multi-Path Self-Healing:** Multiple recovery strategies per error type
@@ -26,6 +27,7 @@ defined in
 The Agent MUST use enhanced self-healing for Go runtime JIT download:
 
 **Multi-Version & Multi-Mirror Strategy:**
+
 - **Primary:** Go 1.24+ (latest stable)
 - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
 - **Mirrors:** Official + China CDN mirrors (4 mirrors)
@@ -41,6 +43,7 @@ The Agent MUST use enhanced self-healing for Go runtime JIT download:
 | PATH setup fail | Use absolute path, verify binary exists | 1 |
 
 **Health Check:**
+
 - Go binary exists and executable
 - Version ≥ go1.21
 - Workspace initialized
@@ -51,6 +54,7 @@ For detailed implementation, see the meta-skill framework doc Section 3.2.
 ### JIT Go SDK Workflow for ASK
 
 1. **Initialize workspace:**
+
    ```bash
    mkdir -p /tmp/aliyun-sdk-workspace
    cd /tmp/aliyun-sdk-workspace
@@ -58,6 +62,7 @@ For detailed implementation, see the meta-skill framework doc Section 3.2.
    ```
 
 2. **Get dependencies:**
+
    ```bash
    export GOPROXY="https://goproxy.cn,direct"
    go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -69,6 +74,7 @@ For detailed implementation, see the meta-skill framework doc Section 3.2.
 3. **Generate script** (Agent dynamically creates operation-specific .go file)
 
 4. **Execute:**
+
    ```bash
    go run ./main.go
    ```
@@ -119,7 +125,7 @@ aliyun cms PutMetricAlarm \
   --Period 300 \
   --EvaluationCount 3 \
   --ContactGroups '["{{user.contact_group}}"]'
-```
+```markdown
 
 ### Alarm-to-Diagnosis Delegation
 
@@ -136,7 +142,7 @@ When CMS alarms fire for ASK:
 
 ### Delegation Protocol
 
-```
+```json
 [CMS Alarm Fires]
     │
     ├── 1. Identify metric from alarm rule
@@ -144,15 +150,15 @@ When CMS alarms fire for ASK:
     ├── 3. If ECI quota issue → invoke alicloud-eci-ops
     ├── 4. If VPC/network issue → invoke alicloud-vpc-ops / alicloud-nat-ops
     └── 5. Compile unified diagnosis report
-```
+```markdown
 
 ## Environment Variable Loading
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
-```
+```markdown
 
 ### `.env` File Format
 
@@ -161,7 +167,7 @@ Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
 ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 > **Security:** `.env` MUST be in `.gitignore` — never commit credentials.
 > When printing to console, mask:

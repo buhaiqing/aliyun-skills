@@ -197,6 +197,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and the orchestrator's `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
@@ -271,6 +272,7 @@ Use case: User asks "list all ECS instances in cn-hangzhou".
 Use case: User asks "spin up a minimal ECS for a 5-minute smoke test, then tear down".
 
 **Cost guardrails (mandatory in the trace):**
+
 - `InstanceType = ecs.s6-c1m1.small` (minimum spec, ~¥0.05/hr PayByTraffic)
 - `RegionId = cn-hangzhou` (matches `{{user.region}}`)
 - `ImageId` is verified available via `DescribeImages`

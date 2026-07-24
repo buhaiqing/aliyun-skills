@@ -59,6 +59,7 @@ ACK 支持阿里云 Prometheus 服务（Prometheus Monitoring）：
 ## 降级策略
 
 若 ARMS/SLS 不可用：
+
 1. 直接使用 `kubectl get events --all-namespaces --sort-by='.lastTimestamp'`
 2. 使用 `kubectl describe node` 和 `kubectl describe pod` 排查
 3. 使用 `journalctl -u kubelet` 查看节点日志

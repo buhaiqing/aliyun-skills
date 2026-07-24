@@ -5,6 +5,7 @@
 ## What is NAT Gateway?
 
 NAT (Network Address Translation) Gateway provides network address translation services for cloud resources in a VPC. It enables:
+
 - **SNAT (Source NAT):** Private instances access the internet via NAT
 - **DNAT (Destination NAT):** External traffic reaches private instances via port mapping
 - **FULLNAT:** Bidirectional NAT — source and destination IPs both translated
@@ -20,10 +21,10 @@ NAT (Network Address Translation) Gateway provides network address translation s
 
 ### How SNAT Works
 
-```
+```text
 Private ECS 10.0.1.5 → SNAT → EIP 1.2.3.4 → Internet
                                             Internet → EIP 1.2.3.4 → SNAT → Private ECS 10.0.1.5
-```
+```markdown
 
 ### SNAT Source Configurations
 
@@ -46,9 +47,9 @@ Multiple EIPs can be added to a NAT Gateway for SNAT. Total SNAT connections sca
 
 ### How DNAT Works
 
-```
+```text
 Internet → EIP 1.2.3.4:8080 → DNAT → 10.0.1.5:80
-```
+```markdown
 
 ### DNAT Fields
 
@@ -65,20 +66,21 @@ Internet → EIP 1.2.3.4:8080 → DNAT → 10.0.1.5:80
 ## FULLNAT
 
 FULLNAT translates both source and destination IPs:
+
 - Source IP: Private IP → EIP (like SNAT)
 - Destination IP: Internal service IP → Real server IP (like DNAT)
 - Used for advanced load balancing and service mesh scenarios
 
 ## Resource Lifecycle
 
-```
+```sql
 Create → Creating → Available → Delete
                         ↑
               SNAT/DNAT Entries → EIPs bound
                         ↓
             Delete ALL entries first!
             Unbind ALL EIPs first!
-```
+```markdown
 
 ## Quotas (Default)
 

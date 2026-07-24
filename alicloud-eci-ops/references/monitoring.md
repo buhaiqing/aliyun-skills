@@ -121,6 +121,7 @@ aliyun cms PutMetricAlarm \
 
 > **Note:** Quota metrics (CPU/memory/instance count) are typically
 > queried via `ListUsage` API, not CMS. To alert on quota:
+>
 > - **Option A:** Periodic poller that publishes custom CMS metric
 > - **Option B:** Application-level check before any `CreateContainerGroup`
 >   (see SKILL.md pre-flight section)

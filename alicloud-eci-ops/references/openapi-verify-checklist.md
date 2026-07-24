@@ -13,7 +13,7 @@ knowledge was wrong.
 
 Verified operation list (from `aliyun help eci`):
 
-```
+```text
 CommitContainer, CopyDataCache, CreateContainerGroup, CreateDataCache,
 CreateImageCache, CreateInstanceOpsTask, CreateVirtualNode,
 DeleteContainerGroup, DeleteDataCache, DeleteImageCache, DeleteVirtualNode,

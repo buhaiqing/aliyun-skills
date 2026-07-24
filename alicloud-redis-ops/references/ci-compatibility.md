@@ -9,11 +9,13 @@ This guide addresses common issues when running Alibaba Cloud Redis/Tair operati
 ### Issue 1: CLI Plugin Installation Permission Denied
 
 **Symptom:**
-```
+
+```text
 ERROR: mkdir ~/.aliyun/plugins/aliyun-cli-r-kvstore: operation not permitted
-```
+```markdown
 
 **Root Cause:**
+
 - CI environments often have restricted file system permissions
 - Home directory may be read-only or have limited write access
 - Plugin installation requires write access to `~/.aliyun/plugins`
@@ -21,6 +23,7 @@ ERROR: mkdir ~/.aliyun/plugins/aliyun-cli-r-kvstore: operation not permitted
 **Solution:**
 
 **Option A: Use SDK Fallback (Recommended)**
+
 ```yaml
 # GitHub Actions example
 - name: Run Redis Operations
@@ -33,9 +36,10 @@ ERROR: mkdir ~/.aliyun/plugins/aliyun-cli-r-kvstore: operation not permitted
     # Use SDK fallback instead of CLI
     cd alicloud-redis-ops/scripts
     go run sdk-fallback.go
-```
+```text
 
 **Option B: Pre-install Plugin in CI Image**
+
 ```yaml
 # Custom Dockerfile for CI
 FROM aliyun-cli-base:latest
@@ -47,9 +51,10 @@ RUN aliyun plugin install --names aliyun-cli-r-kvstore
 - name: Run Redis Operations
   run: |
     aliyun r-kvstore describe-instances --RegionId "$ALIBABA_CLOUD_REGION_ID"
-```
+```text
 
 **Option C: Use Temporary Directory**
+
 ```bash
 # Override plugin directory location
 export ALIBABA_CLOUD_PLUGIN_DIR=/tmp/aliyun-plugins
@@ -57,16 +62,18 @@ mkdir -p "$ALIBABA_CLOUD_PLUGIN_DIR"
 
 # Install plugin to temporary directory
 aliyun plugin install --names aliyun-cli-r-kvstore --plugin-dir "$ALIBABA_CLOUD_PLUGIN_DIR"
-```
+```markdown
 
 ### Issue 2: Environment Variables Not Loaded
 
 **Symptom:**
-```
+
+```text
 ERROR: ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set
-```
+```markdown
 
 **Root Cause:**
+
 - CI secrets not properly exported to environment
 - .env file not present in CI environment
 - Shell configuration not loaded
@@ -74,6 +81,7 @@ ERROR: ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set
 **Solution:**
 
 **Option A: Use CI Secrets (Recommended)**
+
 ```yaml
 # GitHub Actions
 env:
@@ -86,9 +94,10 @@ steps:
     run: |
       bash scripts/preflight-check.sh
       # Environment variables already set via env section
-```
+```text
 
 **Option B: Create .env File in CI**
+
 ```yaml
 steps:
   - name: Setup credentials
@@ -103,16 +112,18 @@ steps:
     run: |
       bash scripts/preflight-check.sh
       # Pre-flight check will auto-load .env file
-```
+```markdown
 
 ### Issue 3: Go SDK Version Compatibility
 
 **Symptom:**
-```
+
+```text
 cannot use config (variable of type *v2/client.Config) as *client.Config
-```
+```markdown
 
 **Root Cause:**
+
 - Go version mismatch
 - SDK import path version mismatch
 - Missing dependencies
@@ -120,6 +131,7 @@ cannot use config (variable of type *v2/client.Config) as *client.Config
 **Solution:**
 
 **Option A: Use Go 1.21+**
+
 ```yaml
 # GitHub Actions
 steps:
@@ -132,25 +144,28 @@ steps:
       cd alicloud-redis-ops/scripts
       go mod download
       go run sdk-fallback.go
-```
+```text
 
 **Option B: Use Correct Import Paths**
+
 ```go
 // Use v2 import path for darabonba-openapi
 import openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 
 // Use v2 import path for r-kvstore
 import rkvstore "github.com/alibabacloud-go/r-kvstore-20150101/v2/client"
-```
+```markdown
 
 ### Issue 4: Network Connectivity Restrictions
 
 **Symptom:**
-```
+
+```text
 ERROR: Cannot reach Alibaba Cloud endpoint
-```
+```markdown
 
 **Root Cause:**
+
 - CI environment firewall restrictions
 - Proxy configuration required
 - Network isolation
@@ -158,6 +173,7 @@ ERROR: Cannot reach Alibaba Cloud endpoint
 **Solution:**
 
 **Option A: Configure Proxy**
+
 ```yaml
 env:
   HTTP_PROXY: ${{ secrets.HTTP_PROXY }}
@@ -169,9 +185,10 @@ steps:
     run: |
       # Proxy settings will be used by SDK/CLI
       bash scripts/preflight-check.sh
-```
+```text
 
 **Option B: Use Self-hosted Runner**
+
 ```yaml
 # Use self-hosted runner with proper network access
 runs-on: self-hosted
@@ -180,7 +197,7 @@ steps:
   - name: Run operations
     run: |
       bash scripts/preflight-check.sh
-```
+```markdown
 
 ## CI Workflow Templates
 
@@ -267,7 +284,7 @@ jobs:
         cd alicloud-redis-ops/scripts
         go mod download
         go run sdk-fallback.go
-```
+```markdown
 
 ### GitLab CI Complete Template
 
@@ -306,26 +323,30 @@ redis-execute:
     - go run sdk-fallback.go
   only:
     - main
-```
+```markdown
 
 ## Best Practices for CI
 
 ### 1. Always Use Pre-flight Check
+
 ```bash
 bash scripts/preflight-check.sh
-```
+```markdown
 
 ### 2. Prefer SDK Fallback in CI
+
 - More reliable in restricted environments
 - No plugin installation required
 - Better error handling
 
 ### 3. Use CI Secrets for Credentials
+
 - Never hardcode credentials
 - Use environment variables
 - Mask credentials in logs
 
 ### 4. Handle Both Paths Gracefully
+
 ```bash
 # Try CLI first, fallback to SDK
 if aliyun help r-kvstore 2>&1 | grep -q "Usage"; then
@@ -333,9 +354,10 @@ if aliyun help r-kvstore 2>&1 | grep -q "Usage"; then
 else
     go run scripts/sdk-fallback.go
 fi
-```
+```markdown
 
 ### 5. Validate Results
+
 ```bash
 # Check if operation succeeded
 if [ $? -eq 0 ]; then
@@ -344,7 +366,7 @@ else
     echo "Operation failed, check logs"
     exit 1
 fi
-```
+```markdown
 
 ## Troubleshooting Checklist
 
@@ -360,6 +382,7 @@ fi
 ## Support
 
 If issues persist:
+
 1. Run pre-flight check and review output
 2. Check CI environment logs
 3. Verify credentials and permissions

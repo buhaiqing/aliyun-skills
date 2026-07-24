@@ -88,6 +88,7 @@ totalPages := (totalCount + pageSize - 1) / pageSize
 ### QueryBill (typical pattern)
 
 **Request:**
+
 ```go
 request := &bssopenapi.QueryBillRequest{
     BillingCycle: tea.String("2026-05"),
@@ -100,6 +101,7 @@ request := &bssopenapi.QueryBillRequest{
 ```
 
 **Response Fields:**
+
 ```go
 response.Body.Data.{BillingCycle, AccountID, TotalCount}
 response.Body.Data.Items.Item[]: {RecordID, ProductCode, ProductName, SubscriptionType,
@@ -109,6 +111,7 @@ response.Body.Data.Items.Item[]: {RecordID, ProductCode, ProductName, Subscripti
 ### QueryAccountBalance
 
 **Response Fields:**
+
 ```go
 response.Body.Data.{AvailableAmount, CreditAmount, Currency, MybankCreditAmount}
 ```
@@ -116,6 +119,7 @@ response.Body.Data.{AvailableAmount, CreditAmount, Currency, MybankCreditAmount}
 ### QueryOrders
 
 **Request:**
+
 ```go
 request := &bssopenapi.QueryOrdersRequest{
     CreateTimeStart: tea.String("2026-05-01T00:00:00Z"),
@@ -130,6 +134,7 @@ request := &bssopenapi.QueryOrdersRequest{
 ### QueryRIUtilizationDetail
 
 **Request:**
+
 ```go
 request := &bssopenapi.QueryRIUtilizationDetailRequest{
     PageNum:                tea.Int32(1),
@@ -142,6 +147,7 @@ request := &bssopenapi.QueryRIUtilizationDetailRequest{
 ### QuerySavingsPlansDeductLog
 
 **Request:**
+
 ```go
 request := &bssopenapi.QuerySavingsPlansDeductLogRequest{
     InstanceId: tea.String("sp-xxxxxxxx"),
@@ -159,7 +165,7 @@ request := &bssopenapi.QuerySavingsPlansDeductLogRequest{
 mkdir -p /tmp/aliyun-sdk-workspace
 cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script
-export GOPROXY="https://goproxy.cn,direct"
+export GOPROXY="<https://goproxy.cn,direc>t"
 
 # Get dependencies
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -201,4 +207,4 @@ if tea.BoolValue(response.Body.Success) == false {
 |---------|---------------|
 | BSSOpenApi | `github.com/alibabacloud-go/bssopenapi-20171214/v3/client` |
 
-> Find latest versions at: https://github.com/alibabacloud-go
+> Find latest versions at: <https://github.com/alibabacloud-go>

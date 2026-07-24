@@ -156,6 +156,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 > **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
 >
 > **Masking rules across all execution paths:**
+>
 > | Execution Path | Safe Pattern | Unsafe Pattern |
 > |----------------|-------------|----------------|
 > | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=LTAI5t...` |
@@ -166,6 +167,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 > | Debug/verbose | `⚠️ Debug mode may expose credential values` (warning only) | `--debug` with un-masked credential output |
 >
 > **Credential verification MUST check existence only**, never echo the value:
+>
 > - Bash: `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"` ✅ | `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET` ❌
 > - Go: `if os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET") == ""` ✅ | `fmt.Println(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET"))` ❌
 >
@@ -199,26 +201,31 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to deploy, configure, troubleshoot, and monitor [Product Name] resources on Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 
 ### Verify Setup
+
 ```bash
 # Check CLI and credentials
 aliyun [product] DescribeRegions
 ```
 
 ### Your First Command
+
 ```bash
 # Example: List resources
 aliyun [product] Describe[Resources] --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 ```
 
 ### Next Steps
+
 - Core Concepts — Understand [Product Name] architecture
 - [Common Operations](#execution) — Create, manage, and delete resources
 - Troubleshooting — Fix common issues
@@ -262,6 +269,7 @@ Every operation: **Pre-flight → Execute (SDK/API and, when applicable, `aliyun
 Use the [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli) as the **primary execution path**.
 
 > **Critical CLI Notes** (verified through source code analysis):
+>
 > - Output is **JSON by default** — NO `--output json` needed for plain JSON
 > - `--output` is for JMESPath transformations: `--output cols=InstanceId,Status rows=Instances.Instance[]`
 > - `--no-interactive` does NOT exist — CLI is non-interactive by default
@@ -321,6 +329,7 @@ func main() {
 ```
 
 Execute:
+
 ```bash
 # In /tmp/aliyun-sdk-workspace
 go mod init sdk-script
@@ -425,6 +434,7 @@ Poll describe (or head/get) until **404**, **NotFound**, or status indicates del
 > **Stability Pillar:** Following Alibaba Cloud Well-Architected Framework §面向风险的应急快恢 (Emergency Recovery), every writable skill MUST document backup and recovery operations.
 
 #### When to Use
+
 - Before any destructive operation (delete, resize, engine upgrade)
 - Scheduled per organizational RPO requirements
 - Migration or region transfer prerequisites
@@ -582,11 +592,13 @@ request := &[product].Restore[Resource]Request{
    ```
 
    **Alternative — Interactive CLI Configuration:**
+
    ```bash
    aliyun configure
    ```
 
    **Alternative — Config File (`~/.aliyun/config.json`):**
+
    ```bash
    mkdir -p ~/.aliyun
    cat > ~/.aliyun/config.json << 'CONFIGEOF'
@@ -606,6 +618,7 @@ request := &[product].Restore[Resource]Request{
    ```
 
 4. **Verify Configuration**:
+
    ```bash
    # Quick validation (JSON output by default)
    aliyun ecs DescribeRegions
@@ -643,26 +656,39 @@ request := &[product].Restore[Resource]Request{
 Generated skills MUST follow these 6 rules. See meta-skill SKILL.md for detailed examples.
 
 ### TE-1: API Query > Static Tables
+
 Use API commands instead of hardcoding version/port/quota tables.
+
 ```markdown
 aliyun [product] Describe[Versions]
 | Engine | Port |
 |--------|------|
 ```
+
 ### TE-2: No docstrings in code
+
 Inline comments only. No function-level docstring.
+
 ```go
 // DO: inline comment only
 func createResource() { ... }
 ```
+
 ### TE-3: Compact error tables
+
 | Error Code | Agent Action |
 |------------|-------------|
+
 ### TE-4: Centralized JSON paths
+
 File-top comment block; one per resource type.
+
 ### TE-5: YAML anchors in example-config.yaml
+
 Use `&dev` / `&prod` to eliminate repeated fields.
+
 ### TE-6: Eliminate cross-file duplicate flows
+
 SKILL.md already has full flow, no Complete Workflow in config or SDK files.
 
 ---

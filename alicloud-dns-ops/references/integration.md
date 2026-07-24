@@ -13,12 +13,14 @@ patterns, cross-skill delegation, and best practices for DNS coordination.
 **Use Case**: Configure domain resolution to load balancer endpoints
 
 **Pattern**:
+
 1. Create SLB/ALB instance → get DNS name (e.g., `example.slb.aliyuncs.com`)
 2. Add CNAME record in DNS → point to SLB/ALB DNS name
 3. Verify health checks → ensure backend servers are healthy
 4. Test end-to-end → validate traffic flows through load balancer
 
 **Example**:
+
 ```bash
 # Get SLB DNS name
 SLB_DNS=$(aliyun slb DescribeLoadBalancers --LoadBalancerName "web-slb" | jq -r '.LoadBalancers.LoadBalancer[0].Address')
@@ -36,6 +38,7 @@ dig CNAME www.example.com @ns1.alidns.com
 ```
 
 **Delegation**:
+
 - `alicloud-slb-ops`: SLB instance creation and health check configuration
 - `alicloud-alb-ops`: ALB instance creation and rule management
 - `alicloud-dns-ops`: DNS record management and validation
@@ -45,12 +48,14 @@ dig CNAME www.example.com @ns1.alidns.com
 **Use Case**: Configure domain for CDN acceleration
 
 **Pattern**:
+
 1. Create CDN domain → get CDN CNAME (e.g., `example.com.kunlun.com`)
 2. Add CNAME record in DNS → point to CDN CNAME
 3. Configure CDN origin → set origin server address
 4. Verify CDN caching → test content delivery
 
 **Example**:
+
 ```bash
 # Add CDN CNAME record
 aliyun alidns AddRecord \
@@ -65,6 +70,7 @@ dig CNAME static.example.com @ns1.alidns.com
 ```
 
 **Delegation**:
+
 - CDN product: CDN domain creation and origin configuration
 - `alicloud-dns-ops`: DNS CNAME record management
 - `alicloud-ecs-ops`: Origin server management (if needed)
@@ -74,12 +80,14 @@ dig CNAME static.example.com @ns1.alidns.com
 **Use Case**: Internal DNS resolution for VPC environments
 
 **Pattern**:
+
 1. Create PrivateZone → define internal domain
 2. Add internal records → A/CNAME records for services
 3. Bind to VPC → associate PrivateZone with VPC
 4. Test internal resolution → verify VPC instances can resolve
 
 **Example**:
+
 ```bash
 # Create PrivateZone
 ZONE_ID=$(aliyun pvtz CreateZone --ZoneName "internal.example.com" | jq -r '.ZoneId')
@@ -101,6 +109,7 @@ nslookup api.internal.example.com 100.100.2.136
 ```
 
 **Delegation**:
+
 - `alicloud-vpc-ops`: VPC creation and network configuration
 - `alicloud-dns-ops`: PrivateZone management and VPC binding
 - `alicloud-ecs-ops`: VPC instance management
@@ -110,12 +119,14 @@ nslookup api.internal.example.com 100.100.2.136
 **Use Case**: Direct domain resolution to ECS instances
 
 **Pattern**:
+
 1. Create ECS instance → get public/private IP
 2. Add A/AAAA record → point to ECS IP
 3. Verify resolution → ensure ECS is reachable
 4. Configure security groups → allow traffic
 
 **Example**:
+
 ```bash
 # Get ECS public IP
 ECS_IP=$(aliyun ecs DescribeInstances --InstanceIds '["i-12345678"]' | jq -r '.Instances.Instance[0].PublicIpAddress.IpAddress[0]')
@@ -133,6 +144,7 @@ dig A app.example.com @ns1.alidns.com
 ```
 
 **Delegation**:
+
 - `alicloud-ecs-ops`: ECS instance creation and management
 - `alicloud-dns-ops`: DNS record management
 - `alicloud-vpc-ops`: Network and security group configuration
@@ -142,12 +154,14 @@ dig A app.example.com @ns1.alidns.com
 **Use Case**: Web application firewall protection for domains
 
 **Pattern**:
+
 1. Configure WAF protection → set domain in WAF
 2. Add CNAME record → point to WAF CNAME
 3. Verify WAF protection → test malicious request blocking
 4. Monitor WAF logs → review blocked requests
 
 **Example**:
+
 ```bash
 # Add WAF CNAME record
 aliyun alidns AddRecord \
@@ -162,6 +176,7 @@ curl -I https://www.example.com/sql-injection-test
 ```
 
 **Delegation**:
+
 - `alicloud-waf-ops`: WAF protection configuration
 - `alicloud-dns-ops`: DNS CNAME record management
 - `alicloud-actiontrail-ops`: WAF operation audit
@@ -184,7 +199,7 @@ curl -I https://www.example.com/sql-injection-test
 
 ### Workflow 1: New Web Application Deployment
 
-```
+```markdown
 1. Create ECS instances → alicloud-ecs-ops
 2. Configure SLB → alicloud-slb-ops
 3. Add DNS records → alicloud-dns-ops
@@ -196,7 +211,7 @@ curl -I https://www.example.com/sql-injection-test
 
 ### Workflow 2: Internal Service Migration
 
-```
+```markdown
 1. Create PrivateZone → alicloud-dns-ops
 2. Add internal records → alicloud-dns-ops
 3. Bind to VPC → alicloud-dns-ops
@@ -208,7 +223,7 @@ curl -I https://www.example.com/sql-injection-test
 
 ### Workflow 3: Disaster Recovery with GTM
 
-```
+```markdown
 1. Configure primary region → alicloud-ecs-ops
 2. Configure DR region → alicloud-ecs-ops
 3. Set up GTM pools → alicloud-dns-ops

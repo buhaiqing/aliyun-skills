@@ -109,6 +109,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 
 ## 3. Other Dimensions
+
 - **Correctness**: 1.0 for `Delete*` (post-execution `DescribeDBClusterAttribute`).
 - **Idempotency**: `CreateDBCluster` must check `DescribeDBClusters --DBClusterName` first. `CreateAccount` must check `DescribeAccounts`. `CreateBackup` natural idempotent.
 - **Traceability**: `DeleteDBCluster` requires `backup_trace`; SQL Execution requires `affected_rows` and `statement_count`.
@@ -155,6 +156,7 @@ Use case: User asks "list all PolarDB-MySQL clusters in cn-hangzhou".
 Use case: User asks "create a PolarDB-MySQL account for the app".
 
 **Cost / safety guardrails (mandatory):**
+
 - `AccountName = app_service` (NOT in {root, admin} reserved set)
 - `AccountPassword` delivered via `$MYSQL_NEW_PASSWORD` env var (NOT CLI flag)
 - `AccountType = Normal` (NOT Super — least privilege)
@@ -189,6 +191,7 @@ Use case: User asks "create a PolarDB-MySQL account for the app".
 **Why it passes:** `DescribeAccounts` called first to verify name uniqueness; `AccountName` not in reserved set; password via env var (Credential Hygiene = 1.0); `AccountType = Normal` (least privilege).
 
 ## 5. Anti-Patterns
+
 - ❌ `DeleteDBCluster` without final backup (no waiver)
 - ❌ `DELETE` / `UPDATE` without WHERE
 - ❌ `VACUUM FULL` on production table (long lock)
@@ -197,4 +200,5 @@ Use case: User asks "create a PolarDB-MySQL account for the app".
 - ❌ Wildcard GRANT (e.g. `GRANT ALL ON *.*`)
 
 ## 6. Changelog
+
 1.0.0 | 2026-06-04 | Initial PolarDB GCL rubric (Phase 1, eleventh skill, **canonical for all 4 PolarDB variants**). Inherits RDS WHERE-clause + 6-class SQL classification; adds cluster-level ops (DeleteDBCluster with final backup, Manage Endpoints, Node Management).

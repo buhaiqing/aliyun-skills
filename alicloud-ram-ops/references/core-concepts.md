@@ -41,6 +41,7 @@ credentials. RAM roles do not have long-term credentials.
 ### System Policy
 
 Managed by Alibaba Cloud. Cannot be modified or deleted. Examples:
+
 - `AliyunRAMFullAccess` — Full RAM management
 - `AliyunECSFullAccess` — Full ECS management
 - `AliyunReadOnlyAccess` — Read-only across all services
@@ -71,7 +72,7 @@ deleted.
     }
   ]
 }
-```
+```markdown
 
 ### Effect
 
@@ -97,6 +98,7 @@ deleted.
 Optional. Restricts when the policy applies.
 
 Common condition keys:
+
 - `acs:CurrentTime` — Current date/time
 - `acs:SourceIp` — Source IP address
 - `acs:RegionId` — Region ID
@@ -104,6 +106,7 @@ Common condition keys:
 - `sts:ExternalId` — External ID for cross-account roles
 
 Common operators:
+
 - `StringEquals`, `StringNotEquals`
 - `StringLike`, `StringNotLike` (supports `*` wildcard)
 - `NumericEquals`, `NumericGreaterThan`
@@ -150,11 +153,12 @@ Issues temporary credentials for assumed roles.
 
 Alibaba Cloud Resource Name (ARN) uniquely identifies a resource:
 
-```
+```text
 acs:<service>:<region>:<account-id>:<resource-type>/<resource-id>
-```
+```markdown
 
 Examples:
+
 - User: `acs:ram::1234567890123456:user/alice`
 - Role: `acs:ram::1234567890123456:role/MyRole`
 - Policy: `acs:ram::1234567890123456:policy/my-policy`

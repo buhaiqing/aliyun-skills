@@ -26,6 +26,7 @@
 ## Example
 
 Input JSON:
+
 ```json
 {
   "VSwitchId": "vsw-bp1aevb8sfi8mh1qj5t9",
@@ -37,6 +38,7 @@ Input JSON:
 ```
 
 Output HCL:
+
 ```hcl
 resource "alicloud_vswitch" "vsw_prod_web_a" {
   vswitch_name = "vsw-prod-web-a"

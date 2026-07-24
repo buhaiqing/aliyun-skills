@@ -5,7 +5,8 @@
 Function Compute (FC) is Alibaba Cloud's fully managed, event-driven, serverless compute platform. FC 3.0 simplifies the resource model compared to FC 2.0:
 
 **FC 3.0 Resource Hierarchy:**
-```
+
+```text
 Account/Region → Function → [Versions, Aliases, Triggers, Tags]
                 → VpcBindings
                 → ProvisionConfigs (per qualifier)
@@ -74,6 +75,7 @@ GPU workloads use a separate **GPU function** resource type (not CPU runtimes ab
 ## Billing Model
 
 FC 3.0 charges:
+
 1. **Invocation count**: per request (free tier: first 1M requests/month)
 2. **Resource usage (GB-s)**: memory (GB) × execution duration (seconds) (free tier: 400,000 GB-s/month)
 3. **Provisioned instances**: per instance-hour, regardless of invocations
@@ -83,7 +85,7 @@ FC 3.0 charges:
 
 ## Dependency Graph
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │              FC Function                │
 │  ┌─────────────┐  ┌──────────────────┐ │

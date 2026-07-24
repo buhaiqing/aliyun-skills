@@ -11,7 +11,7 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/bailian-20231229/v1/client
 ```
 
@@ -77,13 +77,15 @@ github.com/alibabacloud-go/bailian-20231229/v1/client
 ### GetModelInfo
 
 **Request:**
+
 ```json
 {
   "ModelId": "qwen-turbo"
 }
-```
+```markdown
 
 **Response Fields:**
+
 | Field | JSON Path | Type |
 |-------|-----------|------|
 | ModelId | $.ModelId | string |
@@ -99,6 +101,7 @@ github.com/alibabacloud-go/bailian-20231229/v1/client
 ### CreateChatCompletion
 
 **Request:**
+
 ```json
 {
   "model": "qwen-turbo",
@@ -111,9 +114,10 @@ github.com/alibabacloud-go/bailian-20231229/v1/client
   "top_p": 0.95,
   "stream": false
 }
-```
+```markdown
 
 **Response Fields:**
+
 | Field | JSON Path | Type |
 |-------|-----------|------|
 | Content | $.Choices[0].Message.Content | string |
@@ -138,7 +142,7 @@ github.com/alibabacloud-go/bailian-20231229/v1/client
   "Items": [...],
   "NextToken": "eyJuZXh0IjogInBhZ2UifQ=="
 }
-```
+```markdown
 
 Continue until `NextToken` is empty/null.
 

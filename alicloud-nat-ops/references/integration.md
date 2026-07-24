@@ -4,9 +4,9 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+```markdown
 
 ## JIT Go SDK Workflow
 
@@ -18,7 +18,7 @@ export GOPROXY="https://goproxy.cn,direct"
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/tea
 go get github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+```text
 
 ```go
 package main
@@ -73,11 +73,11 @@ func main() {
     
     fmt.Println(tea.Prettify(resp))
 }
-```
+```text
 
 ```bash
 go run ./main.go
-```
+```markdown
 
 ## Cross-Skill Delegation Matrix
 
@@ -92,7 +92,7 @@ go run ./main.go
 
 ## Delegation Workflow
 
-```
+```json
 [NAT 告警触发]
     │
     ├── 1. 识别告警类型（创建/配置/带宽/连通性/删除）
@@ -101,7 +101,7 @@ go run ./main.go
     ├── 4. 若 DNAT 不通 → 检查目标 ECS (`alicloud-ecs-ops`)
     ├── 5. 汇总结果生成诊断报告
     └── 6. 提供可执行的修复建议
-```
+```markdown
 
 ## Environment Variable Loading
 
@@ -109,6 +109,6 @@ go run ./main.go
 ALIBABA_CLOUD_ACCESS_KEY_ID=<your_ak>
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=<your_secret>
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```text
 
 **Security:** Credential masking is MANDATORY. Never echo `ALIBABA_CLOUD_ACCESS_KEY_SECRET`.

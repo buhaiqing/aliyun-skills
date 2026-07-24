@@ -35,9 +35,11 @@
 ## 执行前验
 
 所有 CLI 命令在执行前必须经过正则匹配验证：
+
 ```python
 ALLOWED_PATTERN = r"^(Describe|List|Get|sts AssumeRole)"
 ```
+
 任何不匹配上述模式的命令将导致程序立即终止 (HALT)。
 
 > **注**:`sts AssumeRole` 仅当 `--assume-role` 参数显式传入时才被调用。该操作改变调用者身份但不修改任何云资源,属于允许的例外。

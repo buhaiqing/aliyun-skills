@@ -30,7 +30,7 @@ When CLI does not support an operation, use JIT Go SDK.
 
 ### SDK Package
 
-```
+```text
 github.com/alibabacloud-go/cas-20200407/v3/client
 ```
 

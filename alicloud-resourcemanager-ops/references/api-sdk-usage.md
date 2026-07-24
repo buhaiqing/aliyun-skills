@@ -67,10 +67,12 @@
 ## Pagination
 
 ### Resource Manager:
+
 - `PageNumber` (1-based) + `PageSize` (default 10, max 100)
 - Response includes `TotalCount` and `PageSize`
 
 ### Tag:
+
 - `NextToken` (cursor-based) + `MaxResult` (default 50, max 1000)
 - Response includes `NextToken` for next page; empty = last page
 
@@ -79,6 +81,7 @@
 ### Resource Manager Common Patterns:
 
 **ListAccounts response:**
+
 ```json
 {
   "RequestId": "...",
@@ -102,6 +105,7 @@
 ```
 
 **CreateResourceAccount response:**
+
 ```json
 {
   "RequestId": "...",
@@ -116,6 +120,7 @@
 ```
 
 **ListResourceGroups response:**
+
 ```json
 {
   "RequestId": "...",
@@ -140,6 +145,7 @@
 ### Tag Common Patterns:
 
 **TagResources request:**
+
 ```json
 {
   "RegionId": "cn-hangzhou",
@@ -149,6 +155,7 @@
 ```
 
 **TagResources response:**
+
 ```json
 {
   "RequestId": "...",

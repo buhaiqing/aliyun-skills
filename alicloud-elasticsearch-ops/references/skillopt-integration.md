@@ -16,11 +16,13 @@ legacy `skillopt-lib.sh` symlink) sources
 ## Usage
 
 ### Direct Command
+
 ```bash
 aliyun elasticsearch DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 ```
 
 ### Wrapper Script
+
 ```bash
 cd $(pwd)/alicloud-elasticsearch-ops
 ./scripts/elasticsearch-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou

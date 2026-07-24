@@ -43,11 +43,13 @@ metadata:
 ## ✅ OpenAPI 验证状态 (VERIFIED 2026-06-02)
 
 > **Status: 已通过** `https://api.aliyun.com/meta/v1/products/ECI/versions/2018-08-08/api-docs.json`
+>
 > + `aliyun eci <Op> --help` + `aliyun help eci` 验证。
 > 详见 [`references/openapi-verify-checklist.md`](references/openapi-verify-checklist.md)
 > 和 [`references/api-sdk-usage.md`](references/api-sdk-usage.md)。
 >
 > **重大修正（修正训练知识错误）：**
+>
 > - ⚠️ **配额命令是 `ListUsage`**，不是 `DescribeContainerGroupQuota`（后者不存在）
 > - **CPU pinning** 字段是 `CpuOptionsCore` + `CpuOptionsThreadsPerCore`（不是 `CpuOptions`）
 > - **`ImageRegistryCredential`** 形状是 `{Server, UserName, Password}`（注意 `UserName` 不是 `Username`）
@@ -77,6 +79,7 @@ rules, pre-flight checks, **dual-path execution** (official **`aliyun` CLI**
 primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 
 **Execution surface — CLI-primary with JIT Go SDK fallback:**
+
 - **Primary:** `aliyun eci <Operation>` — static Go binary, covers
   ContainerGroup CRUD, exec, quota, image cache, data cache, virtual node.
 - **Fallback:** JIT Go SDK
@@ -85,6 +88,7 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 - **Console click-paths** are not an agent execution surface in `SKILL.md`.
 
 **Core resources managed by this skill:**
+
 - **ContainerGroup** — the ECI unit (≡ K8s Pod). Identified by
   `ContainerGroupId`. Can contain 1..N containers sharing
   network/volume/lifecycle.
@@ -224,11 +228,13 @@ primary, **JIT Go SDK** fallback), response validation, and failure recovery.
 ## Quick Start
 
 ### What This Skill Does
+
 This skill creates, describes, updates, deletes, and execs into Alibaba Cloud
 Elastic Container Instances (ECI) via `aliyun eci ...` (primary) or JIT Go SDK
 (fallback). It also handles ECI quota pre-flight checks via `ListUsage`.
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
@@ -237,6 +243,7 @@ Elastic Container Instances (ECI) via `aliyun eci ...` (primary) or JIT Go SDK
       at the top of this file before first CreateContainerGroup
 
 ### Verify Setup
+
 ```bash
 aliyun version
 test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" && echo "✅ AK set"
@@ -245,6 +252,7 @@ aliyun eci ListUsage --body '{"RegionId":"'"$ALIBABA_CLOUD_REGION_ID"'"}' 2>&1 |
 ```
 
 ### Your First Command
+
 ```bash
 # Check ECI quota in region
 aliyun eci ListUsage --body '{"RegionId":"'"$ALIBABA_CLOUD_REGION_ID"'"}'
@@ -273,6 +281,7 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 | CreateVirtualNode | Bridge self-managed K8s cluster to ECI | High | Medium |
 
 ## Runtime Rules
+
 **MANDATORY: Always prefer the SkillOpt wrapper for all CLI operations.**
 
 | Rule | Requirement |
@@ -306,7 +315,7 @@ Every operation: **Pre-flight → Execute (CLI primary / SDK fallback) → Valid
 
 ### Operation: CreateContainerGroup
 
-#### Pre-flight Checks
+#### Pre-flight Checks (CreateContainerGroup)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -322,10 +331,12 @@ Every operation: **Pre-flight → Execute (CLI primary / SDK fallback) → Valid
 #### Execution — CLI (`aliyun eci`) (Primary Path)
 
 > **CLI supports two styles**:
+>
 > 1. `--Container.N.*` array parameters (for simple cases)
 > 2. `--body '{...}'` for complex requests
 
 **Style 1: Simple array params (single container, no image cache)**
+
 ```bash
 aliyun eci CreateContainerGroup \
   --RegionId "{{user.region}}" \
@@ -342,6 +353,7 @@ aliyun eci CreateContainerGroup \
 ```
 
 **Style 2: JSON body (complex, multi-container, with private registry)**
+
 ```bash
 aliyun eci CreateContainerGroup --body '{
   "RegionId": "{{user.region}}",
@@ -498,6 +510,7 @@ Use this for full detail (container list, events, ENI, volumes).
 ### Operation: ExecContainerCommand
 
 #### Pre-flight
+
 - Confirm ContainerGroup is in `Running` status.
 - Confirm the target container name exists in the response of
   `DescribeContainerGroup`.
@@ -523,11 +536,13 @@ aliyun eci ExecContainerCommand --RegionId {{user.region}} \
 ```
 
 > **Param notes (verified):**
+>
 > - `--Stdin` (default true) — read commands from stdin
 > - `--Sync` (default false) — sync execution; if true, `TTY` must be false and `Command` cannot be `/bin/bash`
 > - `--TTY` (default false) — enable interaction; required if `Command` is `/bin/bash`
 
-#### Validation
+#### Validation (ExecContainerCommand)
+
 - Output of the command is returned in the response. If the command
   returns non-zero, treat as failure and surface the stderr.
 
@@ -540,6 +555,7 @@ aliyun eci ExecContainerCommand --RegionId {{user.region}} \
 > image (rolling restart), resource limits (depending on state).
 
 #### Pre-flight
+
 - ContainerGroup must be in `Running` or terminal state (verify which).
 - Some updates cause ECI restart; confirm user accepts.
 
@@ -558,6 +574,7 @@ aliyun eci UpdateContainerGroup --RegionId {{user.region}} \
 ### Operation: DeleteContainerGroup
 
 #### Pre-flight (Safety Gate)
+
 - **MUST** obtain explicit confirmation.
 - **MUST** warn user: deleting the ContainerGroup is irreversible;
   any in-flight workloads are killed; persistent volumes may survive
@@ -613,6 +630,7 @@ Poll `DescribeContainerGroup` until **404** or absent (max wait 120s).
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary):
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
    ```
@@ -622,15 +640,18 @@ Poll `DescribeContainerGroup` until **404** or absent (max wait 120s).
    (复用相同的 self-healing 流程)
 
 3. **Configure Credentials**:
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+
    > **IMPORTANT:** Mask SK in console output:
    > `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`.
 
 4. **Verify**:
+
    ```bash
    aliyun eci ListUsage --body '{"RegionId":"'"$ALIBABA_CLOUD_REGION_ID"'"}'
    ```
@@ -665,7 +686,8 @@ This skill's operations are evaluated against Alibaba Cloud's
 | **Volume cleanup** | ECI with cloud disk / NAS may leave orphan volumes; build a cleanup pass. |
 
 #### DR Runbook
-```
+
+```text
 Phase 1: Verify — DescribeContainerGroup for target workload
 Phase 2: Restore — Recreate ContainerGroup with same image + spec
 Phase 3: Validate — Poll Status; if Failed, check Events / exec inspect
@@ -686,6 +708,7 @@ Phase 3: Validate — Poll Status; if Failed, check Events / exec inspect
 > advantage.
 
 **Waste detection:**
+
 | Pattern | Detection | Action |
 |---------|-----------|--------|
 | `RestartPolicy=Always` + crash | `RestartCount` rising | Change to `Never` or `OnFailure` |
@@ -795,6 +818,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Most-scrutinized | `DeleteContainerGroup` (ephemeral data loss; waiver/backup required), `ExecContainerCommand` with destructive patterns (`rm -rf`, `dd`, `mkfs`) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for eci-ops.
 
 ---

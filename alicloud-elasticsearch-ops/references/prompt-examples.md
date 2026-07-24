@@ -751,7 +751,7 @@ Type "DELETE {{instance_id}}" to confirm:
 
 ### 8.2 Prompt Execution Checklist
 
-```
+```text
 Before Using Prompt:
 □ Context variables filled
 □ Pre-flight checks understood

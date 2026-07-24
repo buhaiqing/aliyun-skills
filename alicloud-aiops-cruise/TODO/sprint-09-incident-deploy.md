@@ -13,6 +13,7 @@
 ### 1.1 问题背景
 
 当前 4 个 runbook 输出 findings 到 stdout 和 JSON 报告，但：
+
 - **无持久化**：每次运行覆盖上次结果，无法做趋势分析
 - **无检索能力**：无法回答"上周有多少 RDS 磁盘告警"
 - **无去重**：同一问题每天重复报告，导致告警疲劳
@@ -34,7 +35,7 @@
 
 ### 2.1 目录结构
 
-```
+```text
 .runtime/
 └── incidents/
     └── {customer}/
@@ -48,6 +49,7 @@
 ### 2.2 文件格式
 
 **单 Incident 文件** (`SLB-ECS-01_lbp1bxxxx.json`):
+
 ```json
 {
   "id": "inc-20250606-7a8b9c",
@@ -84,13 +86,14 @@
     "stderr_digest": null
   }
 }
-```
+```text
 
 **索引文件** (`index.jsonl`):
+
 ```jsonl
 {"id": "inc-20250606-7a8b9c", "level": "CRITICAL", "rule_id": "SLB-ECS-01", "resource_id": "lb-bp1bxxxx", "title": "SLB后端ECS健康检查失败"}
 {"id": "inc-20250606-8c9d0e", "level": "WARNING", "rule_id": "RDS-04", "resource_id": "rm-bp1yyyy", "title": "RDS磁盘使用率>95%"}
-```
+```markdown
 
 ### 2.3 去重策略
 
@@ -98,9 +101,10 @@
 # dedup_key 生成规则
 dedup_key = f"{customer}:{resource_type}:{resource_id}:{rule_id}:{date_bucket}"
 # 示例: "hd123-crm-prod:SLB:lb-bp1bxxxx:SLB-ECS-01:2026-06-06"
-```
+```markdown
 
 去重逻辑：
+
 1. 写之前检查 `dedup_key` 是否已存在
 2. 存在则更新 `timestamp` 和 `trace`（刷新观察时间）
 3. 不存在则新建 Incident

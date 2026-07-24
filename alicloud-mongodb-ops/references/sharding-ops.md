@@ -29,7 +29,7 @@ aliyun dds DescribeDBInstances \
 
 # Expected: "sharding" for sharded cluster
 # Other values: "standalone", "replicaset"
-```
+```markdown
 
 ### Network Address Types for Sharded Cluster
 
@@ -43,7 +43,7 @@ aliyun dds DescribeDBInstances \
 # Get sharding network addresses
 aliyun dds DescribeShardingNetworkAddress \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 ### Default Configuration
 
@@ -71,7 +71,7 @@ sh.getBalancerState()
 
 // Check balancer lock (if balancer is active)
 sh.isBalancerRunning()
-```
+```markdown
 
 ### Enable/Disable Balancer
 
@@ -83,7 +83,7 @@ sh.stopBalancer()
 
 // Verify balancer is stopped
 sh.getBalancerState()  // Expected: false
-```
+```text
 
 #### Scenario: Enable Balancer After Maintenance
 
@@ -93,7 +93,7 @@ sh.startBalancer()
 
 // Verify balancer is running
 sh.getBalancerState()  // Expected: true
-```
+```markdown
 
 ### Balancer Window Configuration (Maintenance Windows)
 
@@ -117,7 +117,7 @@ db.getSiblingDB("config").settings.updateOne(
   { _id: "balancer" },
   { $unset: { activeWindow: "" }
 )
-```
+```markdown
 
 **Recommended Window Times (UTC):**
 
@@ -137,7 +137,7 @@ db.getSiblingDB("config").migrations.find({ state: { $in: ["ready", "ongoing"] }
 
 // View migration details
 db.getSiblingDB("config").migrations.find().pretty()
-```
+```text
 
 #### Migration Metrics via API
 
@@ -148,7 +148,7 @@ aliyun dds DescribeDBInstancePerformance \
   --Key "CpuUsage,MemoryUsage,IOPSUsage" \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 ### Balancer API Operations
 
@@ -177,11 +177,11 @@ Shard key cardinality directly affects chunk distribution and query efficiency:
 
 **Decision Matrix:**
 
-```
+```text
 If cardinality < shard_count * 10:
   → WARNING: Potential for jumbo chunks or uneven distribution
   → Recommendation: Use hashed shard key or compound key
-```
+```markdown
 
 ### Write Distribution Patterns
 
@@ -205,9 +205,10 @@ sh.shardCollection("mydb.users", { userId: "hashed" })
 // - Random write pattern (no hotspot)
 // - Range queries broadcast to all shards
 // - Good for high-cardinality fields
-```
+```markdown
 
 **Best for:**
+
 - User IDs, session IDs, random UUIDs
 - High write volume with random distribution
 - Single-document queries by shard key
@@ -223,9 +224,10 @@ sh.shardCollection("mydb.orders", { orderId: 1 })
 // - Efficient range queries
 // - Risk: hotspot on monotonically increasing keys
 // - Good for time-series with compound key
-```
+```markdown
 
 **Best for:**
+
 - Time-based queries (with compound key)
 - Geographic region partitioning
 - When data locality improves query performance
@@ -240,7 +242,7 @@ sh.shardCollection("mydb.transactions", { region: 1, userId: "hashed" })
 // - Region locality for queries
 // - userId hashed for write distribution
 // - Optimal for multi-region applications
-```
+```markdown
 
 ### Anti-Patterns: Shard Keys to Avoid
 
@@ -261,18 +263,18 @@ sh.shardCollection("mydb.logs", { timestamp: 1 })
 // DO: Use compound key with hashed component
 sh.shardCollection("mydb.logs", { timestamp: 1, logId: "hashed" })
 // Result: Writes distributed, time locality preserved
-```
+```markdown
 
 ### Shard Key Selection Checklist
 
-```
+```text
 Pre-sharding Checklist:
 [ ] Cardinality: > 1000 unique values per shard
 [ ] Write pattern: No single-point hotspot
 [ ] Query pattern: Most queries include shard key
 [ ] Cardinality growth: Field values grow over time
 [ ] Update frequency: Shard key is immutable (recommended)
-```
+```markdown
 
 ---
 
@@ -291,7 +293,7 @@ db.getSiblingDB("config").settings.updateOne(
   { _id: "chunksize" },
   { $set: { value: 128 } }  // Set to 128MB
 )
-```
+```markdown
 
 **Chunk Size Trade-offs:**
 
@@ -319,7 +321,7 @@ sh.splitAt("mydb.collection", { shardKey: "split_point_value" })
 
 // Find split point automatically
 sh.splitFind("mydb.collection", { shardKey: "query_point" })
-```
+```markdown
 
 ### Chunk Migration Troubleshooting
 
@@ -340,7 +342,7 @@ sh.moveChunk("mydb.collection", { shardKey: "value" }, "shard01")
 
 // Check migration status
 db.getSiblingDB("config").migrations.find({ ns: "mydb.collection" })
-```
+```markdown
 
 ### Jumbo Chunks Handling
 
@@ -364,7 +366,7 @@ db.getSiblingDB("config").chunks.aggregate([
     sizeEstimate: { $subtract: ["$max.shardKey", "$min.shardKey"] }
   }}
 ])
-```
+```text
 
 #### Resolve Jumbo Chunks
 
@@ -373,7 +375,7 @@ db.getSiblingDB("config").chunks.aggregate([
 ```javascript
 // Add compound shard key to increase cardinality
 // Requires collection re-sharding (complex operation)
-```
+```text
 
 **Option B: Manual Split**
 
@@ -386,7 +388,7 @@ db.getSiblingDB("config").chunks.find({
   ns: "mydb.collection",
   min: { shardKey: "midpoint_value" }
 })
-```
+```text
 
 **Option C: Force Migration (Advanced)**
 
@@ -406,7 +408,7 @@ db.getSiblingDB("config").settings.updateOne(
   { _id: "chunksize" },
   { $set: { value: 64 } }
 )
-```
+```markdown
 
 ---
 
@@ -421,7 +423,7 @@ db.getSiblingDB("config").settings.updateOne(
 aliyun dds DescribeShardingNetworkAddress \
   --DBInstanceId "{{user.db_instance_id}}" \
   --output cols=ConnectionString,Port rows=NetworkAddresses[?Role=='mongos']
-```
+```text
 
 #### Connection Pool Configuration
 
@@ -433,7 +435,7 @@ maxPoolSize: 100          # Per mongos instance
 minPoolSize: 10           # Maintain minimum connections
 maxIdleTimeMS: 60000      # Close idle connections after 60s
 waitQueueTimeoutMS: 5000  # Wait timeout for connection
-```
+```text
 
 #### Mongos Instance Scaling
 
@@ -448,7 +450,7 @@ aliyun dds AddShardingNode \
 # Poll for new address
 aliyun dds DescribeShardingNetworkAddress \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 ### Query Routing Logic
 
@@ -473,7 +475,7 @@ db.users.find({ name: "John" })  // Scans all shards
 
 // Better: Add shard key hint
 db.users.find({ name: "John", userId: "user123" })
-```
+```markdown
 
 ### Multiple Mongos Deployment Patterns
 
@@ -504,7 +506,7 @@ aliyun cms DescribeMetricList \
   --MetricName MongosConnectionUsage \
   --Dimensions '[{"instanceId":"{{user.db_instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 | Metric | Threshold | Action |
 |--------|-----------|--------|
@@ -529,7 +531,7 @@ aliyun dds AddShardingNode \
   --NodeInfo.ShardInfo.ShardClass "{{user.shard_class}}" \
   --NodeInfo.ShardInfo.ShardStorage "{{user.shard_storage}}" \
   --NodeInfo.ShardInfo.ReplicationFactor "{{user.replication_factor|3}}"
-```
+```markdown
 
 #### Pre-flight for AddShard
 
@@ -549,7 +551,7 @@ aliyun dds AddShardingNode \
 aliyun dds DescribeShardingNetworkAddress \
   --DBInstanceId "{{user.db_instance_id}}" \
   --output cols=Role,NodeId rows=NetworkAddresses[?Role=='shard']
-```
+```markdown
 
 ### RemoveShardNode API
 
@@ -560,7 +562,7 @@ Remove a shard from the cluster (data must be migrated first):
 aliyun dds RemoveShardingNode \
   --DBInstanceId "{{user.db_instance_id}}" \
   --NodeId "{{user.shard_node_id}}"
-```
+```markdown
 
 #### Pre-flight for RemoveShard (CRITICAL)
 
@@ -580,7 +582,7 @@ db.getSiblingDB("config").chunks.find({ shard: "shard_to_remove" }).count()
 
 // If chunks exist, manually move them
 sh.moveChunk("mydb.collection", { shardKey: "range" }, "new_shard")
-```
+```markdown
 
 ### Shard Status Monitoring
 
@@ -596,7 +598,7 @@ aliyun cms DescribeMetricList \
   --MetricName ShardCpuUsage,ShardMemoryUsage \
   --Dimensions '[{"instanceId":"{{user.db_instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 ### Balanced Cluster Validation
 
@@ -614,16 +616,16 @@ db.getSiblingDB("config").chunks.aggregate([
 
 // Expected: Similar chunk counts across shards
 // Imbalance threshold: max_count - min_count > 5 chunks
-```
+```text
 
 **Balance Score Calculation:**
 
-```
+```markdown
 Balance Score = (max_chunks - min_chunks) / total_chunks * 100
 - Score < 5%: Healthy
 - Score 5-15%: Monitor
 - Score > 15%: Investigate balancer
-```
+```markdown
 
 ---
 
@@ -653,7 +655,7 @@ db.getSiblingDB("config").chunks.find({ jumbo: true })
 
 # Step 4: Check shard key cardinality
 db.mydb.collection.distinct("shardKeyField").length
-```
+```markdown
 
 **Decision Tree:**
 
@@ -675,7 +677,7 @@ sh.splitFind("mydb.collection", { shardKey: "split_point" })
 
 // 3. Manually move chunks to balance
 sh.moveChunk("mydb.collection", { shardKey: "value" }, "underloaded_shard")
-```
+```markdown
 
 ---
 
@@ -701,7 +703,7 @@ aliyun dds DescribeDBInstancePerformance \
 # Step 4: Check shard health
 aliyun dds DescribeShardingNetworkAddress \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 **Common Causes and Solutions:**
 
@@ -725,7 +727,7 @@ sh.moveChunk("mydb.collection", { shardKey: "value" }, "target_shard")
 // Cleanup orphaned documents if migration partially completed
 // On affected shard:
 db.mydb.collection.cleanupOrphaned("shardKeyField")
-```
+```markdown
 
 ---
 
@@ -755,7 +757,7 @@ aliyun dds DescribeSlowLogRecords \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **Decision Tree:**
 
@@ -777,7 +779,7 @@ db.orders.find({ orderId: "order123", status: "pending" })
 
 // Or use hint for shard key
 db.orders.find({ status: "pending" }).hint({ orderId: 1 })
-```
+```markdown
 
 ---
 
@@ -804,7 +806,7 @@ aliyun dds DescribeAvailableResource \
 aliyun dds DescribeDBInstanceAttribute \
   --DBInstanceId "{{user.db_instance_id}}" \
   --output cols=DBInstanceStatus rows=DBInstances.DBInstance[0].DBInstanceStatus
-```
+```markdown
 
 **Common API Errors:**
 
@@ -837,11 +839,11 @@ chunks.forEach(function(chunk) {
 // Verify migration complete
 db.getSiblingDB("config").chunks.count({ shard: "shard_to_remove" })
 // Must be 0 before RemoveShardNode API call
-```
+```text
 
 **Safety Protocol:**
 
-```
+```text
 1. Check chunk count on target shard
 2. If chunks > 0:
    a. Enable balancer
@@ -850,7 +852,7 @@ db.getSiblingDB("config").chunks.count({ shard: "shard_to_remove" })
 3. Re-verify chunk count = 0
 4. Get explicit user confirmation
 5. Execute RemoveShardNode API
-```
+```markdown
 
 ---
 
@@ -886,7 +888,7 @@ aliyun dds CreateDBInstance \
   --ShardingInfo.ShardNumber "{{user.shard_count}}" \
   --ShardingInfo.MongosNumber "{{user.mongos_count}}" \
   --ShardingInfo.ConfigServer "{{user.config_server_class}}"
-```
+```markdown
 
 ### AddShardingNode Examples
 
@@ -904,7 +906,7 @@ aliyun dds AddShardingNode \
   --NodeInfo.ShardInfo.ShardClass "dds.shard.mid" \
   --NodeInfo.ShardInfo.ShardStorage 100 \
   --NodeInfo.ShardInfo.ReplicationFactor 3
-```
+```markdown
 
 ### RemoveShardingNode Example
 
@@ -913,7 +915,7 @@ aliyun dds AddShardingNode \
 aliyun dds RemoveShardingNode \
   --DBInstanceId "dds-xxxxxxx" \
   --NodeId "d-xxxxxxx"  # Shard node ID from DescribeShardingNetworkAddress
-```
+```markdown
 
 ---
 
@@ -996,7 +998,7 @@ aliyun dds DescribeSlowLogRecords \
   --StartTime "$START_TIME" \
   --EndTime "$END_TIME" \
   --PageSize 10
-```
+```markdown
 
 ---
 
@@ -1027,7 +1029,7 @@ sh.moveChunk("mydb.collection", { key: "value" }, "shardName")
 db.getSiblingDB("config").chunks.find({ ns: "mydb.collection" })
 db.getSiblingDB("config").shards.find()
 db.getSiblingDB("config").migrations.find()
-```
+```markdown
 
 ### Common Thresholds
 

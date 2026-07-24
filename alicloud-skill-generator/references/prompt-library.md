@@ -24,12 +24,14 @@
 **ID:** `meta-initiate`
 **Usage Context:** Triggered when user requests creation of a new `alicloud-[product]-ops` skill.
 **Trigger Conditions:**
+
 - User mentions "add skill for [product]"
 - User mentions "generate alicloud-[product]-ops"
 - Existing skill lacks P0 elements and needs regeneration
 
 **Prompt Content:**
-```
+
+```text
 You are the Alibaba Cloud Skill Generator. Your task is to scaffold a new operational skill for Alibaba Cloud product: {{product.name}}.
 
 Before generating, you MUST:
@@ -40,9 +42,10 @@ Before generating, you MUST:
 
 Follow the generation process in SKILL.md Step 0–6 exactly.
 Output: structured directory tree with populated SKILL.md and references/.
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product.name` | string | Yes | English product name (e.g., ECS, RDS) |
@@ -51,6 +54,7 @@ Output: structured directory tree with populated SKILL.md and references/.
 | `product.chinese_name` | string | No | Chinese name for trigger matching |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** Generated skill passes P0 checklist ≥ 95% items
 - **Failure Mode:** Missing OpenAPI source → API hallucination risk
 - **Optimization:** Auto-detect product slug from `aliyun help` output
@@ -64,7 +68,8 @@ Output: structured directory tree with populated SKILL.md and references/.
 **Trigger Conditions:** Product name matches existing directory pattern.
 
 **Prompt Content:**
-```
+
+```text
 Analyze whether to EXTEND existing skill `alicloud-{{product}}-ops` or CREATE new directory.
 
 Decision rules:
@@ -80,11 +85,13 @@ Output: decision (EXTEND or NEW) with justification.
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** Correct decision in 100% of cases (wrong decision causes skill fragmentation)
 - **Failure Mode:** Creating duplicate skills for same product
 - **Optimization:** Maintain product-to-skill mapping registry
@@ -100,10 +107,12 @@ Output: decision (EXTEND or NEW) with justification.
 **Trigger Conditions:** Decision made to create new skill directory.
 
 **Prompt Content:**
-```
+
+```text
 Create the standard directory layout for `alicloud-{{product}}-ops`:
 
-```
+```text
+
 alicloud-{{product}}-ops/
 ├── SKILL.md
 ├── references/
@@ -116,19 +125,22 @@ alicloud-{{product}}-ops/
 │   └── idempotency-checklist.md  # when retries/automation required
 └── assets/
     └── example-config.yaml
-```
+
+```text
 
 Populate each file from templates in `alicloud-skill-generator/references/`.
 Replace all [Placeholders] with product-specific content derived from OpenAPI.
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
 | `cli_applicability` | enum | Yes | `cli-first` (CLI primary), `dual-path` (both required), `sdk-only` (SDK only), or `cli-only` (read-only) |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** All P0-required files present; no missing references/
 - **Failure Mode:** Missing cli-usage.md for dual-path skills
 - **Optimization:** Automated template substitution with OpenAPI parsing
@@ -142,7 +154,8 @@ Replace all [Placeholders] with product-specific content derived from OpenAPI.
 **Trigger Conditions:** Directory layout created, OpenAPI source available.
 
 **Prompt Content:**
-```
+
+```text
 Populate `SKILL.md` from `alicloud-skill-generator/references/alicloud-skill-template.md`.
 
 Replace placeholders with verified data:
@@ -154,9 +167,10 @@ Replace placeholders with verified data:
 - CLI commands → verified via `aliyun help {{product.slug}}`
 
 CRITICAL: Do NOT invent fields, flags, or response paths. Every item MUST be traceable to OpenAPI or verified CLI output.
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product.name` | string | Yes | Product name |
@@ -166,6 +180,7 @@ CRITICAL: Do NOT invent fields, flags, or response paths. Every item MUST be tra
 | `product.slug` | string | Yes | CLI slug |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** Zero hallucinated fields; all operationIds exist in OpenAPI
 - **Failure Mode:** Invented JSON paths cause runtime failures
 - **Optimization:** Integrate OpenAPI parser for automatic field extraction
@@ -181,7 +196,8 @@ CRITICAL: Do NOT invent fields, flags, or response paths. Every item MUST be tra
 **Trigger Conditions:** OpenAPI URL or spec provided.
 
 **Prompt Content:**
-```
+
+```yaml
 Analyze the OpenAPI spec for Alibaba Cloud product {{product.name}}.
 
 Extract:
@@ -197,12 +213,14 @@ Flag any operations that appear deprecated or experimental.
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product.name` | string | Yes | Product name |
 | `openapi.spec` | string | Yes | Raw OpenAPI spec content or URL |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** 100% of operations documented; no missing required params
 - **Failure Mode:** Missing pagination pattern → broken list operations
 - **Optimization:** Automated spec diff tracking for API updates
@@ -216,7 +234,8 @@ Flag any operations that appear deprecated or experimental.
 **Trigger Conditions:** Determining `cli_applicability` value.
 
 **Prompt Content:**
-```
+
+```yaml
 Analyze `aliyun` CLI coverage for product {{product.slug}}.
 
 Run: `aliyun help {{product.slug}}` and capture output.
@@ -233,14 +252,16 @@ Output: coverage gap table with columns:
 Set `cli_applicability` accordingly:
 - `dual-path` if CLI covers core operations
 - `sdk-only` if CLI does not expose this product
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product.slug` | string | Yes | CLI product slug |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** Accurate `cli_applicability` assignment
 - **Failure Mode:** Marking `dual-path` when CLI lacks product → broken flows
 - **Optimization:** Cache `aliyun help` output per product version
@@ -256,7 +277,8 @@ Set `cli_applicability` accordingly:
 **Trigger Conditions:** Skill scaffolding complete.
 
 **Prompt Content:**
-```
+
+```text
 Validate generated skill `alicloud-{{product}}-ops` against P0 checklist.
 
 Check each item:
@@ -280,12 +302,14 @@ Output: PASS / FAIL with detailed report.
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
 | `skill.content` | string | Yes | Full SKILL.md content |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** 100% P0 items pass before merge
 - **Failure Mode:** Missing safety gate → destructive action without confirmation
 - **Optimization:** Automated checklist runner with regex validation
@@ -299,7 +323,8 @@ Output: PASS / FAIL with detailed report.
 **Trigger Conditions:** Before merge or release.
 
 **Prompt Content:**
-```
+
+```text
 Run adversarial scenarios against `alicloud-{{product}}-ops`.
 
 Scenarios:
@@ -315,9 +340,10 @@ For each scenario:
 - Result: PASS / FAIL
 - Evidence: quote from skill content
 - Fix: specific instruction if FAILED
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
@@ -325,6 +351,7 @@ For each scenario:
 | `openapi.spec` | string | Yes | Reference OpenAPI spec |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** Zero critical security gaps
 - **Failure Mode:** Credential leak in generated skill
 - **Optimization:** Automated static analysis for secret patterns
@@ -340,7 +367,8 @@ For each scenario:
 **Trigger Conditions:** Every skill generation.
 
 **Prompt Content:**
-```
+
+```yaml
 Generate an onboarding section for `alicloud-{{product}}-ops` SKILL.md.
 
 Include:
@@ -366,6 +394,7 @@ Tone: concise, actionable, no jargon. Assume user knows Alibaba Cloud basics but
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product.name` | string | Yes | Product name |
@@ -373,6 +402,7 @@ Tone: concise, actionable, no jargon. Assume user knows Alibaba Cloud basics but
 | `operations` | array | Yes | List of primary operations |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** New user can execute first command within 60 seconds
 - **Failure Mode:** Missing prerequisites → user stuck at first step
 - **Optimization:** Include copy-paste ready command blocks
@@ -386,7 +416,8 @@ Tone: concise, actionable, no jargon. Assume user knows Alibaba Cloud basics but
 **Trigger Conditions:** Each operation flow (create, describe, delete, etc.).
 
 **Prompt Content:**
-```
+
+```text
 Design the user interaction pattern for operation: {{operation.name}} on {{product.name}}.
 
 Requirements:
@@ -400,9 +431,10 @@ Anti-patterns to avoid:
 - Do not ask for credentials (use {{env.*}})
 - Do not present raw JSON as primary output
 - Do not chain more than 3 prompts without showing progress
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `operation.name` | string | Yes | Operation name |
@@ -410,6 +442,7 @@ Anti-patterns to avoid:
 | `operation.destructive` | boolean | Yes | Whether operation is destructive |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** User completes flow with ≤ 3 interactive prompts
 - **Failure Mode:** Excessive prompting → user abandonment
 - **Optimization:** Pre-fill from environment and previous context
@@ -423,19 +456,22 @@ Anti-patterns to avoid:
 **Trigger Conditions:** Every error handling pattern.
 
 **Prompt Content:**
-```
+
+```text
 Design user-friendly error messages for `alicloud-{{product}}-ops`.
 
 For each error category:
 
 **Format:**
 ```
+
 [ERROR] {{error.code}}: {{error.human_readable}}
 
 What happened: {{error.explanation}}
 How to fix: {{error.remediation}}
 Next step: {{error.next_action}}
-```
+
+```text
 
 **Categories to cover:**
 - Credential missing/invalid
@@ -451,15 +487,17 @@ Rules:
 - Never expose secret values
 - Always suggest a concrete next action
 - Include request ID when available for support escalation
-```
+```markdown
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `product` | string | Yes | Product identifier |
 | `error.code` | string | Yes | API error code |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** User can self-resolve ≥ 80% of errors without external help
 - **Failure Mode:** Cryptic error → user escalation
 - **Optimization:** Link to specific troubleshooting.md sections
@@ -473,7 +511,8 @@ Rules:
 **Trigger Conditions:** After each operation execution.
 
 **Prompt Content:**
-```
+
+```text
 Design feedback mechanisms for operation: {{operation.name}}.
 
 Include:
@@ -498,12 +537,14 @@ Include:
 ```
 
 **Parameters:**
+
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `operation.name` | string | Yes | Operation name |
 | `operation.duration` | enum | Yes | `instant`, `seconds`, `minutes` |
 
 **Effectiveness Evaluation:**
+
 - **Success Metric:** User always knows system state after any action
 - **Failure Mode:** Silent failure → user uncertainty
 - **Optimization:** Structured output with machine-readable status fields

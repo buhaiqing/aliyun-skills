@@ -5,6 +5,7 @@
 > **命名**：Runtime Harness = 运行时 wrapper 框架（legacy 代码名 `skillopt_*`）。与 [Microsoft SkillOpt](https://github.com/microsoft/SkillOpt) 及 [runtime-harness-glossary.md §1.1](./runtime-harness-glossary.md#11-与-microsoft-skillopt-的架构关系) 区分。
 >
 > **相关文档**：
+>
 > - [memory-strategy.md](./memory-strategy.md) — 三层记忆实现与 Local-first 原则
 > - [harness-observability-architecture.md](./harness-observability-architecture.md) — Metrics / Logs / Traces 三位一体
 > - [gcl-spec.md](./gcl-spec.md) — GCL trace 与 Layer 1/2 规范
@@ -60,7 +61,7 @@ flowchart TB
     PREFLIGHT --> L3
     PREFLIGHT --> PROMPT
     PROMPT --> WRAP
-```
+```markdown
 
 ### 1.1 一句话对比
 
@@ -84,7 +85,7 @@ flowchart TB
 
 ### 2.1 Local-first 关键设计
 
-```
+```text
 每次 wrapper 调用 → 始终写本地 trace（与 Langfuse / Judge 开关无关）
 Langfuse          → 仅是 optional mirror，不 gate 本地 trace
 trace_end         → memory_store_lite（非致命）→ Layer 1
@@ -100,7 +101,7 @@ Canonical 存储与联动细节见 [memory-strategy.md — 本地 Trace](./memor
 
 ### 3.1 写入（执行后，append-only）
 
-```
+```bash
 skillopt_wrap() / gcl_runner
     │
     ├─► 可观测性（并行、best-effort）
@@ -118,13 +119,13 @@ make memory-maintain-apply（离线）
 
 make doctor-weekly-apply（weekly）
           rollup + weekly          → Layer 3 baseline / runtime-rollup.json
-```
+```markdown
 
 ### 3.2 读取（执行前，闭环消费）
 
 记忆独有的一条 **R2 preflight 闭环**，可观测性不参与：
 
-```
+```text
 memory_preflight.py
     ├─ Layer 1 → {{recent_executions}}  「最近几次 PASS/FAIL？」
     ├─ Layer 2 → {{known_traps}}        「同类坑有没有？」
@@ -153,14 +154,14 @@ gcl_runner / skillopt_wrap 注入 trace + Generator prompt
 
 ## 5. 抽象递进：可观测性 ≈ Layer 0，记忆 = Layer 1–3
 
-```
+```text
 Layer 0  可观测性（原始 telemetry）
          Metrics / Logs / Traces — 「telemetry 管道」
 
 Layer 1  Execution Memory — 「按 (skill, op) 索引的 trace 摘要」
 Layer 2  Reflexion — 「dedup 失败模式 + count」
 Layer 3  Strategy — 「跨 skill 趋势 + Git 信号 → baseline」
-```
+```markdown
 
 | 层级 | 保留什么 | 适合做什么 |
 |------|----------|------------|
@@ -201,7 +202,7 @@ Layer 3  Strategy — 「跨 skill 趋势 + Git 信号 → baseline」
 
 ## 8. 总结：关系模型
 
-```
+```text
                     ┌─────────────────────────────────┐
                     │         一次云操作执行            │
                     └───────────────┬─────────────────┘

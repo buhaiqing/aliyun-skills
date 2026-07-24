@@ -15,6 +15,7 @@
 | **Prompt Injection Guard** | Input validation and content filtering | Required |
 
 **Minimum RAM Policy:**
+
 ```json
 {
   "Version": "1",
@@ -71,12 +72,13 @@
 1. Switch to backup region (cn-shanghai)
    ```bash
    export ALIBABA_CLOUD_REGION_ID=cn-shanghai
-   ```
+```yaml
 
 2. Verify model availability
+
    ```bash
    aliyun bailian ListModels --RegionId cn-shanghai
-   ```
+```markdown
 
 3. Update application endpoints
    - Update DNS/config to point to cn-shanghai
@@ -87,9 +89,11 @@
    - Update status page
 
 ### Recovery
+
 1. Monitor primary region status
 2. When restored, gradually shift traffic back
 3. Verify no KB/agent drift between regions
+
 ```
 
 ### 3. Cost (成本)
@@ -112,6 +116,7 @@
 | **KB Right-Sizing** | 15% | Remove outdated docs, optimize chunk size |
 
 **Idle Resource Detection:**
+
 ```bash
 # Find unused agents (>30 days no invocations)
 aliyun bailian ListAgents | jq '.Agents[] | select(.LastUsed < "'$(date -d "30 days ago" +%Y-%m-%d)'")'

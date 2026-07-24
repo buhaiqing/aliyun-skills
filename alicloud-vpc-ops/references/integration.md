@@ -4,9 +4,9 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+```markdown
 
 ## JIT Go SDK Workflow
 
@@ -27,7 +27,7 @@ export GOPROXY="https://goproxy.cn,direct"
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/tea
 go get github.com/alibabacloud-go/vpc-20160428/v3/client
-```
+```markdown
 
 ### 3. Create operation-specific script
 
@@ -82,7 +82,7 @@ func main() {
 
 ```bash
 go run ./main.go
-```
+```markdown
 
 ## Cross-Skill Delegation Matrix
 

@@ -82,11 +82,13 @@ echo "Your input text" | wc -c | awk '{print "Approx tokens:", int($1/4)}'
 ### Issue: "Model not found" Error
 
 **Symptoms:**
-```
+
+```text
 Error: ModelNotFound — The specified model ID does not exist
 ```
 
 **Diagnosis:**
+
 ```bash
 # List valid model IDs
 aliyun bailian ListModels | jq '.Models[].ModelId'
@@ -100,6 +102,7 @@ aliyun bailian ListModels | jq '.Models[].ModelId'
 ```
 
 **Resolution:**
+
 - Use exact model ID from ListModels
 - Check for typos (case-sensitive)
 - Verify model is Available in your region
@@ -107,11 +110,13 @@ aliyun bailian ListModels | jq '.Models[].ModelId'
 ### Issue: Context Length Exceeded
 
 **Symptoms:**
-```
+
+```text
 Error: ContextLengthExceeded — Input length exceeds maximum context
 ```
 
 **Resolution:**
+
 ```bash
 # Option 1: Truncate input
 # Option 2: Use larger context model
@@ -124,11 +129,13 @@ aliyun bailian CreateChatCompletion --body '{
 ### Issue: Rate Limiting During Batch Processing
 
 **Symptoms:**
-```
+
+```text
 Error: RateLimitExceeded — Too many requests
 ```
 
 **Resolution:**
+
 ```bash
 # Implement token bucket pacing
 #!/bin/bash
@@ -147,6 +154,7 @@ done
 RAG query returns no results or low relevance.
 
 **Diagnosis:**
+
 ```bash
 # Check KB status
 aliyun bailian GetKnowledgeBase --KnowledgeBaseId "kb-xxx" | jq '.Status'
@@ -165,6 +173,7 @@ aliyun bailian Retrieve --body '{
 ```
 
 **Resolution:**
+
 - Ensure documents are indexed (Status=Completed)
 - Lower ScoreThreshold if set too high
 - Check query relevance to document content
@@ -173,6 +182,7 @@ aliyun bailian Retrieve --body '{
 ### Issue: Agent Not Responding as Expected
 
 **Diagnosis:**
+
 ```bash
 # Check agent configuration
 aliyun bailian GetAgent --AgentId "agent-xxx" | jq '{
@@ -195,6 +205,7 @@ aliyun bailian InvokeAgent --body '{
 ### Scenario: Inference Latency Too High
 
 **Round 1 — Baseline:**
+
 ```bash
 # Measure base latency
 time aliyun bailian CreateChatCompletion --body '{
@@ -205,6 +216,7 @@ time aliyun bailian CreateChatCompletion --body '{
 ```
 
 **Round 2 — Isolate Variables:**
+
 | Variable | Test | Result |
 |----------|------|--------|
 | Model | Try qwen-turbo vs qwen-max | Compare latencies |
@@ -213,6 +225,7 @@ time aliyun bailian CreateChatCompletion --body '{
 | Region | Test cn-hangzhou vs cn-shanghai | Compare latencies |
 
 **Round 3 — Root Cause:**
+
 - If model-dependent: Switch to faster model (qwen-turbo)
 - If input-dependent: Implement prompt compression
 - If region-dependent: Use lowest-latency region

@@ -20,15 +20,17 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | **面向风险的应急快恢** | Detach policy before delete. If all access lost, root account recovery available |
 
 ### DR Runbook
-```
+
+```text
 Phase 1: Verify — sts GetCallerIdentity to confirm credentials are still valid
 Phase 2: Restore — If locked out, use root account to re-grant access
 Phase 3: Validate — ListUsers/ListPolicies to confirm permissions are correct
-```
+```markdown
 
 ## 成本 (Cost)
 
 RAM is free. However, poorly managed identities can lead to:
+
 - **Orphaned resources:** Users/roles that exist but are never used → audit and delete
 - **Over-provisioned permissions:** Excessive `Action: "*"` leads to accidental resource creation → cost overruns
 
@@ -41,6 +43,7 @@ RAM is free. However, poorly managed identities can lead to:
 ## 性能 (Performance)
 
 RAM API calls are instant (sub-second). Monitor:
+
 | Metric | Threshold | Action |
 |--------|----------|--------|
 | Throttling | Any 429 | Retry with exponential backoff |

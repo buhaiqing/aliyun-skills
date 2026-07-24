@@ -4,7 +4,7 @@
 
 ## 1. 项目结构
 
-```
+```text
 sandbox-sidecar/
 ├── app/
 │   ├── __init__.py
@@ -28,7 +28,7 @@ sandbox-sidecar/
 ├── requirements.txt
 ├── Dockerfile
 └── config.yaml
-```
+```markdown
 
 ## 2. 依赖安装
 
@@ -50,7 +50,7 @@ pydantic-settings==2.1.0
 EOF
 
 pip install -r requirements.txt
-```
+```markdown
 
 ## 3. 核心实现
 
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
         return self.data_endpoint_template.replace("{account}", self.account_id).replace("{region}", self.region_id)
 
 settings = Settings()
-```
+```markdown
 
 ### 3.2 签名模块 (`app/auth/signer.py`)
 
@@ -164,7 +164,7 @@ class AgentRunSigner:
             "X-Acs-Date": date_time,
             "X-Acs-Content-Sha256": body_hash,
         }
-```
+```markdown
 
 ### 3.3 主应用 (`app/main.py`)
 
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         port=settings.port,
         reload=False,
     )
-```
+```markdown
 
 ### 3.4 Dockerfile
 
@@ -322,7 +322,7 @@ COPY app/ ./app/
 EXPOSE 8080
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
-```
+```markdown
 
 ## 4. 运行
 
@@ -338,7 +338,7 @@ python -m app.main
 
 # 或使用 uvicorn
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --workers 4
-```
+```markdown
 
 ## 5. Go vs Python 对比
 

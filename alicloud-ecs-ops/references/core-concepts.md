@@ -7,7 +7,9 @@ Elastic Compute Service (ECS) is Alibaba Cloud's Infrastructure-as-a-Service (Ia
 ## Key Concepts
 
 ### Instance
+
 A virtual server in the cloud. Each instance has:
+
 - **Instance ID**: Unique identifier (e.g., `i-bp67acfmxazb4ph***`)
 - **Instance Type**: Hardware configuration (CPU, memory) — e.g., `ecs.g7.large`
 - **Image**: OS template used to create the instance
@@ -21,7 +23,9 @@ A virtual server in the cloud. Each instance has:
   - `Deleted`: Instance has been deleted (may appear briefly in describe results)
 
 ### Disk
+
 Block-level storage volumes:
+
 - **System Disk**: OS installation, mandatory, lifecycle-bound to instance
 - **Data Disk**: Additional storage, can be attached/detached independently
 - **Disk Categories**:
@@ -32,33 +36,41 @@ Block-level storage volumes:
   - `cloud_auto`: ESSD AutoPL, auto-scales performance based on workload
 
 ### Image
+
 OS template used to create instances:
+
 - **Public Image**: Official images provided by Alibaba Cloud
 - **Custom Image**: User-created from existing instances
 - **Shared Image**: Shared from other Alibaba Cloud accounts
 - **Marketplace Image**: Third-party images from Alibaba Cloud Marketplace
 
 ### Snapshot
+
 Point-in-time backup of a disk:
+
 - Used for data backup and disaster recovery
 - Can be used to create custom images
 - Supports incremental snapshots
 
 ### Security Group
+
 Virtual firewall for instances:
+
 - Controls inbound and outbound traffic
 - Rules defined by protocol, port range, source/destination CIDR
 - Instances in the same security group can communicate by default
 
 ### VPC / VSwitch
+
 Virtual network environment:
+
 - **VPC**: Isolated private network
 - **VSwitch**: Subnet within a VPC, bound to a specific zone
 - ECS instances must be created in a VSwitch (VPC mode)
 
 ## Instance Lifecycle
 
-```
+```text
 CreateInstance → Pending → Starting → Running
                                     ↓
                               StopInstance

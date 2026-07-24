@@ -4,7 +4,7 @@
 
 - **Spec:** WAF OpenAPI 2021-10-01
 - **Style:** RPC
-- **Documentation:** https://help.aliyun.com/zh/waf/web-application-firewall-3-0/developer-reference/api-overview
+- **Documentation:** <https://help.aliyun.com/zh/waf/web-application-firewall-3-0/developer-reference/api-overview>
 - **Endpoint:** `waf-openapi.{region}.aliyuncs.com`
 
 ## SDK Operations Map
@@ -131,7 +131,7 @@ func main() {
 
 > **Token Efficiency (TE-6):** SKILL.md lists only 3–5 most commonly used fields per operation.
 > Complete response field lists are defined in the OpenAPI spec:
-> - **API Docs:** https://help.aliyun.com/zh/waf/web-application-firewall-3-0/developer-reference/api-overview
+> - **API Docs:** <https://help.aliyun.com/zh/waf/web-application-firewall-3-0/developer-reference/api-overview>
 > - For each operation, see *Response Parameters* in the API docs for the full field list.
 >
 > **Commonly used fields (SKILL.md)** focus on: `InstanceId`, `Edition`, `PayType`, `DomainId`, `Cname`, `RuleId`, `RequestId`.

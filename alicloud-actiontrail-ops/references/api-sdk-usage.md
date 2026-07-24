@@ -7,8 +7,8 @@
 - **Style**: RPC
 - **Endpoint**: `actiontrail.[region_id].aliyuncs.com` (e.g., `actiontrail.cn-hangzhou.aliyuncs.com`)
 - **Global Endpoint**: `actiontrail.aliyuncs.com`
-- **Docs**: https://help.aliyun.com/zh/actiontrail/developer-reference/api-actiontrail-2020-07-06-overview
-- **API Explorer**: https://api.aliyun.com/api/Actiontrail/2020-07-06
+- **Docs**: <https://help.aliyun.com/zh/actiontrail/developer-reference/api-actiontrail-2020-07-06-overview>
+- **API Explorer**: <https://api.aliyun.com/api/Actiontrail/2020-07-06>
 
 ## SDK Operations Map
 

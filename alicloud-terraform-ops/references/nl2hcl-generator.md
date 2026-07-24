@@ -15,7 +15,7 @@
 
 ### 1.2 架构分层
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  Input: 自然语言描述                      │
 │  "创建一个 VPC，两个交换机，3台 ECS"        │
@@ -53,7 +53,7 @@
 │  Output: Terraform 配置文件               │
 │  main.tf / variables.tf / outputs.tf      │
 └─────────────────────────────────────────┘
-```
+```markdown
 
 ## 2. 语义解析层
 
@@ -67,6 +67,7 @@
 | **Destroy** | 删除、销毁、清理 | "销毁测试环境的资源" |
 
 **输出格式**:
+
 ```json
 {
   "intent": "create",
@@ -103,7 +104,7 @@
     }
   ]
 }
-```
+```markdown
 
 ### 2.3 关系建模
 
@@ -117,6 +118,7 @@
 | **Depend** | A 依赖 B | ECS 依赖 SecurityGroup |
 
 **关系图表示**:
+
 ```json
 {
   "relations": [
@@ -211,13 +213,13 @@ defaults:
     db_instance_class:
       dev: "rds.mysql.t1.small"
       prod: "rds.mysql.c1.large"
-```
+```markdown
 
 ## 4. 生成流程
 
 ### 4.1 五步流程
 
-```
+```text
 Step 1: 语义解析 (Semantic Parsing)
    └─ 输入: 自然语言文本
    └─ 输出: 结构化意图 + 实体列表 + 关系图
@@ -254,6 +256,7 @@ Step 6: Dry-Run 预览 (可选)
 **输入**: "创建一个 VPC，包含两个可用区的交换机，每个交换机下挂 2 台 ECS"
 
 **Step 1 - 语义解析**:
+
 ```json
 {
   "intent": "create",
@@ -267,9 +270,10 @@ Step 6: Dry-Run 预览 (可选)
     {"from": "vswitch", "to": "ecs", "type": "contain", "multiplicity": "1:n"}
   ]
 }
-```
+```text
 
 **Step 2 - 资源标准化**:
+
 ```json
 {
   "resources": [
@@ -302,7 +306,8 @@ Step 6: Dry-Run 预览 (可选)
 ```
 
 **Step 3 - 依赖图**:
-```
+
+```text
 alicloud_vpc.main
        │
        ▼
@@ -317,11 +322,12 @@ alicloud_vswitch.subnet[1] ──┘
        ▼
 alicloud_instance.web[2]
 alicloud_instance.web[3]
-```
+```bash
 
 **Step 4 - HCL 生成**: (见第 7 节输出规范)
 
 **Step 5 - 验证**:
+
 ```bash
 $ terraform validate
 [PASS] Configuration is valid.
@@ -351,7 +357,7 @@ $ terraform validate
     {"from": "custom_ecs", "to": "custom_vpc", "reason": "业务逻辑依赖"}
   ]
 }
-```
+```markdown
 
 ### 5.3 拓扑排序算法
 
@@ -401,15 +407,17 @@ def topological_sort(resources, dependencies):
 ### 6.2 变量生成规则
 
 **原始属性**:
+
 ```hcl
 resource "alicloud_instance" "web" {
   instance_type = "ecs.c6.large"
   image_id      = "centos_8"
   vswitch_id    = alicloud_vswitch.subnet.id
 }
-```
+```markdown
 
 **变量化后**:
+
 ```hcl
 # variables.tf
 variable "ecs_instance_type" {
@@ -442,13 +450,13 @@ ecs_count         = 1
 # terraform.tfvars (prod)
 ecs_instance_type = "ecs.c6.xlarge"
 ecs_count         = 4
-```
+```markdown
 
 ## 7. 输出规范
 
 ### 7.1 文件结构
 
-```
+```text
 generated/
 ├── main.tf          # 资源定义
 ├── variables.tf     # 变量声明
@@ -547,7 +555,7 @@ data "alicloud_zones" "available" {
   available_disk_category     = "cloud_efficiency"
   available_resource_creation = "VSwitch"
 }
-```
+```markdown
 
 ### 7.3 variables.tf 格式
 
@@ -657,7 +665,7 @@ output "security_group_id" {
   description = "安全组 ID"
   value       = alicloud_security_group.web.id
 }
-```
+```markdown
 
 ## 8. Dry-Run 支持
 
@@ -671,7 +679,7 @@ output "security_group_id" {
 
 ### 8.2 Dry-Run 流程
 
-```
+```json
 用户: "生成一个 VPC 和 2 台 ECS 的配置，先 preview 一下"
 
 Agent: [NL2HCL 生成中...]
@@ -728,11 +736,12 @@ hitl:
       dry_run: true  # 强制 dry-run 后再确认
       show_cost: true  # 显示预估费用
       show_risk: true  # 显示风险提示
-```
+```markdown
 
 ### 8.4 限制
 
 Dry-Run 需要：
+
 - 有效的阿里云凭证 (用于查询数据源)
 - 有效的 backend 配置 (或本地临时 backend)
 - 网络连通性 (查询可用区等数据)
@@ -746,6 +755,7 @@ Dry-Run 需要：
 **自然语言**: "创建一个 Web 服务栈，包含 VPC、2 台 ECS、1 个 SLB，ECS 要能访问公网"
 
 **生成要点**:
+
 - VPC + VSwitch (多可用区)
 - ECS × 2 (带公网带宽)
 - SLB (绑定 ECS)
@@ -757,6 +767,7 @@ Dry-Run 需要：
 **自然语言**: "创建一个高可用 RDS MySQL 集群，一主一从，部署在多可用区，只有应用服务器能访问"
 
 **生成要点**:
+
 - VPC + 2× VSwitch (不同可用区)
 - RDS MySQL (主可用区 + 备可用区)
 - SecurityGroup (限制内网访问)
@@ -767,6 +778,7 @@ Dry-Run 需要：
 **自然语言**: "在现有架构上添加 Redis 缓存，与数据库同 VPC，只允许 ECS 访问"
 
 **生成要点**:
+
 - 引用现有 VPC (data source)
 - Redis 实例 (云数据库版)
 - SecurityGroup 规则 (限制 ECS IP 段)
@@ -776,6 +788,7 @@ Dry-Run 需要：
 **自然语言**: "创建一个私有 OSS bucket，用于存储用户上传文件，需要通过 CDN 加速"
 
 **生成要点**:
+
 - OSS Bucket (私有读写)
 - CDN Domain (加速域名)
 - Referer 防盗链配置
@@ -785,6 +798,7 @@ Dry-Run 需要：
 **自然语言**: "搭建一个完整的微服务基础设施：VPC 跨 3 可用区，每区 2 台 ECS，共享 SLB，后端 RDS + Redis，ECS 能出网但外网不能直接访问"
 
 **生成要点**:
+
 - VPC / 3× VSwitch
 - ECS × 6 (跨可用区分布)
 - SLB (健康检查配置)
@@ -812,7 +826,8 @@ Dry-Run 需要：
 歧义: "大的"可能指 CPU 多、内存大、还是磁盘大?
 
 **处理**:
-```
+
+```json
 [歧义检测] "大的"规格不明确，请选择:
   [1] 高 CPU (ecs.c6.xlarge - 4核4G)
   [2] 高内存 (ecs.r6.xlarge - 2核16G)  
@@ -823,6 +838,7 @@ Dry-Run 需要：
 ### 10.3 回退机制
 
 当 LLM 解析不可靠时:
+
 1. 使用规则引擎做初筛
 2. 关键字段必须匹配资源映射表
 3. 生成后强制 `terraform validate`
@@ -832,7 +848,7 @@ Dry-Run 需要：
 
 ### 11.1 语义解析 Prompt
 
-```
+```json
 你是一位 Terraform 专家，负责将自然语言描述转换为结构化配置。
 
 任务: 解析用户的基础设施需求，提取以下信息:
@@ -855,11 +871,11 @@ Dry-Run 需要：
 }
 
 用户输入: {{user_input}}
-```
+```markdown
 
 ### 11.2 HCL 生成 Prompt
 
-```
+```text
 你是一位 Terraform HCL 代码生成专家。
 
 根据以下结构化配置，生成符合最佳实践的 Terraform HCL 代码:
@@ -895,12 +911,13 @@ Dry-Run 需要：
 ### 12.2 增量生成
 
 支持对现有配置的增量修改:
-```
+
+```text
 用户: "给现有 VPC 再添加一个交换机"
 → 读取现有 main.tf
 → 仅生成新增资源
 → 保持已有格式和变量
-```
+```yaml
 
 ---
 

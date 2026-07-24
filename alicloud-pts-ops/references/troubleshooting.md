@@ -64,6 +64,7 @@ If PTS reports success but latency high → delegate to target product skill (RD
 **Causes:** Already `Running`; invalid `LoadConfig`; quota; unpaid account.
 
 **Resolution:**
+
 1. `get-pts-scene-running-status` — stop if active
 2. `start-debug-pts-scene` — isolate config vs capacity issue
 3. Reduce `agentCount` and `allRpsLimit`; retry
@@ -73,6 +74,7 @@ If PTS reports success but latency high → delegate to target product skill (RD
 **Causes:** Target overload; wrong checkpoint; auth headers missing; rate limiting on target.
 
 **Resolution:**
+
 1. `stop-pts-scene` if production impact
 2. Review `relationList[].apiList[].headerList` and checkpoints
 3. Lower RPS; fix target capacity (ECS/SLB scaling)
@@ -82,6 +84,7 @@ If PTS reports success but latency high → delegate to target product skill (RD
 **Message:** "创建或者修改场景入参必须是实体类Scene的JSON串"
 
 **Resolution:**
+
 - Ensure top-level keys match OpenAPI `Scene` entity
 - Use `save-pts-scene --help` for nested structure reference
 - Test with minimal scene (single GET URL) first

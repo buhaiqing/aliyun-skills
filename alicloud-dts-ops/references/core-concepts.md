@@ -12,7 +12,7 @@ DTS provides three core capabilities:
 
 ### Architecture Components
 
-```
+```text
 [Source Database] ←→ [DTS Server (Data Plane)] ←→ [Target Database]
                           ↕
                     [DTS Control Plane]
@@ -50,7 +50,7 @@ DTS supports 100+ source/target combinations. Common ones include:
 | Cross-region (any) | ✅ | ✅ | ✅ |
 | Cross-account (any) | ✅ | ✅ | ✅ |
 
-> See full matrix: https://help.aliyun.com/zh/dts/supported-sources-and-targets
+> See full matrix: <https://help.aliyun.com/zh/dts/supported-sources-and-targets>
 
 ## Limits and Quotas
 
@@ -89,7 +89,9 @@ DTS supports 100+ source/target combinations. Common ones include:
 ## Key Concepts
 
 ### Precheck
+
 Before any DTS task starts, a precheck validates:
+
 - Source/target connectivity
 - Database account permissions
 - Binlog configuration (for incremental sync)
@@ -97,19 +99,25 @@ Before any DTS task starts, a precheck validates:
 - Object name conflicts
 
 ### Checkpoint / Resumption
+
 DTS maintains checkpoints for incremental migration and sync. If a task fails:
+
 - **Migration:** May resume from checkpoint if incremental phase was active
 - **Sync:** Resumes automatically from checkpoint after fixing the issue
 - **Full migration:** Must re-run from start if full phase fails
 
 ### Data Consistency Verification
+
 Use DescribeCheckJobs to trigger data verification between source and target:
+
 - Number verification: Compare row counts of each table
 - Full verification: Compare row-by-row data
 - Structure verification: Compare table schemas
 
 ### DU (DTS Unit)
+
 Each DTS task consumes DUs (compute units). Higher DU = faster throughput.
+
 - Default: 1 DU
 - Range: 1–100 DU (depending on instance type)
 - Modify via `ModifyDtsJobDuLimit`
@@ -125,7 +133,7 @@ Each DTS task consumes DUs (compute units). Higher DU = faster throughput.
 
 ## Dependency Graph
 
-```
+```text
 DTS Task
   ├── Source Database (RDS / PolarDB / MongoDB / Redis / ECS / external)
   │     └── VPC / Security Group / DTS CIDR Whitelist

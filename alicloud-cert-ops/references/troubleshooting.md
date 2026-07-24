@@ -17,7 +17,7 @@ metadata:
 
 When certificate deployment fails, follow this order:
 
-```
+```markdown
 1. DescribeDeploymentJobStatus
    -> Why: Is the job pending/running/failed/canceled?
 
@@ -65,6 +65,7 @@ When certificate deployment fails, follow this order:
 **Symptoms**: `DescribeDeploymentJobStatus` returns `pending` after 5 minutes.
 
 **Diagnosis**:
+
 ```bash
 aliyun cas ListContact
 aliyun cas GetUserCertificateDetail --CertId {{user.cert_id}}
@@ -81,6 +82,7 @@ aliyun cas GetUserCertificateDetail --CertId {{user.cert_id}}
 **Symptoms**: Job status = `partial_success`.
 
 **Diagnosis**:
+
 ```bash
 aliyun cas DescribeDeploymentJob --JobId {{user.job_id}}
 aliyun cas ListDeploymentJobCert --JobId {{user.job_id}}
@@ -97,6 +99,7 @@ aliyun cas ListDeploymentJobCert --JobId {{user.job_id}}
 **Symptoms**: Upload returns 400 with InvalidCertContent.
 
 **Diagnosis**:
+
 ```bash
 openssl x509 -in user_cert.pem -text -noout
 ```
@@ -142,6 +145,7 @@ openssl x509 -in user_cert.pem -text -noout
 **Symptoms**: Deployment job creation fails with 404 Contact.
 
 **Diagnosis**:
+
 ```bash
 aliyun cas ListContact
 ```

@@ -70,7 +70,7 @@
 
 ### DescribeContainerGroups (verified)
 
-```
+```text
 --RegionId                 Required, string
 --ContainerGroupIds        JSON array, max 20
 --ContainerGroupName       string
@@ -84,7 +84,7 @@
 
 ### ExecContainerCommand (verified)
 
-```
+```text
 --Command          Required, string (JSON array). Example: '["/bin/sh", "-c", "ls"]'
 --ContainerGroupId Required, string
 --ContainerName    Required, string
@@ -157,6 +157,7 @@ aliyun eci CreateContainerGroup --body '{
 ## Filter Examples (JMESPath)
 
 ### Summarize ECI status distribution
+
 ```bash
 aliyun eci DescribeContainerGroups --RegionId $REGION \
   --output cols=Status rows=ContainerGroups[].Status \
@@ -164,6 +165,7 @@ aliyun eci DescribeContainerGroups --RegionId $REGION \
 ```
 
 ### Find failed ECIs
+
 ```bash
 aliyun eci DescribeContainerGroups --RegionId $REGION --Status Failed \
   --output cols=ContainerGroupId,Name,Status \
@@ -240,6 +242,7 @@ aliyun eci DescribeContainerGroups --RegionId "$REGION" \
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
 ```

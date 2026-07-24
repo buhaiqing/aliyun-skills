@@ -360,6 +360,7 @@ def pre_flight_safety_check(operation: str, **kwargs) -> tuple[bool, str]:
 ```
 
 **Benefits**:
+
 - Sandbox runs inside VPC, no public internet exposure
 - Can access internal services (RDS, Redis, OSS VPC endpoint)
 - Security group controls inbound/outbound traffic

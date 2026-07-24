@@ -13,6 +13,7 @@ GCL 质量门禁运行器 (GCL Runner) is an Alibaba Cloud service for managing 
 ## Resource Lifecycle
 
 ### Status Flow
+
 - **Creating**: Resource is being provisioned
 - **Running/Available**: Resource is operational
 - **Modifying**: Resource configuration is being changed

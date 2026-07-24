@@ -17,6 +17,7 @@
 | Avg memory utilization | FunctionAvgMemoryUtilization | % | Average memory / allocated |
 
 **Additional:**
+
 - FunctionProvisionInvocations — invocations on provisioned instances
 - FunctionConcurrencyThrottles — throttled due to concurrency limit
 - FunctionResourceThrottles — throttled due to resource limit
@@ -46,72 +47,78 @@ FC-specific anomaly patterns for proactive inspection:
 
 ### Pattern 1: Cold Start Impact
 
-```
+```text
 Condition: FunctionMaxDuration >> FunctionAvgDuration (p95 > 5x avg)
 Interpretation: Cold start dominating execution time
 ```
 
 **Action:**
+
 - Consider provisioned instances for latency-sensitive functions
 - Increase memory allocation (higher memory = faster init)
 - Reduce package size / use layers
 
 ### Pattern 2: Memory Pressure
 
-```
+```text
 Condition: FunctionMaxMemoryUtilization > 85% OR FunctionMaxMemoryUsageMB approaching limit
 Interpretation: Risk of OOM errors (exit status 1)
 ```
 
 **Action:**
+
 - Increase `memorySize` config (up to 3072 MB)
 - Profile function for memory leaks
 - Use 10240 MB disk if working with large datasets
 
 ### Pattern 3: Throttle Cascade
 
-```
+```text
 Condition: FunctionConcurrencyThrottles > 0 OR FunctionResourceThrottles > 0
 Interpretation: Concurrency or resource limit hit — cascading failures possible
 ```
 
 **Action:**
+
 - Review `maxConcurrency` setting per function
 - Request account-level concurrency increase
 - Consider provisioned instances for baseline traffic
 
 ### Pattern 4: Error Spike
 
-```
+```text
 Condition: FunctionFunctionErrors > 0 AND FunctionTotalInvocations stable/rising
 Interpretation: Function code regression or downstream dependency failure
 ```
 
 **Action:**
+
 - Check recent code version deployments
 - Review async retry config
 - Check downstream service health
 
 ### Pattern 5: Duration Degradation
 
-```
+```text
 Condition: FunctionAvgDuration trending upward over 24h+
 Interpretation: Performance regression or resource saturation
 ```
 
 **Action:**
+
 - Review code changes
 - Check if hitting timeout limit
 - Profile cold vs warm start durations
 
 ### Pattern 6: Idle Resource Waste
 
-```
+```text
 Condition: FunctionInstanceProvisionCount > 0 AND FunctionTotalInvocations ≈ 0 (24h)
 Interpretation: Paying for unused provisioned capacity
 ```
 
 **Action:**
+
 - Reduce or remove provisioned instance count
 - Set up cost alert for idle function detection
 
@@ -198,7 +205,7 @@ aliyun cms DescribeMetricList --Namespace acs_fc \
 
 ## Alert-Driven Diagnosis (AIOps 5-Step Decision Tree)
 
-```
+```text
 [FC Alert Triggered]
     │
     ├── Step 1: Verify Alert Validity
@@ -223,7 +230,7 @@ aliyun cms DescribeMetricList --Namespace acs_fc \
 
 ### Diagnostic Report Schema
 
-```
+```markdown
 ## FC Diagnostic Report — {{user.function_name}}
 
 ### Alert Summary

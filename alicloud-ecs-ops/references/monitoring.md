@@ -242,9 +242,11 @@ func (c *AlertConverger) groupByRootCause(alerts []Alert, depGraph map[string][]
 ### 收敛前后对比
 
 ```
+
 收敛前: [ECS-1告警][ECS-2告警][ECS-3告警][SLB告警][RDS告警] = 5条
 收敛后: [SLB根因告警] = 1条 ✅
-```
+
+```markdown
 
 ### Integration
 
@@ -276,7 +278,7 @@ aliyun cms PutMetricRuleTargets \
 
 ## Alert-Driven Diagnostic Decision Tree
 
-```
+```text
 [ECS Alarm Fires]
     │
     ├── Step 1: Verify alarm validity — Current metric value vs threshold

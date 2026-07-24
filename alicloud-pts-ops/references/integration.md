@@ -19,7 +19,7 @@ GOEOF
 go mod init pts-jit
 go get github.com/alibabacloud-go/pts-20201020/v2@v2.0.0
 go run .
-```
+```markdown
 
 > Use repo `.runtime/` for ephemeral JIT workspaces per AGENTS.md §13.
 
@@ -35,7 +35,7 @@ go run .
 
 ```bash
 aliyun plugin install --names aliyun-cli-pts
-```
+```markdown
 
 ## Cross-Skill Delegation Matrix
 
@@ -51,19 +51,19 @@ aliyun plugin install --names aliyun-cli-pts
 
 ## VPC Intranet Load Test Flow
 
-```
+```text
 1. alicloud-vpc-ops  → ensure VPC + vSwitch + SG
 2. alicloud-pts-ops  → get-user-vpcs / bind in scene
 3. alicloud-pts-ops  → start-debug-pts-scene
 4. alicloud-pts-ops  → start-pts-scene (with safety gate)
 5. alicloud-cms-ops  → target metrics correlation
-```
+```markdown
 
 ## SkillOpt Wrapper
 
 ```bash
 ./scripts/pts-skillopt-wrapper.sh list-pts-scene --page-number 1 --page-size 10
-```
+```markdown
 
 See [skillopt-integration.md](skillopt-integration.md).
 

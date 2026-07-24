@@ -98,7 +98,7 @@ See [§14.2.4 Wrapper Compliance (H)](#1424-wrapper-compliance-h--recommended-fo
 
 ## 4. Loop Flow
 
-```
+```json
 User Request
      │
      ▼
@@ -142,7 +142,7 @@ User Request
     - else → RETURN best + unresolved                        │
        rubric items                                          │
      └───────────────────────────────────────────────────────┘
-```
+```markdown
 
 ## 5. Termination (first match wins)
 
@@ -204,7 +204,7 @@ Every GCL run MUST persist a JSON trace under `.runtime/audit/gcl-runner-ops/gcl
     "reusable": true
   }
 }
-```
+```markdown
 
 Reusable patterns (reusable=true) are candidates for [../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md](../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md) — the centralized Reflexion memory. See [§15 Reflexion Integration](#15-reflexion-integration-layer-2--failure-pattern-memory) for details.
 
@@ -530,7 +530,7 @@ The H result is embedded in the GCL trace JSON under `iterations[].hallucination
     }
   ]
 }
-```
+```markdown
 
 ### 14.5 Per-Skill Defaults
 
@@ -564,7 +564,7 @@ See §9 for the full anti-pattern list. H-specific additions:
 
 All four layers together form a **four-wall defense**:
 
-```
+```json
 User Request
   |
   v
@@ -631,7 +631,7 @@ Return strict JSON:
   "overall": "PASS"|"FAIL",
   "report": "..."
 }
-```
+```markdown
 
 This template follows the same isolation principle as the Critic prompt (§7):
 **H must NOT see the user's original request** to prevent answer-alignment bias.
@@ -655,7 +655,7 @@ This template follows the same isolation principle as the Critic prompt (§7):
 
 ### 15.2 Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    GCL Execution (per-session)                   │
 │   [0] Pre-flight → [1] Generate → [1.5] H → [2] C → [3] Decide │
@@ -768,7 +768,7 @@ During GCL Pre-flight (§4 step [0]) and every `skillopt_wrap()` call, the orche
 # memory_preflight.py → {{recent_executions}} {{known_traps}} {{success_patterns}} {{strategy_hints}}
 python3 alicloud-gcl-runner-ops/scripts/memory_preflight.py \
   --skill alicloud-ecs-ops --operation DeleteInstance --format slots
-```
+```markdown
 
 Known failure patterns for the current skill (tier 0 skill-specific → tier 1 `generalized_cli` → tier 2 `cross_skill`):
 
@@ -808,7 +808,7 @@ Patterns in the reflexion store include a `last_seen` timestamp that is updated 
 
 The time-decay window is **adaptive**: high-frequency patterns get longer retention.
 
-```
+```text
 waiting_seconds = 86400 × (decay_days + min(count, 90) × 7)
 ```
 
@@ -820,11 +820,11 @@ python gcl_reflexion.py maintain --min-count 5 --decay-days 90
 
 # Apply: prune patterns with count < 3 OR outside adaptive window
 python gcl_reflexion.py maintain --min-count 3 --decay-days 60 --apply
-```
+```text
 
 The report sort order uses a time-weighted score:
 
-```
+```text
 score = count × (1 − min(elapsed_days / decay_days, 1) × 0.5)
 ```
 
@@ -838,7 +838,7 @@ python gcl_reflexion.py report
 
 # Raw frequency order (no recency bias)
 python gcl_reflexion.py report --sort-by count
-```
+```markdown
 
 ### 15.X Capture Scope
 
@@ -862,7 +862,7 @@ Previously only `SAFETY_FAIL` was captured. The expanded scope provides richer f
 
 ### 16.1 Architecture
 
-```
+```text
 ┌───────────────────┐     persist_trace()     ┌──────────────────┐
 │  gcl_runner.py    │ ──────────────────────►  │ .runtime/audit/gcl-runner-ops/   │
 │  (main loop)      │                          │ gcl-trace-*.json │
@@ -937,10 +937,10 @@ The memory layer automatically extracts the operation from the trace or CLI comm
 
 The memory store call **never blocks** the runner's exit code. Failures are logged as `[WARN]`:
 
-```
+```json
 [WARN] memory_store returned 1 for trace gcl-trace-20260620-124114-0ca5a6.json
 [WARN] memory_store failed: [Errno 2] No such file or directory
-```
+```markdown
 
 This ensures memory indexing is a best-effort enhancement, not a reliability risk.
 

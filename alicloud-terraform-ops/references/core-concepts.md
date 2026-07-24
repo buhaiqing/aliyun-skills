@@ -15,11 +15,11 @@ Terraform 基础概念与阿里云 Provider 配置。
 
 ### 1.2 核心工作流
 
-```
+```text
 Write (HCL) → Init → Plan → Apply → Destroy
      ↑                                    ↓
      └──────── State 记录当前状态 ─────────┘
-```
+```markdown
 
 ### 1.3 关键文件
 
@@ -76,7 +76,7 @@ resource "alicloud_instance" "backup" {
   provider = alicloud.shanghai
   # ...
 }
-```
+```markdown
 
 ## 3. Backend 配置
 
@@ -107,7 +107,7 @@ terraform init -backend-config=backend.hcl
 
 # 迁移本地状态到远程
 terraform init -migrate-state
-```
+```markdown
 
 ### 3.3 Backend 配置分离
 
@@ -121,7 +121,7 @@ tablestore_table    = "state_lock"
 
 ```bash
 terraform init -backend-config=backend.hcl
-```
+```markdown
 
 ## 4. Workspaces
 
@@ -172,7 +172,7 @@ resource "alicloud_instance" "web" {
   count         = local.current_env.count
   # ...
 }
-```
+```markdown
 
 ### 4.3 Workspace 隔离策略
 
@@ -212,7 +212,7 @@ resource "alicloud_instance" "web" {
     alicloud_route_entry.nat_route
   ]
 }
-```
+```markdown
 
 ### 5.3 依赖图查看
 
@@ -246,7 +246,7 @@ resource "alicloud_instance" "web" {
     create_before_destroy = true
   }
 }
-```
+```markdown
 
 ### 6.2 替换策略
 
@@ -286,7 +286,7 @@ output "rds_password" {
   value       = random_password.db_password.result
   sensitive   = true  # 标记敏感，不在控制台显示
 }
-```
+```markdown
 
 ### 7.2 数据源查询
 
@@ -321,7 +321,7 @@ resource "alicloud_instance" "web" {
   vswitch_id = data.terraform_remote_state.network.outputs.vswitch_id
   # ...
 }
-```
+```markdown
 
 ## 8. 变量与类型
 
@@ -377,4 +377,4 @@ variable "vpc_cidr" {
     error_message = "必须是有效的 CIDR 格式"
   }
 }
-```
+```text

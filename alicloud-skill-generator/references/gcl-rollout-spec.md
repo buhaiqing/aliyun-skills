@@ -90,13 +90,13 @@ to `required`. Otherwise consult the existing table.
 For `required` and `recommended` skills, the GCL rollout creates **3
 files**:
 
-```
+```text
 alicloud-<product>-ops/
 ├── SKILL.md                                          # (existing; modify)
 └── references/
     ├── rubric.md                                     # NEW
     └── prompt-templates.md                           # NEW
-```
+```markdown
 
 For `optional` skills, **no files are created** — single-shot pre-flight
 is sufficient.
@@ -127,7 +127,7 @@ metadata:
   references:
     - prompt-templates.md
 ---
-```
+```markdown
 
 ### 4.2 Body Sections (in order)
 
@@ -165,7 +165,7 @@ the table:
 | Operation | Sub-rule (Score 1) |
 |---|---|
 | `<Verb><Resource>` | (a) explicit user confirmation; (b) ... ; (c) ... |
-```
+```markdown
 
 Each row must have **at least 3 sub-rules**. Each sub-rule is a
 **verifiable condition** the Critic can check (re-query API, parse trace,
@@ -217,7 +217,7 @@ independently:
 | `^drop\s+user\s+\S+\s+cascade` | DESTRUCTIVE-MASS | `DROP USER legacy_app CASCADE;` |
 | `^alter\s+system\s+set\b.*scope\s*=\s*spfile` | CONFIG-MUTATION | `ALTER SYSTEM SET ... SCOPE=SPFILE;` |
 | `match_all\s*:\s*\{\s*\}` | DESTRUCTIVE-QUERY (in `_delete_by_query`) | `{"query": {"match_all": {}}}` |
-```
+```markdown
 
 This is the **mechanical safety net** — the Critic applies the regex
 list to every command, then the trace's `result_excerpt` confirms the
@@ -246,7 +246,7 @@ metadata:
   references:
     - rubric.md
 ---
-```
+```markdown
 
 ### 5.2 Body Sections (in order)
 
@@ -274,7 +274,7 @@ You are the Generator in a GCL for Alibaba Cloud <Product>.
 - <cross-skill delegation>: <which skill to consult>
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 - For data-plane ops: <engine-specific hot-spots>
-```
+```markdown
 
 ### 5.4 Critic Template (canonical form)
 
@@ -298,7 +298,7 @@ You are the Critic in a GCL for Alibaba Cloud <Product>. Read-only.
 # Strict JSON (when used) — include test_assessment:
 #   tests_accurate, accuracy_issues, regression_required, regression_suites, regression_rationale
 # blocking=true if tests_accurate=false or regression_required without green-run evidence
-```
+```markdown
 
 Canonical block: [`docs/gcl-critic-test-assessment-block.md`](../../docs/gcl-critic-test-assessment-block.md).
 
@@ -328,7 +328,7 @@ Operational Best Practices section).
 
 ### Changelog
 1.0.0 | <YYYY-MM-DD> | <Nth> rollout.
-```
+```markdown
 
 ### 6.2 Frontmatter Bump
 
@@ -337,7 +337,7 @@ Each rollout bumps:
 ```yaml
   version: "<X.Y.Z+1>"          # increment minor or patch
   last_updated: "<YYYY-MM-DD>"  # today's date
-```
+```markdown
 
 ### 6.3 Reference Directory Addition
 
@@ -346,7 +346,7 @@ Add 2 rows to the Reference Directory table (or create one if missing):
 ```markdown
 | [GCL Rubric](references/rubric.md) | **Phase 1 rollout** GCL rubric (5 core + 3 Aliyun dimensions, <N> per-op Safety sub-rules, ...) |
 | [GCL Prompt Templates](references/prompt-templates.md) | **Phase 1 rollout** Generator & Critic prompt templates (...) |
-```
+```markdown
 
 ---
 
@@ -371,7 +371,7 @@ In the Generator template, add a hard rule:
 - EIP operations (`AssociateEipAddress` / `UnassociateEipAddress` /
   `ReleaseEipAddress`) MUST delegate to `alicloud-eip-ops` GCL rules
   (2-step unbind, DNS audit, production-EIP marker, InstanceType cross-check).
-```
+```markdown
 
 ---
 
@@ -414,7 +414,7 @@ Generator template excerpt:
 - `RemoveBackendServers` MUST verify the LB still has ≥ 1 healthy
   backend AFTER removal (otherwise 503 to all clients).
 - All EIP operations delegate to `alicloud-eip-ops` GCL.
-```
+```text
 
 Critic template excerpt:
 
@@ -423,7 +423,7 @@ Critic template excerpt:
   `DescribeLoadBalancerListeners` and `DescribeHealthStatus`.
 - For `RemoveBackendServers`: verify post-execution
   `DescribeHealthStatus` shows ≥ 1 healthy backend.
-```
+```markdown
 
 ### Step 4: Insert `## Quality Gate (GCL)` into SKILL.md
 
@@ -442,7 +442,7 @@ Meta-Skill Rules`. Table:
 ```yaml
   version: "1.0.0"      → "1.1.0"
   last_updated: "<date>" → "2026-06-04"
-```
+```markdown
 
 ### Step 6: Add Reference Directory entries
 

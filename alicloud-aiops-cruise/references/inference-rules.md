@@ -21,7 +21,7 @@
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认异常后端
   aliyun slb DescribeHealthStatus --RegionId $REGION --LoadBalancerId $LB_ID
   -> 查哪个 ECS 端口异常
@@ -56,7 +56,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 查 ECS 连接状态分布
   [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "ss -tan | awk '{print \$1}' | sort | uniq -c"
   -> CLOSE_WAIT 过多 -> 应用未正确关闭连接
@@ -91,7 +91,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: CloudAssistant 查 TOP 进程
   [AUTO-QUIET] aliyun ecs RunCommand --CommandContent "ps aux --sort=-%cpu | head -10"
   -> 定位 CPU 消耗最高的进程
@@ -127,7 +127,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: DAS 查慢 SQL 明细（JIT Go SDK）
   -> 从 assets/code-snippets/ 动态生成 das_slow_query.go
   -> INSTANCE_ID=rm-xxx go run das_slow_query.go
@@ -160,7 +160,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 紧急判断
   -> DiskUsage > 95%: 立即扩容（否则数据库马上只读）
   -> DiskUsage 85-95%: 先查空间构成再操作
@@ -204,7 +204,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: DAS 缓存分析查大key（JIT Go SDK）
   INSTANCE_ID=r-xxx go run das_cache_analysis.go
   -> 获取大key列表（key名称、类型、大小）
@@ -243,7 +243,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认端口耗尽
   aliyun cms DescribeMetricList --Namespace acs_nat_gateway --MetricName EniPacketsDropPortAllocationFail
   -> >0 确认出现过端口分配失败
@@ -288,7 +288,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 确认云盘类型和上限
   aliyun ecs DescribeDisks --InstanceId $INST_ID
   -> 查 Category（cloud_essd / cloud_ssd / cloud_efficiency）
@@ -329,7 +329,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认内存和 Swap 状态
   free -h
   cat /proc/meminfo | grep -E "SwapTotal|SwapFree|Dirty"
@@ -368,7 +368,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 确认 IO 冲突源
   iotop -b -o -n 3
   -> 确认哪些进程在争抢 IO
@@ -407,7 +407,7 @@ Step 3: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认文件系统类型
   df -hT /
   mount | grep " / "
@@ -448,7 +448,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 检查 IO 调度器
   cat /sys/block/*/queue/scheduler
   -> 云盘推荐: mq-deadline 或 none（NVMe）
@@ -487,7 +487,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认 inode 使用率
   df -i /
   -> IUse% > 95% 确认 inode 耗尽
@@ -528,7 +528,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 确认超分节点
   node.cpu.limit / node.cpu.capacity = {ratio}%  -> 超分 {over} core
 
@@ -561,7 +561,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 紧急判断
   查看 node.cpu.usage_rate 是否接近 node.cpu.limit
   -> 如果 usage 已超过 node.cpu.capacity * 0.8 -> 有 immediate Throttling 风险
@@ -593,7 +593,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```yaml
 Step 1: 查 OOMKill 记录
   acs_k8s -> pod 维度 -> 查 OOMKill 事件
   -> 或通过 DescribeClusterEvents 查近期 OOM 事件
@@ -628,7 +628,7 @@ Step 5: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 确认规则详情
   aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId $SG_ID
   -> 找到具体哪条规则是 0.0.0.0/0
@@ -664,7 +664,7 @@ Step 4: 验证
 
 **[FIX] 修复步骤：**
 
-```
+```text
 Step 1: 查 ActionTrail 是否有配置变更
   aliyun actiontrail LookupEvents --StartTime $START --EndTime $END
   -> 近期有人改过配置？回滚试试
@@ -689,7 +689,7 @@ Step 4: 查第三方依赖
 
 ## 推理优先级规则
 
-```
+```markdown
 1. Safety 优先：SG-01/02 端口暴漏 -> 立即标记 Critical
 2. 容量优先：RDS-04 磁盘 > 90% -> 立即标记 Critical
 3. 链路上游优先：SLB 异常先于 ECS 排查

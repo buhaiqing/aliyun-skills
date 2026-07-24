@@ -39,6 +39,7 @@ def q_cms_batch(jobs: list, max_workers: int = 12) -> list:
 ```
 
 实测 (mock subprocess 50ms latency):
+
 - 10 jobs 串行: 500ms
 - 10 jobs 并发 (max_workers=10): **55ms (-89%)**
 

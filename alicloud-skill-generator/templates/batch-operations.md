@@ -4,7 +4,7 @@
 
 ## 1. 模板结构
 
-```
+```text
 batch-operation/
 ├── config/
 │   ├── batch.yaml          # 批处理配置
@@ -18,7 +18,7 @@ batch-operation/
 │   ├── failed.json         # 失败记录
 │   └── report.md           # 执行报告
 └── README.md
-```
+```bash
 
 ## 2. CLI 并行示例 (xargs -P)
 
@@ -92,7 +92,7 @@ cat resources.txt | parallel \
     --progress \
     --bar \
     ./process_single.sh {}
-```
+```markdown
 
 ## 3. SDK Goroutine + Semaphore 示例
 
@@ -362,7 +362,7 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-```
+```markdown
 
 ## 4. 并发控制参数模板
 
@@ -466,7 +466,7 @@ func AbortOnCriticalFailure(err error) bool {
     }
     return true
 }
-```
+```markdown
 
 ### 失败重试队列
 

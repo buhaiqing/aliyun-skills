@@ -16,11 +16,13 @@ legacy `skillopt-lib.sh` symlink) sources
 ## Usage
 
 ### Direct Command
+
 ```bash
 aliyun bssopenapi DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 ```
 
 ### Wrapper Script
+
 ```bash
 cd $(pwd)/alicloud-billing-ops
 ./scripts/bssopenapi-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
@@ -64,6 +66,7 @@ ls -lt .runtime/traces/alicloud-billing-ops/ | head -3
 
 
 > **Note:** This skill ships two harness wrappers:
+>
 > - `./scripts/billing-harness-wrapper.sh` (BSSOpenApi / `aliyun bssopenapi` operations such as `QueryAccountBalance`)
 > - `./scripts/bssopenapi-harness-wrapper.sh` (alias to the same BSSOpenApi product)
 >

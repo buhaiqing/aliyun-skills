@@ -24,7 +24,7 @@ Understanding the bandwidth ceiling is the prerequisite for any tuning or troubl
 
 ## Two-Layer Diagnostic Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Layer 1: Cloud-Side (No instance login required)           │
 │  ─────────────────────────────────────────────────          │
@@ -165,7 +165,7 @@ aliyun ecs DescribeInstanceHistoryEvents \
 
 #### Traffic Path Anatomy
 
-```
+```text
 Client (Internet)
     │
     ▼
@@ -508,6 +508,7 @@ sysctl -n net.ipv4.neigh.default.gc_thresh3 2>/dev/null  # Max entries (force GC
 ```
 
 **When ARP is the root cause:**
+
 - `ip neigh show nud failed` shows entries for gateway or peer IPs
 - Flush: `ip neigh flush nud failed`
 - If recurring, raise `gc_thresh3`: `sysctl -w net.ipv4.neigh.default.gc_thresh3=4096`
@@ -671,6 +672,7 @@ aliyun ecs RunCommand \
 ```
 
 > **Parameter notes:**
+>
 > - Use `--InstanceId.1` (singular with numeric suffix) for single-instance execution. The deprecated `--InstanceIds` is rejected by recent CLI versions.
 > - Set `--Timeout` slightly longer than the script's expected runtime.
 > - The same wrapper pattern applies to the integration test script and any other long shell script delivered via Cloud Assistant.
@@ -991,7 +993,7 @@ diff -u /tmp/tune-measure/<label>/sysctl-before.txt /tmp/tune-measure/<label>/sy
 
 ### 4.5 Optimization Decision Tree
 
-```
+```text
 Apply sysctl tuning?
     │
     ├── Read-only environment (managed K8s, sandbox)? -> STOP. Use only monitoring.
@@ -1138,23 +1140,31 @@ Every network diagnosis should produce a structured report. Below is the standar
 
 ### Interface State
 ```
+
 {{ip addr show eth0}}
-```
+
+```markdown
 
 ### Socket Summary
 ```
+
 {{ss -s output}}
-```
+
+```markdown
 
 ### NIC Statistics
 ```
+
 {{ethtool -S eth0 | grep drop/error/overrun}}
-```
+
+```markdown
 
 ### Bandwidth Profile (10s sample)
 ```
+
 {{sar -n DEV 1 10}}
-```
+
+```markdown
 
 ## [ROOT-CAUSE] Probable Root Cause(s)
 
@@ -1240,6 +1250,7 @@ This matrix maps observed symptoms to diagnostic path, root-cause confidence, an
 Use this script to validate the entire network diagnostic pipeline on a single ECS instance. It performs a self-contained end-to-end test: tool verification, baseline capture, simulated workload, post-load diagnosis, and report generation.
 
 **v2.0 improvements:**
+
 - Auto-detects active network interface (no longer hardcoded `eth0`)
 - Single `ping` call (was double) — parses avg RTT and loss% from one run
 - Handles intranet-only instances — detects no-public-IP and adapts workload

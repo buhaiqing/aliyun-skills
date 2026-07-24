@@ -76,6 +76,7 @@ optResp, err := client.GetQueryOptimizeData(optReq)
 ```
 
 **Decision Tree:**
+
 - Diagnostic report identifies specific slow queries → Optimize identified SQL statements
 - PFS samples show high `lock_time` or `rows_examined` → Add appropriate indexes
 - Query governance data shows high-frequency queries → Consider query caching or optimization
@@ -117,6 +118,7 @@ for i := 0; i < 60; i++ {
 ```
 
 **Decision Tree:**
+
 - Large keys found (string > 10KB, hash/set/list > 10000 elements) → Split large keys
 - Key count growing rapidly → Set TTL; review data retention policy
 - Memory fragmentation high → Restart instance during maintenance window
@@ -155,6 +157,7 @@ killResp, err := client.CreateKillInstanceSessionTask(killReq)
 ```
 
 **Decision Tree:**
+
 - Many idle-in-transaction sessions → Check application transaction handling
 - Many connections from same host → Check application connection pool settings
 - Long-running queries blocking others → Kill sessions; optimize slow queries
@@ -188,6 +191,7 @@ historyResp, err := client.GetDeadLockHistory(historyReq)
 ```
 
 **Decision Tree:**
+
 - Deadlock involves specific tables → Check transaction order; ensure consistent access order
 - Deadlock frequency increasing → Review application transaction logic
 - Deadlock with index-related locks → Add missing indexes to reduce lock range
@@ -229,6 +233,7 @@ eventResp, err := client.GetAutonomousNotifyEventsInRange(eventReq)
 ```
 
 **Decision Tree:**
+
 - Score < 60 → Create diagnostic report for detailed analysis
 - Score 60-80 → Review specific low-scoring dimensions
 - Score > 80 → Instance is healthy; no action needed
@@ -356,11 +361,13 @@ func main() {
 ### SDK / Build Issues
 
 #### `go get` fails for das-20200116
+
 - Ensure Go version is >= 1.21.
 - Check network access to `proxy.golang.org` or configure `GOPROXY` (e.g., `https://goproxy.cn,direct` for China regions).
 - Verify the import path: `github.com/alibabacloud-go/das-20200116/v5/client`.
 
 #### JIT build timeout
+
 - DAS SDK compilation is usually fast (< 10s). If timeout occurs, check disk space and network.
 - Pre-warm the module cache by running `go mod tidy` in the workspace before critical operations.
 

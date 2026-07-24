@@ -5,16 +5,19 @@
 ### 1. Domain Not Resolving
 
 **Symptoms**:
+
 - `dig` or `nslookup` returns no records
 - Website inaccessible via domain name
 
 **Possible Causes**:
+
 - Domain not added to DNS service
 - NS records not pointing to Alibaba Cloud
 - DNS records deleted or paused
 - TTL propagation delay
 
 **Diagnostic Steps**:
+
 ```bash
 # Check if domain exists in DNS
 aliyun alidns DescribeDomainInfo --DomainName "example.com"
@@ -30,6 +33,7 @@ dig A www.example.com @ns1.alidns.com
 ```
 
 **Solutions**:
+
 ```bash
 # If domain not added
 aliyun alidns AddDomain --DomainName "example.com"
@@ -42,11 +46,13 @@ aliyun alidns AddRecord --DomainName "example.com" --RR "www" --Type "A" --Value
 ### 2. CNAME Conflicts
 
 **Symptoms**:
+
 - Error: `Forbidden.AliasRecord`
 - Cannot add CNAME record when A/AAAA exists
 - Cannot add A/AAAA when CNAME exists
 
 **Diagnostic Steps**:
+
 ```bash
 # Check for conflicting records
 aliyun alidns DescribeDomainRecords \
@@ -61,6 +67,7 @@ aliyun alidns DescribeDomainRecords \
 ```
 
 **Solutions**:
+
 ```bash
 # Remove conflicting A record before adding CNAME
 aliyun alidns DeleteDomainRecord --RecordId "conflicting_record_id"
@@ -72,11 +79,13 @@ aliyun alidns DeleteDomainRecord --RecordId "conflicting_cname_id"
 ### 3. DNS Propagation Delays
 
 **Symptoms**:
+
 - Changes not visible immediately
 - Different results from different DNS servers
 - TTL not expiring as expected
 
 **Diagnostic Steps**:
+
 ```bash
 # Check TTL value
 dig +ttlid A www.example.com @ns1.alidns.com
@@ -96,6 +105,7 @@ aliyun alidns DescribeDomainRecords \
 ```
 
 **Solutions**:
+
 - Wait for TTL to expire (max 24 hours for standard records)
 - Reduce TTL before making changes (e.g., 60 seconds)
 - Flush local DNS cache: `sudo dscacheutil -flushcache` (macOS)
@@ -104,11 +114,13 @@ aliyun alidns DescribeDomainRecords \
 ### 4. Health Check Failures
 
 **Symptoms**:
+
 - GTM shows health check failures
 - Automatic failover not working
 - Manual failover required
 
 **Diagnostic Steps**:
+
 ```bash
 # Check GTM instance status
 aliyun alidns DescribeGtmInstanceStatus --InstanceId "gtm_123"
@@ -124,6 +136,7 @@ aliyun alidns DescribeDnsLogs --DomainName "example.com" --StartDate $(date -d "
 ```
 
 **Solutions**:
+
 ```bash
 # Verify backend server is accessible
 ping www.example.com
@@ -143,11 +156,13 @@ aliyun alidns SwitchGtmFailoverAddressPool --InstanceId "gtm_123"
 ### 5. PrivateZone Not Working
 
 **Symptoms**:
+
 - Internal DNS resolution failing
 - VPC instances cannot resolve internal domains
 - PrivateZone records not accessible
 
 **Diagnostic Steps**:
+
 ```bash
 # Check PrivateZone exists
 aliyun pvtz DescribeZoneInfo --ZoneId "zone_123"
@@ -163,6 +178,7 @@ nslookup api.internal.example.com 100.100.2.136
 ```
 
 **Solutions**:
+
 ```bash
 # If VPC not bound
 aliyun pvtz BindZoneVpc \
@@ -183,11 +199,13 @@ dig A api.internal.example.com @100.100.2.136
 ### 6. DNSSEC Validation Errors
 
 **Symptoms**:
+
 - DNSSEC validation failures
 - `SERVFAIL` responses
 - DNSSEC-signed domains not resolving
 
 **Diagnostic Steps**:
+
 ```bash
 # Check DNSSEC status
 aliyun alidns DescribeDnssecStatus --DomainName "example.com"
@@ -200,6 +218,7 @@ dig DS example.com @a.gtld-servers.net
 ```
 
 **Solutions**:
+
 ```bash
 # If DNSSEC not enabled
 aliyun alidns EnableDnssec --DomainName "example.com"
@@ -214,11 +233,13 @@ aliyun alidns DisableDnssec --DomainName "example.com"
 ### 7. GTM Failover Not Working
 
 **Symptoms**:
+
 - Traffic not shifting to backup
 - Health checks passing but failover not triggering
 - Manual failover required
 
 **Diagnostic Steps**:
+
 ```bash
 # Check GTM configuration
 aliyun alidns DescribeGtmInstanceStatus --InstanceId "gtm_123"
@@ -234,6 +255,7 @@ dig A www.example.com @ns1.alidns.com
 ```
 
 **Solutions**:
+
 ```bash
 # Update GTM configuration
 aliyun alidns UpdateGtmInstance \
@@ -251,11 +273,13 @@ aliyun alidns DescribeGtmInstanceStatus --InstanceId "gtm_123"
 ### 8. Rate Limiting / Throttling
 
 **Symptoms**:
+
 - Error: `Throttling`
 - API calls being rejected
 - Operations failing intermittently
 
 **Diagnostic Steps**:
+
 ```bash
 # Check API call frequency
 # Review recent API logs
@@ -265,6 +289,7 @@ aliyun alidns DescribeDomains --PageNumber 1 --PageSize 1
 ```
 
 **Solutions**:
+
 ```bash
 # Implement exponential backoff
 retry_count=0
@@ -287,11 +312,13 @@ done
 ### Slow DNS Resolution
 
 **Symptoms**:
+
 - High DNS response times
 - Slow website loading
 - Intermittent connectivity
 
 **Diagnostic Steps**:
+
 ```bash
 # Measure DNS resolution time
 dig A www.example.com @ns1.alidns.com | grep "Query time"
@@ -305,6 +332,7 @@ dig A www.example.com @1.1.1.1
 ```
 
 **Solutions**:
+
 ```bash
 # Reduce TTL for faster propagation
 aliyun alidns UpdateDomainRecord \
@@ -321,11 +349,13 @@ aliyun alidns UpdateDomainRecord \
 ### Inconsistent Resolution
 
 **Symptoms**:
+
 - Different results from different DNS servers
 - Regional resolution differences
 - ISP-specific issues
 
 **Diagnostic Steps**:
+
 ```bash
 # Test from different locations
 # Use DNS propagation check tools
@@ -340,6 +370,7 @@ aliyun alidns DescribeDomainRecords \
 ```
 
 **Solutions**:
+
 ```bash
 # Verify line-based routing configuration
 aliyun alidns AddRecord \
@@ -358,11 +389,13 @@ aliyun alidns AddRecord \
 ### Unauthorized DNS Changes
 
 **Symptoms**:
+
 - Unexpected DNS record changes
 - Domain pointing to wrong IP
 - Security alert from ActionTrail
 
 **Diagnostic Steps**:
+
 ```bash
 # Check ActionTrail for DNS changes
 aliyun actiontrail LookupEvents \
@@ -378,6 +411,7 @@ aliyun ram ListPoliciesForUser --UserName "dns_admin"
 ```
 
 **Solutions**:
+
 ```bash
 # Restore from backup
 cat dns-backup-20260703.json | jq -r '.DomainRecords.Record[] | 
@@ -391,11 +425,13 @@ cat dns-backup-20260703.json | jq -r '.DomainRecords.Record[] |
 ### DNS Hijacking
 
 **Symptoms**:
+
 - Domain resolving to malicious IP
 - SSL certificate warnings
 - Browser security alerts
 
 **Diagnostic Steps**:
+
 ```bash
 # Check DNS resolution
 dig A www.example.com @ns1.alidns.com
@@ -408,6 +444,7 @@ aliyun alidns DescribeDomainRecords --DomainName "example.com"
 ```
 
 **Solutions**:
+
 ```bash
 # Remove unauthorized records
 aliyun alidns DeleteDomainRecord --RecordId "malicious_record_id"
@@ -492,21 +529,25 @@ aliyun cms PutMetricRuleTargets \
 ## Escalation Procedures
 
 ### Level 1: Self-Service
+
 - Check DNS status and records
 - Verify NS propagation
 - Test health checks
 
 ### Level 2: SRE Team
+
 - DNS hijacking suspected
 - GTM failover issues
 - PrivateZone connectivity problems
 
 ### Level 3: Alibaba Cloud Support
+
 - Domain registration issues
 - DNSSEC validation failures
 - Service-wide outages
 
 ### Level 4: Management
+
 - Security breaches
 - Business-critical failures
 - Compliance violations

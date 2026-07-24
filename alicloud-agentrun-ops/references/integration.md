@@ -14,17 +14,19 @@
 | `ALIBABA_CLOUD_ACCOUNT_ID` | Main account ID | `1234567890123456` |
 
 **Configuration**:
+
 ```bash
 # ~/.bashrc or ~/.zshrc
 export ALIBABA_CLOUD_ACCESS_KEY_ID="LTAI5t..."
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="abc123..."
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 export ALIBABA_CLOUD_ACCOUNT_ID="1234567890123456"
-```
+```markdown
 
 ### 1.2 Credential Security
 
 **Best Practices**:
+
 - ✅ Use environment variables (never hardcode)
 - ✅ Prefer STS temporary credentials (expires in 1h)
 - ✅ Store secrets in KMS or Secrets Manager
@@ -39,6 +41,7 @@ export ALIBABA_CLOUD_ACCOUNT_ID="1234567890123456"
 ### 2.1 ACS3-HMAC-SHA256 Overview
 
 **Required Headers**:
+
 | Header | Value | Source |
 |---|---|---|
 | `Content-Type` | `application/json` | Fixed |
@@ -49,7 +52,7 @@ export ALIBABA_CLOUD_ACCOUNT_ID="1234567890123456"
 
 ### 2.2 Signing Steps
 
-```
+```text
 1. Build Canonical Request
    ├─ HTTP Method
    ├─ Canonical URI (path)
@@ -76,7 +79,7 @@ export ALIBABA_CLOUD_ACCOUNT_ID="1234567890123456"
 
 5. Build Authorization Header
    └─ "ACS3-HMAC-SHA256 Credential={ak}/{scope}, SignedHeaders={headers}, Signature={hex}"
-```
+```markdown
 
 ### 2.3 Python Signing Helper
 
@@ -162,7 +165,7 @@ headers = sign_request(
     sk="${ALIBABA_CLOUD_ACCESS_KEY_SECRET}",
     region="${ALIBABA_CLOUD_REGION_ID}"
 )
-```
+```markdown
 
 ---
 
@@ -191,7 +194,7 @@ curl -X POST "https://agentrun.${REGION}.aliyuncs.com/2025-09-10/templates" \
   -H "X-Acs-Content-Sha256: ${BODY_HASH}" \
   -H "Authorization: ${SIGNATURE}" \
   -d "$BODY"
-```
+```markdown
 
 ### 3.2 Python HTTP Client
 
@@ -276,7 +279,7 @@ sandbox_id = sandbox["sandboxId"]
 
 # Execute code
 result = client.execute_code(sandbox_id, "print('Hello, World!')")
-```
+```markdown
 
 ---
 
@@ -321,7 +324,7 @@ result = client.execute_code(sandbox_id, "print('Hello, World!')")
     }
   ]
 }
-```
+```markdown
 
 #### Operator Policy (DevOps — Recommended)
 
@@ -362,7 +365,7 @@ result = client.execute_code(sandbox_id, "print('Hello, World!')")
     }
   ]
 }
-```
+```markdown
 
 > **⚠️ Security Note:** Never use `Resource: "*"` with `Effect: Allow` for write operations. Always scope to `acs:agentrun:*:*:template/*` or specific resource ARNs. See [security-enhancement.md](security-enhancement.md) for full policy templates.
 
@@ -426,4 +429,4 @@ curl -I https://agentrun.${ALIBABA_CLOUD_REGION_ID}.aliyuncs.com
 
 # Test signing
 python3 sign_helper.py --test
-```
+```text

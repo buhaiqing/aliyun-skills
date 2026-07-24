@@ -244,6 +244,7 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 | 26 | **Image Processing** | `ossutil cp oss://{{user.bucket_name}}/{{user.object_key}}?x-oss-process=image/... "{{user.local_path}}"` | `{{user.bucket_name}}`, `{{user.object_key}}`, image params | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 
 > **Pre-flight Checks (common to all operations):**
+>
 > 1. Credentials valid: `aliyun sts GetCallerIdentity` → non-empty UID
 > 2. Bucket name valid: `validate_oss_bucket_name` → exit 0
 > 3. Object key valid (if applicable): `validate_oss_object_key` → exit 0
@@ -251,6 +252,7 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 > 5. Wrapper present (for wrapper path): `ls alicloud-oss-ops/scripts/oss-skillopt-wrapper.sh` → file exists
 >
 > **Post-execution Validation (common):**
+>
 > - Poll state transition table above for async operations
 > - Capture `{{output.request_id}}` from response for correlation
 > - For object ops: verify via `ossutil stat oss://{{user.bucket_name}}/{{user.object_key}}`

@@ -35,7 +35,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/gcl-runner-skillopt-wrapper.sh` for all GCL Runner CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun gcl-runner` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/gcl-runner-skillopt-wrapper.sh`for all GCL Runner CLI operations to enable automated self-repair and dynamic optimization; fallback to native`aliyun gcl-runner`only when the wrapper is unavailable or`skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 This skill provides the **Generator-Critic-Loop (GCL)** adversarial quality gate
 as defined in `AGENTS.md §12` and [`docs/gcl-spec.md`](../docs/gcl-spec.md). It is
@@ -44,9 +44,10 @@ execution here rather than implementing inline GCL logic.
 
 
 > **EXECUTION MANDATORY RULE**: 所有 GCL runner 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/gcl-runner-skillopt-wrapper.sh` 运行。
-> 以下所有 `python3 scripts/gcl_runner.py ...` 示例在执行时应替换为 `./scripts/gcl-runner-skillopt-wrapper.sh ...`（参数原样传递）。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun ` CLI 调用。
+> 以下所有 `python3 scripts/gcl_runner.py ...`示例在执行时应替换为`./scripts/gcl-runner-skillopt-wrapper.sh ...`（参数原样传递）。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh`缺失时，才退回到原生`aliyun` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Trigger & Scope
 
 | Scope | Description |
@@ -61,8 +62,8 @@ to other skills.
 
 | Source Skill Type | Trigger | Context Passed |
 |-------------------|---------|----------------|
-| All `required` / `recommended` skills | Before executing a write/destructive operation: "Delegate GCL quality gate to alicloud-gcl-runner-ops" | `skill`, `op`, `command`, `user_request`, `max_iter` |
-| `alicloud-skill-generator` | When validating generated skill content: "Run GCL on the generated commands" | `skill`, `op`, `command` |
+| All `required`/ `recommended` skills | Before executing a write/destructive operation: "Delegate GCL quality gate to alicloud-gcl-runner-ops" |`skill`, `op`, `command`, `user_request`, `max_iter` |
+| `alicloud-skill-generator`| When validating generated skill content: "Run GCL on the generated commands" |`skill`, `op`, `command` |
 
 ## Variable Convention
 
@@ -71,9 +72,9 @@ to other skills.
 | `{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}` | Alibaba Cloud AccessKey | Environment (NEVER ask user) |
 | `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` | Alibaba Cloud AccessSecret | Environment (NEVER ask user, NEVER log) |
 | `{{env.ALIBABA_CLOUD_REGION_ID}}` | Default region | Environment (NEVER ask user) |
-| `{{env.ALIYUN_SKILLS_ROOT}}` | Repository root | Environment or autodetected via `git rev-parse --show-toplevel` |
-| `{{user.skill}}` | Target skill name (e.g. `alicloud-ecs-ops`) | Delegate context |
-| `{{user.op}}` | Operation name (e.g. `DeleteInstance`) | Delegate context |
+| `{{env.ALIYUN_SKILLS_ROOT}}`| Repository root | Environment or autodetected via`git rev-parse --show-toplevel` |
+| `{{user.skill}}`| Target skill name (e.g.`alicloud-ecs-ops`) | Delegate context |
+| `{{user.op}}`| Operation name (e.g.`DeleteInstance`) | Delegate context |
 | `{{user.command}}` | Full CLI command to execute | Delegate context |
 | `{{user.user_request}}` | Original natural-language request | Delegate context |
 | `{{user.max_iter}}` | Maximum GCL iterations (default: 2) | Delegate context or interactive prompt |
@@ -82,12 +83,12 @@ to other skills.
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
-| `aliyun` CLI installed | `command -v aliyun` | Binary found | HALT — install `aliyun` CLI per `alicloud-skill-generator/references/execution-environment.md` |
+| `aliyun`CLI installed |`command -v aliyun`| Binary found | HALT — install`aliyun`CLI per`alicloud-skill-generator/references/execution-environment.md` |
 | Python 3.10+ available | `python3 --version` | Version ≥ 3.10 | HALT — install Python 3.10+ |
-| `gcl_runner.py` exists | `ls {{env.ALIYUN_SKILLS_ROOT}}/alicloud-gcl-runner-ops/scripts/gcl_runner.py` | File found | HALT — re-clone or check repo integrity |
+| `gcl_runner.py`exists |`ls {{env.ALIYUN_SKILLS_ROOT}}/alicloud-gcl-runner-ops/scripts/gcl_runner.py` | File found | HALT — re-clone or check repo integrity |
 | Target skill rubric exists | `ls {{env.ALIYUN_SKILLS_ROOT}}/{{user.skill}}/references/rubric.md` | File found | HALT — rubric missing, check skill structure |
 | Credentials configured | `echo ${ALIBABA_CLOUD_ACCESS_KEY_ID:?}` | Non-empty | HALT — configure credentials per README_CN.md |
-| LLM Critic endpoint configured (only if `GCL_CRITIC_MODE=llm\|hybrid`) | check `GCL_CRITIC_LLM_ENDPOINT` | Non-empty if LLM mode is enabled | HALT if `GCL_CRITIC_LLM_FAIL_OPEN=false`; else fall back to `mechanical` |
+| LLM Critic endpoint configured (only if `GCL_CRITIC_MODE=llm\|hybrid`) | check `GCL_CRITIC_LLM_ENDPOINT`| Non-empty if LLM mode is enabled | HALT if`GCL_CRITIC_LLM_FAIL_OPEN=false`; else fall back to `mechanical` |
 | LLM Critic API key configured (only if `GCL_CRITIC_MODE=llm\|hybrid`) | check `GCL_CRITIC_LLM_API_KEY` | Non-empty if LLM mode is enabled | WARNING logged if empty (endpoint may reject request); execution continues |
 
 ## Execution — CLI
@@ -104,7 +105,7 @@ python3 "$SCRIPT" \
   --user-request "{{user.user_request}}" \
   --max-iter "{{user.max_iter:-2}}" \
   --output-dir "${ALIYUN_SKILLS_ROOT:-.}/audit-results"
-```
+```markdown
 
 ### Exit Codes
 
@@ -126,18 +127,16 @@ python3 "$SCRIPT" \
   --command "{{user.command}}" \
   --user-request "{{user.user_request}}" \
   --dry-run
-```
+```bash
 
 ## Execution — SDK (Go JIT)
 
-For SDK-only skills or CLI fallback operations, use `gcl_actiontrail_crosscheck.py`
-to verify GCL traces against cloud audit logs:
-
-```bash
+For SDK-only skills or CLI fallback operations, use `gcl_actiontrail_crosscheck.py`to verify GCL traces against cloud audit logs:```bash
 python3 "${ALIYUN_SKILLS_ROOT}/alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py" \
   --trace-dir "${ALIYUN_SKILLS_ROOT}/audit-results/" \
   --report "${ALIYUN_SKILLS_ROOT}/audit-results/crosscheck-$(date +%Y%m%d).json"
-```
+
+```markdown
 
 ## Post-execution Validation
 
@@ -153,8 +152,8 @@ After the GCL runner completes:
 | Failure | Diagnosis | Recovery |
 |---------|-----------|----------|
 | `SAFETY_FAIL` | Destructive regex matched command/rubric | Present trace to user; request explicit re-confirmation or safer alternative |
-| `MAX_ITER` | Loop exhausted without passing all dimensions | Inspect `unresolved_rubric_items` in trace; fix command or update rubric |
-| `USAGE_ERROR` | CLI arguments malformed | Fix `--skill`, `--command`, or product prefix |
+| `MAX_ITER`| Loop exhausted without passing all dimensions | Inspect`unresolved_rubric_items` in trace; fix command or update rubric |
+| `USAGE_ERROR`| CLI arguments malformed | Fix`--skill`, `--command`, or product prefix |
 | `RUBRIC_ERROR` | Rubric parse failure | Verify rubric.md exists and is well-formed frontmatter + body |
 | `HALLUCINATION_ABORT` | Generated command/JSON failed structural check | Fix parameter names, JSON structure, or resource references |
 | Credential missing | `ALIBABA_CLOUD_ACCESS_KEY_ID` not set | Configure credentials per README_CN.md |

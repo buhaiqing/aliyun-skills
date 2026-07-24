@@ -39,7 +39,7 @@ pillars of the Alibaba Cloud
 
 ### DR Runbook (Cross-Region Snapshot Replica)
 
-```
+```markdown
 Phase 1 — Detect
   - CMS alarm: snapshot creation failed for FileSystemId X
   - OR: primary region degraded
@@ -57,7 +57,7 @@ Phase 3 — Restore (DR)
   - alicloud nas CreateMountTarget in DR region
   - alicloud nas ResetFileSystem (optional, to bring new FS to the right state)
   - Update client configuration to mount from DR region
-```
+```markdown
 
 ### Stability Pre-flight Checklist
 
@@ -96,7 +96,7 @@ aliyun nas CreateLifecyclePolicy \
       {"Path": "/var/log", "IA": {"Days": 30}, "Archive": {"Days": 180}}
     ]
   }'
-```
+```bash
 
 **Pattern 2: Right-size Extreme NAS bandwidth**
 
@@ -113,7 +113,7 @@ aliyun nas DescribeStoragePackages
 
 # Purchase via console or pricing API (no direct CreateStoragePackage API;
 # purchase in NAS console or via Pricing API)
-```
+```markdown
 
 **Pattern 4: Snapshot retention tuning**
 
@@ -164,7 +164,7 @@ for ZV in "${ZONES_AND_VSW[@]}"; do
     --NetworkType Vpc
   sleep 2  # Throttling courtesy
 done
-```
+```markdown
 
 ### Efficiency Pre-flight Checklist
 
@@ -200,7 +200,7 @@ mount -t nfs -o vers=4,minorversion=1,rsize=1048576,wsize=1048576,noacl,async \
 # Maximum IOPS (smaller chunks, more concurrent)
 mount -t nfs -o vers=3,rsize=32768,wsize=32768,noacl \
   <mount-domain>:/ /mnt/nas
-```
+```text
 
 **SMB:**
 
@@ -209,7 +209,7 @@ mount -t nfs -o vers=3,rsize=32768,wsize=32768,noacl \
 [global]
   server multi channel support = yes
   client multi channel support = yes
-```
+```markdown
 
 ### Performance Monitoring (CMS)
 

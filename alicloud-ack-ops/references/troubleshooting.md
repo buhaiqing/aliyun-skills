@@ -64,9 +64,10 @@ kubectl describe pvc {{user.pvc_name}} -n {{user.namespace}}
 
 # Step 5: Check node conditions
 kubectl get nodes -o wide
-```
+```markdown
 
 **Decision Tree:**
+
 - Events show `Insufficient cpu` or `Insufficient memory` → Scale out node pool or reduce resource requests
 - Events show `FailedScheduling` with node selector/affinity → Check node labels and affinity rules
 - Events show `FailedAttachVolume` or `WaitingForPVC` → Check PVC and StorageClass
@@ -97,9 +98,10 @@ kubectl describe pod {{user.pod_name}} -n {{user.namespace}} | grep -A10 Events
 
 # Step 5: Check resource limits
 kubectl get pod {{user.pod_name}} -n {{user.namespace}} -o yaml | grep -A5 resources
-```
+```markdown
 
 **Decision Tree:**
+
 - Logs show `OOMKilled` → Increase memory limits
 - Logs show application error → Fix application configuration
 - `CrashLoopBackOff` with `Error` exit code → Check application startup
@@ -136,9 +138,10 @@ aliyun cms DescribeMetricList \
 
 # Step 5: Check kubelet status (if SSH access available)
 # ssh {{user.node_ip}} "systemctl status kubelet"
-```
+```markdown
 
 **Decision Tree:**
+
 - ECS instance `Status` != `Running` → ECS instance issue; delegate to `alicloud-ecs-ops`
 - `DiskPressure` condition = True → Clean up disk space (images, logs)
 - `MemoryPressure` condition = True → Reduce pod density or scale out
@@ -174,9 +177,10 @@ kubectl get networkpolicies -n {{user.namespace}}
 
 # Step 5: Check Ingress configuration (if using Ingress)
 kubectl get ingress {{user.ingress_name}} -n {{user.namespace}} -o yaml
-```
+```markdown
 
 **Decision Tree:**
+
 - Endpoints list is empty → No matching pods for service selector
 - Pods not `Running` → Check pod status (Scenario 1/2)
 - SLB backend health = `abnormal` → Backend pod not responding; delegate to `alicloud-slb-ops`
@@ -206,9 +210,10 @@ aliyun ecs DescribeAccountAttributes \
 
 # Step 4: Check RAM role existence (delegate to alicloud-ram-ops)
 aliyun ram GetRole --RoleName "AliyunCSDefaultRole"
-```
+```markdown
 
 **Decision Tree:**
+
 - VPC/VSwitch not found → Create VPC/VSwitch first via `alicloud-vpc-ops`
 - ECS quota exceeded → Raise quota or reduce node count
 - RAM role `AliyunCSDefaultRole` missing → Create service-linked role via `alicloud-ram-ops`
@@ -239,9 +244,10 @@ aliyun cs GET /clusters/{{user.cluster_id}}/components | jq '.components[] | sel
 
 # Step 5: Identify high-request clients
 kubectl get --raw /metrics | grep apiserver_request_count | sort -t= -k2 -nr | head -10
-```
+```markdown
 
 **Decision Tree:**
+
 - P99 latency >5s → Control plane overload; check client watch/request volume
 - High watch count (>10K) → Too many informers; reduce controller watch scope
 - High request rate (>1K/min) → Identify aggressive client; throttle or optimize
@@ -275,9 +281,10 @@ kubectl get --raw '/api/v1/nodes/{{user.node_name}}/proxy/healthz'
 
 # Step 5: Certificate validation (control plane -> node)
 kubectl get nodes -o yaml | grep -A5 "client-certificate-data"
-```
+```markdown
 
 **Decision Tree:**
+
 - Control plane state != `running` → ACK-managed issue; contact support or wait
 - Data plane nodes/pods abnormal → User-managed issue; apply Scenario 1/2/3
 - Network connectivity failed → VPC/network issue; delegate to `alicloud-vpc-ops`
@@ -310,9 +317,10 @@ aliyun vpc DescribeRouteTables --VpcId "{{user.vpc_id}}"
 # Step 5: Check CNI plugin (Terway/Flannel) configuration
 kubectl get pods -n kube-system -l app=terway  # For Terway
 kubectl get configmap -n kube-system terway-config -o yaml
-```
+```markdown
 
 **Decision Tree:**
+
 - Nodes in different zones → Cross-AZ traffic has latency; optimize pod placement
 - Ping latency >10ms → VPC routing issue; delegate to `alicloud-vpc-ops`
 - CNI misconfigured → Check Terway ENI allocation
@@ -343,9 +351,10 @@ aliyun cs GET /clusters/{{user.cluster_id}}/nodepools | jq '.nodepools[] | {name
 # Step 5: Check autoscaler status (if enabled)
 kubectl get configmap cluster-autoscaler-status -n kube-system -o yaml
 kubectl logs -n kube-system -l app=cluster-autoscaler --tail=100
-```
+```markdown
 
 **Decision Tree:**
+
 - Pending due to `Insufficient cpu/memory` → Node pool capacity insufficient; scale out
 - Autoscaler not triggering → Check autoscaler config and thresholds
 - Pending pods > node capacity → Resource requests too high; reduce or add nodes
@@ -381,9 +390,10 @@ kubectl logs -n kube-system -l app=csi-plugin --tail=100
 # Step 5: Test disk performance (inside pod)
 kubectl exec -it {{user.pod_name}} -n {{user.namespace}} -- \
   dd if=/dev/zero of=/data/test bs=1M count=1024 conv=fdatasync
-```
+```markdown
 
 **Decision Tree:**
+
 - Disk type is `cloud_efficiency` or `cloud_ssd` → Upgrade to ESSD for better performance
 - Disk I/O utilization >80% → Disk bottleneck; expand disk or optimize I/O
 - CSI plugin errors → Check CSI driver logs; may need plugin restart
@@ -421,11 +431,11 @@ fault_chain_analysis:
     - SLB layer → alicloud-slb-ops
     - CMS layer → alicloud-cms-ops
     - RAM layer → alicloud-ram-ops
-```
+```markdown
 
 ### Example: Pod Crash Due to Storage Chain
 
-```
+```text
 Pod CrashLoopBackOff
   ↓
 Events: FailedMount
@@ -441,7 +451,7 @@ ECS API error: QuotaExceeded
 Root cause: Disk quota exceeded
   ↓
 Action: Raise disk quota via ECS quota management
-```
+```markdown
 
 ---
 
@@ -458,7 +468,7 @@ kubectl get events -n {{user.namespace}} --since=1h > /tmp/events.log
 # System logs (if SSH access)
 ssh {{user.node_ip}} "journalctl -u kubelet --since='1 hour ago'" > /tmp/kubelet.log
 ssh {{user.node_ip}} "journalctl -u docker --since='1 hour ago'" > /tmp/docker.log
-```
+```markdown
 
 ### Log Pattern Analysis
 
@@ -471,7 +481,7 @@ grep -oE "error_type=[a-zA-Z]+" /tmp/pod.log | sort | uniq -c | sort -nr
 
 # Timestamp correlation
 grep -E "^[0-9]{4}-[0-9]{2}-[0-9]{2}" /tmp/pod.log | awk '{print $1, $2}' | sort | uniq -c
-```
+```markdown
 
 ### Common Log Patterns Reference
 
@@ -550,7 +560,7 @@ aliyun cms DescribeMetricList \
 echo ""
 echo "=== Addons ==="
 aliyun cs GET /clusters/$CLUSTER_ID/addons | jq '.addons[] | {name, version, state}'
-```
+```markdown
 
 ### Script 2: Node Deep Inspection
 
@@ -597,7 +607,7 @@ aliyun cms DescribeMetricList \
   --Period 60 \
   --StartTime "$START_TIME" \
   --EndTime "$END_TIME"
-```
+```markdown
 
 ---
 

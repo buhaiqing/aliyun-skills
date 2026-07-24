@@ -26,6 +26,7 @@ metadata:
 | cas:DeleteUserCertificate | certificate | Write — specific cert ID |
 
 **Recommended RAM Policy**:
+
 ```json
 {
   "Version": "1",

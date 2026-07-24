@@ -47,6 +47,7 @@
 ### DR Runbook: Key Loss Scenario
 
 **Phase 1 — Assessment (0–5 min)**
+
 1. Identify affected key(s) via `ListKeys` and `DescribeKey`
 2. Determine key state: Enabled, Disabled, or PendingDeletion
 3. If PendingDeletion and within window → `CancelKeyDeletion` immediately
@@ -71,6 +72,7 @@
 ### Explicit Confirmation on Destructive Operations
 
 All destructive operations require explicit confirmation:
+
 - `ScheduleKeyDeletion` — confirm key ID, waiting period, impact on dependent services
 - `DeleteSecret` — confirm secret name, recovery window, no active dependencies
 - `DeleteAlias` — confirm alias name (note: does NOT delete the underlying key)

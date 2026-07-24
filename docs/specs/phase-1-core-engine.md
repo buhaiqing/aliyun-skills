@@ -32,7 +32,7 @@
 
 ### 2.1 整体数据流
 
-```
+```text
 Input (任意文本 / 结构化 JSON)
   │
   ▼
@@ -64,7 +64,7 @@ Input (任意文本 / 结构化 JSON)
 ┌─────────────────┐
 │  OutputAdapter   │  格式化为诊断报告 / 回写工单 / IM 推送 / CI 回调
 └─────────────────┘
-```
+```markdown
 
 ### 2.2 IntentParser（意图解析器）
 
@@ -134,7 +134,7 @@ symptoms:
   cost_spike:
     keywords: ["费用异常", "成本飙升", "账单异常", "cost anomaly"]
     default_products: ["billing"]
-```
+```markdown
 
 ### 2.3 ContextEnricher（上下文富化器）
 
@@ -190,7 +190,7 @@ class Step:
     timeout: int                     # 超时秒数，默认 30
     on_failure: str                  # skip | abort | retry
     output_mapping: dict             # 输出映射: {"connection_trend": "$.PerformanceKeys..."}
-```
+```text
 
 **诊断模板匹配逻辑**：
 
@@ -291,9 +291,10 @@ async def execute(plan: Plan, context: EnrichedContext) -> ExecutionResult:
                 results[step.id] = result
     
     return ExecutionResult(steps=results, trace=build_trace(plan, results))
-```
+```markdown
 
 **关键约束**：
+
 - 每个 Step 执行前过 GCL 门禁（复用 `gcl_runner.py`）
 - Safety=0 → 标记步骤为 `blocked`，不执行，通知用户
 - 同 parallel_group 的步骤并行执行（asyncio.gather）
@@ -369,9 +370,10 @@ rules:
       - action: "升级 RDS 实例规格"
         category: short_term
         risk: medium
-```
+```yaml
 
 **置信度计算**：
+
 - 基础分：0.5
 - 每条匹配的规则 +0.1 ~ +0.3（由规则定义）
 - 证据链完整（所有依赖步骤成功） +0.1
@@ -428,7 +430,7 @@ class ToolRegistry:
     def to_openai_tools() -> list[dict]: ...       # OpenAI Function Calling 格式
     def to_anthropic_tools() -> list[dict]: ...    # Anthropic Tool Use 格式
     def to_mcp_tools() -> list[dict]: ...          # MCP tools/list 格式
-```
+```markdown
 
 ---
 
@@ -539,7 +541,7 @@ output:
   "estimated_duration": "30s",
   "poll_url": "/api/v1/tasks/task-20260717-abc123"
 }
-```
+```markdown
 
 #### GET /api/v1/tasks/{task_id}/result
 
@@ -619,7 +621,7 @@ output:
   ],
   "summary": "3 pass, 1 warn, 0 fail — 建议人工确认延迟变化后继续"
 }
-```
+```markdown
 
 ### 5.3 认证
 
@@ -717,7 +719,7 @@ MCP_TOOLS = [
 
 {"type": "progress", "step": "root_cause", "status": "running", "message": "正在交叉分析根因..."}
 {"type": "result", "status": "done", "result": {"root_cause": "...", "confidence": 0.92, "suggestions": [...]}}
-```
+```markdown
 
 ### 6.3 渐进式加载
 
@@ -735,6 +737,7 @@ MCP_TOOLS = [
 ### 7.1 设计目标
 
 跨多次 API 调用 / MCP tool 调用保持诊断上下文，支持：
+
 - 暂停/恢复诊断
 - 多轮对话中逐步补充信息
 - 同一会话内的资源共享
@@ -824,7 +827,7 @@ class Exchange:
 ---
 
 *诊断耗时: 28.3s | Trace: langfuse-trace-abc123*
-```
+```markdown
 
 ---
 

@@ -61,7 +61,7 @@
 
 ## 📁 New Files Created (6)
 
-```
+```text
 alicloud-elasticsearch-ops/
 ├── operations/
 │   └── batch-operations.md        ✅ NEW (P1 - 16.6KB)

@@ -115,14 +115,16 @@ iostat -xmd 2 5
 ### 2.2 关键诊断模式
 
 #### 模式 A：%util 高 + await 正常 (< 5ms)
-```
+
+```text
 结论：IO 请求量大但响应快，云盘性能充足
 原因：正常高负载，非瓶颈
 处理：观察，无需处理
 ```
 
 #### 模式 B：%util 高 + await 高 (> 10ms)
-```
+
+```markdown
 结论：IO 请求等待严重
 原因：云盘 IOPS/吞吐到达上限，或 IO 调度不合理
 处理：
@@ -132,7 +134,8 @@ iostat -xmd 2 5
 ```
 
 #### 模式 C：%util 正常 + await 异常高
-```
+
+```markdown
 结论：IO 不繁忙但等待时间长
 原因：IO 调度器问题、文件系统 journal 延迟、或后台 flush/fdatasync 阻塞
 处理：
@@ -142,7 +145,8 @@ iostat -xmd 2 5
 ```
 
 #### 模式 D：读写比严重失衡
-```
+
+```markdown
 结论：读或写单方向压力过大
 原因：日志写入过多 / 读放大 / 缓存未命中
 处理：
@@ -270,7 +274,7 @@ cat /sys/block/*/queue/scheduler
 
 ## 7. 综合决策树
 
-```
+```text
 ECS IO 异常
 │
 ├─ 1. CloudMonitor 确认 IO 异常
@@ -316,6 +320,7 @@ ECS IO 异常
 | ssl_session_cache | SSL 握手时 | 共享内存缓存，不落盘 |
 
 **Nginx 日志 IO 优化示例**：
+
 ```nginx
 access_log /var/log/nginx/access.log main buffer=32k flush=5s;
 error_log /var/log/nginx/error.log warn;

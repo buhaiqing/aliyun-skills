@@ -6,6 +6,7 @@
 ## [NOTE] 提示知识力
 
 > **阈值设计原则：**
+>
 > - Warning 阈值 = "开始关注" — 超过这个值不一定出问题，但需要纳入容量计划
 > - Critical 阈值 = "需要行动" — 超过这个值有实际的性能风险或可用性风险
 > - 阿里云 ECS 规格的基线网络带宽会受"积分制"影响（突发性能实例 t5/t6），巡检分析时要注意区分
@@ -29,7 +30,7 @@
 ## ECS 实例规格上限速查
 
 > 以下为常用规格。未列出的规格使用同系列最小值作为安全估算。
-> 完整规格表见：https://help.aliyun.com/zh/ecs/user-guide/instance-family
+> 完整规格表见：<https://help.aliyun.com/zh/ecs/user-guide/instance-family>
 
 ### 通用型 (g7/g7se)
 

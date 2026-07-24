@@ -75,6 +75,7 @@ JSON paths in the SKILL.md. Do NOT guess.
 | Presigned URL | ❌ | ✅ | `ossutil sign` |
 
 > **Rule of thumb:**
+>
 > - **Control plane** (bucket config) → `aliyun oss`
 > - **Data plane** (objects) → `ossutil` (or OSS Go SDK V2 in code)
 > - **Bulk operations** → `ossutil` only

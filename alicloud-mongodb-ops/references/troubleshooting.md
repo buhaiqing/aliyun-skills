@@ -12,7 +12,7 @@ aliyun dds DescribeInstances --RegionId cn-hangzhou --PageSize 1
 
 # Check instance exists and is accessible
 aliyun dds DescribeDBInstances --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 ### Common Environment Errors
 
@@ -29,15 +29,18 @@ aliyun dds DescribeDBInstances --InstanceId "{{user.instance_id}}"
 #### Issue: Region Mismatch
 
 **Symptom:**
-```
+
+```text
 InvalidInstanceId.NotFound: The specified InstanceId does not exist.
-```
+```markdown
 
 **Root Cause:**
+
 - InstanceId belongs to different region
 - RegionId parameter not set correctly
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: List all MongoDB instances across regions
 for region in cn-hangzhou cn-shanghai cn-beijing cn-shenzhen; do
@@ -50,34 +53,39 @@ aliyun configure list
 
 # Step 3: Verify instance exists in specific region
 aliyun dds DescribeDBInstances --RegionId "{{user.region}}" --InstanceId "{{user.instance_id}}"
-```
+```text
 
 **Solutions:**
 
 **Option A: Specify Correct Region**
+
 ```bash
 aliyun dds DescribeDBInstances --RegionId cn-shanghai --InstanceId dds-xxx
-```
+```text
 
 **Option B: Update CLI Default Region**
+
 ```bash
 aliyun configure --region cn-shanghai
-```
+```text
 
 #### Issue: Credentials Not Loaded
 
 **Symptom:**
-```
+
+```text
 ERROR: ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set
 ERROR: ALIBABA_CLOUD_ACCESS_KEY_SECRET is NOT set
-```
+```markdown
 
 **Root Cause:**
+
 - .env file not found
 - Environment variables not exported
 - CLI not configured
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: Check environment variables
 env | grep ALIBABA_CLOUD
@@ -87,7 +95,7 @@ cat ~/.aliyun/config.json
 
 # Step 3: Test API call
 aliyun dds DescribeDBInstances --RegionId cn-hangzhou --PageSize 1
-```
+```markdown
 
 **Solutions:**
 
@@ -107,13 +115,14 @@ chmod 600 .env
 
 # Add to .gitignore (if in a git repository)
 echo ".env" >> .gitignore
-```
+```text
 
 **Option B: Configure CLI**
+
 ```bash
 aliyun configure
 # Enter AccessKeyId, AccessKeySecret, and default region
-```
+```markdown
 
 ---
 
@@ -219,9 +228,10 @@ aliyun cms DescribeMetricList \
   --MetricName ConnectionUsage \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 **Decision Tree:**
+
 - `DBInstanceStatus != Normal` → Wait for instance to stabilize; investigate if stuck
 - Source IP not in whitelist → Add IP/CIDR to whitelist via ModifySecurityIPs
 - Account status != `Available` → Reset password via ResetAccountPassword
@@ -283,9 +293,10 @@ aliyun cms DescribeMetricList \
 
 # Step 5: Check if index hit rate is low (via DAS if available)
 # Delegate to alicloud-das-ops for performance analysis
-```
+```markdown
 
 **Decision Tree:**
+
 - Slow logs show `COLLSCAN` (collection scan) → Missing index; create appropriate index
 - `ScanRowCount >> ReturnRowCount` → Low selectivity query; optimize query or add better index
 - CPU > 80% + slow aggregations → Complex aggregation pipeline; simplify or use covered queries
@@ -334,9 +345,10 @@ aliyun dds DescribeDBInstanceAttribute \
   --InstanceId "{{user.instance_id}}" \
   --output cols=MaintainTime,MaintainEndTime \
   rows=DBInstanceAttribute.{MaintainTime,MaintainEndTime}
-```
+```markdown
 
 **Decision Tree:**
+
 - NetworkLatency > 100ms → Network instability causing heartbeat failures; investigate network path
 - Node status shows `RECOVERING` or `ROLLBACK` → Node recovering; monitor recovery progress
 - Multiple elections in short time → Network partition suspected; check VPC connectivity
@@ -386,9 +398,10 @@ aliyun cms DescribeMetricList \
   --MetricName WriteOperations \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 **Decision Tree:**
+
 - ReplicationLag > 60s → Significant lag; investigate root cause
 - Oplog window < 1 hour → Oplog too small; increase oplog size
 - Secondary CPU > 80% → Secondary overloaded; scale up secondary node
@@ -434,9 +447,10 @@ aliyun dds DescribeHistoryEvents \
   --StartTime "$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-24H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --EventType "Migration"
-```
+```markdown
 
 **Decision Tree:**
+
 - BalancerStatus = `Stopped` → Balancer disabled; enable via SetShardingBalancer
 - ChunkCount highly uneven → Balancer should be active; check for blockers
 - Jumbo chunks detected → Chunk size > 64MB; split chunk or refine shard key
@@ -483,9 +497,10 @@ aliyun dds DescribeReplicaSetRole \
   --InstanceId "{{user.instance_id}}" \
   --output cols=ReplicaSetRole,OptimeDate,LagTime \
   rows=ReplicaSets.ReplicaSet[].{ReplicaSetRole,OptimeDate,LagTime}
-```
+```markdown
 
 **Decision Tree:**
+
 - Oplog retention window < 8 hours → Oplog too small for write volume
   - Calculate required size: `RequiredSize = AverageWriteRate * DesiredRetentionTime`
   - Recommended retention: 24-48 hours minimum
@@ -496,10 +511,11 @@ aliyun dds DescribeReplicaSetRole \
 - Using `w:1` writes → Oplog grows faster; consider batch writes
 
 **Oplog Sizing Formula:**
-```
+
+```text
 OplogSize (MB) = WriteRate (MB/hour) * DesiredRetentionHours
 Example: If writing 1GB/hour, need 24GB oplog for 24-hour retention
-```
+```markdown
 
 ---
 
@@ -539,9 +555,10 @@ aliyun cms DescribeMetricList \
   --MetricName ConnectionCount \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 **Decision Tree:**
+
 - MemoryUsage > 90% → Critical; scale up or reduce working set
 - WorkingSetSize > 80% of total memory → Working set exceeds capacity
 - IndexSize > 30% of memory → Too many indexes; remove unused indexes
@@ -588,9 +605,10 @@ aliyun cms DescribeMetricList \
 # Step 5: Check for index build operations (can cause CPU spike)
 aliyun dds DescribeRunningTasks \
   --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 **Decision Tree:**
+
 - Slow logs show aggregation pipelines → Optimize pipeline stages; use $match early
 - COLLSCAN operations → Missing indexes; create indexes for query patterns
 - Index build in progress → Background index building; wait for completion or cancel
@@ -635,9 +653,10 @@ aliyun dds DescribeDBInstanceAttribute \
   --InstanceId "{{user.instance_id}}" \
   --output cols=StorageEngine,CompressionRatio \
   rows=DBInstanceAttribute.{StorageEngine,CompressionRatio}
-```
+```markdown
 
 **Decision Tree:**
+
 - DiskUsage > 85% → Warning; plan expansion
 - DiskUsage > 95% → Critical; immediate expansion required
 - IndexSize > 40% of total → Redundant indexes; remove unused indexes
@@ -680,9 +699,10 @@ aliyun dds DescribeRestoreTasks \
 # Step 5: Check backup download status (if using physical backup)
 aliyun dds DescribeBackupDownloadURL \
   --BackupId "{{user.backup_id}}"
-```
+```markdown
 
 **Decision Tree:**
+
 - BackupStatus = `Failed` → Backup incomplete; use different backup
 - Engine version mismatch → Version incompatible; upgrade target instance
 - Storage engine mismatch → WiredTiger vs MMAPv1 incompatible; convert or use compatible backup
@@ -696,6 +716,7 @@ aliyun dds DescribeBackupDownloadURL \
 ## Resource-Level Diagnostic Order
 
 ### Instance Issues
+
 1. Verify instance exists: `aliyun dds DescribeDBInstances --InstanceId <id>`
 2. Check instance status: should be `Normal` for normal operation
 3. Verify region and zone configuration
@@ -705,6 +726,7 @@ aliyun dds DescribeBackupDownloadURL \
 7. Verify architecture type: standalone / replica set / sharded
 
 ### Connection Issues
+
 1. Check instance status is `Normal`
 2. Verify whitelist contains source IP/CIDR
 3. Check account status is `Available`
@@ -715,6 +737,7 @@ aliyun dds DescribeBackupDownloadURL \
 8. Verify VPC routing and security group
 
 ### Performance Issues
+
 1. Check CPU, memory, and disk metrics
 2. Review slow logs for expensive operations
 3. Check index usage and hit rate
@@ -725,6 +748,7 @@ aliyun dds DescribeBackupDownloadURL \
 8. Check for in-progress operations (index builds, etc.)
 
 ### Replication Issues
+
 1. Check replica set role and node status
 2. Verify primary and secondary nodes are healthy
 3. Check replication lag metrics
@@ -735,6 +759,7 @@ aliyun dds DescribeBackupDownloadURL \
 8. Check write concern settings
 
 ### Sharding Issues
+
 1. Check balancer status and activity
 2. Review chunk distribution across shards
 3. Check for jumbo chunks
@@ -745,6 +770,7 @@ aliyun dds DescribeBackupDownloadURL \
 8. Verify config server health
 
 ### Backup Issues
+
 1. Check backup status and history
 2. Verify backup method (snapshot vs logical)
 3. Check backup retention policy
@@ -893,7 +919,7 @@ echo ""
 echo "========================================"
 echo "Health Check Complete"
 echo "========================================"
-```
+```markdown
 
 ### Script 2: MongoDB Performance Deep Dive
 
@@ -1007,7 +1033,7 @@ echo ""
 echo "========================================"
 echo "Performance Analysis Complete"
 echo "========================================"
-```
+```markdown
 
 ### Script 3: Sharded Cluster Health Check
 
@@ -1075,7 +1101,7 @@ echo ""
 echo "========================================"
 echo "Sharding Health Check Complete"
 echo "========================================"
-```
+```markdown
 
 ---
 
@@ -1151,41 +1177,46 @@ These commands are executed via MongoDB shell after connecting to the instance.
 ### Diagnostic Query Patterns
 
 #### Find Slow Queries Without Index
+
 ```javascript
 // Queries with high scan ratio
 db.system.profile.find({
   "millis": {$gt: 100},
   "execStats.totalDocsExamined": {$gt: 1000}
 }).sort({millis: -1}).limit(20)
-```
+```text
 
 #### Find Operations Waiting for Lock
+
 ```javascript
 db.currentOp({
   "waitingForLock": true,
   "secs_running": {$gt: 5}
 })
-```
+```text
 
 #### Check Index Usage Efficiency
+
 ```javascript
 db.collection.aggregate([
   {$indexStats: {}},
   {$match: {"accesses.ops": {$gt: 0}}},
   {$sort: {"accesses.ops": -1}}
 ])
-```
+```text
 
 #### Find Large Documents
+
 ```javascript
 db.collection.find({
   "$where": function() {
     return Object.bsonsize(this) > 16000; // > 16KB
   }
 }).limit(100)
-```
+```text
 
 #### Calculate Oplog Window
+
 ```javascript
 // Get oplog first and last entry timestamps
 use local
@@ -1193,9 +1224,10 @@ var first = db.oplog.rs.find().sort({ts: 1}).limit(1).next().ts;
 var last = db.oplog.rs.find().sort({ts: -1}).limit(1).next().ts;
 var windowHours = (last.t - first.t) / 3600;
 print("Oplog window: " + windowHours + " hours");
-```
+```text
 
 #### Check Chunk Distribution Imbalance
+
 ```javascript
 use config
 db.chunks.aggregate([
@@ -1206,7 +1238,7 @@ db.chunks.aggregate([
   }},
   {$sort: {count: -1}}
 ])
-```
+```markdown
 
 ---
 
@@ -1279,7 +1311,7 @@ db.chunks.aggregate([
   "Period": 60,
   "ContactGroups": ["dba-team"]
 }
-```
+```markdown
 
 ### Composite Alert: CPU + Slow Queries
 
@@ -1301,7 +1333,7 @@ db.chunks.aggregate([
   "Logic": "AND",
   "Action": "TriggerSlowLogAnalysis"
 }
-```
+```markdown
 
 ### Composite Alert: Replication Risk
 
@@ -1324,7 +1356,7 @@ db.chunks.aggregate([
   "Logic": "OR",
   "Action": "TriggerReplicationDiagnosis"
 }
-```
+```markdown
 
 ### Sharding Balance Alert
 
@@ -1343,7 +1375,7 @@ db.chunks.aggregate([
   "EvaluationCount": 5,
   "Action": "TriggerBalancerDiagnosis"
 }
-```
+```markdown
 
 ---
 
@@ -1365,12 +1397,14 @@ db.chunks.aggregate([
 ## Best Practices Summary
 
 ### Connection Management
+
 - Use replica set connection string format for replica sets
 - Configure proper connection pool size (typically 100-200 per application instance)
 - Enable SSL for production environments
 - Use appropriate read preferences for read-heavy workloads
 
 ### Index Strategy
+
 - Create indexes for all query patterns
 - Use covered queries to minimize document scans
 - Monitor index usage and remove unused indexes
@@ -1378,24 +1412,28 @@ db.chunks.aggregate([
 - Consider TTL indexes for time-series data
 
 ### Write Optimization
+
 - Use appropriate write concern based on durability needs
 - Batch writes when possible
 - Avoid document growth patterns
 - Use bulk operations for large inserts/updates
 
 ### Sharding Best Practices
+
 - Choose shard key with good distribution and query locality
 - Monitor chunk distribution and balancer activity
 - Avoid jumbo chunks by proper shard key selection
 - Plan for shard key cardinality
 
 ### Replication Best Practices
+
 - Maintain adequate oplog size for write volume
 - Monitor replication lag continuously
 - Use appropriate read concern levels
 - Consider geography when placing secondary nodes
 
 ### Monitoring Integration
+
 - Set up alerts for CPU, memory, disk thresholds
 - Monitor slow logs daily
 - Track replication lag continuously

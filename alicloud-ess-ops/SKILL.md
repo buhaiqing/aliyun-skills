@@ -66,7 +66,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```markdown
 # CreateScalingGroup:              $.ScalingGroupId
 # DescribeScalingGroups:           $.ScalingGroups[].{ScalingGroupId,ScalingGroupName,ActiveScalingConfigurationId,LifecycleState,MinSize,MaxSize,DesiredCapacity}
 # CreateScalingConfiguration:      $.ScalingConfigurationId
@@ -171,6 +171,7 @@ Auto Scaling (ESS) is Alibaba Cloud's elastic scaling service that automatically
 | Debug mode | Warning message only | Unmasked credential output |
 
 **Credential verification MUST check existence only, never echo the value.**
+
 - ✅ Bash: `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"`
 - ❌ Bash: `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - ✅ Go: `if os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET") == ""`
@@ -210,11 +211,13 @@ Auto Scaling (ESS) is Alibaba Cloud's elastic scaling service that automatically
 ## Quick Start
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region: `ALIBABA_CLOUD_REGION_ID`
 
 ### First Command
+
 ```bash
 # List all scaling groups in region
 aliyun ess DescribeScalingGroups --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
@@ -263,7 +266,7 @@ aliyun ess DescribeScalingGroups --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
 
 ### Operation: Create Scaling Group
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Scaling Group)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -322,7 +325,7 @@ aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{user.scaling_group_id}}"
 
 ### Operation: Modify Scaling Group
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Modify Scaling Group)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -334,6 +337,7 @@ aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{user.scaling_group_id}}"
 Full CLI command in [references/execution-flows.md §2](references/execution-flows.md#2-modify-scaling-group)
 
 #### Post-execution Validation
+
 ```bash
 aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{user.scaling_group_id}}"
 ```
@@ -369,6 +373,7 @@ Full CLI commands in [references/execution-flows.md §4](references/execution-fl
 #### Post-execution Validation
 
 Capture `$.ScalingConfigurationId`. Verify:
+
 ```bash
 aliyun ess DescribeScalingConfigurations --ScalingConfigurationId.1 "{{output.scaling_configuration_id}}"
 ```
@@ -411,7 +416,7 @@ Full CLI commands in [references/execution-flows.md §7](references/execution-fl
 
 ### Operation: Instance Management
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Instance Management)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -441,6 +446,7 @@ Full CLI commands in [references/execution-flows.md §9](references/execution-fl
 Full CLI commands in [references/execution-flows.md §10](references/execution-flows.md#10-enabledisable-scaling-group)
 
 #### Post-execution Validation
+
 ```bash
 aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{user.scaling_group_id}}"
 ```
@@ -516,20 +522,24 @@ aliyun ess DescribeScalingActivityDetail --ScalingActivityId "{{user.scaling_act
 ## Operational Best Practices
 
 ### Capacity Management
+
 - **MinSize == DesiredCapacity:** Prevents scale-in below desired level.
 - **PredictiveScalingRule:** For proactive scaling based on historical patterns.
 - **MultiAZPolicy:** Use `BALANCE` for even AZ distribution; `PRIORITY` for cost optimization.
 
 ### Health Check Integration
+
 - ESS automatically replaces unhealthy instances when health check enabled.
 - Use lifecycle hooks for custom health check logic.
 - `SetInstanceHealth` for manual health status override.
 
 ### Scaling Configuration Management
+
 - **Keep only active configs:** Periodically delete unused configurations.
 - **Use `ModifyScalingGroup --ActiveScalingConfigurationId`** to switch configurations during instance refresh.
 
 ### Instance Refresh Best Practices
+
 - Use `MinHealthyPercentage=100` for zero-downtime refresh.
 - Use batch mode for controlled rollout.
 - Test with canary batch before full rollout.

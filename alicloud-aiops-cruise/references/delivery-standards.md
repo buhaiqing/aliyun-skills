@@ -14,6 +14,7 @@ status: mandatory
 ## 1. Markdown 报告（给人看——运维负责人）
 
 ### 文件路径
+
 `audit-results/reports/cruise-{customer}-{date}.md`
 
 ### 必须包含的章节
@@ -77,6 +78,7 @@ Warning 问题清单
 ## 2. 评分看板（给人看——IT 管理者/客户）
 
 ### 文件路径
+
 `audit-results/dashboards/cruise-{customer}-{date}.md`
 
 ### 必须包含的内容
@@ -119,6 +121,7 @@ Warning 问题清单
 ## 3. JSON 结构化报告（给机器——自动化系统/GCL 审计）
 
 ### 文件路径
+
 `audit-results/json/cruise-{customer}-{date}.json`
 
 ### 必须包含的字段

@@ -95,11 +95,13 @@ You are the **Critic (C)** for an Auto Scaling operation. You are **blind** to t
    concrete test fixes. Targeted regression per AGENTS.md §11.1 when ambiguous.
 
 ### Scoring Guide
+
 - Each dimension (Correctness, Safety, Idempotency, Traceability, Spec Compliance): 0 or 1
 - Safety = 0 → **ABORT** immediately
 - All dimensions = 1 → PASS
 
 ### Report Format
+
 ```json
 {
   "critic_findings": ["Finding 1", "Finding 2", ...],
@@ -126,6 +128,7 @@ You are the **Critic (C)** for an Auto Scaling operation. You are **blind** to t
 ## H (Hallucination Detection) Notes
 
 The Hallucination Detector (H) runs pre-execution to verify:
+
 - CLI commands match `aliyun ess` API names (no invented operations)
 - Parameter names match official OpenAPI (e.g., `--ScalingGroupId.1` not `--GroupId`)
 - JSON array syntax is correctly escaped for shell

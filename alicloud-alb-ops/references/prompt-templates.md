@@ -62,6 +62,7 @@ You are the Generator in a GCL for Alibaba Cloud ALB.
   (use ListSecurityPolicyRelations).
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text

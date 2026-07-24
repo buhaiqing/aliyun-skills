@@ -8,7 +8,7 @@
 
 现代云原生运维需要 **Metrics + Logs + Traces** 三位一体的可观测性支撑。CMS 提供 Metrics 层，但根因定位往往需要下沉到 Logs 和 Traces 层。
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   Metrics       │────▶│     Logs        │────▶│    Traces       │
 │   (CMS)         │     │    (SLS)        │     │   (ARMS)        │
@@ -246,7 +246,7 @@ If SLS/ARMS skills are not available:
 
 ### Pattern 1: Metrics-Triggered Log Investigation
 
-```
+```text
 [CMS Alarm: CPUUtilization > 95%]
     │
     ├── 1. Query CMS metrics (confirm + trend)
@@ -258,7 +258,7 @@ If SLS/ARMS skills are not available:
 
 ### Pattern 2: Latency Investigation with Traces
 
-```
+```text
 [CMS Alarm: SLB Latency > 5s]
     │
     ├── 1. Query CMS SLB metrics (confirm + backend correlation)
@@ -270,7 +270,7 @@ If SLS/ARMS skills are not available:
 
 ### Pattern 3: Full Stack Root Cause
 
-```
+```text
 [CMS Alarm: RDS ConnectionUsage > 90%]
     │
     ├── 1. Query CMS RDS metrics (confirm + CPU correlation)

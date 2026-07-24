@@ -3,6 +3,7 @@
 ## Overview
 
 Bailian Agent framework supports autonomous AI agents with:
+
 - **Tool Use**: Call external APIs and functions
 - **Memory**: Short-term (session) and long-term (persistent)
 - **Planning**: Multi-step reasoning and task decomposition
@@ -12,7 +13,7 @@ Bailian Agent framework supports autonomous AI agents with:
 
 ### Pattern 1: ReAct (Reasoning + Acting)
 
-```
+```yaml
 User: "What's the weather in Hangzhou and should I bring an umbrella?"
 
 Agent:
@@ -26,6 +27,7 @@ Agent:
 ```
 
 **Implementation:**
+
 ```go
 req := &bailian.CreateAgentRequest{
     AgentName:    tea.String("weather-assistant"),
@@ -37,11 +39,11 @@ Always provide actionable advice based on the weather.`),
         tea.String("weather_api"),
     },
 }
-```
+```markdown
 
 ### Pattern 2: Multi-Agent Collaboration
 
-```
+```text
 ┌──────────────┐
 │  Supervisor  │
 │   Agent      │
@@ -53,7 +55,7 @@ Always provide actionable advice based on the weather.`),
 │Order│ │Support│
 │Agent│ │Agent  │
 └─────┘ └─────┘
-```
+```text
 
 **Use when:** Complex workflows requiring specialized agents
 
@@ -70,11 +72,11 @@ supervisorReq := &bailian.CreateAgentRequest{
         tea.String("delegate_to_support_agent"),
     },
 }
-```
+```markdown
 
 ### Pattern 3: Plan-and-Execute
 
-```
+```yaml
 User: "Book a flight to Shanghai and find a hotel near the bund"
 
 Agent Plan:
@@ -90,9 +92,10 @@ Agent Execution:
   Step 2: [Tool: flight_select] → Selection
   Step 3: [Tool: hotel_search] → Results
   ...
-```
+```text
 
 **Implementation:**
+
 ```go
 req := &bailian.CreateAgentRequest{
     AgentName: tea.String("travel-planner"),
@@ -110,7 +113,7 @@ For complex requests:
         tea.String("hotel_book"),
     },
 }
-```
+```markdown
 
 ## Tool Design
 
@@ -136,7 +139,7 @@ For complex requests:
     "required": ["query"]
   }
 }
-```
+```markdown
 
 ### Tool Categories
 
@@ -169,7 +172,7 @@ req := &bailian.CreateAgentRequest{
     // ...
     MaxSessionMessages: tea.Int64(20),
 }
-```
+```markdown
 
 ### Long-Term Memory (User Profile)
 
@@ -185,7 +188,7 @@ memoryReq := &bailian.SaveMemoryRequest{
 // Recall in agent
 instructions := `Check user preferences before responding.
 If user has preferred_language, respond in that language.`
-```
+```markdown
 
 ### Working Memory (Task State)
 
@@ -204,7 +207,7 @@ Turn 2: User: "POL-12345"
 Turn 3: User: "2026-06-01"
         Agent: "Please describe what happened..."
         [Working memory: policy=POL-12345, date=2026-06-01]
-```
+```markdown
 
 ## Knowledge Integration
 
@@ -223,7 +226,7 @@ Use the knowledge base to answer questions accurately.
 If the answer is not in the knowledge base, say so honestly.
 Cite sources when providing information.`),
 }
-```
+```markdown
 
 ### Retrieval Strategy
 
@@ -250,7 +253,7 @@ safetyReq := &bailian.CreateAgentRequest{
         BlockThreshold: tea.String("MEDIUM_AND_ABOVE"),
     },
 }
-```
+```markdown
 
 ### Output Filtering
 
@@ -263,7 +266,7 @@ outputFilter := &bailian.OutputFilter{
         tea.String("\\b1[3-9]\\d{9}\\b"), // Phone numbers
     },
 }
-```
+```markdown
 
 ### Human-in-the-Loop
 
@@ -276,7 +279,7 @@ req := &bailian.CreateAgentRequest{
         TriggerTools: []*string{tea.String("delete_data"), tea.String("transfer_funds")},
     },
 }
-```
+```markdown
 
 ## Performance Optimization
 
@@ -324,7 +327,7 @@ req := &bailian.CreateAgentRequest{
     "safety_check": "no_escalation"
   }
 ]
-```
+```markdown
 
 ## Deployment Patterns
 
@@ -340,7 +343,7 @@ if hash(user_id)%2 == 0 {
 } else {
     agent_id = "agent-v2"
 }
-```
+```markdown
 
 ### Canary Deployment
 
@@ -353,7 +356,7 @@ if random(0, 100) < rollout_percentage {
 } else {
     agent_id = "agent-v1"  // Stable
 }
-```
+```markdown
 
 ### Multi-Region
 
@@ -365,4 +368,4 @@ region_mapping = {
     "cn-south": "cn-shenzhen"
 }
 agent_endpoint = region_mapping[user_region]
-```
+```text

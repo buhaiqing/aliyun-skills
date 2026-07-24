@@ -38,16 +38,18 @@ terraform {
 provider "alicloud" {
   region = var.region
 }
-```
+```markdown
 
 ## State Management
 
 ### OSS Backend
+
 - Store state remotely for team collaboration
 - Enable state locking to prevent conflicts
 - Version state files for rollback capability
 
 ### State Commands
+
 ```bash
 terraform state list                    # List all resources
 terraform state show <resource>         # Show resource details
@@ -57,17 +59,17 @@ terraform state mv <old> <new>          # Rename resource
 
 ## Module Structure
 
-```
+```text
 modules/
 ├── vpc/                    # VPC network module
 ├── ecs/                    # ECS instance module
 ├── rds/                    # RDS database module
 └── security/               # Security group module
-```
+```markdown
 
 ## Multi-Environment Pattern
 
-```
+```text
 environments/
 ├── dev/
 │   ├── main.tf
@@ -82,6 +84,7 @@ environments/
 ## NL2HCL (Natural Language to HCL)
 
 Convert natural language descriptions to Terraform HCL:
+
 - Resource type detection
 - Parameter inference
 - Dependency analysis
@@ -90,6 +93,7 @@ Convert natural language descriptions to Terraform HCL:
 ## Reverse Engineering
 
 Generate Terraform configurations from existing Alibaba Cloud resources:
+
 - Resource discovery
 - HCL generation
 - Import command generation

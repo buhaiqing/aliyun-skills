@@ -14,6 +14,7 @@
 > **4 个 runbook 全部脚本化 + 幂等加固完成**
 
 当前状态:
+
 - [x] 4 个 runbook 已有 Python 脚本 (daily-health-check / emergency-troubleshoot / capacity-planning / pre-launch-check)
 - [ ] **幂等加固** [ ] 重点: 重复跑能保证 side-effect = 0
 
@@ -27,10 +28,10 @@
 | pre-launch-check | 弱幂等 (写 `.need_escalation`) | — |
 
 **幂等加固清单**:
+
 1. `.need_escalation` 文件用 append + 时间戳, 不覆盖
 2. 报告文件名带 timestamp, 不冲突
-3. 缓存清理时**只清本 runbook 的 cache key**
-4. **重入检查**: 同一 runbook 同一时间只允许一个实例 (file lock)
+3. 缓存清理时**只清本 runbook 的 cache key**4.**重入检查**: 同一 runbook 同一时间只允许一个实例 (file lock)
 
 ### 1.2 Stage 3 D1 阶段
 
@@ -38,7 +39,7 @@
 
 #### 双引擎架构
 
-```
+```text
                 ┌──────────────────────────────────────┐
                 │  Cruise Orchestrator (调度器)         │
                 │  - cron / event trigger              │
@@ -79,8 +80,8 @@
 
 | 场景 | 触发器 | 走引擎 | 响应延迟 |
 |------|--------|--------|---------|
-| 每日健康巡检 | cron 0 9 * * * | 固化 | < 1s |
-| 容量预测 (周报) | cron 0 9 * * 0 | 固化 | < 1s |
+| 每日健康巡检 | cron 0 9 ** * | 固化 | < 1s |
+| 容量预测 (周报) | cron 0 9 ** 0 | 固化 | < 1s |
 | 大促前预检 (双11 前 7 天) | cron 0 9 1,10 11 * | 固化 | < 1s |
 | 5xx 告警 | CMS webhook | Agent 兜底 | < 30s |
 | 用户提问 "我数据库慢" | 钉钉/企微 webhook | Agent 兜底 | < 60s |
@@ -124,16 +125,19 @@
 ### D7 (2026-06-07): 双引擎分工
 
 **固化工作流 (90% 场景)**:
+
 - 已知 runbook, 已知输入, 已知输出
 - 不需要 LLM 推理
 - 毫秒级响应
 
 **弹性 Agent (10% 异常场景)**:
+
 - 5xx 告警、根因分析、新场景
 - 需要 LLM 推理 + 工具调用
 - 秒级响应
 
 **判定标准**:
+
 - 触发是**已知 cron** -> 固化
 - 触发是**未知 event** (5xx 告警/用户提问) -> Agent
 - 巡检发现 **3+ critical** -> Agent 升级分析
@@ -141,17 +145,19 @@
 ### D8 (2026-06-07): 幂等性是关键
 
 **没有幂等 -> 重复跑 = 数据污染**:
+
 - 报告覆盖: 历史不可追溯
 - 写文件覆盖: `.need_escalation` 丢失
 - 重入并发: race condition
 - 缓存误清: hit_rate 暴跌
 
 **File Lock 实现**:
+
 ```bash
 # Lock 文件: /tmp/cruise-{runbook}-{customer}.lock
 # 包含: PID + start_time + hostname
 # TTL: 10 分钟自动过期
-```
+```markdown
 
 ---
 

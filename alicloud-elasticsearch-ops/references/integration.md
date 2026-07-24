@@ -233,7 +233,7 @@ func checkClusterHealth(client *elasticsearch.Client, instanceId string) (string
 
 ### 6.1 5-Step Cross-Skill Diagnosis Workflow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Step 1: Error Classification (Local Diagnosis)                    │
 │  ├── Classify error code (Throttling, InstanceNotFound, etc.)      │

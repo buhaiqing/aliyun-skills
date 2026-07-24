@@ -67,7 +67,7 @@ REDIS_IDS=$(echo "$RC_RESULT" | jq -r 'select(.ResourceType=="ACS::Redis::Instan
 NAT_IDS=$(echo "$RC_RESULT" | jq -r 'select(.ResourceType=="ACS::VPC::NatGateway") | .ResourceId')
 
 echo "[INFO] 扫描到 ECS:$(echo "$ECS_IDS" | wc -l) SLB:$(echo "$SLB_IDS" | wc -l) RDS:$(echo "$RDS_IDS" | wc -l) Redis:$(echo "$REDIS_IDS" | wc -l) NAT:$(echo "$NAT_IDS" | wc -l)"
-```
+```markdown
 
 ### Phase 2: 逐层排查（决策树）
 
@@ -79,7 +79,7 @@ echo "[INFO] 扫描到 ECS:$(echo "$ECS_IDS" | wc -l) SLB:$(echo "$SLB_IDS" | wc
   S4: RDS/Redis -> 异常? -> DAS 慢查询
   S5: NAT -> 异常? -> SNAT 端口
   S6: 全链路正常 -> 查应用日志/外部依赖
-```
+```markdown
 
 #### Step S1: 异常窗口确定 + 告警历史
 
@@ -94,7 +94,7 @@ aliyun actiontrail LookupEvents \
   --StartTime "$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-6H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --MaxResults 50 | jq '.Events[] | {EventTime, EventName, UserIdentity, ResourceName}'
-```
+```markdown
 
 #### Step S2: SLB 健康检查
 
@@ -117,7 +117,7 @@ for LB_ID in $SLB_IDS; do
     echo "[WARN] SLB 健康检查异常 -> 走 SLB-ECS 推理分支"
   fi
 done
-```
+```markdown
 
 #### Step S3: ECS 层排查
 
@@ -151,7 +151,7 @@ for INST_ID in $ECS_IDS; do
     # ... (内检测脚本见 01-daily-health-check.md Step 2.7)
   fi
 done
-```
+```markdown
 
 #### Step S4: 数据库层排查
 
@@ -198,7 +198,7 @@ for REDIS_ID in $REDIS_IDS; do
   
   echo "[DIAG] Redis $REDIS_ID: 内存=${REDIS_MEM}% 命中率=${REDIS_HIT}%"
 done
-```
+```markdown
 
 #### Step S5: NAT 层排查
 
@@ -215,7 +215,7 @@ for NAT_ID in $NAT_IDS; do
   
   echo "[DIAG] NAT $NAT_ID: SNAT峰值=$SNAT_PEAK"
 done
-```
+```markdown
 
 ### Phase 3: 根因报告
 
@@ -249,11 +249,11 @@ done
 [LIST] 操作事件
   ActionTrail 发现近期配置变更：
   - 2026-06-06T08:00:00Z CreateSnapshot -> 触发数据备份
-```
+```markdown
 
 ## 3. 决策树
 
-```
+```text
 用户报障/告警
 ├── ActionTrail 近期有配置变更?
 │   ├── 是 -> 变更回滚或修复
@@ -274,7 +274,7 @@ done
 │   ├── 是 -> 端口耗尽 -> 升配或加 NAT
 │   └── 否 -> 查外部依赖
 └── 全链路正常 -> 非阿里云资源问题 -> 查应用日志/第三方
-```
+```markdown
 
 ## 4. Changelog
 

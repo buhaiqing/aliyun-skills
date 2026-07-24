@@ -92,6 +92,7 @@ done
 TCP/2049 (NFS) or TCP/445 (SMB).
 
 **Fix:** Add security group egress rule:
+
 ```bash
 aliyun ecs AuthorizeSecurityGroupEgress --SecurityGroupId <sg> \
   --IpProtocol tcp --PortRange 2049/2049 --DestCidrIp 0.0.0.0/0
@@ -137,9 +138,11 @@ aliyun nas DeleteFileSystem --FileSystemId <id>
 **Cause:** Snapshot was deleted or never existed in this region.
 
 **Fix:** List available snapshots:
+
 ```bash
 aliyun nas DescribeSnapshots --FileSystemId <id>
 ```
+
 Choose a snapshot from a region/file system you have access to. **Note that
 cross-FS snapshot rollback is not supported** — the snapshot must be from
 the same file system you are resetting.

@@ -86,6 +86,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
@@ -149,10 +150,12 @@ Default per `AGENTS.md` §12.5. `max_iter=2`. Safety=0 or Credential Hygiene=0 �
 ```
 
 ## 5. Anti-Patterns
+
 - ❌ `DeleteVpc` without dependency cascade
 - ❌ `DeleteNatGateway` with active SNAT/DNAT entries
 - ❌ `Create SNAT/DNAT` with overlapping CIDR
 - ❌ CIDR outside RFC1918 for private VPC
 
 ## 6. Changelog
+
 1.0.0 | 2026-06-04 | Initial VPC GCL rubric (Phase 1, seventh skill). Dependency-cascade pattern for `DeleteVpc` / `DeleteNatGateway`. Cross-skill delegation to `alicloud-eip-ops` for EIP ops.

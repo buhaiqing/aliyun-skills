@@ -96,4 +96,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | SLB GCL prompt templates (Phase 5, recommended).

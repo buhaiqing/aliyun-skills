@@ -81,7 +81,7 @@ aliyun polardb DescribeDBClusterAttribute \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --output cols=DBClusterId,DBClusterClass,DBNodeNumber rows=DBCluster
-```
+```markdown
 
 ### Step 2: Analyze Business Cycle Patterns
 
@@ -97,7 +97,7 @@ aliyun cms GetMetricStatisticsData \
   --Statistics Average,Maximum \
   --Period 3600 \
   | jq '.Datapoints[] | {hour: (.timestamp % 86400 / 3600), value: .Average}'
-```
+```markdown
 
 ### Step 3: Predict Peak Connections and Threshold Breach
 
@@ -143,7 +143,7 @@ aliyun cms GetMetricStatisticsData \
   --EndTime "$(date +%Y-%m-%dT%H:%M:%SZ)" \
   --Statistics Maximum \
   --Period 3600
-```
+```markdown
 
 ### JIT Go SDK (Prediction Engine)
 
@@ -890,7 +890,7 @@ func boolStr(b bool, trueStr, falseStr string) string {
 	}
 	return falseStr
 }
-```
+```markdown
 
 ## Output Format
 
@@ -920,7 +920,8 @@ func boolStr(b bool, trueStr, falseStr string) string {
 
 ### 周期特征描述
 
-```
+```text
+
 业务周期模式:
 ┌─────────────────────────────────────────────────────────────┐
 │ 日周期: 早10点高峰，晚8点低谷                                  │
@@ -933,7 +934,8 @@ func boolStr(b bool, trueStr, falseStr string) string {
 │     Wed-Fri ████████████████ 中等                           │
 │     Sat-Sun ████████ 低谷                                   │
 └─────────────────────────────────────────────────────────────┘
-```
+
+```markdown
 
 ## 高峰连接预测
 
@@ -953,11 +955,13 @@ func boolStr(b bool, trueStr, falseStr string) string {
 
 ## 预警级别: `medium`
 
-```
+```text
+
 当前状态: 连接高峰接近80%阈值，建议中期规划
 风险评级: 中等风险
 建议时间窗: 下一个高峰时段前做好准备
-```
+
+```markdown
 
 ## 优化建议
 
@@ -985,7 +989,7 @@ func boolStr(b bool, trueStr, falseStr string) string {
 | 误差范围 | ±3.5% | 低误差 |
 
 > **验收结论**: ✅ 预测模型准确率 > 80%，符合验收标准
-```
+```markdown
 
 ### JSON Output Format
 
@@ -1037,7 +1041,7 @@ func boolStr(b bool, trueStr, falseStr string) string {
   ],
   "validation_accuracy": 85.2
 }
-```
+```markdown
 
 ## Acceptance Criteria (验收标准)
 
@@ -1077,7 +1081,7 @@ func validatePredictionAccuracy(clusterId string) float64 {
 
     return accuracy // 要求 ≥ 80%
 }
-```
+```markdown
 
 ## Alert Threshold Configuration
 
@@ -1111,7 +1115,7 @@ SHOW VARIABLES LIKE 'max_connections';
 
 -- 检查活跃连接
 SHOW PROCESSLIST;
-```
+```markdown
 
 ## Failure Recovery
 

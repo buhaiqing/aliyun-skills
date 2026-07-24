@@ -88,6 +88,7 @@ Each addon entry is an object with these fields:
 | `disabled` | (default) `false` | Set `true` to skip auto-install |
 
 **Common addons for ASK:**
+
 - Network: `terway-eniip` (default) or `flannel`
 - Storage: `csi-plugin`, `csi-provisioner`
 - Logging: `loongcollector` (with SLS project config)

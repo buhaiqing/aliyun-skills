@@ -38,7 +38,7 @@ sed -i '' 's/CpuUtilization/CPUUtilization/g' runbooks/01-daily-health-check.md
 
 # 多文件替换
 find runbooks/ references/ -name "*.md" -exec sed -i '' 's/旧名/新名/g' {} +
-```
+```markdown
 
 **优点**：一行命令，全文件/全目录替换
 **缺点**：无法精确控制替换位置（会替换注释、代码块内所有匹配）
@@ -53,7 +53,7 @@ read path/to/file offset=NN limit=20
 
 # 2. 复制原文到 oldText（包含所有空白和换行符）
 # 注意：oldText 必须一字不差，连缩进空格都算
-```
+```markdown
 
 **优点**：只改目标位置，不影响文件其他部分
 **缺点**：遇到转义字符、多行缩进不一时容易匹配失败
@@ -85,7 +85,7 @@ else:
     if idx >= 0:
         print(f"附近内容: {repr(content[idx:idx+100])}")
 PYFIX
-```
+```markdown
 
 **优点**：处理复杂逻辑最可靠，支持转义、条件判断
 **缺点**：需要写脚本，比前两种方式重
@@ -100,9 +100,9 @@ PYFIX
 
 ## 最佳实践总结
 
-```
+```text
 单处精确修改 -> edit
 全局关键词替换 -> sed + find
 复杂多行替换 -> python
 匹配失败时 -> grep -n -C3 先看精确原文
-```
+```text

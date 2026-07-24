@@ -5,7 +5,7 @@
 
 ## TL;DR (Decision Tree)
 
-```
+```text
 用户要在 PolarDB MySQL 集群里执行 SQL（尤其是一个含多条语句的 .sql 文件）
 │
 ├─ 问：能否用 `aliyun polardb` 直接执行 SQL？
@@ -23,7 +23,7 @@
 └─ 可选路径（无 mysql 客户端、仅需查询类操作）
     └─ ⚠️ 通过 DMS 或控制台执行（见 §Path B）
         · 适合临时查询、无自动化需求
-```
+```markdown
 
 | 需求 | 推荐方式 | Endpoint 类型 |
 |------|----------|---------------|
@@ -46,7 +46,7 @@ PolarDB MySQL 集群提供多种 Endpoint 类型，支持不同的访问场景�
 
 ### Endpoint 选择指南
 
-```
+```text
 SQL 类型决策树
 │
 ├─ 写入操作（INSERT/UPDATE/DELETE/DDL）
@@ -68,7 +68,7 @@ SQL 类型决策树
 └─ 混合操作（事务中含读写）
     └─ ✅ Primary Endpoint
         · 事务内读写需在同一节点
-```
+```markdown
 
 ---
 
@@ -113,7 +113,7 @@ CLUSTER_HOST=$(aliyun polardb DescribeDBClusterEndpoints \
 # 4) 查看白名单配置
 aliyun polardb DescribeDBClusterAccessWhitelist \
   --DBClusterId "{{user.db_cluster_id}}"
-```
+```markdown
 
 ### A.3 执行 SQL 文件
 
@@ -141,7 +141,7 @@ mysql -h "$POLAR_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" "$POLAR
 
 # 方式 3：不指定库名（脚本内自行 USE / CREATE DATABASE）
 mysql -h "$POLAR_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" < "$SQL_FILE"
-```
+```text
 
 #### 通过 Cluster Endpoint 执行（读写分离）
 
@@ -152,7 +152,7 @@ export POLAR_CLUSTER_HOST="pc-xxxx-cluster.mysql.polardb.rds.aliyuncs.com"
 # 查询类操作会自动路由到只读节点
 mysql -h "$POLAR_CLUSTER_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" "$POLAR_DB" \
   -e "SELECT COUNT(*) FROM large_table WHERE created_at > '2024-01-01'"
-```
+```text
 
 #### 通过 Custom Endpoint 执行（指定只读节点）
 
@@ -163,7 +163,7 @@ export POLAR_CUSTOM_HOST="pc-xxxx-custom-reader.mysql.polardb.rds.aliyuncs.com"
 # 适合大数据分析、报表查询等重负载只读任务
 mysql -h "$POLAR_CUSTOM_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" \
   -e "SELECT /*+ PARALLEL(4) */ * FROM orders WHERE order_date BETWEEN '2024-01-01' AND '2024-12-31'"
-```
+```markdown
 
 **安全提示：** 生产环境优先 `-p` 交互输入或从环境变量读取密码，避免在 shell 历史里明文
 `--password=xxx`。Agent 不得将用户密码写入日志或提交到版本库。
@@ -182,7 +182,7 @@ mysql -h "$POLAR_CLUSTER_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS"
 # DDL 操作（通过 Primary Endpoint）
 mysql -h "$POLAR_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" "$POLAR_DB" \
   -e "CREATE TABLE IF NOT EXISTS orders (id INT PRIMARY KEY, amount DECIMAL(10,2))"
-```
+```markdown
 
 ### A.5 常见失败与处理
 
@@ -227,7 +227,7 @@ Agent 执行 SQL 前必须进行安全检查：
 
 ### 安全检查流程
 
-```
+```text
 SQL 安全检查流程
 │
 ├─ 1. 解析 SQL 类型
@@ -249,11 +249,11 @@ SQL 安全检查流程
     ├─ 不显示敏感数据（密码字段、个人信息）
     ├─ 显示执行状态和影响行数
     └─ 错误信息不包含完整 SQL 内容
-```
+```markdown
 
 ### 用户确认模板
 
-```
+```text
 ⚠️ 危险 SQL 检测
 
 即将执行高危操作：
@@ -269,7 +269,7 @@ SQL 类型：DROP TABLE
 [3] 查看完整 SQL 内容
 
 输入选项：
-```
+```markdown
 
 ---
 
@@ -302,7 +302,7 @@ ENDPOINT_INFO=$(aliyun polardb DescribeDBClusterEndpoints \
 # 3. 执行 SQL
 mysql -h "$POLAR_HOST" -P "$POLAR_PORT" -u "$POLAR_USER" -p"$POLAR_PASS" \
   -e "{{user.sql_statement}}" "{{user.db_name}}"
-```
+```markdown
 
 ### Post-execution Validation
 
@@ -357,7 +357,7 @@ if [ $? -eq 0 ]; then
 else
   echo "❌ SQL 文件执行失败，请检查错误信息"
 fi
-```
+```markdown
 
 ### 安全扫描脚本
 
@@ -386,9 +386,10 @@ scan_sql_file() {
   
   return $dangerous
 }
-```
+```markdown
 
 > **⚠️ 简化版局限性说明：**
+>
 > - 此脚本基于正则匹配，可能遗漏以下复杂场景：
 >   - 存储过程内嵌的危险 SQL（`CREATE PROCEDURE` 内含 `DROP`）
 >   - 动态 SQL 拼接（字符串内含危险关键词）
@@ -396,7 +397,8 @@ scan_sql_file() {
 >   - 注释混淆（危险关键词被注释包裹）
 > - **生产环境建议**：使用专业 SQL 解析器（如 `sqlparse` Python 库）进行 AST 级别分析
 > - **复杂文件处理**：含存储过程、触发器、事件调度器的 SQL 文件，建议人工审核后再执行
-```
+>
+```markdown
 
 ---
 
@@ -447,7 +449,7 @@ aliyun polardb DescribeSlowLogRecords \
 # $.Items.SlowLogRecord[].SQLText      — SQL 文本
 # $.Items.SlowLogRecord[].ExecutionTime — 执行时间（秒）
 # $.Items.SlowLogRecord[].TotalQueryTimes — 累计执行次数
-```
+```markdown
 
 ### 深度慢查询分析
 
@@ -521,11 +523,13 @@ aliyun polardb DescribeSlowLogRecords \
 ### 场景 1：执行 SQL 文件
 
 **用户提示词：**
-```
+
+```text
 在 PolarDB 集群 pc-bp123456 里执行 schema.sql 文件，数据库是 mydb，账号是 admin
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQLFile
 - 目标集群：pc-bp123456
 - 目标数据库：mydb
@@ -533,6 +537,7 @@ aliyun polardb DescribeSlowLogRecords \
 - SQL 文件：schema.sql（用户需提供完整路径或文件内容）
 
 **执行步骤：**
+
 1. 获取 Primary Endpoint 地址
 2. 扫描 SQL 文件安全等级
 3. 执行 `mysql -h <endpoint> -u admin -p <mydb> < schema.sql`
@@ -542,60 +547,69 @@ aliyun polardb DescribeSlowLogRecords \
 ### 场景 2：单条 SQL 查询
 
 **用户提示词：**
-```
+
+```text
 查询 PolarDB 集群 pc-bp123456 的 orders 表，统计2024年订单总数
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQL（查询）
 - 目标集群：pc-bp123456
 - SQL 类型：SELECT（安全，可直接执行）
 - 推荐 Endpoint：Cluster（利用读写分离）
 
 **执行 SQL：**
+
 ```sql
 SELECT COUNT(*) AS total_orders 
 FROM orders 
 WHERE YEAR(order_date) = 2024;
-```
+```markdown
 
 ---
 
 ### 场景 3：单条 SQL 写入
 
 **用户提示词：**
-```
+
+```text
 在 PolarDB 集群 pc-bp123456 的 users 表插入一条记录：id=100, name='张三'
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQL（写入）
 - 目标集群：pc-bp123456
 - SQL 类型：INSERT（需确认目标表存在）
 - 必须使用：Primary Endpoint
 
 **执行 SQL：**
+
 ```sql
 INSERT INTO users (id, name) VALUES (100, '张三');
-```
+```markdown
 
 ---
 
 ### 场景 4：危险 SQL 执行
 
 **用户提示词：**
-```
+
+```text
 删除 PolarDB 集群 pc-bp123456 里 test_db 数据库的 logs_backup 表
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQL（DDL）
 - 目标集群：pc-bp123456
 - SQL 类型：DROP TABLE（🔴 **高危**）
 - 安全检查：**必须用户确认**
 
 **Agent 回复模板：**
-```
+
+```text
 ⚠️ 危险 SQL 检测
 
 即将执行高危操作：
@@ -611,24 +625,27 @@ SQL 类型：DROP TABLE
 [3] 先创建备份再执行
 
 请输入您的选择：
-```
+```markdown
 
 ---
 
 ### 场景 5：慢查询分析
 
 **用户提示词：**
-```
+
+```text
 分析 PolarDB 集群 pc-bp123456 最近7天的慢查询情况
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：DescribeSlowQueryLogs
 - 目标集群：pc-bp123456
 - 时间范围：最近7天
 - 可用 API：`DescribeSlowLogRecords`
 
 **执行命令：**
+
 ```bash
 # 步骤1：获取慢查询统计概览
 aliyun polardb DescribeSlowLogs \
@@ -642,7 +659,7 @@ aliyun polardb DescribeSlowLogRecords \
   --StartTime "2024-01-01T00:00Z" \
   --EndTime "2024-01-07T23:59Z" \
   --PageSize 100
-```
+```markdown
 
 **深度分析流程：**
 
@@ -650,6 +667,7 @@ aliyun polardb DescribeSlowLogRecords \
 > **Delegate to:** `alicloud-das-ops` — 提供 SQL 自动优化、智能诊断能力
 
 本 Skill 提供的**轻量级分析能力**：
+
 1. **Top N 慢查询识别** — 基于 `DescribeSlowLogRecords` 数据统计
 2. **慢查询趋势分析** — 对比时间段内的慢查询数量变化
 3. **初步索引建议** — 基于 SQL 模式的简单规则建议
@@ -671,12 +689,14 @@ aliyun polardb DescribeSlowLogRecords \
 ### 场景 6：大数据只读查询
 
 **用户提示词：**
-```
+
+```text
 在 PolarDB 集群 pc-bp123456 执行一个大数据分析查询，统计2024年各月销售金额，
 数据量很大，请使用只读节点避免影响主库性能
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQL（大数据查询）
 - 目标集群：pc-bp123456
 - SQL 类型：SELECT（聚合查询）
@@ -684,6 +704,7 @@ aliyun polardb DescribeSlowLogRecords \
 - 优化建议：启用 Parallel Query
 
 **执行 SQL：**
+
 ```sql
 SELECT /*+ PARALLEL(4) */
   MONTH(sale_date) AS month,
@@ -692,29 +713,33 @@ FROM sales_records
 WHERE YEAR(sale_date) = 2024
 GROUP BY MONTH(sale_date)
 ORDER BY month;
-```
+```markdown
 
 ---
 
 ### 场景 7：获取 Endpoint 信息
 
 **用户提示词：**
-```
+
+```text
 获取 PolarDB 集群 pc-bp123456 的连接地址，我要用 mysql 客户端连接
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：DescribeDBClusterEndpoints
 - 目标集群：pc-bp123456
 - 用户需求：获取连接地址
 
 **执行命令：**
+
 ```bash
 aliyun polardb DescribeDBClusterEndpoints \
   --DBClusterId pc-bp123456
-```
+```markdown
 
 **返回信息：**
+
 | Endpoint 类型 | 连接地址 | 用途建议 |
 |---------------|----------|----------|
 | Primary | `pc-bp123456.mysql.polardb.rds.aliyuncs.com` | 写入操作 |
@@ -725,12 +750,14 @@ aliyun polardb DescribeDBClusterEndpoints \
 ### 场景 8：批量数据导入
 
 **用户提示词：**
-```
+
+```text
 向 PolarDB 集群 pc-bp123456 的 products 表导入 products.sql 文件，
 文件包含5000条 INSERT 语句
-```
+```markdown
 
 **Agent 解析：**
+
 - 操作类型：ExecuteSQLFile
 - 目标集群：pc-bp123456
 - 目标表：products
@@ -738,13 +765,14 @@ aliyun polardb DescribeDBClusterEndpoints \
 - 推荐方式：使用 Primary Endpoint + mysql 客户端
 
 **安全检查：**
-```
+
+```markdown
 检测到批量写入操作（5000条 INSERT）
 请确认：
 - 文件来源可信？
 - 目标表 products 已存在？
 - 是否需要事务包裹（失败时回滚）？
-```
+```markdown
 
 ---
 

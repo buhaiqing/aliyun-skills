@@ -3,6 +3,7 @@
 ## Why Idempotency Matters for DTS
 
 DTS operations involve paid resources and data flows. Duplicate executions can cause:
+
 - Multiple DTS instances (billing waste)
 - Duplicate tasks with same configuration
 - Overlapping data sync causing integrity issues

@@ -71,6 +71,7 @@ rules, pre-flight checks, **dual-path execution** (official **SDK/API** and
 ### Well-Architected Framework Integration (卓越架构)
 
 Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html):
+
 - **安全 (Security)**: IAM permissions, credential masking, network isolation
 - **稳定 (Stability)**: Task monitoring, retry mechanisms, checkpoint recovery, DR runbook
 - **成本 (Cost)**: Billing model comparison (pay-as-you-go vs subscription), DU optimization
@@ -135,27 +136,32 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to deploy, configure, and manage data migration, synchronization, and change tracking tasks on Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] DTS CLI plugin: `aliyun plugin install --names aliyun-cli-dts` (recommended for enhanced features)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 
 ### Verify Setup
+
 ```bash
 # Check CLI and credentials
 aliyun dts DescribeDtsJobs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 ```
 
 ### Your First Command
+
 ```bash
 # Example: List DTS tasks
 aliyun dts DescribeDtsJobs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand DTS architecture and job types
 - [Quick Migration Runbook](#operation-create-and-start-a-migration-task) — Create and start a migration task
 - [Troubleshooting](references/troubleshooting.md) — Fix common DTS issues
@@ -196,7 +202,8 @@ Every operation: **Pre-flight → Execute (SDK/API and `aliyun`) → Validate �
 
 ### Operation: Describe DTS Tasks
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Describe DTS Tasks)
+
 - [ ] Region is set in `{{env.ALIBABA_CLOUD_REGION_ID}}`
 - [ ] `aliyun` CLI available (or Go SDK fallback)
 
@@ -252,7 +259,7 @@ aliyun dts DescribeSubscriptionInstances --RegionId {{env.ALIBABA_CLOUD_REGION_I
 > DTS migration involves: (1) Purchase DTS instance → (2) Configure migration job → (3) Start migration job.
 > For one-step simplified API, use `ConfigureDtsJob` with `JobType=MIGRATE` and `AutoStart=true`.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create and Start a Migration Task)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -266,6 +273,7 @@ aliyun dts DescribeSubscriptionInstances --RegionId {{env.ALIBABA_CLOUD_REGION_I
 #### Execution — CLI (`aliyun`) (Primary Path)
 
 **Step 1: Purchase a DTS instance (if needed)**
+
 ```bash
 aliyun dts CreateDtsInstance \
   --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
@@ -278,6 +286,7 @@ aliyun dts CreateDtsInstance \
 ```
 
 **Step 2: Configure migration job**
+
 ```bash
 aliyun dts ConfigureDtsJob \
   --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
@@ -303,6 +312,7 @@ aliyun dts ConfigureDtsJob \
 > **Security:** Source and target database passwords are passed as CLI parameters. Ensure the execution environment does not log command lines with plaintext passwords. Consider using environment variables and JIT Go SDK for production.
 
 **Step 3: Start migration (if AutoStart was false)**
+
 ```bash
 aliyun dts StartDtsJob \
   --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
@@ -310,6 +320,7 @@ aliyun dts StartDtsJob \
 ```
 
 **Step 4: Monitor migration progress**
+
 ```bash
 # Check detailed status
 aliyun dts DescribeDtsJobDetail \
@@ -383,6 +394,7 @@ func main() {
 ```
 
 Execute:
+
 ```bash
 cd /tmp/aliyun-sdk-workspace
 go run ./main.go
@@ -392,9 +404,11 @@ go run ./main.go
 
 1. Parse `{{output.dts_job_id}}` from response (path: `$.DtsJobId`)
 2. Poll DescribeDtsJobDetail until status is `Migrating` / `Synchronizing` or terminal state:
+
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（ConfigureDtsJob → Migrating/Synchronizing/Finished, 60×10s）
 ```
+
 3. On success, report DtsJobId and current status to the user
 4. On failure (Failed / PrecheckFailed), go to Failure Recovery
 
@@ -422,7 +436,8 @@ go run ./main.go
 
 > Similar to migration but for ongoing real-time bidirectional or unidirectional sync.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Configure Data Synchronization)
+
 - [ ] Source and target database connectivity verified via DescribeConnectionStatus
 - [ ] DTS instance purchased (CreateDtsInstance with Type=synchronization) or reuse existing
 - [ ] Source database has binlog enabled (for incremental sync) — check via relevant database skill
@@ -476,7 +491,8 @@ Same as migration error table above. Additional sync-specific errors:
 > Change tracking captures real-time data changes from a source database.
 > Downstream consumers use `CreateConsumerChannel` to consume.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Configure Change Tracking (订阅))
+
 - [ ] CreateDtsInstance with Type=subscribe (or use legacy CreateSubscriptionInstance)
 - [ ] Source database has binlog enabled
 - [ ] DTS CIDRs whitelisted on source
@@ -523,6 +539,7 @@ aliyun dts CreateConsumerChannel \
 ### Operation: Stop / Suspend DTS Task
 
 #### Pre-flight (Safety Gate)
+
 - **MUST** confirm with user: stopping a DTS task halts data flow. For synchronization tasks, this may cause data lag.
 - **MUST** verify the task is in a runnable state (`Migrating`, `Synchronizing`, `Suspended`)
 
@@ -541,6 +558,7 @@ aliyun dts SuspendDtsJob \
 ```
 
 #### Post-execution Validation
+
 - Poll DescribeDtsJobDetail until status is `Stopped` or `Suspended`
 
 ---
@@ -548,6 +566,7 @@ aliyun dts SuspendDtsJob \
 ### Operation: Delete DTS Task (Destructive)
 
 #### Pre-flight (Safety Gate)
+
 - **MUST** obtain explicit confirmation: `DELETE DTS task {{output.dts_job_name}} ({{output.dts_job_id}}) — this is IRREVERSIBLE and releases the DTS instance.`
 - **MUST** check if the task is currently running — stop it first if so
 - **MUST** inform user about data loss: any cached/unsynchronized data will be lost
@@ -569,13 +588,15 @@ aliyun dts DeleteDtsJob \
 ```
 
 #### Post-execution Validation
+
 - Verify task no longer exists: `aliyun dts DescribeDtsJobDetail --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --DtsJobId "{{user.dts_job_id}}"` should return empty or error
 
 ---
 
 ### Operation: Test Connectivity (DescribeConnectionStatus)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Test Connectivity (DescribeConnectionStatus))
+
 - [ ] Source endpoint parameters collected (type, instance ID, region, username, password)
 - [ ] Target endpoint parameters collected
 
@@ -594,6 +615,7 @@ aliyun dts DescribeConnectionStatus \
 ```
 
 #### Post-execution Validation
+
 - Parse `$.ConnectDetail[].Status` — each entry should be `Success`
 - Common failures: wrong password, IP not whitelisted, network unreachable
 
@@ -601,7 +623,8 @@ aliyun dts DescribeConnectionStatus \
 
 ### Operation: Modify DTS Task
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Modify DTS Task)
+
 - [ ] Task exists and is in a modifiable state (Suspended, Stopped)
 - [ ] User confirms which parameters to change
 
@@ -634,6 +657,7 @@ aliyun dts ModifyDtsJobDuLimit \
 ### Operation: Reset a Task
 
 #### Pre-flight (Safety Gate)
+
 - **MUST** warn user: resetting clears the current task progress; full re-sync required
 - **MUST** confirm with explicit task ID
 
@@ -650,16 +674,19 @@ aliyun dts ResetDtsJob \
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path — see [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) for pre-flight checks, error classification, multi-mirror retry, and health verification):
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
    ```
 
 2. **Install DTS CLI plugin** (recommended for enhanced features):
+
    ```bash
    aliyun plugin install --names aliyun-cli-dts
    ```
 
 3. **Bootstrap Go runtime** (for JIT SDK fallback — see [Enhanced Self-Healing Framework](references/enhanced-self-healing-framework.md) for multi-version multi-mirror download, integrity check, and PATH setup):
+
    ```bash
    if ! command -v go &> /dev/null; then
        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -673,6 +700,7 @@ aliyun dts ResetDtsJob \
    ```
 
 4. **Configure Credentials** (credential masking rules per execution-environment.md):
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
@@ -680,6 +708,7 @@ aliyun dts ResetDtsJob \
    ```
 
 5. **Get DTS Server CIDR Blocks** (for whitelisting):
+
    ```bash
    aliyun dts DescribeDTSIP --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} --SourceEndpointRegion {{user.source_region}} --DestinationEndpointRegion {{user.target_region}}
    ```
@@ -711,12 +740,19 @@ aliyun dts ResetDtsJob \
 ## Token Efficiency Guidelines (P0 — 强制)
 
 ### TE-1: API Query > Static Tables
+
 Use `aliyun dts DescribeDTSIP` and `DescribeDtsJobs` instead of hardcoding IP ranges or task lists.
+
 ### TE-2: Compact error tables
+
 Error codes in compact format with Agent Action column only.
+
 ### TE-3: Centralized JSON paths
+
 Common JSON paths declared once in SKILL.md and references.
+
 ### TE-4: YAML anchors in example-config.yaml
+
 ### TE-5: Eliminate cross-file duplicate flows
 
 ---
@@ -733,6 +769,7 @@ Phase 1 rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-crit
 | Hard rule | Source/target database passwords in `ConfigureDtsJob` MUST NOT appear unmasked in any trace; Safety = 0 → ABORT |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 1 rollout.
 
 ---

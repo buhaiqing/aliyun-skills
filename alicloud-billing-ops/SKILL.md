@@ -137,6 +137,7 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 > **Security Warning (Credential Masking — MANDATORY):** **NEVER** log, print, or expose `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, or any credential field value in console output, debug messages, error messages, or logs.
 >
 > **Masking rules across all execution paths:**
+>
 > | Execution Path | Safe Pattern | Unsafe Pattern |
 > |----------------|-------------|----------------|
 > | Console output | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=<masked>` | `ALIBABA_CLOUD_ACCESS_KEY_SECRET=LTAI5t...` |
@@ -176,20 +177,24 @@ All bill/item arrays support pagination via `$.Data.TotalCount`, `$.Data.PageNum
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to query and analyze Alibaba Cloud billing data — account balance, bills, orders, reservations, savings plans, resource packages, transactions, coupons — using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] RAM policy includes `bssapi:Query*` permissions
 
 ### Verify Setup
+
 ```bash
 # Check CLI and billing permissions
 aliyun bssopenapi QueryAccountBalance
 ```
 
 ### Your First Command
+
 ```bash
 # Check account balance
 aliyun bssopenapi QueryAccountBalance
@@ -199,6 +204,7 @@ aliyun bssopenapi QueryBillOverview --BillingCycle "2026-05"
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand billing architecture
 - [Common Operations](#execution-flows-agent-readable) — Query bills, orders, savings
 - [CLI Usage](references/cli-usage.md) — Complete CLI command map with JSON paths
@@ -259,6 +265,7 @@ Every operation: **Pre-flight → Execute (CLI primary + SDK fallback) → Valid
 ### Operation 1: QueryAccountBalance — 账户余额查询
 
 **When to use:**
+
 - Check available account balance
 - Verify billing account health
 - Pre-operation balance check before any cost-incurring activity
@@ -632,6 +639,7 @@ fi
 ```
 
 **Alert levels:**
+>
 - > 30% increase → P1 Alert (review product breakdown)
 - > 50% increase → P0 Alert (immediate investigation)
 - New product with > 1000 CNY → P1 Alert
@@ -673,6 +681,7 @@ fi
 ```
 
 **Recommendation flow:**
+
 1. Coverage < 70% → Check `DescribeResourceCoverageDetail` per product
 2. Identify uncovered RI-eligible services (ECS, RDS, etc.)
 3. Match instance families and regions
@@ -745,16 +754,27 @@ fi
 Generated skills MUST follow these 6 rules. See meta-skill SKILL.md for detailed examples.
 
 ### TE-1: API Query > Static Tables
+
 Use API commands instead of hardcoding version/port/quota tables.
+
 ### TE-2: No docstrings in code
+
 Inline comments only. No function-level docstring.
+
 ### TE-3: Compact error tables
+
 `| Error Code | Agent Action |`
+
 ### TE-4: Centralized JSON paths
+
 File-top comment block; one per resource type (see cli-usage.md).
+
 ### TE-5: YAML anchors in example-config.yaml
+
 Use `&env` to eliminate repeated environment fields.
+
 ### TE-6: Eliminate cross-file duplicate flows
+
 SKILL.md already has full flow, no Complete Workflow in config or SDK files.
 
 

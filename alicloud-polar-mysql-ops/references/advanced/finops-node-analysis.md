@@ -37,7 +37,7 @@ aliyun cms GetMetricStatisticsData \
   --EndTime "{{user.end_time}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --Statistics Average,Maximum
-```
+```markdown
 
 > **Note:** Node-level metrics require CMS API. If unavailable, use cluster-level metrics via `DescribeDBClusterPerformance` as proxy.
 
@@ -148,11 +148,11 @@ func main() {
         fmt.Println(rec)
     }
 }
-```
+```markdown
 
 ## Output Format
 
-```
+```text
 PolarDB 节点级分析:
 ├── 主节点 (polar-xxx-writer)
 │   ├── CPU: avg 45%, peak 78% (适中)
@@ -166,7 +166,7 @@ PolarDB 节点级分析:
 └── 优化建议:
     ├── ⚠️ 移除只读节点1 (节省 ￥1,200/月)
     └── ✓ 考虑增加只读节点2 权重
-```
+```markdown
 
 ## Acceptance Criteria (验收标准)
 

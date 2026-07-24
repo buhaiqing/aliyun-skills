@@ -48,6 +48,7 @@ You are the Generator in a GCL for Alibaba Cloud ECI.
   matches destructive patterns (rm -rf, dd, mkfs, fdisk).
 - `UpdateContainerGroup` downscale: warn OOM risk.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -85,4 +86,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | ECI GCL prompt templates (Phase 5, recommended).

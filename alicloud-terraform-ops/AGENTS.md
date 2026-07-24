@@ -21,7 +21,7 @@
 
 ## 2. Architecture — 三条路径
 
-```
+```text
                     ┌─────────────────┐
   自然语言 create ──►│ NL2HCL          │──► module 块 + copy modules/
                     │ (module-first)  │     .runtime/.../nl2hcl/<env>/
@@ -36,7 +36,7 @@
   变更/销毁 apply ──►│ Apply / Destroy │──► environments 模板 seed
                     │ + HITL + GCL    │     .runtime/.../environments/<env>/
                     └─────────────────┘
-```
+```markdown
 
 | 路径 | HCL 形态 | 依赖 `modules/` |
 |------|----------|-----------------|
@@ -48,7 +48,7 @@
 
 ## 3. Runtime Layout
 
-```
+```text
 ${SKILLS_DIR}/.runtime/terraform-ops/
 ├── nl2hcl/<env>/          # create 输出
 ├── import/<batch>/        # import 输出
@@ -99,7 +99,7 @@ NL2HCL 在生成前调用 `module_coverage.check_nl2hcl_coverage()`：
 cd alicloud-terraform-ops/scripts
 python3 module_coverage.py --verify
 python3 -m unittest discover -p 'test_*.py' -q
-```
+```markdown
 
 `--verify` 检查：manifest ↔ `modules/` ↔ registry ↔ `RESOURCE_PATTERNS` 一致性。
 

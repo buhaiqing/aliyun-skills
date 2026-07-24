@@ -130,9 +130,9 @@
 
 ## 依赖关系一览
 
-```
+```text
 R2 (pre-flight injection) ✅
    └── R4 (success patterns) — ✅ 4.1–4.6 完成
          ├── R5 (cross-skill) — ✅ 5.1–5.4
          └── R6 (remediation) — ✅ 6.1–6.4
-```
+```text

@@ -11,6 +11,7 @@
 All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
+
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
 - **Intelligent Error Classification:** Network, permission, resource, configuration errors
 - **Multi-Path Self-Healing:** Multiple recovery strategies per error type
@@ -22,6 +23,7 @@ All installation flows MUST follow the **Enhanced Self-Healing Framework** defin
 The Agent MUST use enhanced self-healing for Go runtime JIT download:
 
 **Multi-Version & Multi-Mirror Strategy:**
+
 - **Primary:** Go 1.24+ (latest stable)
 - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
 - **Mirrors:** Official + China CDN mirrors (4 mirrors)
@@ -37,6 +39,7 @@ The Agent MUST use enhanced self-healing for Go runtime JIT download:
 | PATH setup fail | Use absolute path, verify binary exists | 1 |
 
 **Health Check:**
+
 - Go binary exists and executable
 - Version ≥ go1.21
 - Workspace initialized
@@ -47,6 +50,7 @@ For detailed implementation, see [alicloud-skill-generator/references/enhanced-s
 ### JIT Go SDK Workflow
 
 1. **Initialize workspace:**
+
    ```bash
    mkdir -p /tmp/aliyun-sdk-workspace
    cd /tmp/aliyun-sdk-workspace
@@ -54,6 +58,7 @@ For detailed implementation, see [alicloud-skill-generator/references/enhanced-s
    ```
 
 2. **Get dependencies:**
+
    ```bash
    export GOPROXY="https://goproxy.cn,direct"
 
@@ -72,6 +77,7 @@ For detailed implementation, see [alicloud-skill-generator/references/enhanced-s
 3. **Generate script** (Agent dynamically creates operation-specific .go file)
 
 4. **Execute:**
+
    ```bash
    go run ./main.go
    ```
@@ -87,9 +93,9 @@ For detailed implementation, see [alicloud-skill-generator/references/enhanced-s
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
-```
+```markdown
 
 ### `.env` File Format
 
@@ -98,7 +104,7 @@ Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
 ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 - **Security**: `.env` MUST be in `.gitignore` — never commit credentials
 - **RAM note:** RAM is global; `cn-hangzhou` is the typical default even if
@@ -123,7 +129,7 @@ func main() {
     sk := os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
     region := os.Getenv("ALIBABA_CLOUD_REGION_ID")
 }
-```
+```markdown
 
 ## Credential Verification
 
@@ -131,7 +137,7 @@ func main() {
 # Primary: aliyun CLI validation
 aliyun ram ListUsers --MaxItems 5
 aliyun sts GetCallerIdentity
-```
+```text
 
 If `aliyun` validation fails, attempt retries per retry logic. After 3 failures,
 proceed to JIT Go SDK and verify:
@@ -155,7 +161,7 @@ func main() {
 }
 EOF
 go run /tmp/aliyun-sdk-workspace/verify.go
-```
+```markdown
 
 > **SECURITY WARNING:** Verification code ONLY checks for existence. NEVER log
 > the actual secret value.
@@ -171,6 +177,7 @@ When a RAM operation is part of a multi-product workflow:
    identity can access the resource
 
 Example: ECS instance access via RAM role
+
 1. Create RAM role with ECS service principal (this skill)
 2. Attach `AliyunECSFullAccess` to role (this skill)
 3. Create ECS instance and attach instance role (`alicloud-ecs-ops` skill)
@@ -208,7 +215,7 @@ are commonly used. Delegate to `alicloud-cms-ops` for actual monitoring operatio
     }
   ]
 }
-```
+```text
 
 #### Full Access Policy for CMS
 
@@ -223,17 +230,17 @@ are commonly used. Delegate to `alicloud-cms-ops` for actual monitoring operatio
     }
   ]
 }
-```
+```markdown
 
 ### Delegation Protocol
 
 When a user needs monitoring permissions:
 
-```
+```json
 [RAM Permission Request]
     │
     ├── 1. Determine required CMS operations (read-only or full access)
     ├── 2. Create or attach CMS policy via this skill (alicloud-ram-ops)
     ├── 3. Verify CMS access via alicloud-cms-ops (DescribeMetricList)
     └── 4. If access denied → check policy attachment and return to step 2
-```
+```text

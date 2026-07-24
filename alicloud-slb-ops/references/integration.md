@@ -11,6 +11,7 @@
 All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
+
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
 - **Intelligent Error Classification:** Network, permission, resource, configuration errors
 - **Multi-Path Self-Healing:** Multiple recovery strategies per error type
@@ -22,6 +23,7 @@ All installation flows MUST follow the **Enhanced Self-Healing Framework** defin
 The Agent MUST use enhanced self-healing for Go runtime JIT download:
 
 **Multi-Version & Multi-Mirror Strategy:**
+
 - **Primary:** Go 1.24+ (latest stable)
 - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
 - **Mirrors:** Official + China CDN mirrors (4 mirrors)
@@ -37,6 +39,7 @@ The Agent MUST use enhanced self-healing for Go runtime JIT download:
 | PATH setup fail | Use absolute path, verify binary exists | 1 |
 
 **Health Check:**
+
 - Go binary exists and executable
 - Version ≥ go1.21
 - Workspace initialized
@@ -105,6 +108,7 @@ func main() {
 ```
 
 Execute:
+
 ```bash
 cd /tmp/aliyun-sdk-workspace
 go run ./slb-example.go

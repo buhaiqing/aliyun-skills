@@ -85,7 +85,7 @@ on a cron or in CI.
 
 ## 3. Architecture
 
-```
+```text
                     ┌──────────────────────┐
                     │  gcl_runner.py       │  (Phase 2)
                     │  local GCL loop      │
@@ -123,7 +123,7 @@ on a cron or in CI.
        │   Phase 3-E (auto-       (governance     │
        │   remediation)            dashboard)     │
        └──────────────────────────────────────────┘
-```
+```markdown
 
 The cross-check is **downstream** of the GCL runner. It is intentionally
 NOT on the synchronous critical path (the runner does not call it). This
@@ -138,16 +138,16 @@ decouples them so a slow ActionTrail query does not block the runner.
 ```bash
 python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace audit-results/gcl-trace-20260604-103015-abc123.json
-```
+```text
 
 Output:
 
-```
+```json
 [XCHK] gcl-trace-20260604-103015-abc123.json: skill=alicloud-ecs-ops
         decision=PASS findings=[PHANTOM_PASS]
 [XCHK] total=1 clean=0 phantoms=1 api_errors=0
 exit: 1
-```
+```markdown
 
 ### 4.2 All Traces (CI Mode)
 
@@ -156,7 +156,7 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py \
   --trace-dir audit-results/ \
   --report audit-results/crosscheck-$(date +%Y%m%d).json \
   --strict
-```
+```markdown
 
 `--strict` makes the script exit non-zero on any PHANTOM_* finding,
 suitable for CI gating.
@@ -191,7 +191,7 @@ jobs:
           name: gcl-crosscheck-report
           path: audit-results/crosscheck-*.json
           retention-days: 30
-```
+```markdown
 
 ---
 
@@ -250,7 +250,7 @@ keys: `summary` and `reports`.
     }
   ]
 }
-```
+```markdown
 
 This schema is the **input contract** for:
 
@@ -273,7 +273,7 @@ PRODUCT_TO_EVENTNAME["fc"] = [
     (r"^DeleteService$", "DeleteService"),
     (r"^DeleteTrigger$", "DeleteTrigger"),
 ]
-```
+```bash
 
 To discover the actual ActionTrail `EventName` for a new op:
 
@@ -332,4 +332,5 @@ To discover the actual ActionTrail `EventName` for a new op:
 ---
 
 ## 10. Changelog
+
 1.0.0 | 2026-06-04 | Initial cross-check spec. Phase 3-C: `alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py` (28.8 KB, 25 unit tests) + `## Quality Gate (GCL)` cross-checker role in `alicloud-actiontrail-ops/SKILL.md` (bumped 1.0.0 → 1.1.0). ActionTrail skill remains `optional` per §12.8.

@@ -42,7 +42,7 @@ ESS provides built-in activity tracking via `DescribeScalingActivities`:
 
 Create a CloudMonitor dashboard for ESS with:
 
-```
+```text
 Row 1: [GroupCpuUtilization] [GroupMemoryUtilization] [Active Instance Count]
 Row 2: [Scale-out Success Rate] [Scale-in Success Rate] [Scaling Frequency]
 Row 3: [IntranetInRate] [IntranetOutRate] [DiskReadBPS / DiskWriteBPS]

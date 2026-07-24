@@ -9,10 +9,11 @@
 ### 1.1 磁盘增长预测
 
 **预测公式**:
-```
+
+```text
 Days_to_90 = (DBInstanceStorage * 0.9 - DiskUsed) / DailyGrowthRate
 DailyGrowthRate = (DiskUsed_Today - DiskUsed_7d_Ago) / 7
-```
+```text
 
 **预测工作流 CLI**:
 
@@ -41,7 +42,7 @@ echo "磁盘使用: ${CURRENT} MB"
 echo "存储容量: ${STORAGE} GB"
 echo "90% 阈值: ${THRESHOLD_90} MB"
 echo "预计 ${DAYS_PREDICTED} 天后达到 90%"
-```
+```markdown
 
 **预警阈值**:
 
@@ -55,9 +56,10 @@ echo "预计 ${DAYS_PREDICTED} 天后达到 90%"
 ### 1.2 连接增长预测
 
 **预测公式**:
-```
+
+```text
 Days_to_MaxConn = (MaxConnections * 0.9 - CurrentConnections) / DailyConnGrowth
-```
+```text
 
 **关键指标获取**:
 
@@ -73,7 +75,7 @@ aliyun rds DescribeDBInstancePerformance \
 aliyun rds DescribeParameters \
   --DBInstanceId "{{user.db_instance_id}}" \
   --output cols=ParameterValue rows=RunningParameters.DBInstanceParameter[?ParameterName=='max_connections'].ParameterValue
-```
+```markdown
 
 ### 1.3 TPS/QPS 增长预测
 
@@ -86,7 +88,7 @@ aliyun rds DescribeDBInstancePerformance \
   --Key MySQL_TPS,MySQL_QPS \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 ---
 
@@ -104,10 +106,11 @@ aliyun rds DescribeDBInstancePerformance \
 ### 2.2 3σ 异常检测规则
 
 **异常判定公式**:
-```
+
+```text
 Anomaly = |Current - Baseline| > 3 * σ
 Deviation = (Current - Baseline) / Baseline * 100%
-```
+```markdown
 
 **偏离度阈值表**:
 
@@ -155,7 +158,7 @@ aliyun rds DescribeDBInstancePerformance \
   --DBInstanceId "$DB_INSTANCE_ID" \
   --Key MySQL_TPS \
   --StartTime "$LAST_WEEK_START" --EndTime "$LAST_WEEK_END"
-```
+```markdown
 
 ---
 
@@ -176,9 +179,10 @@ aliyun rds DescribeDBInstancePerformance \
 ### 3.2 CPU 饱和预测
 
 **预测公式**:
-```
+
+```text
 Time_to_Saturate = (100% - Current_CPU) / Hourly_Growth_Rate
-```
+```markdown
 
 **饱和预警**:
 
@@ -191,9 +195,10 @@ Time_to_Saturate = (100% - Current_CPU) / Hourly_Growth_Rate
 ### 3.3 连接耗尽预测
 
 **预测公式**:
-```
+
+```text
 Time_to_Exhaustion = (MaxConnections - CurrentConnections) / Hourly_Growth_Rate
-```
+```markdown
 
 **耗尽预警**:
 
@@ -234,7 +239,7 @@ Time_to_Exhaustion = (MaxConnections - CurrentConnections) / Hourly_Growth_Rate
   "AlertLevel": "P1-High",
   "Action": "TriggerCapacityExpansionWorkflow"
 }
-```
+```text
 
 **连接增长预测告警**:
 
@@ -250,7 +255,7 @@ Time_to_Exhaustion = (MaxConnections - CurrentConnections) / Hourly_Growth_Rate
   "AlertLevel": "P0-Critical",
   "Action": "TriggerConnectionDiagnosis"
 }
-```
+```markdown
 
 ### 4.2 预测触发诊断工作流
 
@@ -274,7 +279,7 @@ Prediction_Trigger:
     actions:
       - TriggerConnectionLeakDetection
       - PrepareEmergencyMitigation
-```
+```markdown
 
 ---
 
@@ -295,7 +300,7 @@ aliyun das CreateCapacityPrediction \
 aliyun das DescribeCapacityPrediction \
   --DBInstanceId "{{user.db_instance_id}}" \
   --PredictionId "{{output.prediction_id}}"
-```
+```markdown
 
 ### 5.2 异常检测 API
 
@@ -315,7 +320,7 @@ aliyun das CreateDiagnosticReport \
   --DiagnosticType "AnomalyAnalysis" \
   --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 ### 5.3 预测报告解读
 
@@ -371,8 +376,9 @@ aliyun das CreateDiagnosticReport \
 ### 验证命令
 ```bash
 {{verification_cli}}
-```
-```
+```text
+
+```markdown
 
 ---
 
@@ -380,7 +386,8 @@ aliyun das CreateDiagnosticReport \
 
 ### 7.1 预测 → 告警 → 诊断 联动
 
-```
+```text
+
 预测性分析
 │
 ├─ 磁盘增长预测 → Days_to_90 < 7
@@ -395,11 +402,13 @@ aliyun das CreateDiagnosticReport \
 └─ 连接增长预测 → Exhaustion < 6h
    ├─ 触发诊断 → alert-diagnosis.md §1.3
    └─ 建议行动 → 连接泄漏排查 + 紧急扩容
-```
+
+```markdown
 
 ### 7.2 异常检测 → 智能诊断 联动
 
-```
+```text
+
 异常检测触发
 │
 ├─ 基线偏离 > 3σ
@@ -411,4 +420,5 @@ aliyun das CreateDiagnosticReport \
    ├─ 对比历史同期数据
    ├─ 分析业务事件关联
    └─ 生成趋势报告
-```
+
+```text

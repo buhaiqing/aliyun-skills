@@ -43,6 +43,7 @@ Minimum permissions for ResourceManager operations:
 ```
 
 For write operations, add:
+
 ```json
 {
   "Effect": "Allow",

@@ -199,14 +199,17 @@ aliyun ram ListPolicies --PolicyType Custom \
    `AssumeRole` may accept `--RegionId` for regional endpoints.
 2. **PolicyDocument must be valid JSON string** — Use single quotes around the
    entire JSON when passing via CLI to avoid shell escaping issues:
+
    ```bash
    aliyun ram CreatePolicy --PolicyName my-policy \
      --PolicyDocument '{"Version":"1","Statement":[{"Effect":"Allow","Action":"ecs:*","Resource":"*"}]}'
    ```
+
 3. **Trust policy JSON for roles** — Same JSON string rule applies to
    `AssumeRolePolicyDocument`.
 4. **Passwords with special characters** — When creating login profiles, wrap
    passwords in single quotes to prevent shell interpolation:
+
    ```bash
    aliyun ram CreateLoginProfile --UserName alice --Password 'MyP@$$w0rd!'
    ```
@@ -217,6 +220,7 @@ aliyun ram ListPolicies --PolicyType Custom \
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
 ```

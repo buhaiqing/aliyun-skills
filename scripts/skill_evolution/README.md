@@ -10,11 +10,11 @@ Offline pipeline from **Runtime Harness / GCL Layer 1 memory** → SkillOpt-read
 ```bash
 export ALIYUN_SKILLS_ROOT="$PWD"
 bash scripts/skill_evolution/run_milestone_a.sh alicloud-ecs-ops
-```
+```text
 
 Outputs (gitignored):
 
-```
+```text
 .runtime/skill-evolution/alicloud-ecs-ops/
 ├── trajectories.jsonl    # sanitized L1 memory export
 ├── trainable_seed.md     # SKILL.md trainable sections (not full SKILL.md)
@@ -36,7 +36,7 @@ Requires separate install (not a repo dependency). **Do not** auto-replace `SKIL
 ```bash
 pip install 'skillopt>=0.1.0'
 bash scripts/test-skill-evolution-train-smoke.sh   # CI-safe mock → best_skill.md
-```
+```markdown
 
 ## Tests
 
@@ -53,7 +53,7 @@ Consumes Milestone A outputs and runs mock-safe rollout + scorer smoke tests.
 ```bash
 export ALIYUN_SKILLS_ROOT="$PWD"
 bash scripts/skill_evolution/run_milestone_b.sh alicloud-ecs-ops
-```
+```markdown
 
 Benchmark modules: `benchmark/alicloud_ops/` (`dataloader.py`, `rollout.py`, `scorer.py`, `adapter.py`).
 `run_milestone_b.sh` syncs `trainable_seed.md` → `.runtime/.../initial.md` and materializes SkillOpt splits.

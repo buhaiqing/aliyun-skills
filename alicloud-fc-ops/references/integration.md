@@ -29,6 +29,7 @@ go version
 ### JIT Go SDK Workflow
 
 1. **Initialize workspace:**
+
    ```bash
    mkdir -p /tmp/aliyun-sdk-fc
    cd /tmp/aliyun-sdk-fc
@@ -36,6 +37,7 @@ go version
    ```
 
 2. **Get dependencies:**
+
    ```bash
    export GOPROXY="https://goproxy.cn,direct"
    go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -80,7 +82,7 @@ go version
 
 ## Function ARN Format
 
-```
+```text
 acs:fc:<region>:<account-id>:functions/<function-name>
 acs:fc:<region>:<account-id>:functions/<function-name>/aliases/<alias-name>
 ```
@@ -90,7 +92,8 @@ Example: `acs:fc:cn-hangzhou:123456789:functions/my-function/aliases/prod`
 ## Environment Variable Loading
 
 Credentials can be sourced from:
-```
+
+```text
 Shell env (highest) > `.env` file > `~/.aliyun/config.json` > defaults (lowest)
 ```
 

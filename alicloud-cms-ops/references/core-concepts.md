@@ -6,7 +6,7 @@ CloudMonitor (CMS) is Alibaba Cloud's unified monitoring and alerting service.
 It collects metrics from cloud resources, allows custom metric publishing, and
 supports alarm rule configuration.
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │ Cloud Resources │────▶│ CloudMonitor    │────▶│ Metrics Storage │
 │ (ECS, RDS, etc) │     │ (Collection)    │     │ (Time-Series)   │
@@ -31,6 +31,7 @@ supports alarm rule configuration.
 
 A metric is a time-series data point representing a measurable aspect of a
 resource. Examples:
+
 - `CPUUtilization` — CPU usage percentage
 - `MemoryUsage` — Memory usage percentage
 - `DiskUsage` — Disk usage percentage
@@ -52,6 +53,7 @@ Namespaces group metrics by product. Format: `acs_<product>_dashboard`.
 
 Dimensions are key-value pairs that identify a specific resource instance.
 Common dimension keys:
+
 - `instanceId` — ECS, RDS, Redis instances
 - `userId` — OSS buckets
 - `clusterId` — Kubernetes clusters
@@ -61,6 +63,7 @@ Format in API: JSON array of objects `[{"instanceId":"i-xxx"}]`.
 ### Period
 
 Aggregation interval in seconds:
+
 - `15` — High resolution (7-day retention)
 - `60` — Standard (31-day retention)
 - `300` — 5-minute (91-day retention)
@@ -70,6 +73,7 @@ Aggregation interval in seconds:
 ### Alarm Rules
 
 An alarm rule defines:
+
 - **Metric** to monitor
 - **Threshold** and **ComparisonOperator** (`>=`, `>`, `<`, `<=`, `==`, `!=`)
 - **Statistics** (Average, Minimum, Maximum, Value)

@@ -22,7 +22,7 @@
 
 **Files to create:**
 
-```
+```text
 alicloud-billing-ops/
 ├── SKILL.md
 ├── references/
@@ -37,9 +37,10 @@ alicloud-billing-ops/
 ├── assets/
 │   ├── example-config.yaml
 │   └── eval_queries.json
-```
+```text
 
 **Key operations to cover:**
+
 1. Query account balance (`QueryAccountBalance`)
 2. Query bill overview (`QueryBillOverview`)
 3. Query bill details (`QueryBill`, `QueryInstanceBill`)
@@ -100,7 +101,7 @@ alicloud-billing-ops/
 
 **Files to create:**
 
-```
+```text
 alicloud-resourcemanager-ops/
 ├── SKILL.md
 ├── references/
@@ -118,6 +119,7 @@ alicloud-resourcemanager-ops/
 ```
 
 **Key operations to cover:**
+
 1. Query resource directory (`GetResourceDirectory`)
 2. Enable resource directory (`EnableResourceDirectory`)
 3. Query accounts (`ListAccounts`, `GetAccount`)

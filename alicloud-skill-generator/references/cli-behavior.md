@@ -132,6 +132,7 @@ aliyun <product> <OperationName> --RegionId <region> --Param1 value1
 ```
 
 Examples:
+
 ```bash
 aliyun ecs DescribeInstances --RegionId cn-hangzhou --PageSize 50
 aliyun rds DescribeDBInstances --RegionId cn-hangzhou
@@ -183,6 +184,7 @@ AWS_DEFAULT_REGION=us-east-1
 ## 7. Common Mistakes to Avoid
 
 ### Mistake 1: Adding `--output json`
+
 ```bash
 # WRONG: --output json is unnecessary (JSON is default)
 aliyun ecs DescribeInstances --output json
@@ -192,6 +194,7 @@ aliyun ecs DescribeInstances --RegionId cn-hangzhou
 ```
 
 ### Mistake 2: Using `--no-interactive`
+
 ```bash
 # WRONG: Flag does not exist
 aliyun ecs DescribeInstances --no-interactive
@@ -201,6 +204,7 @@ aliyun ecs DescribeInstances --RegionId cn-hangzhou
 ```
 
 ### Mistake 3: Incorrect Polling Syntax
+
 ```bash
 # WRONG: Missing proper JSON array for InstanceIds
 aliyun ecs DescribeInstances --InstanceIds i-xxx --waiter ...
@@ -211,6 +215,7 @@ aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
 ```
 
 ### Mistake 4: Hardcoding Regions
+
 ```bash
 # WRONG: Hardcoded region
 aliyun ecs DescribeInstances --RegionId cn-hangzhou

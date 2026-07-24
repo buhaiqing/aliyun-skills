@@ -152,7 +152,7 @@ aliyun log createLogstore --project-name "bailian-logs" --logstore-name "inferen
 
 | Widget | Metric | Aggregation |
 |--------|--------|-------------|
-| Daily Cost | TokenInputRate * Price + TokenOutputRate * Price | SUM/day |
+| Daily Cost | TokenInputRate *Price + TokenOutputRate* Price | SUM/day |
 | Cost by Model | Token consumption per model | GROUP BY ModelId |
 | Cost Trend | 7-day rolling cost | SUM |
 | Budget Alert | Projected monthly cost | Forecast |

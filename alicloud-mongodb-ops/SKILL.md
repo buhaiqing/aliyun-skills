@@ -63,6 +63,7 @@ and **CLI** flows), response validation, and failure recovery.
 ### Well-Architected Framework Integration (卓越架构)
 
 Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliyun.com/zh/product/2362200.html):
+
 - **安全 (Security)**: IAM permissions, credential masking, network isolation
 - **稳定 (Stability)**: Backup/restore, multi-AZ, DR runbook, failure-oriented design
 - **成本 (Cost)**: Billing model comparison, waste detection, right-sizing
@@ -83,6 +84,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 > 以下所有代码块中的 `aliyun dds ...` 命令在执行时应替换为 `./scripts/mongodb-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `harness-lib.sh` 缺失时，才退回到原生 `aliyun dds` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Trigger & Scope (Agent-Readable)
 
 ### SHOULD Use This Skill When
@@ -158,6 +160,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 | Delete | `DeleteDBInstance` | `aliyun dds DeleteDBInstance` | Low | **High** — irreversible |
 
 **Pre-flight pattern (all operations):**
+
 1. Verify SDK/CLI availability: `aliyun version`
 2. Verify credentials exist (non-empty check only, never expose values)
 3. Verify region: `aliyun dds DescribeRegions`
@@ -190,6 +193,7 @@ MongoDB 实例创建/变配/删除等为异步操作；shell 轮询模板与 Go 
 **Account Types:** `root` (system admin) / `normal` (application accounts)
 
 **Password Policy:**
+
 - Minimum 8 characters; recommend 16+ for production
 - Must contain uppercase, lowercase, digit, and special character
 - Avoid common passwords and dictionary words
@@ -205,6 +209,7 @@ MongoDB 实例创建/变配/删除等为异步操作；shell 轮询模板与 Go 
 | **Root usage** | Reserve `root` for DBA operations only | Application bugs can destroy all data |
 
 **Example: Create Least-Privilege Application Account**
+
 ```bash
 # Create a normal account with readWrite on a single database
 aliyun dds CreateAccount \
@@ -237,12 +242,14 @@ aliyun dds CreateAccount \
 **Backup Modes:** `Physical` / `Logical`
 
 **Backup Cost Considerations:**
+
 - Backup storage is billed separately from instance storage
 - Physical backups are typically larger than logical backups
 - Automated backups follow the instance retention policy (default 7 days)
 - Long-term retention increases storage costs; evaluate necessity
 
 **Cost-Efficient Backup Strategy:**
+
 ```bash
 # Review backup sizes and retention
 aliyun dds DescribeBackups \
@@ -283,6 +290,7 @@ For advanced performance analysis, connect to DAS console or use DAS APIs:
 | 4 | **存储空间预警** | StorageUsage > 85% | Archive/cleanup or scale storage |
 
 **DAS Diagnostic Commands:**
+
 ```bash
 # For detailed slow query analysis, delegate to alicloud-das-ops
 # aliyun das DescribeSlowLogRecords
@@ -293,6 +301,7 @@ For advanced performance analysis, connect to DAS console or use DAS APIs:
 **Purpose**: 主动发现 MongoDB 实例性能瓶颈、安全风险和容量问题
 
 **Five-Step Workflow**:
+
 1. **Discovery**: `aliyun dds DescribeDBInstances` 列出所有实例
 2. **Collection**: 批量采集 CPU/Memory/IOPS/Connections/Storage 指标
 3. **Detection**: 应用异常模式检测 (4种已定义模式)
@@ -300,6 +309,7 @@ For advanced performance analysis, connect to DAS console or use DAS APIs:
 5. **Report**: 生成巡检报告 (Markdown格式)
 
 **CLI Script Template**:
+
 ```bash
 #!/bin/bash
 # mongodb-intelligent-inspection.sh
@@ -325,6 +335,7 @@ echo "|------|--------|------|"
 ```
 
 **Inspection Scoring**:
+
 - CPU使用率 < 70%: 10分
 - 内存使用率 < 80%: 10分  
 - 连接数 < 80%上限: 10分
@@ -333,11 +344,13 @@ echo "|------|--------|------|"
 - 总分 < 40分 → Critical, 需立即优化
 
 **巡检触发条件**:
+
 - 定时任务: 每日/每周自动执行
 - 事件触发: 实例规格变更、告警阈值触发
 - 手动触发: 用户主动发起巡检请求
 
 **巡检报告内容**:
+
 - 实例概览: 规格、版本、架构、运行时间
 - 性能指标: CPU/内存/IOPS/连接数/存储使用趋势
 - 异常检测: 4种模式检测结果及风险等级
@@ -345,6 +358,7 @@ echo "|------|--------|------|"
 - 历史对比: 与上次巡检结果对比分析
 
 **Delegation**:
+
 - 详细慢查询分析 → `alicloud-das-ops`
 - 索引优化建议 → `alicloud-mongodb-ops` (索引管理)
 - 容量规划 → `alicloud-billing-ops`
@@ -422,6 +436,7 @@ Use when CLI lacks operation or complex programmatic control needed. See `refere
 | `NetworkType` | Cross-region traffic billed | Keep app and DB in same region/VPC |
 
 **Pre-creation Cost Check:**
+
 ```bash
 # Query price before creating (reference only — actual billing varies)
 aliyun dds DescribePrice \
@@ -432,6 +447,7 @@ aliyun dds DescribePrice \
 ```
 
 **Resource Efficiency Check:**
+
 ```bash
 # Identify underutilized instances for potential downsizing
 aliyun dds DescribeDBInstances \
@@ -516,6 +532,7 @@ Ninth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic
 | Hard-coded data-plane regex | 6 hot-spots incl. `db\.\w+\.dropDatabase\s*\(\s*\)`, `db\.\w+\.(deleteMany\|updateMany)\s*\(\s*\{\s*\}\s*\)` |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Ninth rollout.
 
 ---

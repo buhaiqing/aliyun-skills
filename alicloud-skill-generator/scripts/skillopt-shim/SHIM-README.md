@@ -38,7 +38,7 @@ raw CLI.
 ./enable.sh            # adds a source block to ~/.zshrc and ~/.bashrc
 exec $SHELL            # reload
 type aliyun            # should print: aliyun is a function
-```
+```text
 
 To uninstall:
 
@@ -50,7 +50,7 @@ To uninstall:
 
 ```bash
 source /path/to/aliyun-skills/alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh
-```
+```markdown
 
 ### Option C — Per-invocation (CI / scripts)
 
@@ -70,9 +70,9 @@ SKILLOPT_SHIM_LOG=1 bash -c '
 
 Each intercepted call logs a line like:
 
-```
+```json
 [2026-06-17T17:30:00+0800] INTERCEPT product=oss skill=alicloud-oss-ops wrapper=/abs/path/oss-skillopt-wrapper.sh wrapper_arg=oss
-```
+```markdown
 
 Use this to audit that no direct (non-intercepted) `aliyun <product>` calls
 are being made. Add it to your CI as a regression test:
@@ -90,7 +90,7 @@ aliyun-skills checkout, intentionally bypassing SkillOpt), use `command`:
 
 ```bash
 command aliyun oss ls   # bypasses the shim, calls native binary
-```
+```markdown
 
 `command` is a POSIX shell builtin that skips function lookup, so the shim
 is invisible. The native binary always wins.
@@ -103,6 +103,7 @@ is invisible. The native binary always wins.
 ```
 
 The test:
+
 - Does NOT make cloud calls (uses a non-existent subcommand).
 - Verifies each product's INTERCEPT line is logged.
 - Verifies passthrough products (sts, ram) are not intercepted.
@@ -122,7 +123,7 @@ _SKILLOPT_SHIM_REGISTRY=(
   "newprod:alicloud-newprod-ops:newprod-skillopt-wrapper.sh:newprod"
   "newprod-alias:alicloud-newprod-ops:newprod-skillopt-wrapper.sh:newprod"
 )
-```
+```markdown
 
 Then run `./test-skillopt-shim.sh newprod` to verify.
 

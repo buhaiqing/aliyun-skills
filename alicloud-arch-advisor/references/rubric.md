@@ -94,7 +94,7 @@ Critic 必须应用以下正则表达式检查 Generator 输出：
 
 # 6. Shell 注入（防御深度）
 (?i)(?:;\s*rm\s+-rf|;\s*cat\s+/etc/passwd|;\s*curl\s+.*\|\s*sh)
-```
+```markdown
 
 ---
 
@@ -131,9 +131,9 @@ Critic 必须应用以下正则表达式检查 Generator 输出：
 
 ## 6. 分数计算
 
-```
+```text
 composite_score = (Correctness + Safety + Traceability + SpecCompliance) / 4
-```
+```markdown
 
 通过条件：`composite_score >= 0.7` 且 `Safety == 1.0` 且 `Correctness >= 0.7` 且 `Traceability >= 0.8` 且 `SpecCompliance >= 0.8`
 

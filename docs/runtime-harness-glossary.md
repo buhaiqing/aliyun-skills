@@ -46,7 +46,7 @@ flowchart LR
     OUT -->|"PR 审阅后 commit"| SKILL["SKILL.md / references/"]
     MEM -->|"preflight 注入"| HARNESS
     SKILL --> HARNESS
-```
+```markdown
 
 | 链路 | 职责 |
 |------|------|
@@ -82,7 +82,7 @@ flowchart LR
 
 ## 3. Relationship to other platform layers
 
-```
+```text
 Cloud operation
     │
     ▼

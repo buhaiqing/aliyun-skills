@@ -27,7 +27,7 @@
 
 ### 1.3 Automatic Failover Mechanism
 
-```
+```text
 故障检测与自动切换流程
 │
 ├─ Step 1: 心跳检测 (Heartbeat)
@@ -57,9 +57,10 @@
    ├─ 客户端检测Primary变更
    ├─ 自动连接新Primary (驱动支持)
    └─ 请求重试机制生效
-```
+```markdown
 
 **关键参数**:
+
 - **heartbeatIntervalMillis**: 心跳间隔 (默认2秒)
 - **electionTimeoutMillis**: 选举超时 (默认10秒)
 - **stepDownPeriodSecs**: Primary主动降级等待时间
@@ -90,7 +91,7 @@ aliyun dds DescribeReplicaSetRole \
 # - SecondaryNodes: Secondary节点列表
 # - ArbiterNodes: Arbiter节点列表
 # - ReplicaSetStatus: 副本集状态 (Normal/Abnormal)
-```
+```markdown
 
 ### 2.2 Primary Step-down Commands
 
@@ -122,7 +123,7 @@ rs.stepDown(120, 30)  // 120秒内不参与选举, 30秒等待新Primary
 cfg = rs.conf()
 cfg.members[1].priority = 5  // 提升Secondary优先级
 rs.reconfig(cfg)
-```
+```text
 
 **阿里云API触发切换**:
 
@@ -134,7 +135,7 @@ aliyun dds SwitchDBInstanceHA \
 
 # 注意: 需要实例状态为Normal
 # 切换期间会有短暂写中断 (< 30秒)
-```
+```markdown
 
 ### 2.3 Secondary Read Preference Configuration
 
@@ -161,7 +162,7 @@ client = MongoClient(
 # Go (mongo-driver)
 uri := "mongodb://primary:27017,secondary1:27017,secondary2:27017/?readPreference=secondaryPreferred"
 client, _ := mongo.Connect(clientOptions.ApplyURI(uri))
-```
+```markdown
 
 ### 2.4 Write Concern Levels
 
@@ -196,7 +197,7 @@ db.collection.insertOne(
   {name: "test"},
   {writeConcern: {w: "all", wtimeout: 10000}}
 )
-```
+```markdown
 
 ---
 
@@ -234,7 +235,7 @@ aliyun dds ModifyParameter \
 
 # 注意: 参数修改后需重启实例生效
 # 建议在维护窗口执行
-```
+```markdown
 
 ### 3.3 Priority-based Election Customization
 
@@ -265,7 +266,7 @@ rs.reconfig(cfg)
   "NodeType": "Primary",
   "Priority": 10
 }
-```
+```markdown
 
 ### 3.4 Arbiters for Vote-only Nodes
 
@@ -316,7 +317,7 @@ aliyun dds DescribeParameters \
 aliyun dds ModifyParameter \
   --DBInstanceId "{{user.instance_id}}" \
   --Parameters "[{\"Key\":\"oplogSize\",\"Value\":\"2048\"}]"
-```
+```markdown
 
 ### 4.2 Oplog Window Monitoring
 
@@ -352,7 +353,7 @@ print("Oplog窗口: " + hours + "小时")
 // 查看Oplog大小
 db.oplog.rs.stats().size  // 当前大小
 db.oplog.rs.stats().maxSize  // 最大大小
-```
+```markdown
 
 ### 4.3 Oplog Rollover Prevention
 
@@ -385,7 +386,7 @@ if (usagePercent > 90) {
 var count1h = db.oplog.rs.find({ts: {$gt: new Timestamp(Math.floor(Date.now()/1000)-3600, 1)}}).count()
 var ratePerSec = count1h / 3600
 print("写入速率: " + ratePerSec + "条/秒")
-```
+```markdown
 
 ### 4.4 Oplog Tailing for Change Streams
 
@@ -414,7 +415,7 @@ var changeStream = db.collection.watch([], {resumeAfter: resumeToken})
 
 // 注意: resumeToken必须在Oplog窗口内
 // 否则报错: "resume point is no longer in the oplog"
-```
+```markdown
 
 ---
 
@@ -451,7 +452,7 @@ rs.status().members.forEach(function(m) {
     print("Optime: " + m.optime)
   }
 })
-```
+```markdown
 
 ### 5.2 Secondary Catch-up Strategies
 
@@ -488,7 +489,7 @@ db.adminCommand({getParameter: 1, buildIndexInBackground: 1})
 // a. 删除延迟节点 (阿里云DeleteNode)
 // b. 重新添加节点 (阿里云AddNode)
 // c. 等待初始同步完成
-```
+```markdown
 
 ### 5.3 Initial Sync Process
 
@@ -520,7 +521,7 @@ db.adminCommand({replSetGetStatus: 1}).members.forEach(function(m) {
 // 阿里云查询节点状态
 aliyun dds DescribeReplicaSetRole \
   --DBInstanceId "{{user.instance_id}}""
-```
+```markdown
 
 ### 5.4 BuildIndexInBackground Impact
 
@@ -541,7 +542,7 @@ aliyun dds ModifyParameter \
 # - true: 索引构建不阻塞同步, 但索引构建更慢
 # - false: 索引构建快, 但会阻塞同步
 # 推荐: 高写入场景设为true, 降低同步延迟影响
-```
+```markdown
 
 ---
 
@@ -567,7 +568,7 @@ aliyun dds ModifyParameter \
 
 ### 6.3 Cost vs Reliability Trade-offs
 
-```
+```text
 成本与可靠性决策树
 │
 ├─ 业务重要性?
@@ -594,7 +595,7 @@ aliyun dds ModifyParameter \
 │        ├─ 成本: 最低
 │        ├─ 可靠性: 无/低
 │        └─ 仅用于非生产
-```
+```markdown
 
 ---
 
@@ -644,7 +645,7 @@ aliyun dds CreateReplicaSetInstance \
   --VPCId "{{user.vpc_id}}" \
   --VSwitchId "{{user.vswitch_id}}" \
   --ChargeType "PostPaid"
-```
+```markdown
 
 ### 7.3 DescribeReplicaSetRole Example
 
@@ -669,7 +670,7 @@ aliyun dds DescribeReplicaSetRole \
 # - ReplicaSetStatus: 副本集状态
 #   - Normal: 正常
 #   - Abnormal: 异常
-```
+```markdown
 
 ### 7.4 ModifyDBInstanceSpec (Change Node Count)
 
@@ -685,7 +686,7 @@ aliyun dds ModifyDBInstanceSpec \
 # - 增加节点会引起数据同步, 时间视数据量而定
 # - 建议在维护窗口执行
 # - NodeCount包括所有数据节点和Arbiter
-```
+```markdown
 
 ---
 
@@ -722,7 +723,7 @@ aliyun dds DescribeErrorLogs \
   --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --DBType "normal"
-```
+```markdown
 
 **根因分析**:
 
@@ -755,7 +756,7 @@ aliyun dds ModifyDBInstanceSpec \
   --DBInstanceId "{{user.instance_id}}" \
   --NodeClass "dds.mongo.large" \
   --OrderType "UPGRADE"
-```
+```markdown
 
 ---
 
@@ -790,7 +791,7 @@ aliyun dds DescribeDBInstancePerformance \
   --Key MongoDB_OplogWindow \
   --StartTime "$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **根因分析**:
 
@@ -827,7 +828,7 @@ aliyun dds ModifyParameter \
 aliyun dds ModifyParameter \
   --DBInstanceId "{{user.instance_id}}" \
   --Parameters "[{\"Key\":\"oplogSize\",\"Value\":\"5120\"}]"
-```
+```markdown
 
 ---
 
@@ -856,7 +857,7 @@ aliyun dds DescribeDBInstancePerformance \
 aliyun dds DescribeParameters \
   --DBInstanceId "{{user.instance_id}}" \
   --output cols=ParameterName,ParameterValue rows=RunningParameters.Parameter[?ParameterName=='oplogSize'].{ParameterName,ParameterValue}
-```
+```markdown
 
 **根因分析**:
 
@@ -887,7 +888,7 @@ var oldest = db.oplog.rs.find().sort({ts: 1}).limit(1).next().ts
 var hours = (latest.t - oldest.t) / 3600
 print("Oplog窗口: " + hours + "小时")
 // 应 > 24小时
-```
+```markdown
 
 ---
 
@@ -920,7 +921,7 @@ aliyun dds DescribeDBInstancePerformance \
   --Key MongoDB_NetworkLatency \
   --StartTime "$(date -u -v-30M +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '30 minutes ago' +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **根因分析**:
 
@@ -953,7 +954,7 @@ aliyun dds AddNode \
   --DBInstanceId "{{user.instance_id}}" \
   --NodeClass "dds.mongo.small" \
   --NodeType "Arbiter"
-```
+```markdown
 
 ---
 
@@ -1000,7 +1001,7 @@ aliyun cms DescribeMetricList \
 # - MongoDB_IOPS (IOPS)
 # - MongoDB_Connections (连接数)
 # - MongoDB_NetworkLatency (网络延迟)
-```
+```markdown
 
 ### 9.3 Alert Rule Configuration
 
@@ -1033,7 +1034,7 @@ aliyun cms CreateAlarm \
   --AlarmName "MongoDB选举频繁告警" \
   --AlarmDescription "1小时内选举超过3次" \
   --NotifyType "1,2,3"
-```
+```markdown
 
 ---
 

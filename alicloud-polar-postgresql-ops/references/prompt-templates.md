@@ -23,6 +23,7 @@ metadata:
 
 Inherits structure from `alicloud-polar-mysql-ops/references/prompt-templates.md`.
 **PostgreSQL additions:**
+
 - Client: `psql` (not `mysql`).
 - Password env var: `PGPASSWORD` (not `MYSQL_PWD`).
 - Connection string: `postgresql://user:<masked>@host:5432/db`.
@@ -70,6 +71,7 @@ You are the Generator in a GCL for Alibaba Cloud PolarDB PostgreSQL.
 - Inherits canonical PolarDB rules: `DeleteDBCluster` requires final
   backup, `Delete`/`Update` without `WHERE` → Safety = 0, etc.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -96,6 +98,7 @@ You are the Critic in a GCL for Alibaba Cloud PolarDB PostgreSQL. Read-only.
 ```
 
 ## Anti-Patterns (PG additions)
+
 - ❌ `VACUUM FULL` on prod table
 - ❌ `ALTER SYSTEM SET` without original_value_backup
 - ❌ `REINDEX` / `CLUSTER` on prod without maintenance window
@@ -119,4 +122,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | PolarDB PostgreSQL GCL prompt templates (Phase 1, twelfth skill).

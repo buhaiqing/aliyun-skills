@@ -21,6 +21,7 @@ events. Each trail specifies:
 - **Organization trail**: Multi-account trail for resource directory members
 
 **Limits:**
+
 - Maximum 5 trails per region per account
 - Trails are created in **disabled** state by default
 - Must call `StartLogging` to enable event delivery
@@ -82,6 +83,7 @@ ActionTrail supports **7 Insight types**:
 | `TrailConcealmentInsight` | Trail disable/deletion attempts | Attacker disables audit trail to cover tracks after malicious activity |
 
 **Key behaviors:**
+
 - Insight events are generated **at least 24 hours** after enabling
 - Analysis is based on the **past 7 days** of historical management events
 - Insight events are retained for **90 days**
@@ -114,7 +116,7 @@ configured delivery destinations.
 
 ## Architecture
 
-```
+```text
 User Actions (Console/API/SDK/CLI)
         │
         ▼
@@ -188,6 +190,7 @@ To meet compliance requirements (e.g.,等保2.0):
 ### 4. Anomaly Detection
 
 Enable Insight types for automated anomaly detection:
+
 - `IpInsight` — detect AccessKey theft from unfamiliar IPs
 - `ApiCallRateInsight` — detect unusual resource operation patterns
 - `ApiErrorRateInsight` — detect cascading failures from resource changes

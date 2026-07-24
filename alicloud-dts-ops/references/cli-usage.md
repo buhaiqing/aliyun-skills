@@ -4,9 +4,11 @@
 
 - Install: see [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli)
 - **Recommended:** Install DTS plugin for enhanced features:
+
   ```bash
   aliyun plugin install --names aliyun-cli-dts
   ```
+
 - Credentials: env vars `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET` OR `~/.aliyun/config.json`
 - Output is **JSON by default** — no `--output json` needed
 
@@ -54,6 +56,7 @@
 ## Common CLI Patterns
 
 ### List and Filter
+
 ```bash
 # All tasks
 aliyun dts DescribeDtsJobs --RegionId cn-hangzhou
@@ -69,6 +72,7 @@ aliyun dts DescribeDtsJobs --RegionId cn-hangzhou --PageNumber 1 --PageSize 50
 ```
 
 ### Extract Specific Fields
+
 ```bash
 # Projection with jq
 aliyun dts DescribeDtsJobs --RegionId cn-hangzhou | jq '.DtsJobList[] | {DtsJobId, Status, DtsJobName, Delay}'
@@ -79,11 +83,13 @@ aliyun dts DescribeDtsJobs --RegionId cn-hangzhou \
 ```
 
 ### Check Specific Job
+
 ```bash
 aliyun dts DescribeDtsJobDetail --RegionId cn-hangzhou --DtsJobId "dtsxxxx12345"
 ```
 
 ### Poll Until Terminal State
+
 ```bash
 # Poll migration until finished
 for i in $(seq 1 60); do

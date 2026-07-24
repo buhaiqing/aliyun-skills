@@ -134,6 +134,7 @@
 - **Access logs** in SLS provide full request tracing for post-incident analysis.
 - **CMS alerts** configured on `HealthyHostCount = 0` for immediate incident notification.
 - **Diagnostic commands:**
+
   ```bash
   # Quick health check
   aliyun alb GetLoadBalancerAttribute --LoadBalancerId "{{lb_id}}" | jq '.LoadBalancer.LoadBalancerStatus'

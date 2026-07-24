@@ -5,8 +5,8 @@
 - **Product**: DDS (Document Database Service)
 - **API Version**: 2015-12-01
 - **Base Endpoint**: `mongodb.aliyuncs.com`
-- **Official Docs**: https://www.alibabacloud.com/help/en/mongodb
-- **OpenAPI Explorer**: https://api.aliyun.com/api/Mongodb/2015-12-01
+- **Official Docs**: <https://www.alibabacloud.com/help/en/mongodb>
+- **OpenAPI Explorer**: <https://api.aliyun.com/api/Mongodb/2015-12-01>
 
 ## CLI Path (aliyun dds)
 

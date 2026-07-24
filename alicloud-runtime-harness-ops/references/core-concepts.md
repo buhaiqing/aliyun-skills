@@ -8,14 +8,14 @@
 
 ## Architecture (PR-8/9 canonical)
 
-```
+```text
 alicloud-[product]-ops/scripts/harness-lib.sh   ← product overlay (repair, wrap)
     │
     ├─ source alicloud-runtime-harness-ops/scripts/harness-paths.sh
     └─ source alicloud-runtime-harness-ops/scripts/harness-core-lib.sh
             ├─ skillopt_init / harness_init — log, metrics, circuit breaker
             └─ scripts/harness_runtime.py (Langfuse ingestion)
-```
+```markdown
 
 **Legacy compat**: product overlays may still `source skillopt-lib.sh` (symlink) and `*-skillopt-wrapper.sh` (shim); both delegate to harness paths above.
 

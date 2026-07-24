@@ -157,14 +157,17 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to deploy, configure, troubleshoot, and monitor Elasticsearch instances on Alibaba Cloud using JIT Go SDK (CLI does not support Elasticsearch).
 
 ### Prerequisites
+
 - [ ] Go runtime installed (1.21+) or JIT download capability
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 
 ### Verify Setup
+
 ```bash
 # Check Go runtime
 go version
@@ -178,6 +181,7 @@ go get github.com/alibabacloud-go/tea
 ```
 
 ### Your First Command
+
 ```go
 // List Elasticsearch instances
 package main
@@ -206,6 +210,7 @@ func main() {
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand Elasticsearch architecture
 - [Common Operations](#execution-flows-agent-readable) — Create, manage, and delete instances
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
@@ -245,7 +250,7 @@ Every operation: **Pre-flight → Execute (SDK) → Validate → Recover**. Do n
 
 ### Operation: Create Elasticsearch Instance
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Elasticsearch Instance)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -261,6 +266,7 @@ Every operation: **Pre-flight → Execute (SDK) → Validate → Recover**. Do n
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
 Execute:
+
 ```bash
 # In /tmp/aliyun-sdk-workspace
 go mod init es-create
@@ -309,7 +315,7 @@ for i := 0; i < 60; i++ {
 
 ### Operation: Describe Elasticsearch Instance
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Describe Elasticsearch Instance)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -339,7 +345,7 @@ for i := 0; i < 60; i++ {
 
 ### Operation: Update Elasticsearch Instance
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Update Elasticsearch Instance)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -392,7 +398,7 @@ Poll DescribeInstance until **NotFound** error (instance deleted)
 
 > **Stability Pillar:** Following Alibaba Cloud Well-Architected Framework §面向风险的应急快恢, backup operations are mandatory before destructive changes.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Snapshot (Backup))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -409,7 +415,7 @@ Poll snapshot status until `Success` (check via DescribeSnapshot or ListSnapshot
 
 ### Operation: Upgrade Engine Version
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Upgrade Engine Version)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -458,6 +464,7 @@ Poll until upgrade completes (status transitions through upgrade phases)
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+
    > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
 3. **Initialize SDK Workspace**:
@@ -525,6 +532,7 @@ Tenth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic
 | Hard rule | All `Delete*` ops (instance, index, by-query) require `snapshot_trace` — no waiver |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Tenth rollout.
 
 ---
@@ -532,6 +540,7 @@ Tenth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic
 ## Well-Architected Assessment
 
 This skill's operations are evaluated against Alibaba Cloud's Well-Architected Framework (卓越架构). For detailed assessment patterns per pillar:
+
 - Security Assessment
 - Stability Assessment
 - Cost Assessment

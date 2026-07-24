@@ -65,7 +65,7 @@ When multiple alerts fire simultaneously, use correlation analysis to identify t
 
 ### 2.2 Dimensional Analysis Decision Tree
 
-```
+```text
 收到多维度告警
 │
 ├─ Node NotReady 高?
@@ -144,7 +144,7 @@ When multiple alerts fire simultaneously, use correlation analysis to identify t
 
 ### 3.1 Pod Diagnostic Tree
 
-```
+```text
 Pod 故障诊断
 │
 ├─ 状态 = Pending
@@ -212,7 +212,7 @@ Pod 故障诊断
 
 ### 3.2 Node Diagnostic Tree
 
-```
+```text
 Node 故障诊断
 │
 ├─ 状态 = NotReady
@@ -276,7 +276,7 @@ Node 故障诊断
 
 ### 3.3 Network/Service Diagnostic Tree
 
-```
+```text
 网络/Service 故障诊断
 │
 ├─ DNS解析失败
@@ -355,7 +355,7 @@ Node 故障诊断
 
 ### 3.4 Storage/PVC Diagnostic Tree
 
-```
+```text
 Storage/PVC 故障诊断
 │
 ├─ PVC状态 = Pending
@@ -431,7 +431,7 @@ When analyzing metrics over time, identify these patterns to guide diagnosis:
 
 ### 4.2 Baseline Deviation Analysis
 
-```
+```text
 基线偏离分析流程
 │
 ├─ 获取当前指标值 (Current)
@@ -479,7 +479,7 @@ kubectl get events --all-namespaces \
 kubectl get events --all-namespaces \
   --field-selector reason=NodeNotReady \
   --sort-by='.lastTimestamp'
-```
+```markdown
 
 ---
 
@@ -491,7 +491,7 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
 
 #### Phase 1: Alert Triage (30 seconds)
 
-```
+```text
 1. 获取集群基本信息
    → DescribeClusterDetail
    → 确认 ClusterId, State, Version, NodeCount
@@ -506,11 +506,11 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
    ├─ Pod CrashLoopBackOff > 20 pods → Critical
    ├─ CPU > 85% OR Memory > 90% → High, 标准诊断流程
    └─ 其他 → Warning, 标准诊断流程
-```
+```markdown
 
 #### Phase 2: Multi-Dimensional Correlation (60 seconds)
 
-```
+```text
 4. 根据告警类型, 执行关联检查
    ├─ Node NotReady 告警 → 同时获取:
    │  ├─ ECS实例状态 (alicloud-ecs-ops)
@@ -538,11 +538,11 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
 
 5. 应用关联矩阵 (Section 2.1)
    → 识别 Primary Root Cause vs Secondary Effects
-```
+```markdown
 
 #### Phase 3: Kubernetes-Specific Deep Dive (90 seconds)
 
-```
+```text
 6. 执行Kubernetes特定诊断
    ├─ Node诊断 → describe node, 检查Conditions
    │  ├─ DiskPressure → 检查磁盘使用
@@ -569,11 +569,11 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
 7. 获取时间窗口内的详细事件
    → kubectl get events --all-namespaces --sort-by='.lastTimestamp'
    → 分析事件时间线,追溯根因触发点
-```
+```markdown
 
 #### Phase 4: Root Cause Synthesis (30 seconds)
 
-```
+```text
 8. 综合分析所有数据, 生成诊断报告
    ├─ 根因分类: [节点故障] / [Pod配置] / [资源不足] / [网络问题] / [存储问题] / [应用错误]
    ├─ 影响评估: [仅性能下降] / [有服务中断风险] / [有数据风险]
@@ -585,7 +585,7 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
    ├─ 影响评估
    ├─ 即时建议 (可立即执行)
    └─ 长期建议 (需计划执行)
-```
+```markdown
 
 ### 5.2 Diagnosis Report Template
 
@@ -627,17 +627,21 @@ When user reports an alert (e.g., "ACK节点NotReady告警"), Agent executes the
 1. {{immediate_action_1}}
    ```bash
    {{immediate_command_1}}
-   ```
+   ```text
+
 2. {{immediate_action_2}}
+
    ```bash
    {{immediate_command_2}}
-   ```
+   ```markdown
 
 ### 长期建议
+
 1. {{long_term_action_1}} — 预计收益: {{benefit_1}}
 2. {{long_term_action_2}} — 预计收益: {{benefit_2}}
 
 ### 相关诊断命令
+
 ```bash
 # 验证诊断结果
 kubectl describe node {{node_name}}
@@ -647,10 +651,12 @@ kubectl get events --field-selector involvedObject.name={{pod_name}} --sort-by='
 # 集群健康状态
 aliyun cs GET /clusters/{{cluster_id}}/nodes | jq '.nodes[] | {instance_id, state, node_status}'
 aliyun cms DescribeMetricList --Namespace acs_k8s_dashboard --MetricName CpuUsage --Dimensions '[{"clusterId":"{{cluster_id}}"}]'
-```
+```json
 
 ### API调用统计
+
 {{api_call_summary}}
+
 ```
 
 ---
@@ -703,9 +709,10 @@ for INSTANCE_ID in $(jq -r '.[].instance_id' /tmp/notready_nodes.json); do
     --EndTime "$END_TIME" \
     --Period 60 | jq '.Datapoints[-5:]'
 done
-```
+```markdown
 
 **根因判断**:
+
 - 如果多数ECS实例 `Status` != `Running` → **根因: 底层ECS故障**
 - 如果ECS `Status` = `Running` 但 kubelet Conditions 异常 → **根因: Kubelet/Docker异常**
 - 如果 `DiskPressure` = True 节点最多 → **根因: 磁盘空间耗尽**
@@ -713,6 +720,7 @@ done
 - 如果ECS和Conditions都正常 → **根因: API Server连接问题或证书过期**
 
 **即时行动**:
+
 1. ECS故障 → 委托 `alicloud-ecs-ops` 修复或替换实例
 2. Kubelet异常 → 通过Cloud Assistant重启kubelet: `systemctl restart kubelet`
 3. 磁盘满 → 清理镜像和日志: `docker system prune -af && rm -rf /var/log/pods/*`
@@ -756,9 +764,10 @@ kubectl get pods --all-namespaces -o json | jq '
 
 # Step 5: 检查Deployment更新时间 (10s)
 kubectl get deployments --all-namespaces -o wide | grep -E "NAME|$(jq -r '.[].namespace' /tmp/crashloop_pods.json | head -5 | tr '\n' '|' | sed 's/|$//')"
-```
+```markdown
 
 **根因判断**:
+
 - 如果 `OOMKilled` 出现频繁 → **根因: 内存不足**
 - 如果日志显示配置错误 → **根因: ConfigMap/Secret配置问题**
 - 如果 `ImagePullBackOff` → **根因: 镜像拉取失败**
@@ -766,6 +775,7 @@ kubectl get deployments --all-namespaces -o wide | grep -E "NAME|$(jq -r '.[].na
 - 如果最近有Deployment更新 → **根因: 新版本应用bug**
 
 **即时行动**:
+
 1. OOMKilled → 增加Pod内存limit
 2. 配置错误 → 检查并修复ConfigMap/Secret
 3. 镜像问题 → 检查imagePullSecret和镜像tag
@@ -815,9 +825,10 @@ kubectl get pods -n kube-system -l k8s-app=metrics-server
 kubectl get pods --all-namespaces --field-selector status.phase=Pending | head -20
 
 kubectl describe pod {{pending_pod_name}} -n {{namespace}} | grep -A10 "Events:"
-```
+```markdown
 
 **根因判断**:
+
 - 如果HPA显示 `Desired replicas` > `Current replicas` → **根因: Node Pool已达max_size**
 - 如果HPA显示 `Desired replicas` = `Current replicas` → **根因: HPA配置阈值不合理**
 - 如果 `metrics-server` Pod异常 → **根因: Metrics Server故障,HPA无法获取指标**
@@ -825,6 +836,7 @@ kubectl describe pod {{pending_pod_name}} -n {{namespace}} | grep -A10 "Events:"
 - 如果Pod Pending显示 `Insufficient cpu/memory` → **根因: 节点资源不足**
 
 **即时行动**:
+
 1. Node Pool达到上限 → 扩容Node Pool: `PUT /clusters/{id}/nodepools/{pool_id}` 增加 `max_size`
 2. HPA阈值问题 → 调整HPA配置: `kubectl patch hpa ...`
 3. Metrics Server故障 → 重启metrics-server Pod或修复配置
@@ -1079,7 +1091,7 @@ echo "Report saved to: $REPORT_FILE"
 
 # Cleanup
 rm -f /tmp/ack-kubeconfig_$CLUSTER_ID
-```
+```markdown
 
 ### 11.2 Pod Deep Diagnosis Script
 
@@ -1135,4 +1147,4 @@ kubectl get pod "$POD_NAME" -n "$NAMESPACE" -o json | jq '.spec.containers[].env
 kubectl get pod "$POD_NAME" -n "$NAMESPACE" -o json | jq '.spec.containers[].volumeMounts[]'
 
 rm -f /tmp/ack-kubeconfig
-```
+```text

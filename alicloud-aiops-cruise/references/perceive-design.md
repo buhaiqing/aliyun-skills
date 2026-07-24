@@ -20,7 +20,7 @@
 
 ## 2. 组织结构
 
-```
+```text
 scripts/agents/perceive/       # 感知层统一入口
 ├── __init__.sh                # 统一调度入口 (Shell)
 ├── infra/                     # 基础设施巡检 (AIOps 核心链路)
@@ -142,7 +142,7 @@ bash scripts/agents/perceive/__init__.sh --mode advisor
 
 # 查看结构
 bash scripts/agents/perceive/__init__.sh --describe
-```
+```markdown
 
 ### 4.2 推荐 cron 配置
 
@@ -164,7 +164,7 @@ bash scripts/agents/perceive/__init__.sh --describe
 # 顾问建议 (每日 10:00)
 0 10 * * * cd /path/to/aliyun-skills/alicloud-aiops-cruise && \
   bash scripts/agents/perceive/__init__.sh --mode advisor 2>&1 | logger -t perceive-advisor
-```
+```markdown
 
 ### 4.3 Baseline Retention 调度 (Sprint 16)
 
@@ -188,7 +188,7 @@ bash scripts/agents/perceive/__init__.sh --describe
   bash scripts/agents/perceive/infra/configdrift.sh \
   --compare-with $(date -v-7d '+%Y-%m-%d' 2>/dev/null || date -d '7 days ago' '+%Y-%m-%d') \
   2>&1 | logger -t configdrift-weekly
-```
+```markdown
 
 > **注意**: `date -v-7d` 是 BSD/macOS 语法, Linux 用 `date -d '7 days ago'`。脚本会自动 fallback (见 `configdrift.sh`)。
 
@@ -212,7 +212,7 @@ bash scripts/agents/perceive/__init__.sh --describe
     }
   ]
 }
-```
+```markdown
 
 推理层 Agent（AIOps Inference / Cost Analysis / Security Analysis / Architecture Review）读取这些 Findings 后做关联推理。
 

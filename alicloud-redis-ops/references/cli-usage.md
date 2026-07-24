@@ -16,6 +16,7 @@
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
 ```
@@ -109,6 +110,7 @@ aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.I
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
 ```

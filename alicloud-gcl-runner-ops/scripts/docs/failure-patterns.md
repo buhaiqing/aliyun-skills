@@ -22,7 +22,7 @@
 
 ### For Agents (Pre-flight)
 
-```
+```markdown
 # Optional: Load failure patterns before executing a skill
 # 1. Read this file (lazy-load, ~150 lines)
 # 2. Filter patterns by current skill name
@@ -31,7 +31,7 @@
 
 ### For GCL Runner
 
-```
+```markdown
 # After each GCL run with SAFETY_FAIL, the runner stores patterns:
 #   reflexion_store(reflexion_extract(trace))
 # Regenerate this file:
@@ -40,7 +40,7 @@
 
 ### Maintenance
 
-```
+```markdown
 # Prune patterns with count < 3 if lines > 200:
 #   python gcl_reflexion.py maintain --apply
 ```

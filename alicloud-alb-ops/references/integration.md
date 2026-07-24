@@ -10,7 +10,7 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/alb-20200616/v2/client
 ```
 
@@ -23,7 +23,7 @@ cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script
 
 # Set proxy for China CDN mirror
-export GOPROXY="https://goproxy.cn,direct"
+export GOPROXY="<https://goproxy.cn,direc>t"
 
 # Install dependencies
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -33,7 +33,7 @@ go get github.com/alibabacloud-go/alb-20200616/v2/client
 
 # Run script
 go run ./main.go
-```
+```markdown
 
 ## Go SDK Script Template
 
@@ -73,7 +73,7 @@ func main() {
     }
     fmt.Println(tea.ToString(response.Body))
 }
-```
+```markdown
 
 ## SDK Package Naming Reference
 
@@ -84,7 +84,7 @@ func main() {
 | VPC | `github.com/alibabacloud-go/vpc-20160428/v3/client` |
 | CMS | `github.com/alibabacloud-go/cms-20190101/v2/client` |
 
-Find package names at: https://github.com/alibabacloud-go
+Find package names at: <https://github.com/alibabacloud-go>
 
 ## Security
 

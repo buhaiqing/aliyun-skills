@@ -119,7 +119,7 @@ Official quasi-real-time guide: [GPU quasi-real-time inference](https://help.ali
 
 ### 4.2 Two layers of “batching”
 
-```
+```text
 Client requests
       │
       ▼
@@ -225,7 +225,7 @@ CPU function limits (128 MB–3072 MB memory, etc.) in [core-concepts.md](core-c
 
 ## 8. Agent Decision Flow
 
-```
+```text
 User needs LLM inference on FC?
 ├─ Quick deploy, standard OpenAI API, minimal ops
 │   └─► Function AI Model Service + vLLM (Path A)
@@ -673,12 +673,12 @@ aliyun fc-open POST /2023-03-30/functions/{{user.function_name}}/invocations \
 
 | Topic | URL |
 |-------|-----|
-| Create GPU function | https://help.aliyun.com/zh/functioncompute/fc/user-guide/creating-a-gpu-function/ |
-| Quasi-real-time / batch-friendly GPU | https://help.aliyun.com/zh/functioncompute/fc-3-0/user-guide/quasi-real-time-inference-scenarios |
-| vLLM model service (Function AI) | https://help.aliyun.com/zh/functioncompute/fc-3-0/create-a-model-service-using-the-vllm-inference-engine |
-| LLM metrics | https://help.aliyun.com/zh/functioncompute/fc/user-guide/llm-indicator-monitoring |
-| CreateFunction API | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-createfunction |
-| PutScalingConfig | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-putscalingconfig |
-| PutAsyncInvokeConfig | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-putasyncinvokeconfig |
-| LogConfig (enableLlmMetrics) | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-logconfig |
-| GpuConfig | https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-gpuconfig |
+| Create GPU function | <https://help.aliyun.com/zh/functioncompute/fc/user-guide/creating-a-gpu-function/> |
+| Quasi-real-time / batch-friendly GPU | <https://help.aliyun.com/zh/functioncompute/fc-3-0/user-guide/quasi-real-time-inference-scenarios> |
+| vLLM model service (Function AI) | <https://help.aliyun.com/zh/functioncompute/fc-3-0/create-a-model-service-using-the-vllm-inference-engine> |
+| LLM metrics | <https://help.aliyun.com/zh/functioncompute/fc/user-guide/llm-indicator-monitoring> |
+| CreateFunction API | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-createfunction> |
+| PutScalingConfig | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-putscalingconfig> |
+| PutAsyncInvokeConfig | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-putasyncinvokeconfig> |
+| LogConfig (enableLlmMetrics) | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-logconfig> |
+| GpuConfig | <https://help.aliyun.com/zh/functioncompute/fc/developer-reference/api-fc-2023-03-30-struct-gpuconfig> |

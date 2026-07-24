@@ -8,9 +8,9 @@ Sandbox 支持通过 WebSocket 进行交互式终端操作（TTY），允许用�
 
 ### 端点
 
-```
+```text
 GET {account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/tty?protocol=json&tenantId={accountID}
-```
+```markdown
 
 ### 连接要求
 
@@ -107,7 +107,7 @@ func HandleWebSocket(w http.ResponseWriter, r *http.Request, targetURL, accountI
 
 	wg.Wait()
 }
-```
+```markdown
 
 ### 2.2 TTY 消息格式（JSON 模式）
 
@@ -138,7 +138,7 @@ go func() {
 }()
 
 // 服务器 90 秒无心跳发送警告，120 秒超时关闭
-```
+```markdown
 
 ## 3. Python 实现
 
@@ -184,7 +184,7 @@ async def tty_websocket(websocket: WebSocket, sandbox_id: str):
     # 注意：websockets.connect 与 FastAPI WebSocket 不完全兼容
     # 方案：使用 httpx WS 支持或裸 TCP + WebSocket 帧处理
     await proxy_websocket(websocket, target, {"X-Acs-Parent-Id": settings.account_id})
-```
+```markdown
 
 ### 3.2 FastAPI + httpx-ws 完整实现
 
@@ -246,7 +246,7 @@ async def tty_ws(websocket: WebSocket, sandbox_id: str):
             await websocket.close()
         except:
             pass
-```
+```markdown
 
 ## 4. 心跳保活机制
 
@@ -264,7 +264,7 @@ async def tty_ws(websocket: WebSocket, sandbox_id: str):
 # 即使 WebSocket 断开，屏幕会话仍存活
 screen -S sandbox-session
 # 重连后: screen -r sandbox-session
-```
+```markdown
 
 ## 5. 文本模式 vs JSON 模式
 

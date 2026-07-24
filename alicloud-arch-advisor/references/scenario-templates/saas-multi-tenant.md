@@ -55,17 +55,20 @@ graph TB
 ## 产品选型
 
 ### 接入与路由
+
 - **ALB**: 根据域名/Host 头路由到不同租户后端
 - **API 网关**: 租户身份认证、API 限流、调用审计，支持 OAuth2/JWT
 - **WAF**: 全局防护，配置针对不同租户 API 的差异化规则
 
 ### 应用层
+
 - **ACK**: 通过 Kubernetes Namespace 实现租户隔离
   - 每个租户分配独立 Namespace + ResourceQuota
   - 使用 NetworkPolicy 禁止跨 Namespace 访问
 - **ASM (服务网格)**: 为租户间流量配置限流、熔断、灰度策略
 
 ### 数据层
+
 - **PolarDB MySQL**: Bridge 模式下租户按 Schema 隔离
   - 大租户可升级为独立实例（Silo）
   - 配置实例级 IOPS 上限防超卖
@@ -74,6 +77,7 @@ graph TB
 - **RDS PG / AnalyticDB**: 租户报表查询，防止 OLTP 被复杂查询影响
 
 ### 计费与管理
+
 - **资源管理器 (RM)**: 建立资源目录，每个租户一个资源夹
 - **标签 Tag**: 强制所有资源打租户标签，用于成本分摊
 - **分账账单**: 按标签生成分账报表，支持按量/包年包月分摊

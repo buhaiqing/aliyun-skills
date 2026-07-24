@@ -6,7 +6,7 @@
 
 Auto Scaling (ESS) automatically adjusts compute resources (ECS, ECI, or managed instances) based on scaling policies, scheduled tasks, or health checks.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │                    Auto Scaling Service                   │
 │  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐   │
@@ -84,6 +84,7 @@ API Endpoint: `ess.aliyuncs.com` (auto-routes to region).
 ## Billing
 
 ESS service itself is free. You pay for:
+
 - ECS/ECI instances launched by ESS
 - CLB/ALB/NLB bandwidth
 - CloudMonitor metrics (if using alarm-based rules)

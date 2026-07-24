@@ -64,9 +64,10 @@ metadata:
 | DNS 健康检查 / 解析异常巡检 | `alicloud-dns-ops` | 巡检项涉及域名解析、CNAME、PrivateZone、GTM 健康时引导至此 |
 
 ## Perceive Layer — 感知 Agent
+
 本 Skill 内置了 **8 个感知 Agent**，统一放在 `scripts/agents/perceive/` 下，按领域分层组织：
 
-```
+```text
 scripts/agents/perceive/       # 感知层统一入口
 ├── __init__.sh                # 统一调度入口，支持 --mode 子集选择
 ├── infra/                     # 基础设施巡检（AIOps 核心链路）
@@ -94,7 +95,7 @@ scripts/agents/perceive/       # 感知层统一入口
 │   └── audittrail.sh          # 操作事件监控/异常API调用检测 | 实时/每日
 └── advisor/                   # 顾问建议
     └── advisorscan.sh         # 健康报告 + 成本优化建议 | 每日
-```
+```markdown
 
 > 每个 Agent 委托对应的底层 Skill 执行。详见 [`references/perceive-design.md`](references/perceive-design.md)。
 
@@ -111,11 +112,13 @@ scripts/agents/perceive/       # 感知层统一入口
 | **存储路径** | `${SKILLS_DIR}/infra-baseline/<YYYY-MM-DD>/manifest.json` | 与 `infra-baseline/` 规范一致 |
 
 **为什么是 90 天？**
+
 - 满足季度审计、季度复盘的常见需求
 - 资源数 < 500 的账号，每份 manifest < 50KB，90 天总量 < 5MB（可忽略）
 - 阿里云 ActionTrail 自身保留 90 天操作事件，与之对齐便于交叉分析
 
 **当前未实现（见 Sprint 16 候选）**:
+
 - [ ] `--compare-with <date>`：对比指定历史 baseline
 - [ ] Cron 配置示例（toposcan + retention 清理）
 - [ ] 跨账号 baseline 比对
@@ -179,6 +182,7 @@ scripts/agents/perceive/       # 感知层统一入口
 ## Pre-flight Interaction
 
 ```
+
  阿里云全链路 AIOps 巡检配置
 
 1. 巡检范围（二选一）:
@@ -208,20 +212,24 @@ scripts/agents/perceive/       # 感知层统一入口
 4. 深度诊断选项:
    启用 DAS 数据库深度诊断? (Y/N，默认 Y)
    启用 CloudAssistant 内检测? (Y/N，默认 N)
-```
+
+```markdown
 
 ## Execution Flow Overview
 
 本 Skill 采用三阶段执行模式，具体步骤因场景而异（详见 runbooks/）。
 
 ### Phase 1: 嗅探 + 拓扑发现
+
 核心命令: `aliyun resourcecenter SearchResources`, `aliyun vpc DescribeVpcs`, `aliyun slb DescribeLoadBalancers`
 输出: 拓扑初判报告（Markdown）+ 待人工确认清单（如需）
 
 ### Phase 2: 深度采集 + 诊断
+
 数据源: CloudMonitor (6h 指标 + 环比), DAS (慢查询), CloudAssistant (ECS 内检测), ActionTrail (操作事件)
 
 ### Phase 3: 推理 + 报告
+
 Agent 对照 `references/inference-rules.md` 做链路关联推理。输出: Markdown + JSON。
 
 ### 统一风险模型与 ML 灰度
