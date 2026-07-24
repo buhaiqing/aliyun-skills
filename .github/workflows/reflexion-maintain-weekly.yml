@@ -56,6 +56,17 @@ jobs:
             echo "gcl_reflexion.py not found — skip"
           fi
 
+      - name: Layer 2 report (apply mode only)
+        if: ${{ github.event.inputs.apply == 'true' }}
+        run: |
+          echo "=== Regenerating docs/failure-patterns.md from reflexion store ==="
+          if [ -f "alicloud-gcl-runner-ops/scripts/gcl_reflexion.py" ]; then
+            python3 alicloud-gcl-runner-ops/scripts/gcl_reflexion.py report \
+              --reflexion-root .runtime/reflexion 2>&1 || echo "[WARN] reflexion report failed"
+          else
+            echo "gcl_reflexion.py not found — skip"
+          fi
+
       - name: Layer 2 report status
         run: |
           echo "=== Reflexion Report Status ==="
@@ -70,4 +81,4 @@ jobs:
             echo "success-patterns.md: MISSING"
           fi
           echo ""
-          echo "NOTE: This is a read-only dry-run. No changes are committed."
+          echo "NOTE: This is a read-only dry-run unless invoked with apply=true (which regenerates docs/failure-patterns.md)."

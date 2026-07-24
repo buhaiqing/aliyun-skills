@@ -2,7 +2,7 @@
 """
 gcl_actiontrail_crosscheck.py — Cloud-side audit for GCL traces.
 
-For each `audit-results/gcl-trace-*.json` produced by `gcl_runner.py`, this
+For each `.runtime/audit/gcl-runner-ops/gcl-trace-*.json` produced by `gcl_runner.py`, this
 script independently re-verifies the operation by calling Alibaba Cloud
 **ActionTrail** (操作审计) `LookupEvents` API. The result is a
 **cross-check report** that catches:
@@ -27,16 +27,16 @@ USAGE
 -----
     # Cross-check a single trace
     python3 scripts/gcl_actiontrail_crosscheck.py \\
-        --trace audit-results/gcl-trace-20260604-103015-abc123.json
+        --trace .runtime/audit/gcl-runner-ops/gcl-trace-20260604-103015-abc123.json
 
     # Cross-check ALL traces in a directory (CI mode)
     python3 scripts/gcl_actiontrail_crosscheck.py \\
-        --trace-dir audit-results/ \\
-        --report audit-results/crosscheck-report-$(date +%Y%m%d).json
+        --trace-dir .runtime/audit/gcl-runner-ops/ \\
+        --report .runtime/audit/gcl-runner-ops/crosscheck-report-$(date +%Y%m%d).json
 
     # Strict mode: any PHANTOM_* finding exits non-zero
     python3 scripts/gcl_actiontrail_crosscheck.py \\
-        --trace-dir audit-results/ \\
+        --trace-dir .runtime/audit/gcl-runner-ops/ \\
         --strict
 
 EXIT CODES
@@ -641,16 +641,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
             Examples:
               # Single trace
               python3 scripts/gcl_actiontrail_crosscheck.py \\
-                  --trace audit-results/gcl-trace-20260604-103015-abc123.json
+                  --trace .runtime/audit/gcl-runner-ops/gcl-trace-20260604-103015-abc123.json
 
               # All traces in a directory (CI mode)
               python3 scripts/gcl_actiontrail_crosscheck.py \\
-                  --trace-dir audit-results/ \\
-                  --report audit-results/crosscheck-$(date +%Y%m%d).json
+                  --trace-dir .runtime/audit/gcl-runner-ops/ \\
+                  --report .runtime/audit/gcl-runner-ops/crosscheck-$(date +%Y%m%d).json
 
               # Strict mode (exit non-zero on any PHANTOM_* finding)
               python3 scripts/gcl_actiontrail_crosscheck.py \\
-                  --trace-dir audit-results/ \\
+                  --trace-dir .runtime/audit/gcl-runner-ops/ \\
                   --strict
             """
         ),

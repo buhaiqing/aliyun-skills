@@ -155,7 +155,7 @@ User Request
 
 ## 6. Trace & Audit (mandatory)
 
-Every GCL run MUST persist a JSON trace under `./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json`:
+Every GCL run MUST persist a JSON trace under `.runtime/audit/gcl-runner-ops/gcl-trace-YYYYMMDD-HHMMSS.json` (gitignored under `.runtime/`):
 
 ```json
 {
@@ -212,7 +212,7 @@ Reusable patterns (reusable=true) are candidates for [failure-patterns.md](failu
 Redis/RDS passwords, KMS plaintext key material, RAM user passwords, or any other secret enumerated in
 AGENTS.md §8. Use `<masked>` or redacted tokens before writing to disk.
 
-**Directory:** add `./audit-results/` to `.gitignore` (or treat traces as ephemeral; do not commit).
+**Directory:** GCL traces live under `.runtime/audit/gcl-runner-ops/` (already covered by the `.runtime/` gitignore rule; do not commit).
 
 ## 7. Prompt Templates (mandatory per skill)
 
@@ -332,7 +332,7 @@ are common and a second pass is cheap).
 | When | After a `SKILL.md` / `references/*` is **edited** | During **runtime execution** of that skill |
 | Who | The author Agent (single context) | Generator + Critic (isolated contexts) + Orchestrator |
 | Input | The diff / new content | A live user request + skill rubric |
-| Output | Self-review record (in-session only) | Persisted JSON trace under `./audit-results/` |
+| Output | Self-review record (in-session only) | Persisted JSON trace under `.runtime/audit/gcl-runner-ops/` |
 | Failure mode caught | Wrong frontmatter, missing sections, broken links | Wrong arguments, missing pre-checks, silent partial failures, missed idempotency |
 | Cadence | Per skill update | Per execution |
 
@@ -864,7 +864,7 @@ Previously only `SAFETY_FAIL` was captured. The expanded scope provides richer f
 
 ```
 ┌───────────────────┐     persist_trace()     ┌──────────────────┐
-│  gcl_runner.py    │ ──────────────────────►  │ audit-results/   │
+│  gcl_runner.py    │ ──────────────────────►  │ .runtime/audit/gcl-runner-ops/   │
 │  (main loop)      │                          │ gcl-trace-*.json │
 └────────┬──────────┘                          └──────────────────┘
          │
@@ -961,7 +961,7 @@ This ensures memory indexing is a best-effort enhancement, not a reliability ris
 
 | Layer | Timing | Data Source | Memory Complement |
 |-------|--------|-------------|-------------------|
-| **GCL trace** | Per-execution | Full JSON trace in `audit-results/` | Memory indexes key fields for quick grep/jq |
+| **GCL trace** | Per-execution | Full JSON trace in `.runtime/audit/gcl-runner-ops/` | Memory indexes key fields for quick grep/jq |
 | **Reflexion Memory (§15)** | Cross-session | Structured failure patterns ≤200 lines | Memory provides full execution history (unbounded, TTL-bound) |
 | **Hallucination Detector (§14)** | Pre-execution | Structural checks | Memory provides past execution context for flag tuning |
 
