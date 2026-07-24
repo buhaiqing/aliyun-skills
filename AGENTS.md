@@ -394,7 +394,7 @@ The matrix is the first thing a user reads to pick a skill — staleness there i
 | `gcl_runner.py` | `cd alicloud-gcl-runner-ops/scripts && python3 -m unittest gcl_runner_test` |
 | `SKILL.md` only (substantive) | `npx markdownlint-cli2 "alicloud-<product>-ops/SKILL.md"` |
 
-Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.md §11.1](docs/post-update-self-review.md#111-regression-testing-mandatory)
+Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.md §11.1](docs/post-update-self-review.md#regression-testing-mandatory)
 
 ### 11.2 Dual-Track Testing (MANDATORY)
 
