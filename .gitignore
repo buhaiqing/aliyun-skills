@@ -60,6 +60,7 @@ build/
 
 # macOS
 .DS_Store
+**/.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -78,6 +79,9 @@ ehthumbs.db
 .cache/
 
 # ===== Project Specific =====
+
+# GCL model-config audit log (AGENTS.md §4.1 — must be gitignored)
+gcl.log
 
 # Compiled skill binaries (future distribution)
 # *.aliyun-sdk-*  # Keep pre-compiled binaries if we distribute them

@@ -1,0 +1,107 @@
+# CI pipeline — change-safety gate for aliyun-skills
+#
+# Runs on every push/PR. Hard gates (must pass to merge):
+#   - Unclosed {{user.*}}/{{env.*}}/{{output.*}} placeholders (AGENTS.md §2.1 R-N3)
+#   - Python 3.10 compatibility regressions
+#   - Test regressions (GCL runner + topo-discovery)
+#
+# Signal steps (visible, non-blocking):
+#   - Markdown lint + skill structure validation surface existing tech-debt
+#     but do NOT block merge yet; they are being cleaned up in follow-ups.
+#
+# docker-build is also non-blocking: CI runners usually lack a Docker
+# daemon, so a missing daemon must not mask the real gates above.
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint (markdown + placeholders)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Markdown lint (SKILL.md) [signal, non-blocking]
+        continue-on-error: true
+        run: npx --yes markdownlint-cli2 "alicloud-*/SKILL.md"
+
+      - name: Markdown lint (references/*.md) [signal, non-blocking]
+        continue-on-error: true
+        run: npx --yes markdownlint-cli2 "alicloud-*/references/*.md"
+
+      - name: Placeholder integrity (no unclosed {{...}}) [HARD GATE]
+        # AGENTS.md §2.1 R-N3: every placeholder must have both braces.
+        run: |
+          echo "==> Scanning for unclosed {{user.*}}/{{env.*}}/{{output.*}} ..."
+          matches=$(grep -rnE '\{\{[^}]*$' alicloud-*/SKILL.md alicloud-*/references/*.md 2>/dev/null || true)
+          if [ -n "$matches" ]; then
+            echo "FAIL: unclosed placeholder(s) found:"
+            echo "$matches"
+            exit 1
+          fi
+          echo "OK: no unclosed placeholders"
+
+  validate:
+    name: Validate (py310 + skill structure)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Python 3.10 compatibility [HARD GATE]
+        run: python3 scripts/check_py310_compat.py
+
+      - name: Validate skill structures [signal, non-blocking]
+        continue-on-error: true
+        run: python3 scripts/validate_all_skills.py
+
+  test:
+    name: Test (gcl-runner + topo-discovery)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: GCL runner tests
+        run: cd alicloud-gcl-runner-ops/scripts && python -m unittest gcl_runner_test -v
+
+      - name: topo-discovery tests
+        run: cd alicloud-topo-discovery && python -m pytest tests/ -v --tb=short
+
+  docker-build:
+    name: Docker build (non-blocking signal)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build runtime image
+        run: docker build --target runtime -t aliyun-skills:runtime .
