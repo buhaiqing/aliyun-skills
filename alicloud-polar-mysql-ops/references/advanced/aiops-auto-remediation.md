@@ -9,6 +9,7 @@
 本文档定义 PolarDB MySQL 的 AIOps 自动修复建议和一键执行流程，包含参数调优、架构优化、SQL优化（DAS集成）和安全执行策略。
 
 **工单 DOPS-85277 完成清单**:
+
 - [PASS] 扩展异常模式至 10+ 种（当前共 12 种，见 aiops-anomaly-patterns.md）
 - [PASS] 添加 PolarDB 特有模式（5种：主从延迟/只读节点不均衡/存储IO瓶颈/GDN同步延迟/Serverless弹性频繁）
 - [PASS] 参数自动调优建议
@@ -34,14 +35,16 @@
 **重要说明：** PolarDB AIOps 自动修复功能默认运行在**建议模式(Suggestion Mode)**，而非自动执行模式。
 
 **原因：**
+
 1. 数据库参数和架构变更可能影响生产稳定性
 2. 不同业务场景对风险的容忍度不同
 3. 需要人工审核修复建议的合理性
 
 **执行流程：**
-```
+
+```text
 异常检测 → 根因分析 → 生成修复建议 → [人工确认] → 一键执行 → 效果验证
-```
+```markdown
 
 ---
 
@@ -86,7 +89,7 @@ aliyun polardb ModifyParameters \
 aliyun polardb DescribeDBClusterAttribute \
   --DBClusterId "{{user.db_cluster_id}}" \
   --output cols=DBClusterStatus,ParameterStatus rows=DBClusterStatus,ParameterStatus
-```
+```markdown
 
 ---
 
@@ -109,10 +112,12 @@ aliyun polardb DescribeDBClusterAttribute \
 **适用场景**: P001 CPU-IOPS双高、P006 只读节点不均衡
 
 **扩容建议**: 
+
 - CPU 平均 > 70% → 增加只读节点
 - 读负载占比 > 80% → 增加只读节点
 
 **缩容建议**:
+
 - 只读节点 CPU < 20% 持续1周 → 移除冗余节点
 
 **CLI 操作**:
@@ -128,7 +133,7 @@ aliyun polardb AddDBNodes \
 aliyun polardb RemoveDBNodes \
   --DBClusterId "{{user.db_cluster_id}}" \
   --DBNodeIds "{{user.low_usage_node_id}}"
-```
+```markdown
 
 ### 2.3 Serverless 配置优化
 
@@ -162,6 +167,7 @@ aliyun polardb RemoveDBNodes \
 ### 3.1 DAS Skill 委派规则
 
 当检测到以下模式时，委派至 `alicloud-das-ops`:
+
 - 慢查询数量突增
 - CPU 高但无明显流量增长
 - 内存/缓冲池异常
@@ -169,7 +175,7 @@ aliyun polardb RemoveDBNodes \
 
 ### 3.2 委派调用示例
 
-```
+```markdown
 # 委派 DAS 进行 SQL 诊断
 -> alicloud-das-ops
   Task: "诊断 PolarDB 集群 {{user.db_cluster_id}} 的慢 SQL，提供优化建议"
@@ -177,7 +183,7 @@ aliyun polardb RemoveDBNodes \
     - 异常模式: P002 连接-慢查询关联
     - SlowQueries 增加 30%
     - Top slow SQL 执行时间 > 5s
-```
+```markdown
 
 ### 3.3 一键 SQL 优化流程
 
@@ -196,7 +202,7 @@ aliyun polardb DescribeSlowLogRecords \
 # - 创建索引: ALTER TABLE ... ADD INDEX
 # - 修改 SQL: 应用层代码调整
 # - 参数调整: ModifyParameters
-```
+```markdown
 
 ---
 
@@ -220,7 +226,7 @@ aliyun polardb DescribeSlowLogRecords \
 
 ### 5.1 Workflow Definition
 
-```
+```markdown
 异常检测 -> 根因分析 -> 生成修复建议 -> [人工确认] -> 一键执行 -> 效果验证
                   |
                   v
@@ -231,7 +237,7 @@ aliyun polardb DescribeSlowLogRecords \
  Low风险                    Medium/High风险
     |                           |
  自动执行                    人工确认后执行
-```
+```markdown
 
 ### 5.2 Remediation Actions Matrix
 
@@ -248,6 +254,7 @@ aliyun polardb DescribeSlowLogRecords \
 | Kill 阻塞会话 | SQL `KILL` | Medium | [FAIL] No | [PASS] Yes |
 
 **重要说明：**
+
 - 即使标记为 "Auto-Execute: Yes" 的操作，也需要在**建议模式**下经过人工审核
 - 真正的全自动修复（Auto Mode）需要显式开启，并配置白名单
 
@@ -270,7 +277,7 @@ auto_execute_conditions:
     - Critical pattern detected (requires human review)
     - Peak business hours (configurable window)
     - Mode = "Suggestion" (默认模式)
-```
+```markdown
 
 ### 6.2 用户确认必须场景
 
@@ -283,7 +290,7 @@ user_confirmation_required:
   - Kill 长事务/阻塞会话
   - 任何 High 风险操作
   - 所有 Medium 风险操作
-```
+```markdown
 
 ### 6.3 自动执行白名单 (Auto Mode Only)
 
@@ -296,12 +303,13 @@ user_confirmation_required:
 | 连接超时参数调整 | ConnectionUsage > 80% | 每天1次 |
 
 **如何开启 Auto Mode：**
+
 ```bash
 # 在集群标签中配置
 aliyun polardb ModifyDBCluster \
   --DBClusterId "{{user.db_cluster_id}}" \
   --Tags '[{"Key":"AIOpsMode","Value":"Auto"}]'
-```
+```markdown
 
 ---
 
@@ -318,7 +326,7 @@ aliyun polardb ModifyDBCluster \
 
 ### 7.2 委派调用模板
 
-```
+```markdown
 Context:
   - 源 Skill: alicloud-polar-mysql-ops
   - 集群: {{user.db_cluster_id}}
@@ -336,7 +344,7 @@ Context:
   - SQL 优化建议列表
   - 建议索引列表
   - 参数调整建议
-```
+```markdown
 
 ---
 
@@ -519,21 +527,23 @@ main() {
 }
 
 main "$@"
-```
+```markdown
 
 ### 8.2 执行模式说明
 
 **建议模式 (Suggestion Mode - 默认):**
+
 ```bash
 ./auto-parameter-tune.sh pc-xxx P001
 # 输出修复建议，等待人工确认后执行
-```
+```text
 
 **自动模式 (Auto Mode):**
+
 ```bash
 ./auto-parameter-tune.sh pc-xxx P001 --auto-mode
 # 检查白名单后直接执行 (仅适用于白名单内的低风险操作)
-```
+```markdown
 
 ---
 
@@ -558,7 +568,8 @@ main "$@"
 #### 风险评估详情
 
 **建议 #1: {{suggestion_1}}**
-```
+```text
+
 风险等级: Low
 ├─ 是否需要重启: 否
 ├─ 是否影响业务连续性: 否
@@ -571,10 +582,12 @@ main "$@"
 │   └─ 业务高峰期: 否 [PASS]
 ├─ 回滚方案: 自动回滚，参数恢复默认值
 └─ 建议执行时间: 随时可执行
-```
+
+```text
 
 **建议 #2: {{suggestion_2}}**
-```
+```text
+
 风险等级: Medium
 ├─ 是否需要重启: 是（需要重启生效）
 ├─ 是否影响业务连续性: 是（重启期间不可用）
@@ -593,7 +606,8 @@ main "$@"
 │   └─ 预估时间: 2-5分钟
 ├─ 建议执行时间: 业务低峰期（如凌晨）
 └─ 客户通知建议: 建议提前通知业务方
-```
+
+```markdown
 
 ### 已执行操作
 - [PASS] {{executed_action_1}} - {{result_1}}
@@ -607,7 +621,7 @@ main "$@"
 ### 下一步建议
 - {{next_step_1}}
 - {{next_step_2}}
-```
+```markdown
 
 ---
 
@@ -648,7 +662,7 @@ main "$@"
     - 建议配合应用层重试机制使用
   - 回滚方式: 立即修改回原值
   - 安全建议: 在高并发场景下，从50s逐步调整至30s，观察业务影响
-```
+```text
 
 ```yaml
 参数: innodb_buffer_pool_size
@@ -668,7 +682,7 @@ main "$@"
     - 确保预热脚本准备就绪
     - 建议先在只读节点测试
   - 执行窗口: 凌晨00:00-06:00 或维护窗口
-```
+```markdown
 
 #### 架构优化风险矩阵
 
@@ -700,7 +714,7 @@ main "$@"
     - 添加后观察 ReplicationLag 指标，待稳定后再接入流量
     - 若使用读写分离，建议先调整权重逐步引入流量
   - 回滚方式: RemoveDBNodes（High风险，需谨慎）
-```
+```text
 
 ```yaml
 操作: RemoveDBNodes (移除只读节点)
@@ -721,7 +735,7 @@ main "$@"
     - 确保剩余节点连接池充足
   - 执行窗口: 业务低峰期，且需业务方配合观察
   - 回滚方式: AddDBNodes（Medium风险）
-```
+```markdown
 
 #### 存储优化风险矩阵
 
@@ -752,7 +766,7 @@ main "$@"
     - 降级操作需要额外的业务影响评估审批
   - 执行窗口: 严格维护窗口（如周末凌晨）
   - 回滚方式: 再次变更存储层级（High风险，需再次维护窗口）
-```
+```markdown
 
 ### 10.3 安全执行检查清单 (Pre-execution Checklist)
 
@@ -789,13 +803,13 @@ main "$@"
   - 24小时内无备份
   - High风险操作未在维护窗口
   - API限流导致无法执行回滚
-```
+```markdown
 
 ### 10.4 客户通知模板
 
 #### Medium 风险操作通知
 
-```
+```markdown
 【PolarDB MySQL 维护通知】
 维护时间: {{maintenance_window}}
 影响范围: {{cluster_id}} ({{cluster_name}})
@@ -813,11 +827,11 @@ main "$@"
 
 回滚方案: {{rollback_plan}}
 联系人: {{contact_info}}
-```
+```text
 
 #### High 风险操作通知
 
-```
+```markdown
 【PolarDB MySQL 重要维护通知 - 需确认】
 维护时间: {{maintenance_window}} (维护窗口)
 影响范围: {{cluster_id}} ({{cluster_name}})
@@ -841,7 +855,7 @@ main "$@"
 - [ ] 运维负责人确认
 
 紧急回滚: {{emergency_rollback_contact}}
-```
+```markdown
 
 ---
 

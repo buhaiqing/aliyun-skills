@@ -6,7 +6,7 @@
 
 ## 一、异常检测体系架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │               CLI 安装异常检测引擎                          │
 ├───────────────┬───────────────┬───────────────┬──────────┤
@@ -738,7 +738,7 @@ heal_all() {
 
 ### 7.3 降级执行流程
 
-```
+```text
 执行操作前检测
     │
     ├── CLI 可用？──→ 使用 CLI 执行（Primary Path）
@@ -819,7 +819,7 @@ bash cms-full-diagnosis.sh > /tmp/cms-diagnosis.json
 
 在 SKILL.md 的 **Pre-flight Checks** 阶段，Agent 应当：
 
-```
+```markdown
 如果 CLI 命令失败 → 执行 CLI 安装诊断：
   1. 运行 cms-env-diagnosis.sh 检查环境
   2. 运行 cms-network-diagnosis.sh 检查网络
@@ -834,7 +834,7 @@ bash cms-full-diagnosis.sh > /tmp/cms-diagnosis.json
 
 ## 九、异常处理决策树
 
-```
+```text
 安装/调用失败
     │
     ├── 检查 CLI 是否存在

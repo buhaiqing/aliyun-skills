@@ -148,6 +148,7 @@
 | T3 | +5 min | 用户感知服务不可用 | `alicloud-ecs-ops` + `alicloud-slb-ops` |
 
 **诊断顺序：**
+
 1. 先查 SLB 后端健康状态 → 确认 ECS 异常
 2. 再查 ECS CPU/Memory → 定位根因
 3. 修复 ECS 后，SLB 自动恢复
@@ -163,6 +164,7 @@
 | T2 | +1 min | SNAT 流量突降，SLB 后端不可达 | `alicloud-slb-ops` |
 
 **诊断顺序：**
+
 1. 先查 VPC 路由表 → 确认路由变更
 2. 检查 ECS 实例网络 → 确认非 ECS 自身问题
 3. 恢复路由配置

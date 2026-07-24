@@ -11,9 +11,10 @@
 ### Connection Refused
 
 **症状：**
-```
+
+```text
 psql: could not connect to server: Connection refused
-```
+```text
 
 **诊断步骤：**
 
@@ -34,32 +35,35 @@ aliyun polardb DescribeDBClusterAccessWhitelist \
 aliyun ecs DescribeSecurityGroupAttribute \
   --SecurityGroupId "{{user.security_group_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 **解决方案：**
 
 1. 集群未运行：启动集群
+
 ```bash
 aliyun polardb StartDBCluster \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 2. 白名单限制：添加客户端 IP
+
 ```bash
 aliyun polardb ModifyDBClusterAccessWhitelist \
   --DBClusterId "{{user.db_cluster_id}}" \
   --DBClusterIPArrayName "default" \
   --SecurityIps "{{user.client_ip}}/32" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### Connection Timeout
 
 **症状：**
-```
+
+```text
 psql: connection to server at "..." timed out
-```
+```text
 
 **诊断步骤：**
 
@@ -73,7 +77,7 @@ aliyun cms DescribeMetricList \
   --MetricName "ConnectionUsage" \
   --Dimensions "[{\"instanceId\":\"{{user.db_cluster_id}}\"}]" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 **解决方案：**
 
@@ -83,35 +87,39 @@ aliyun cms DescribeMetricList \
 ### Too Many Connections
 
 **症状：**
-```
+
+```text
 FATAL: sorry, too many clients already
-```
+```text
 
 **诊断：**
+
 ```bash
 # 查看当前连接数
 # 需要通过 SQL 执行：
 SELECT count(*) FROM pg_stat_activity;
 SELECT state, count(*) FROM pg_stat_activity GROUP BY state;
-```
+```text
 
 **解决方案：**
 
 1. 增加 max_connections
+
 ```bash
 aliyun polardb ModifyDBClusterParameters \
   --DBClusterId "{{user.db_cluster_id}}" \
   --Parameters "[{\"ParameterName\":\"max_connections\",\"ParameterValue\":\"2000\"}]" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 2. 关闭空闲连接 (SQL)
+
 ```sql
 SELECT pg_terminate_backend(pid) 
 FROM pg_stat_activity 
 WHERE state = 'idle' 
   AND state_change < NOW() - INTERVAL '1 hour';
-```
+```markdown
 
 ## Performance Issues
 
@@ -129,26 +137,28 @@ aliyun cms DescribeMetricList \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --Period 60 \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 **解决方案：**
 
 1. 查看慢查询 (SQL)
+
 ```sql
 SELECT pid, usename, application_name, client_addr, 
        query_start, state, query
 FROM pg_stat_activity
 WHERE state = 'active'
   AND query_start < NOW() - INTERVAL '1 minute';
-```
+```text
 
 2. 升级节点规格
+
 ```bash
 aliyun polardb ModifyDBCluster \
   --DBClusterId "{{user.db_cluster_id}}" \
   --DBNodeClass "{{user.larger_node_class}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### Slow Queries
 
@@ -161,7 +171,7 @@ aliyun polardb DescribeSlowLogs \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 **解决方案：**
 
@@ -184,7 +194,7 @@ aliyun cms DescribeMetricList \
 
 # SQL 查看复制状态
 SELECT * FROM pg_stat_replication;
-```
+```text
 
 **解决方案：**
 
@@ -196,16 +206,17 @@ SELECT * FROM pg_stat_replication;
 aliyun polardb RestartDBNode \
   --DBNodeId "{{user.db_node_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ## Storage Issues
 
 ### Disk Full
 
 **症状：**
-```
+
+```text
 ERROR: could not extend file: No space left on device
-```
+```text
 
 **诊断：**
 
@@ -216,25 +227,28 @@ aliyun cms DescribeMetricList \
   --MetricName "DiskUsage" \
   --Dimensions "[{\"instanceId\":\"{{user.db_cluster_id}}\"}]" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 **解决方案：**
 
 1. 扩展存储空间
+
 ```bash
 aliyun polardb ModifyDBCluster \
   --DBClusterId "{{user.db_cluster_id}}" \
   --StorageSpace "{{user.new_storage_gb}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 2. 清理 WAL 文件
+
 ```sql
 -- 检查 WAL 保留策略
 SHOW wal_keep_size;
-```
+```text
 
 3. 删除不必要的备份
+
 ```bash
 aliyun polardb DescribeBackups \
   --DBClusterId "{{user.db_cluster_id}}" \
@@ -244,7 +258,7 @@ aliyun polardb DeleteBackup \
   --DBClusterId "{{user.db_cluster_id}}" \
   --BackupId "{{user.old_backup_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ## Cluster State Issues
 
@@ -264,7 +278,7 @@ aliyun polardb DescribeErrorLogs \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 **解决方案：**
 
@@ -286,17 +300,18 @@ aliyun polardb DescribeDBNodes \
 aliyun polardb DescribeErrorLogs \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 **解决方案：**
 
 1. 检查节点资源是否超限
 2. 重启节点
+
 ```bash
 aliyun polardb RestartDBNode \
   --DBNodeId "{{user.db_node_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ## Error Codes Reference
 
@@ -390,4 +405,4 @@ aliyun polardb DescribeSlowLogs \
 echo ""
 
 echo "=== Diagnostic Report Complete ==="
-```
+```text

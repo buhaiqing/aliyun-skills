@@ -6,7 +6,7 @@
 
 ## 1. 集成架构
 
-```
+```text
 alicloud-auto-scaling-orch (编排层)
          │
          │  委托调用 (通过 Agent 路由)
@@ -105,7 +105,7 @@ alicloud-auto-scaling-orch (编排层)
     ]
   }
 }
-```
+```markdown
 
 ### 3.2 执行摘要 (execution_summary.json)
 
@@ -135,7 +135,7 @@ alicloud-auto-scaling-orch (编排层)
     "hourly_rate_after": "¥2.20"
   }
 }
-```
+```markdown
 
 ---
 
@@ -145,14 +145,14 @@ alicloud-auto-scaling-orch (编排层)
 
 每次委托调用必须记录：
 
-```
+```json
 [auto-scaling-orch] → [ess-ops] CreateScalingRule
   TraceID: trace-20260607-001
   Request: {ScalingGroupId: "asg-xxx", ScalingRuleType: "TargetTrackingScalingRule", ...}
   Response: {ScalingRuleId: "sr-yyy"}
   Duration: 1.2s
   Status: success
-```
+```markdown
 
 ### 4.2 常见委托失败原因
 

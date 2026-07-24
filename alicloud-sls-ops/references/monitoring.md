@@ -154,21 +154,25 @@ observability best practices.
 ### Query Patterns
 
 **Error Analysis:**
+
 ```sql
 level:ERROR | select __time__, source, message order by __time__ desc limit 100
 ```
 
 **Performance Analysis:**
+
 ```sql
 query_time > 1000 | select avg(query_time) as avg_time, max(query_time) as max_time, count(*) as cnt
 ```
 
 **Traffic Analysis:**
+
 ```sql
 from * | select date_trunc('hour', __time__) as hour, count(*) as cnt group by hour order by hour
 ```
 
 **User Activity:**
+
 ```sql
 user_name:* | select user_name, count(*) as cnt group by user_name order by cnt desc limit 10
 ```
@@ -176,6 +180,7 @@ user_name:* | select user_name, count(*) as cnt group by user_name order by cnt 
 ### Dashboard Widgets
 
 **Line Chart (Time Series):**
+
 ```json
 {
   "title": "Log Volume",
@@ -192,6 +197,7 @@ user_name:* | select user_name, count(*) as cnt group by user_name order by cnt 
 ```
 
 **Bar Chart (Categorical):**
+
 ```json
 {
   "title": "Error by Source",
@@ -208,6 +214,7 @@ user_name:* | select user_name, count(*) as cnt group by user_name order by cnt 
 ```
 
 **Number (Single Value):**
+
 ```json
 {
   "title": "Total Errors",
@@ -218,6 +225,7 @@ user_name:* | select user_name, count(*) as cnt group by user_name order by cnt 
 ```
 
 **Table (Detailed Data):**
+
 ```json
 {
   "title": "Recent Errors",

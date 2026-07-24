@@ -1,6 +1,7 @@
 # Post-Update Self-Review Checklist for alicloud-sas-ops
 
 ## Task Completion
+
 - [✅] 1. Delete duplicate skillopt-lib.sh from references/ directory
 - [✅] 2. Fix wrapper script to source scripts/skillopt-lib.sh correctly
 - [✅] 3. Create TODO.md with post-update self-review checklist
@@ -10,6 +11,7 @@
 ## Standard Post-Update Checks
 
 ### Round 1: Structural
+
 - [ ] C1: Clear Boundaries: SHOULD/SHOULD NOT triggers with delegation rules; trigger description optimized per agentskills.io guidelines (< 1024 chars)
 - [ ] C2: Structured I/O: `{{env.*}}` (never ask user), `{{user.*}}` (ask once reuse), `{{output.*}}` (parse from API responses)
 - [ ] C3: Explicit Steps: Pre-flight → Execute → Validate → Recover for **each** critical operation
@@ -18,6 +20,7 @@
 - [ ] C6: CLI Format Verification: All `aliyun` CLI commands MUST use verified parameter formats; RepeatList params require `.N` suffix, JSON arrays require `'["value1","value2"]'` format
 
 ### Round 2: Content
+
 - [ ] F1: CLI validation: All commands tested with `aliyun help`
 - [ ] F2: Error codes: ≥15 product-specific codes in Failure Recovery
 - [ ] F3: Safety gates: Destructive operations require explicit confirmation

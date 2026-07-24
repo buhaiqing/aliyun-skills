@@ -20,6 +20,7 @@ status: mandatory
 > 白名单的本质：**预先把"哪些操作可以无副作用执行"达成共识**，让运行时不用再问。
 
 **核心约束**：
+
 - 白名单不是"放开手脚"，而是"提前谈好边界"
 - 每个白名单项必须有：可观测、可回滚、季度复审
 - 任何"对账"操作（涉及钱/安全）永远不进白名单
@@ -85,7 +86,7 @@ ufw status | firewall-cmd --list-all | getenforce
 
 # 资源限制
 ulimit -a
-```
+```markdown
 
 ### 4.2 禁止的命令（绝对黑名单）
 
@@ -102,11 +103,11 @@ bash -c | sh -c | eval | exec | source | . /
 
 # 任何重定向
 > file | >> file | < file | tee file
-```
+```markdown
 
 ### 4.3 校验逻辑
 
-```
+```text
 校验流程（每次 CloudAssistant 调用前）:
   1. 提取命令的 "binary name"（第一个 token，去掉 sudo/path）
   2. 检查是否在 §4.1 允许清单
@@ -114,7 +115,7 @@ bash -c | sh -c | eval | exec | source | . /
   4. 检查是否含 `> >> < | tee` 重定向符
   5. 全部通过 -> 标记 [AUTO-QUIET]
      任一失败 -> 降级 [SUGGESTED]，等用户确认
-```
+```markdown
 
 ---
 
@@ -172,7 +173,7 @@ bash -c | sh -c | eval | exec | source | . /
 ### 审批
 - 安全团队: _____________  日期: ___
 - 运维负责人: _____________  日期: ___
-```
+```markdown
 
 ---
 
@@ -207,7 +208,7 @@ bash -c | sh -c | eval | exec | source | . /
   "rollback_command": null,
   "notified": ["dingtalk:oncall-group"]
 }
-```
+```markdown
 
 ### 6.2 字段说明
 
@@ -296,7 +297,7 @@ bash -c | sh -c | eval | exec | source | . /
 - [ ] 安全团队负责人签字: ____ 日期: ____
 - [ ] 运维负责人签字: ____ 日期: ____
 - [ ] 业务方确认（如果是涉及业务的操作）: ____ 日期: ____
-```
+```markdown
 
 ---
 

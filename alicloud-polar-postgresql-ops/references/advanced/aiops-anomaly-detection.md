@@ -33,7 +33,7 @@ AIOps 异常检测能力，用于自动识别 PolarDB PostgreSQL 集群的性能
 
 ### Root Cause Chain Model
 
-```
+```text
 异常传播链路:
 ┌─────────────────────────────────────────────────────────────┐
 │ CPU Spike (突增)                                             │
@@ -44,7 +44,7 @@ AIOps 异常检测能力，用于自动识别 PolarDB PostgreSQL 集群的性能
 │     ↓                                                        │
 │ [最终定位] → Connection Bottleneck (连接瓶颈)                │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ## Key Metrics for Anomaly Detection
 
@@ -135,7 +135,7 @@ aliyun cms GetMetricStatisticsData \
   --Statistics Average,Maximum \
   --Period 300 \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```text
 
 #### Step 2: Fetch Slow Query Details for Correlation
 
@@ -147,7 +147,7 @@ aliyun polardb DescribeSlowLogRecords \
   --EndTime "{{user.end_time}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --output cols=SQLText,QueryTime,LockTime,RowsExamined,DBName rows=Items.SlowLogRecord[]
-```
+```text
 
 #### Step 3: Get Cluster Performance Overview
 
@@ -174,7 +174,7 @@ aliyun polardb DescribeGlobalDatabaseNetwork \
 aliyun polardb DescribeDBClusterServerlessConf \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### JIT Go SDK (Detection Engine)
 
@@ -931,7 +931,7 @@ func extractTopSlowSQLs(records []map[string]interface{}) []map[string]interface
     }
     return result
 }
-```
+```markdown
 
 ## Output Format
 
@@ -965,22 +965,26 @@ graph TD
     style A fill:#ff6b6b,stroke:#c92a2a
     style C fill:#ffa94d,stroke:#e67700
     style F fill:#51cf66,stroke:#2f9e44
-```
+```markdown
 
 ## 诊断证据
 
 ### Layer 1: 阈值检测
+
 - ✅ CPU利用率超过临界阈值 95% (当前 85.2%)
 - ✅ 慢查询数量超过警告阈值 50/h (当前 120/h)
 
 ### Layer 2: 趋势分析
+
 - ⚠️ CPU连续3个5分钟周期上升 15%+
 - ⚠️ 慢查询趋势: 基线 20/h → 当前 120/h (上升 500%)
 
 ### Layer 3: 突增检测
+
 - 🚨 CPU在1分钟内突增 52% (基线 33% → 当前 85.2%)
 
 ### 关联分析
+
 - 🔗 CPU异常时间点: 15:28:30
 - 🔗 慢查询开始时间: 15:27:45 (提前45秒)
 - 🔗 连接利用率峰值: 15:29:00 (滞后30秒)
@@ -990,6 +994,7 @@ graph TD
 **根本原因**: 复杂查询导致锁竞争，引发连接瓶颈
 
 **证据链路**:
+
 1. 慢查询 `SELECT * FROM orders WHERE create_time > '2026-01-01'` 
    - 执行时间: 12.5秒
    - 扫描行数: 850万行
@@ -1010,20 +1015,24 @@ graph TD
 ## 优化建议
 
 ### 立即执行 (P0)
+
 1. **SQL限流**: 对 `SELECT * FROM orders` 启用SQL限流
 2. **索引优化**: 为 `orders.create_time` 添加索引
 3. **连接释放**: 检查应用连接池配置，优化连接释放逻辑
 
 ### 短期优化 (P1)
+
 1. **增加只读节点**: 分流读请求至只读节点
 2. **调整max_connections**: 根据业务峰值调整连接上限
 3. **启用并行查询**: 对大表查询启用并行执行
 
 ### 长期规划 (P2)
+
 1. **数据归档**: 冷数据迁移降低表扫描开销
 2. **读写分离**: 优化应用层读写分离策略
 3. **DAS深度诊断**: 委托DAS进行自动化SQL优化建议
-```
+
+```markdown
 
 ## Pattern Detection Checklist
 

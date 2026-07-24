@@ -142,7 +142,7 @@ Resource Manager (资源管理) provides enterprise-grade multi-account manageme
 
 ### Centralized JSON Paths
 
-```
+```markdown
 # Common JSON Paths:
 # ResourceDirectory: $.ResourceDirectory.{MasterAccountId,MasterAccountName,RootFolderId,Status}
 # Account list: $.Accounts.Account[].{AccountId,AccountName,DisplayName,Status,Type,JoinMethod}
@@ -154,37 +154,42 @@ Resource Manager (资源管理) provides enterprise-grade multi-account manageme
 # TagKeys list: $.Keys.Key[].{Key,Category}
 # TagValues list: $.Values[]
 # TagResources response: $.FailedResources[].{ResourceARN,Code,Message}
-```
+```markdown
 
 ## Quick Start
 
 ### What This Skill Does
+
 Manages Alibaba Cloud Resource Manager (resource directory, accounts, folders, resource groups, control policies) and Tag (tag keys/values, resource tagging, tag policies, cost allocation governance).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Enterprise management account with Resource Directory enabled
 
 ### Verify Setup
+
 ```bash
 # Check Resource Manager access
 aliyun resourcemanager GetResourceDirectory
 
 # Check Tag access
 aliyun tag ListTagKeys
-```
+```markdown
 
 ### Your First Command
+
 ```bash
 # List accounts in your resource directory
 aliyun resourcemanager ListAccounts
 
 # List resource groups
 aliyun resourcemanager ListResourceGroups
-```
+```markdown
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand Resource Directory hierarchy and tag architecture
 - [Common Operations](#execution-flows-agent-readable) — Account, folder, resource group, tag management
 - [Troubleshooting](references/core-concepts.md) — Fix common issues
@@ -246,11 +251,13 @@ Every operation: **Pre-flight → Execute (CLI primary + Go SDK fallback) → Va
 | CLI | `aliyun version` | Exit code 0 | Install aliyun CLI |
 
 **Execution — CLI:**
+
 ```bash
 aliyun resourcemanager GetResourceDirectory
-```
+```text
 
 **Execution — Go SDK:**
+
 ```go
 client, _ := resourcemanager.NewClient(&openapi.Config{
     AccessKeyId:     tea.String(os.Getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")),
@@ -258,7 +265,7 @@ client, _ := resourcemanager.NewClient(&openapi.Config{
     Endpoint:        tea.String("resourcemanager.aliyuncs.com"),
 })
 resp, _ := client.GetResourceDirectory(&resourcemanager.GetResourceDirectoryRequest{})
-```
+```markdown
 
 **Validate:** Check `$.ResourceDirectory.Status` = `Enabled`; extract `MasterAccountId`, `RootFolderId`.
 
@@ -267,15 +274,17 @@ resp, _ := client.GetResourceDirectory(&resourcemanager.GetResourceDirectoryRequ
 ### Operation 2: List / Get Accounts
 
 **CLI:**
+
 ```bash
 # List all accounts (JSON output by default)
 aliyun resourcemanager ListAccounts
 
 # Get specific account
 aliyun resourcemanager GetAccount --AccountId "{{user.account_id}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 // ListAccounts with pagination
 req := &resourcemanager.ListAccountsRequest{MaxResults: tea.Int32(100)}
@@ -284,7 +293,7 @@ resp, _ := client.ListAccounts(req)
 // GetAccount
 req2 := &resourcemanager.GetAccountRequest{AccountId: tea.String(accountId)}
 resp2, _ := client.GetAccount(req2)
-```
+```markdown
 
 **Validate:** For ListAccounts, parse `$.Accounts.Account[]`; for GetAccount, verify `$.Account.Status`.
 
@@ -303,13 +312,15 @@ resp2, _ := client.GetAccount(req2)
 | Parent folder exists | GetFolder with `{{user.parent_folder_id}}` | Valid folder | HALT; create folder first |
 
 **Execution — CLI:**
+
 ```bash
 aliyun resourcemanager CreateResourceAccount \
   --DisplayName "{{user.account_name}}" \
   --ParentFolderId "{{user.parent_folder_id}}"
-```
+```text
 
 **Execution — Go SDK:**
+
 ```go
 req := &resourcemanager.CreateResourceAccountRequest{
     DisplayName: tea.String(accountName),
@@ -318,7 +329,7 @@ if parentFolderId != "" {
     req.ParentFolderId = tea.String(parentFolderId)
 }
 resp, _ := client.CreateResourceAccount(req)
-```
+```markdown
 
 **Validate:** Parse `$.Account.AccountId`, poll until `Status` = `CreateSuccess`.
 
@@ -327,20 +338,22 @@ resp, _ := client.CreateResourceAccount(req)
 ### Operation 4: Create Cloud Account
 
 **CLI:**
+
 ```bash
 aliyun resourcemanager CreateCloudAccount \
   --DisplayName "{{user.account_name}}" \
   --Email "{{user.email}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &resourcemanager.CreateCloudAccountRequest{
     DisplayName: tea.String(accountName),
     Email:       tea.String(email),
 })
 resp, _ := client.CreateCloudAccount(req)
-```
+```markdown
 
 ---
 
@@ -351,15 +364,17 @@ resp, _ := client.CreateCloudAccount(req)
 **Pre-flight:** Confirm with user: `Remove cloud account {{user.account_id}} ({{user.account_name}})? This CANNOT be undone.`
 
 **CLI:**
+
 ```bash
 aliyun resourcemanager RemoveCloudAccount --AccountId "{{user.account_id}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &resourcemanager.RemoveCloudAccountRequest{AccountId: tea.String(accountId)}
 resp, _ := client.RemoveCloudAccount(req)
-```
+```markdown
 
 **Validate:** ListAccounts to confirm account no longer appears.
 
@@ -368,20 +383,22 @@ resp, _ := client.RemoveCloudAccount(req)
 ### Operation 6: Move Account Between Folders
 
 **CLI:**
+
 ```bash
 aliyun resourcemanager MoveAccount \
   --AccountId "{{user.account_id}}" \
   --DestinationFolderId "{{user.parent_folder_id}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &resourcemanager.MoveAccountRequest{
     AccountId:          tea.String(accountId),
     DestinationFolderId: tea.String(destFolderId),
 }
 resp, _ := client.MoveAccount(req)
-```
+```markdown
 
 ---
 
@@ -390,29 +407,32 @@ resp, _ := client.MoveAccount(req)
 **When to use:** Manage the organizational folder hierarchy.
 
 **List Folders — CLI:**
+
 ```bash
 # List root folders
 aliyun resourcemanager ListFoldersForParent --ParentFolderId "r-xxxx"
-```
+```text
 
 **Get Folder — CLI:**
+
 ```bash
 aliyun resourcemanager GetFolder --FolderId "{{user.folder_id}}"
-```
+```text
 
 **Create Folder — CLI:**
+
 ```bash
 aliyun resourcemanager CreateFolder \
   --FolderName "{{user.folder_name}}" \
   --ParentFolderId "{{user.parent_folder_id}}"
-```
+```markdown
 
 **Delete Folder — CLI:**
 > **SAFETY GATE:** Confirm folder is empty (no sub-folders, no accounts). Must obtain user confirmation.
 
 ```bash
 aliyun resourcemanager DeleteFolder --FolderId "{{user.folder_id}}"
-```
+```markdown
 
 ---
 
@@ -421,37 +441,41 @@ aliyun resourcemanager DeleteFolder --FolderId "{{user.folder_id}}"
 **When to use:** Logical grouping of cloud resources for management, billing, and access control.
 
 **List Resource Groups — CLI:**
+
 ```bash
 aliyun resourcemanager ListResourceGroups
-```
+```text
 
 **Get Resource Group — CLI:**
+
 ```bash
 aliyun resourcemanager GetResourceGroup --ResourceGroupId "{{user.resource_group_id}}"
-```
+```text
 
 **Create Resource Group — CLI:**
+
 ```bash
 aliyun resourcemanager CreateResourceGroup \
   --DisplayName "{{user.resource_group_name}}" \
   --Name "{{user.resource_group_name}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &resourcemanager.CreateResourceGroupRequest{
     DisplayName: tea.String(displayName),
     Name:        tea.String(name),
 }
 resp, _ := client.CreateResourceGroup(req)
-```
+```markdown
 
 **Delete Resource Group — CLI:**
 > **SAFETY GATE:** Confirm resource group is empty. Must obtain user confirmation.
 
 ```bash
 aliyun resourcemanager DeleteResourceGroup --ResourceGroupId "{{user.resource_group_id}}"
-```
+```markdown
 
 ---
 
@@ -462,14 +486,16 @@ aliyun resourcemanager DeleteResourceGroup --ResourceGroupId "{{user.resource_gr
 **Pre-flight:** ListResources to verify resource exists; validate target RG exists.
 
 **CLI:**
+
 ```bash
 aliyun resourcemanager MoveResources \
   --ResourceGroupId "{{user.target_resource_group_id}}" \
   --Resources.1.ResourceId "{{user.resource_id}}" \
   --Resources.1.ResourceType "{{user.resource_type}}"
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &resourcemanager.MoveResourcesRequest{
     ResourceGroupId: tea.String(targetRGId),
@@ -478,7 +504,7 @@ req := &resourcemanager.MoveResourcesRequest{
     },
 }
 resp, _ := client.MoveResources(req)
-```
+```markdown
 
 **Validate:** Check response for `$.Resources[].Status` = `OK`. Failed resources have per-resource error codes.
 
@@ -489,23 +515,26 @@ resp, _ := client.MoveResources(req)
 **When to use:** Enforce governance via Service Control Policies (SCP) on folders or accounts.
 
 **List Control Policies — CLI:**
+
 ```bash
 aliyun resourcemanager ListControlPolicies --PolicyType "System"
-```
+```text
 
 **Attach Control Policy — CLI:**
+
 ```bash
 aliyun resourcemanager AttachControlPolicy \
   --PolicyId "{{user.policy_id}}" \
   --TargetId "{{user.folder_id}}"
-```
+```text
 
 **Detach Control Policy — CLI:**
+
 ```bash
 aliyun resourcemanager DetachControlPolicy \
   --PolicyId "{{user.policy_id}}" \
   --TargetId "{{user.folder_id}}"
-```
+```markdown
 
 ---
 
@@ -514,22 +543,25 @@ aliyun resourcemanager DetachControlPolicy \
 **When to use:** Invite an external Alibaba Cloud account to join your resource directory.
 
 **Invite Account — CLI:**
+
 ```bash
 aliyun resourcemanager InviteAccountToResourceDirectory \
   --TargetEntity "{{user.target_account_id}}" \
   --TargetType "Account" \
   --Note "Invitation from {{output.master_account_name}}"
-```
+```text
 
 **Get Handshake — CLI:**
+
 ```bash
 aliyun resourcemanager GetHandshake --HandshakeId "{{output.handshake_id}}"
-```
+```text
 
 **Accept Handshake — CLI:**
+
 ```bash
 aliyun resourcemanager AcceptHandshake --HandshakeId "{{output.handshake_id}}"
-```
+```markdown
 
 **Validate:** Handshake expires in 7 days. Check `$.Handshake.Status` = `Accepted`.
 
@@ -540,9 +572,10 @@ aliyun resourcemanager AcceptHandshake --HandshakeId "{{output.handshake_id}}"
 **When to use:** Traverse the folder path for a resource or account.
 
 **CLI:**
+
 ```bash
 aliyun resourcemanager ListAncestors --ChildId "{{user.account_id}}"
-```
+```markdown
 
 ---
 
@@ -551,26 +584,30 @@ aliyun resourcemanager ListAncestors --ChildId "{{user.account_id}}"
 **When to use:** Create predefined tag keys and values for governance and cost allocation.
 
 **List Tag Keys — CLI:**
+
 ```bash
 aliyun tag ListTagKeys
-```
+```text
 
 **List Tag Values — CLI:**
+
 ```bash
 aliyun tag ListTagValues --Key "{{user.tag_key}}"
-```
+```text
 
 **Create Tags — CLI:**
+
 ```bash
 aliyun tag CreateTags --TagKeyValueParamList='[
   {"Key":"{{user.tag_key}}","Value":"{{user.tag_value}}"}
 ]'
-```
+```text
 
 **Delete Tag — CLI:**
+
 ```bash
 aliyun tag DeleteTag --Key "{{user.tag_key}}" --Value "{{user.tag_value}}"
-```
+```markdown
 
 ---
 
@@ -579,22 +616,25 @@ aliyun tag DeleteTag --Key "{{user.tag_key}}" --Value "{{user.tag_value}}"
 **When to use:** Add, remove, or query tags on cloud resources.
 
 **Tag Resources — CLI:**
+
 ```bash
 aliyun tag TagResources \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --ResourceARN '["acs:ecs:cn-hangzhou:{{output.account_id}}:instance/i-xxxx"]' \
   --Tags '{"env":"production","project":"app1"}'
-```
+```text
 
 **Untag Resources — CLI:**
+
 ```bash
 aliyun tag UntagResources \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --ResourceARN '["acs:ecs:cn-hangzhou:{{output.account_id}}:instance/i-xxxx"]' \
   --TagKey '["env"]'
-```
+```text
 
 **Go SDK:**
+
 ```go
 req := &tag.TagResourcesRequest{
     RegionId:    tea.String(region),
@@ -603,7 +643,7 @@ req := &tag.TagResourcesRequest{
 }
 resp, _ := client.TagResources(req)
 // Check FailedResources for partial failures
-```
+```markdown
 
 **Validate:** For TagResources, check `$.FailedResources` array — if non-empty, each entry has `ResourceARN`, `Code`, `Message`.
 
@@ -614,12 +654,13 @@ resp, _ := client.TagResources(req)
 **When to use:** Query resources by tag filters — key for cost allocation auditing.
 
 **CLI:**
+
 ```bash
 aliyun tag ListTagResources \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --TagFilter.Key "env" \
   --TagFilter.Value "production"
-```
+```markdown
 
 ---
 
@@ -628,25 +669,28 @@ aliyun tag ListTagResources \
 **When to use:** Define and enforce tag compliance rules across accounts.
 
 **List Tag Policies — CLI:**
+
 ```bash
 aliyun tag ListTagPolicies
-```
+```text
 
 **Create Tag Policy — CLI:**
+
 ```bash
 aliyun tag CreatePolicy \
   --PolicyName "require-env-tag" \
   --PolicyDesc "Require env tag on all resources" \
   --PolicyContent '{"tags":{"env":{"tag_key":"@string","tag_value":["production","staging","development"]}}}'
-```
+```text
 
 **Attach Config Rule to Policy — CLI:**
+
 ```bash
 aliyun tag AttachConfigRuleToPolicy \
   --TargetId "{{user.account_id}}" \
   --TargetType "USER" \
   --PolicyId "{{user.policy_id}}"
-```
+```markdown
 
 ---
 
@@ -655,16 +699,18 @@ aliyun tag AttachConfigRuleToPolicy \
 **When to use:** Set up cost allocation tags for accurate billing split by business unit, project, or environment.
 
 **Flow:**
+
 1. **Enable cost allocation tags** — Use billing console or API to activate tag key for cost splitting.
 2. **Audit tag coverage** — Use `ListTagResources` to find untagged resources.
 3. **Remediate** — Apply missing tags via `TagResources`.
 
 **CLI — Find untagged resources across accounts:**
+
 ```bash
 # Per resource type, list resources and check tag presence
 # Use product-specific APIs (ECS DescribeInstances, RDS DescribeDBInstances, etc.)
 # then cross-reference with tag data from ListTagResources
-```
+```markdown
 
 See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete cost allocation workflow.
 
@@ -675,6 +721,7 @@ See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete 
 **When to use:** Use resource groups to attribute costs to business units without requiring tags.
 
 **Flow:**
+
 1. **Design resource group hierarchy** — Map to cost centers (e.g., `rg-bu-marketing`, `rg-bu-engineering`)
 2. **List resources by group** — `aliyun resourcemanager ListResources --ResourceGroupId "{{user.resource_group_id}}"`
 3. **Cross-reference with billing** — Use `alicloud-billing-ops` to query costs per resource group.
@@ -686,13 +733,14 @@ See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete 
 **When to use:** Periodically audit for unused or abandoned member accounts.
 
 **CLI:**
+
 ```bash
 # List all accounts and check Status field
 aliyun resourcemanager ListAccounts
 
 # Filter for accounts with no recent activity (manual review needed)
 # Status values: CreateSuccess, PromoteCheckFailed, etc.
-```
+```markdown
 
 See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete governance audit workflow.
 
@@ -703,6 +751,7 @@ See [references/api-sdk-usage.md](references/api-sdk-usage.md) for the complete 
 **When to use:** Check for resources violating tag policies or missing required tags.
 
 **CLI:**
+
 ```bash
 # List all tag policies
 aliyun tag ListTagPolicies
@@ -711,7 +760,7 @@ aliyun tag ListTagPolicies
 aliyun tag GetPolicyEnableStatus \
   --TargetType "USER" \
   --TargetId "{{user.account_id}}"
-```
+```markdown
 
 ---
 
@@ -804,6 +853,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Most-scrutinized | `RemoveCloudAccount` (account resources released; permanent), `DeleteFolder` (must be empty; cascading delete not supported) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for resourcemanager-ops.
 
 ---
@@ -811,16 +861,27 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 ## Token Efficiency Guidelines (P0 — 强制)
 
 ### TE-1: API Query > Static Tables
+
 Use API commands to discover current state rather than hardcoding limits.
+
 ### TE-2: No docstrings in code
+
 Inline comments only in Go SDK scripts.
+
 ### TE-3: Compact error tables
+
 One-line error entries with Agent Action column — see Failure Recovery section.
+
 ### TE-4: Centralized JSON paths
+
 File-top comment block; one per resource type — see API and Response Conventions section.
+
 ### TE-5: YAML anchors in example-config.yaml
+
 Use `&base` to eliminate repeated fields.
+
 ### TE-6: Eliminate cross-file duplicate flows
+
 SKILL.md has full flows; reference files provide supplementary detail only.
 
 

@@ -669,6 +669,7 @@ compatible_with: ["AIOps Platform", "Incident Management", "Audit Trail"]
 ## Alarm Storm Checklist Status
 
 ```
+
 Detection:
 ✅ Alarm count exceeds threshold (>30/5min)
 ✅ Storm pattern classified (APIRateLimitStorm)
@@ -683,7 +684,8 @@ Resolution:
 🔄 Remediation in progress
 ✅ Exponential backoff implemented
 ⏳ Batch concurrency reduction pending
-```
+
+```yaml
 
 ---
 

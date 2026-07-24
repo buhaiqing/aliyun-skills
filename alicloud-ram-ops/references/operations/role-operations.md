@@ -81,9 +81,11 @@ response, err := client.CreateRole(request)
 
 1. Read `{{output.role_arn}}` from `$.Role.Arn`.
 2. Call `GetRole` to confirm:
+
    ```bash
    aliyun ram GetRole --RoleName "{{user.role_name}}"
    ```
+
 3. Report `RoleName`, `RoleId`, `Arn`, and `MaxSessionDuration`.
 
 ---
@@ -279,6 +281,7 @@ aliyun sts GetCallerIdentity
 > **Usage for trust policies:** When creating a role trust policy that references
 > the current account, FIRST call `GetCallerIdentity` to obtain `AccountId`,
 > THEN substitute it into the trust policy JSON:
+>
 > ```json
 > {"Principal": {"RAM": ["acs:ram::{{output.account_id}}:root"]}}
 > ```

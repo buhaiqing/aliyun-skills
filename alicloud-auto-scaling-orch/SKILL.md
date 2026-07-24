@@ -152,7 +152,7 @@ metadata:
 
 每个场景遵循统一的 5 步编排流程：
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │  Step 1 — Perceive (感知)                                        │
 │  委托 cms-ops 采集当前/历史指标，或解析用户输入的定时/事件参数         │
@@ -199,7 +199,7 @@ metadata:
 
 **编排流**：
 
-```
+```markdown
 1. cms-ops 创建 CPU 告警 (CPU > 70%, 5min)
 2. ess-ops CreateScalingRule (TargetTracking, target=60%)
 3. ess-ops 关联告警到伸缩规则
@@ -225,7 +225,7 @@ metadata:
 
 **编排流**：
 
-```
+```markdown
 1. ess-ops CreateScheduledTask (扩容: 9:00 → 期望容量 N)
 2. ess-ops CreateScheduledTask (缩容: 18:00 → 期望容量 1)
 3. 验证: ess-ops DescribeScheduledTasks 确认创建成功
@@ -247,7 +247,7 @@ metadata:
 
 **编排流**：
 
-```
+```markdown
 1. cms-ops DescribeMetricList 获取 14 天 CPU 历史
 2. 决策引擎分析历史模式 (周期性/趋势性/随机性)
 3. ess-ops CreateScalingRule (PredictiveScalingRule, target=60%)
@@ -271,7 +271,7 @@ metadata:
 
 **决策矩阵**：
 
-```
+```text
             内存 < 80%    内存 80-90%    内存 > 90%
 CPU < 70%    [无操作]     [监控观察]     [❗危险→扩容]
 CPU 70-85%   [监控观察]   [✅确认→扩容]  [❗危险→扩容]
@@ -280,7 +280,7 @@ CPU > 85%    [❗危险→扩容] [❗危险→扩容]  [🚨紧急→扩容+通
 
 **编排流**：
 
-```
+```markdown
 1. cms-ops 创建复合告警 (CPU > 70% AND Mem > 80%)
 2. ess-ops CreateScalingRule (StepScalingRule)
    ├── 正常区: 扩容 1 台
@@ -306,7 +306,7 @@ CPU > 85%    [❗危险→扩容] [❗危险→扩容]  [🚨紧急→扩容+通
 
 **编排流**：
 
-```
+```markdown
 1. 决策引擎计算预扩容容量（基于历史峰值 × 安全系数 1.5）
 2. ess-ops ModifyScalingGroup (MaxSize 临时提升)
 3. ess-ops CreateScheduledTask (提前 2h 扩容至保底台数)
@@ -332,7 +332,7 @@ CPU > 85%    [❗危险→扩容] [❗危险→扩容]  [🚨紧急→扩容+通
 
 **编排流**：
 
-```
+```markdown
 1. cms-ops DescribeMetricList 查 7 天 CPU 历史
 2. 决策引擎判断是否为 "闲置" 模式
 3. 创建 cms-ops 告警 (24h 通知 → 准备缩容)
@@ -370,7 +370,7 @@ CPU > 85%    [❗危险→扩容] [❗危险→扩容]  [🚨紧急→扩容+通
 
 ## Pre-flight Interaction
 
-```
+```markdown
  弹性伸缩编排配置
 
 1. 选择场景:

@@ -5,8 +5,8 @@
 - **Service**: Dysmsapi
 - **API Version**: 2017-05-25
 - **Base Endpoint**: `dyvmsapi.aliyuncs.com` (regional endpoints also available)
-- **Official Docs**: https://www.alibabacloud.com/help/en/sms
-- **OpenAPI Explorer**: https://api.aliyun.com/
+- **Official Docs**: <https://www.alibabacloud.com/help/en/sms>
+- **OpenAPI Explorer**: <https://api.aliyun.com/>
 
 ## SDK Operations Map
 
@@ -36,65 +36,79 @@ go get github.com/alibabacloud-go/dyvmsapi-20170525/v3/client
 ## Request / Response Notes
 
 ### SingleCallByVoice
+
 - **Required**: `CalledNumber`, `VoiceCode`, `ShowNumber`
 - **Optional**: `CalledShowNumber`, `Volume`, `Speed`, `PlayTimes`
 - **Response**: `Code`, `Message`, `RequestId`, `CallId`
 - **Idempotency**: Client `OutId` prevents duplicate calls
 
 ### SingleCallByTts
+
 - **Required**: `CalledNumber`, `TtsCode`, `ShowNumber`
 - **Optional**: `TtsParam` (JSON string), `OutId` (tracking ID)
 - **Response**: `Code`, `Message`, `RequestId`, `CallId`
 
 ### BatchCallByVoice
+
 - **Required**: `CalledNumbers` (JSON array), `VoiceCode`, `VoiceSign`, `ShowNumber`
 - **All phone numbers must be in E.164 format**
 - **Response**: `Code`, `Message`, `RequestId`, `TaskId`
 
 ### QueryCallDetailByCallId
+
 - **Required**: `CallId`
 - **Response**: `CallDetails` array with call status, duration, etc.
 
 ### QueryCallTaskDetail
+
 - **Required**: `TaskId`
 - **Response**: `TaskDetail` with batch task status, success count, etc.
 
 ### QueryVoiceFileAuditInfo
+
 - **Required**: `FileName`
 - **Response**: `AuditStatus`, `FileName`, `CreateTime`
 
 ### AddVoiceSign
+
 - **Required**: `SignName`, `SignSource`
 - **Optional**: `FileList` (JSON array of file URLs)
 - **Response**: `Code`, `Message`, `RequestId`
 
 ### QueryVoiceSign
+
 - **Required**: `SignName`
 - **Response**: `SignName`, `SignStatus`, `AuditStatus`, `CreateDate`, `Reason`
 
 ### DeleteVoiceSign
+
 - **Required**: `SignName`
 - **Response**: `Code`, `Message`, `RequestId`
 
 ### ModifyVoiceSign
+
 - **Required**: `SignName`, `SignSource`
 - **Optional**: `FileList` (JSON array of file URLs)
 - **Response**: `Code`, `Message`, `RequestId`
 
 ### AddVoiceTemplate
+
 - **Required**: `TemplateName`, `TemplateType`, `TemplateContent`
 - **Optional**: `Remark`
 - **Response**: `Code`, `Message`, `RequestId`, `TemplateCode`
 
 ### QueryVoiceTemplate
+
 - **Required**: `TemplateCode`
 - **Response**: `TemplateCode`, `TemplateName`, `TemplateType`, `TemplateContent`, `TemplateStatus`, `AuditStatus`, `CreateDate`, `Reason`
 
 ### DeleteVoiceTemplate
+
 - **Required**: `TemplateCode`
 - **Response**: `Code`, `Message`, `RequestId`
 
 ### ModifyVoiceTemplate
+
 - **Required**: `TemplateCode`, `TemplateName`, `TemplateType`, `TemplateContent`
 - **Optional**: `Remark`
 - **Response**: `Code`, `Message`, `RequestId`

@@ -44,6 +44,7 @@ metadata:
 Alibaba Cloud **Key Management Service (KMS)** provides centralized management of cryptographic keys and secrets on Alibaba Cloud. This skill is an **operational runbook** for agents: explicit scope, credential rules, pre-flight checks, **dual-path execution** (official **SDK/API** and official **`aliyun` CLI**), response validation, and failure recovery. **Do not use the web console as the primary agent execution path.**
 
 KMS covers three primary resource domains:
+
 - **Keys (CMK)** — Customer Master Keys for encryption, decryption, signing, and verification
 - **Secrets** — Generic secret values with version management and automatic rotation
 - **KMS Instances** — Dedicated KMS instances for enhanced security and compliance
@@ -176,26 +177,31 @@ Structured placeholders reduce injection ambiguity and unsafe prompts:
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to deploy, configure, troubleshoot, and monitor KMS resources on Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed (or Go 1.24+ runtime for JIT fallback)
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 
 ### Verify Setup
+
 ```bash
 # Check CLI and KMS API connectivity
 aliyun kms DescribeRegions
 ```
 
 ### Your First Command
+
 ```bash
 # Example: List all KMS keys in current region
 aliyun kms ListKeys --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand KMS architecture, key lifecycle, and protection levels
 - [Common Operations](#execution) — Create, manage, and delete keys and secrets
 - [Troubleshooting](references/troubleshooting.md) — Fix common KMS issues
@@ -253,7 +259,7 @@ Every operation: **Pre-flight → Execute (CLI primary + JIT Go SDK fallback) �
 
 ### Operation: CreateKey
 
-#### Pre-flight Checks
+#### Pre-flight Checks (CreateKey)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -341,6 +347,7 @@ func main() {
 ```
 
 Execute:
+
 ```bash
 mkdir -p /tmp/aliyun-sdk-workspace && cd /tmp/aliyun-sdk-workspace
 go mod init kms-jit
@@ -355,9 +362,11 @@ go run ./main.go
 
 1. Capture `{{output.key_id}}` from response `$.KeyId`
 2. Verify key state:
+
    ```bash
    aliyun kms DescribeKey --KeyId "{{output.key_id}}"
    ```
+
 3. Confirm `KeyState` is `Enabled`. Report `{{output.key_id}}` and key spec to user.
 4. On failure, go to **Failure Recovery**.
 
@@ -456,6 +465,7 @@ aliyun kms DisableKey --KeyId "{{user.key_id}}" --RegionId "{{user.region}}"
 #### Post-execution Validation
 
 Poll `DescribeKey` until `KeyState` matches desired state (15s max):
+
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（15×1s → desired_state）
 ```
@@ -514,9 +524,11 @@ aliyun kms ScheduleKeyDeletion \
 #### Post-execution Validation
 
 1. Verify key state changed to `PendingDeletion`:
+
    ```bash
    aliyun kms DescribeKey --KeyId "{{user.key_id}}"
    ```
+
 2. Note the actual deletion date for user reference.
 
 #### Failure Recovery
@@ -539,13 +551,14 @@ aliyun kms CancelKeyDeletion \
 #### Post-execution Validation
 
 Verify key state returned to `Enabled`:
+
 ```bash
 aliyun kms DescribeKey --KeyId "{{user.key_id}}"
 ```
 
 ### Operation: CreateSecret
 
-#### Pre-flight Checks
+#### Pre-flight Checks (CreateSecret)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -579,6 +592,7 @@ aliyun kms CreateSecret \
 
 1. Capture `{{output.secret_name}}` from response `$.SecretName`
 2. Verify secret metadata:
+
    ```bash
    aliyun kms DescribeSecret --SecretName "{{output.secret_name}}"
    ```
@@ -647,9 +661,11 @@ aliyun kms PutSecretValue \
 #### Post-execution Validation
 
 1. Verify new version exists:
+
    ```bash
    aliyun kms ListSecretVersionIds --SecretName "{{user.secret_name}}"
    ```
+
 2. Validate secret data via `GetSecretValue`.
 
 ### Operation: DeleteSecret
@@ -673,6 +689,7 @@ aliyun kms DeleteSecret \
 #### Post-execution Validation
 
 Verify secret state is `ScheduledDeletion`:
+
 ```bash
 aliyun kms DescribeSecret --SecretName "{{user.secret_name}}"
 ```
@@ -815,6 +832,7 @@ aliyun kms AsymmetricVerify \
    ```
 
 4. **Verify Configuration**:
+
    ```bash
    aliyun kms DescribeRegions
    ```
@@ -909,6 +927,7 @@ be **in [7, 30]**. The Critic regex `pending_window_in_days["': =]+[1-6]\b`
 or `=0\b` will catch violations. Values outside this range → **Safety = 0**.
 
 Additionally, the user MUST be informed of:
+
 - The **deletion date** (computed from `PendingWindowInDays`)
 - `CancelKeyDeletion` as the **rescue op** within the window
 

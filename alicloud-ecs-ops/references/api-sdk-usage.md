@@ -5,8 +5,8 @@
 - **Service**: ECS
 - **API Version**: 2014-05-26
 - **Base Endpoint**: `ecs.aliyuncs.com` (regional endpoints also available)
-- **Official Docs**: https://www.alibabacloud.com/help/en/ecs
-- **OpenAPI Explorer**: https://api.aliyun.com/
+- **Official Docs**: <https://www.alibabacloud.com/help/en/ecs>
+- **OpenAPI Explorer**: <https://api.aliyun.com/>
 
 ## SDK Operations Map
 
@@ -46,35 +46,42 @@ go get github.com/alibabacloud-go/ecs-20140526/v4/client
 ## Request / Response Notes
 
 ### CreateInstance
+
 - **Required fields**: `RegionId`, `ImageId`, `InstanceType`, `SecurityGroupId`
 - **Optional but common**: `ZoneId`, `VSwitchId`, `InstanceName`, `Password`, `KeyPairName`
 - **Response**: `InstanceId`
 
 ### DescribeInstances
+
 - **Pagination**: `PageNumber`, `PageSize` (default 10, max 100)
 - **Filters**: `InstanceIds` (JSON array), `Status`, `InstanceName`
 - **Response**: `Instances.Instance[]` array
 
 ### StartInstance / StopInstance / RebootInstance
+
 - **Required**: `InstanceId`
 - **Stop options**: `ForceStop` (boolean), `StoppedMode` (`StopCharging` or `KeepCharging`)
 
 ### CreateDisk
+
 - **Required**: `RegionId`, `Size` (GB)
 - **Optional**: `ZoneId`, `DiskName`, `DiskCategory`, `Encrypted`
 - **Note**: If `InstanceId` is specified, disk is created and attached in one step
 - **Response**: `DiskId`
 
 ### AttachDisk
+
 - **Required**: `InstanceId`, `DiskId`
 - **Optional**: `Device` (e.g., `/dev/xvdb`)
 
 ### CreateSnapshot
+
 - **Required**: `DiskId`
 - **Optional**: `SnapshotName`, `Description`
 - **Response**: `SnapshotId`
 
 ### AuthorizeSecurityGroup
+
 - **Required**: `SecurityGroupId`, `RegionId`
 - **Rule params** (use `Permissions.N.*` array format; old flat params are deprecated):
   - `IpProtocol`: `tcp`, `udp`, `icmp`, `gre`, `all`
@@ -84,16 +91,19 @@ go get github.com/alibabacloud-go/ecs-20140526/v4/client
   - `Priority`: `1` to `100` (lower = higher priority)
 
 ### RunInstances (Batch Create)
+
 - **Required**: `RegionId`, `ImageId`, `InstanceType`, `SecurityGroupId`
 - **Optional**: `Amount` (1-100, default 1), `ZoneId`, `VSwitchId`, `InstanceName`
 - **Response**: `InstanceIdSets.InstanceIdSet[]`
 
 ### ModifyInstanceAttribute
+
 - **Required**: `InstanceId`
 - **Modifiable fields**: `InstanceName`, `Password`, `Description`, `UserData`
 - **Note**: `Password` change requires instance to be `Stopped`
 
 ### DescribeImages
+
 - **Required**: `RegionId`
 - **Filters**: `ImageOwnerAlias` (`system`, `self`, `others`, `marketplace`), `OSType` (`Linux`, `Windows`), `ImageName`
 - **Response**: `Images.Image[]`
@@ -122,6 +132,7 @@ req := &ecs.DescribeInstancesRequest{
 代码示例使用以下环境变量注入参数：`ALIBABA_CLOUD_REGION_ID`, `INSTANCE_ID`, `DISK_ID`, `IMAGE_ID`, `SECURITY_GROUP_ID`, `VSWITCH_ID`, `ZONE_ID`, `INSTANCE_TYPE`, `INSTANCE_NAME`, `KEY_PAIR_NAME`, `SNAPSHOT_ID`, `VPC_ID` 等。
 
 > 所有代码片段均假设已在文件顶部导入：
+>
 > ```go
 > import (
 >     "github.com/alibabacloud-go/tea/tea"
@@ -199,6 +210,7 @@ func main() {
 ```
 
 **UserData Note:** 传递初始化脚本时，添加 `UserData` 字段并 base64 编码：
+
 ```go
 import "encoding/base64"
 userData := base64.StdEncoding.EncodeToString([]byte("#!/bin/bash\necho 'hello' > /tmp/setup.log"))
@@ -309,6 +321,7 @@ resp, err := c.CreateDisk(req)
 ```
 
 **Disk Encryption:** 启用加密：
+
 ```go
 req.Encrypted = tea.Bool(true)
 req.KMSKeyId = tea.String("alias/acs/ecs")

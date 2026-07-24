@@ -1,7 +1,7 @@
 # Well-Architected Assessment — BSSOpenApi (Billing)
 
 > Aligned with Alibaba Cloud Well-Architected Framework (卓越架构) five pillars.
-> Reference: https://help.aliyun.com/zh/product/2362200.html
+> Reference: <https://help.aliyun.com/zh/product/2362200.html>
 
 ## 1. Security Pillar (安全)
 
@@ -28,6 +28,7 @@ Billing APIs expose highly sensitive financial data. Follow the principle of lea
 | QueryCashCoupons | `bssapi:QueryCashCoupons` | `*` |
 
 **Best Practices:**
+
 - DO NOT use `AdministratorAccess` for billing queries
 - Create dedicated RAM role for billing read operations
 - Use STS temporary credentials for cross-account billing access
@@ -86,16 +87,19 @@ BSSOpenApi is read-heavy with no destructive operations. Stability risks:
 BSSOpenApi has no resource CRUD — recovery focus is on:
 
 **Phase 1: Diagnose**
+
 1. Verify credentials via `QueryAccountBalance` (simplest API)
-2. Check network: `curl -I https://business.aliyuncs.com`
+2. Check network: `curl -I <https://business.aliyuncs.com`>
 3. Confirm RAM policy includes `bssapi:Query*`
 
 **Phase 2: Mitigate**
+
 1. Retry with backoff for InternalError / Throttling
 2. Reduce PageSize for pagination errors
 3. Narrow time ranges for date range errors
 
 **Phase 3: Escalate**
+
 1. Capture RequestId from error response
 2. Document: timestamp, operation, error code, full response
 3. Escalate via Alibaba Cloud Support with RequestId

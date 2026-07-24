@@ -214,6 +214,7 @@ func safeRestart(client *elasticsearch.Client, instanceId string) error {
 #### Recovery Runbook
 
 **Phase 1: Backup Verification**
+
 ```go
 // Verify backup exists
 response, err := client.DescribeSnapshot(&elasticsearch.DescribeSnapshotRequest{
@@ -224,6 +225,7 @@ response, err := client.DescribeSnapshot(&elasticsearch.DescribeSnapshotRequest{
 ```
 
 **Phase 2: Recovery Execution**
+
 ```go
 // Restore from snapshot (if instance available)
 // Note: Elasticsearch restore is typically done via ES API, not OpenAPI
@@ -231,6 +233,7 @@ response, err := client.DescribeSnapshot(&elasticsearch.DescribeSnapshotRequest{
 ```
 
 **Phase 3: Post-Recovery Validation**
+
 1. Verify instance status = `Normal`
 2. Check cluster health = `green`
 3. Validate index count matches backup

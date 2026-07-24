@@ -24,7 +24,7 @@
 
 ## 三层回溯架构
 
-```
+```text
 巡检时间点 T
      │
      ├── Layer 1: CMS 指标回溯 <- 0 额外成本
@@ -117,11 +117,11 @@ def backtrack_7d(cluster_id, region):
             })
     
     return report
-```
+```markdown
 
 ### 输出示例（巡检报告中的回溯章节）
 
-```
+```markdown
 ## [BACK] 历史回溯（过去 7 天）
 
 ### 节点趋势异常
@@ -135,7 +135,7 @@ def backtrack_7d(cluster_id, region):
 ### OOM 高风险 Pod
 - default/payment-svc (memory.utilization=97.3%) CRITICAL
 - default/user-svc (memory.utilization=91.8%) WARNING
-```
+```markdown
 
 ---
 
@@ -160,11 +160,12 @@ aliyun cs GET /clusters/{clusterId}/controlplanelog
 {
     "components": null
 }
-```
+```markdown
 
 ### 当前环境状态
 
 > **当前环境 `海鼎-测试集群  (c3516669...)` 检查结果（2026-06-06）：**
+>
 > - `audit_enabled: false` — FAIL 审计日志未开启
 > - `components: null` — FAIL 控制面日志未开启
 >
@@ -189,7 +190,7 @@ aliyun cs PUT /clusters/{clusterId}/audit_log \
 # 开启控制面日志
 aliyun cs PUT /clusters/{ClusterId}/controlplanelog \
   --body '{"components":["apiserver","scheduler","controller-manager"]}'
-```
+```markdown
 
 ---
 
@@ -207,7 +208,7 @@ aliyun ecs RunCommand \
   --CommandContent "kubectl get events --all-namespaces --sort-by='.lastTimestamp' --output=wide" \
   --InstanceId i-xxx \
   --RegionId cn-hangzhou
-```
+```markdown
 
 ### 能获取到的事件类型
 
@@ -243,7 +244,7 @@ aliyun ecs RunCommand \
 
 ### 推荐实施路径
 
-```
+```text
 Phase 1 (P0): Layer 1 CMS 回溯
   -> 在 daily-health-check 中集成 7 天回溯分析
   -> 检测趋势异常 + 疑似事件推断
@@ -257,7 +258,7 @@ Phase 2 (P1): Layer 3 kubectl 兜底
 Phase 3 (P2): Layer 2 SLS 增强
   -> 如果用户开启了审计日志，自动接入
   -> 精确事件回溯
-```
+```markdown
 
 ---
 

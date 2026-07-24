@@ -3,6 +3,7 @@
 ## Overview
 
 Bailian Knowledge Base provides Retrieval-Augmented Generation (RAG) capabilities:
+
 - **Embedding**: Convert text to vector representations
 - **Indexing**: Store and organize document chunks
 - **Retrieval**: Semantic search for relevant context
@@ -59,6 +60,7 @@ req := &bailian.CreateKnowledgeBaseRequest{
 ```
 
 **Use when:**
+
 - Content has clear headings/sections
 - Preserving context boundaries is critical
 - Mixed content types in one document
@@ -76,6 +78,7 @@ req := &bailian.CreateKnowledgeBaseRequest{
 ```
 
 **Use when:**
+
 - Source code documentation
 - API references
 - Structured data (JSON, XML, YAML)
@@ -100,6 +103,7 @@ req := &bailian.CreateKnowledgeBaseRequest{
 | text-embedding-v1 | 1536 | Legacy compatibility |
 
 **Selection Criteria:**
+
 - Use v2 for new projects
 - Consistency: Same model for all docs in a KB
 - Multilingual: v2 supports Chinese/English mixed
@@ -158,6 +162,7 @@ Done
 ```
 
 **Benefits:**
+
 - Filter retrieval by product/version
 - Boost recent documents
 - Language-specific routing

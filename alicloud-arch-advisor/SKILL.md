@@ -185,11 +185,12 @@ alicloud-arch-advisor 支持三种操作模式，由 Agent 根据用户意图自
     { "priority": "P0", "pillar": "reliability", "title": "RDS 单节点风险", "action": "升级到高可用版", "effort": "medium" }
   ]
 }
-```
+```markdown
 
 ### 报告 Markdown 格式
 
 所有报告最终以 Markdown 呈现给用户，包含：
+
 1. **摘要** — 一句话结论 + composite score（Mode B）
 2. **架构概览** — 组件列表 + 交互关系图（文本模式）
 3. **WAF 评估矩阵** — 五支柱评分表
@@ -208,7 +209,7 @@ alicloud-arch-advisor 支持三种操作模式，由 Agent 根据用户意图自
 aliyun version        # >= 3.3.0
 go version            # >= 1.21
 echo $ALIBABA_CLOUD_ACCESS_KEY_ID  # 已设置
-```
+```markdown
 
 ### Mode A — 架构逆向与分析
 
@@ -238,7 +239,7 @@ echo $ALIBABA_CLOUD_ACCESS_KEY_ID  # 已设置
 
 ### Mode A — 架构逆向与分析流程
 
-```
+```text
 Phase 1 — 数据采集
   1. 询问用户系统的大致构成（用什么产品、多少实例、地域分布）
   2. 委托 topo-discovery 扫描指定资源
@@ -253,11 +254,11 @@ Phase 3 — 报告产出
   1. 生成架构拓扑 JSON
   2. 生成 Markdown 架构描述文档
   3. 标注风险点和改进机会
-```
+```markdown
 
 ### Mode B — WAF 成熟度评估流程
 
-```
+```text
 Phase 1 — 数据采集
   1. 委托 topo-discovery 获取完整资源清单
   2. 委托 advisor-ops 获取安全/稳定/成本类 Advice
@@ -276,11 +277,11 @@ Phase 3 — 报告产出
   2. 按 P0-P3 分级的风险发现清单
   3. 针对每个发现的改进建议
   4. 跨支柱权衡指引
-```
+```markdown
 
 ### Mode C — 架构方案推荐流程
 
-```
+```text
 Phase 1 — 需求收集
   1. 业务场景：用户的核心业务是什么
   2. 非功能性需求：可用性目标、性能要求、数据量预估
@@ -297,7 +298,7 @@ Phase 3 — 推荐与报告
   2. 推荐架构拓扑（文本描述）
   3. 实施路线图建议（分阶段上线）
   4. 成本估算和 TCO 对比
-```
+```markdown
 
 ---
 

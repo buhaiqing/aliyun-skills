@@ -15,7 +15,7 @@
 
 ### 三层安全控制模型
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                   Safety Control Framework                   │
 ├─────────────────────────────────────────────────────────────┤
@@ -34,7 +34,7 @@
 │  ├── 业务指标检查 (Business Metric Check)                    │
 │  └── 回滚触发条件 (Rollback Trigger)                         │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ### 安全控制参数
 
@@ -144,7 +144,7 @@ func assessImpact(pattern PatternType, action RemediationAction) *ImpactAssessme
     
     return assessment
 }
-```
+```markdown
 
 ## Remediation Implementation
 
@@ -204,7 +204,7 @@ func remediateCPUSpike(clusterId string, severity SeverityLevel, assessment *Imp
     result.EndTime = time.Now()
     return result, nil
 }
-```
+```text
 
 #### P003 Connection Surge - Connection Pool Expansion
 
@@ -218,7 +218,7 @@ aliyun polardb ModifyDBClusterServerlessConf \
 
 # 记录变更用于回滚
 echo "$(date) - Expanded connection pool: {{user.current_max}} -> $((user.current_max + 20))" >> /var/log/polardb-auto-remediation.log
-```
+```text
 
 #### P008 Replication Lag - Replication Parameter Adjustment
 
@@ -281,7 +281,7 @@ func remediateReplicationLag(clusterId, nodeId string, lagSeconds int) (*Remedia
     result.EndTime = time.Now()
     return result, nil
 }
-```
+```markdown
 
 ## Safety Controls
 
@@ -330,7 +330,7 @@ func (cb *CircuitBreaker) Execute(operation func() error) error {
     cb.State = CircuitClosed
     return nil
 }
-```
+```markdown
 
 ### 灰度执行
 
@@ -372,7 +372,7 @@ func (ce *CanaryExecutor) ExecuteWithCanary(
     logInfo(fmt.Sprintf("Canary passed with %.2f%% success rate, proceeding to full rollout", successRate*100))
     return nil
 }
-```
+```markdown
 
 ### 回滚机制
 
@@ -424,7 +424,7 @@ func (rm *RollbackManager) Rollback(clusterId string) error {
     
     return nil
 }
-```
+```markdown
 
 ## Output Format
 
@@ -489,7 +489,7 @@ func (rm *RollbackManager) Rollback(clusterId string) error {
 **修复状态**: ✅ 成功  
 **回滚需求**: 否  
 **后续建议**: 监控24小时，如CPU稳定则取消限流
-```
+```markdown
 
 ### JSON 输出格式
 
@@ -540,7 +540,7 @@ func (rm *RollbackManager) Rollback(clusterId string) error {
   "rollback_triggered": false,
   "duration_seconds": 315
 }
-```
+```markdown
 
 ## Acceptance Criteria
 

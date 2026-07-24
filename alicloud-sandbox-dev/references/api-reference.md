@@ -25,11 +25,12 @@
 
 #### 创建模板
 
-```
+```text
 POST https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "templateName": "my-interpreter",
@@ -40,9 +41,10 @@ POST https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
   "cpu": 2,
   "memory": 4096
 }
-```
+```text
 
 **响应**:
+
 ```json
 {
   "templateId": "tpl-xxx",
@@ -50,13 +52,13 @@ POST https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
   "status": "READY",
   "createdAt": "2024-12-02T10:30:00Z"
 }
-```
+```text
 
 #### 删除模板
 
-```
+```sql
 DELETE https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
-```
+```markdown
 
 **路径参数**:
 
@@ -69,9 +71,9 @@ DELETE https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName
 
 #### 获取模板
 
-```
+```text
 GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
-```
+```markdown
 
 **路径参数**:
 
@@ -80,6 +82,7 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
 | templateName | string | 是 | 模板名称 |
 
 **响应**:
+
 ```json
 {
   "code": "SUCCESS",
@@ -107,13 +110,13 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
     "description": "模板描述"
   }
 }
-```
+```text
 
 #### 列出模板
 
-```
+```text
 GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
-```
+```markdown
 
 **查询参数**:
 
@@ -127,6 +130,7 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
 | workspaceId | string | 否 | 工作空间 ID | aaa |
 
 **响应**:
+
 ```json
 {
   "code": "SUCCESS",
@@ -149,13 +153,13 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/templates
     ]
   }
 }
-```
+```text
 
 #### 更新模板
 
-```
+```text
 PUT https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
-```
+```markdown
 
 **路径参数**:
 
@@ -174,9 +178,9 @@ PUT https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
 
 #### 停止 TemplateMCP 服务
 
-```
+```text
 PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}/mcp/stop
-```
+```markdown
 
 **路径参数**:
 
@@ -188,9 +192,9 @@ PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
 
 #### 启用 TemplateMCP 服务
 
-```
+```text
 PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}/mcp/activate
-```
+```markdown
 
 **路径参数**:
 
@@ -199,6 +203,7 @@ PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
 | templateName | string | 是 | 模板名称 |
 
 **请求体**:
+
 ```json
 {
   "enabledTools": [
@@ -211,7 +216,7 @@ PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
   ],
   "transport": "streamable-http"
 }
-```
+```markdown
 
 **注意**: 启用后会自动部署 MCP 服务函数，保证 mcp-session-id 和 SandboxID 的唯一映射。
 
@@ -219,19 +224,21 @@ PATCH https://agentrun.{region}.aliyuncs.com/2025-09-10/templates/{templateName}
 
 #### 创建 Sandbox
 
-```
+```text
 POST https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "templateName": "my-interpreter",
   "sandboxId": "custom-id"  // 可选，自动生成 ULID
 }
-```
+```text
 
 **响应**:
+
 ```json
 {
   "sandboxId": "01JCED8Z9Y6XQVK8M2NRST5WXY",
@@ -250,13 +257,13 @@ POST https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes
     }
   }
 }
-```
+```text
 
 #### 获取 Sandbox
 
-```
+```text
 GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}
-```
+```markdown
 
 **路径参数**:
 
@@ -265,6 +272,7 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}
 | sandboxId | string | 是 | 沙箱 ID |
 
 **响应**:
+
 ```json
 {
   "code": "SUCCESS",
@@ -283,13 +291,13 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}
     "metadata": {}
   }
 }
-```
+```text
 
 #### 列出 Sandbox
 
-```
+```text
 GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes
-```
+```markdown
 
 **查询参数**:
 
@@ -302,6 +310,7 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes
 | nextToken | string | 否 | 分页游标（非空表示有更多） | dnLkmea... |
 
 **响应**:
+
 ```json
 {
   "code": "SUCCESS",
@@ -325,22 +334,22 @@ GET https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes
     ]
   }
 }
-```
+```text
 
 #### 停止 Sandbox
 
-```
+```text
 POST https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}/stop
-```
+```markdown
 
 - **幂等**: 是
 - **响应**: 与创建相同，但 `status` 为 `TERMINATED`，增加 `endedAt`
 
 #### 删除 Sandbox
 
-```
+```sql
 DELETE https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}
-```
+```markdown
 
 - **幂等**: 是
 - **行为**: 如果 READY → 先 Stop → 再删除
@@ -362,34 +371,37 @@ DELETE https://agentrun.{region}.aliyuncs.com/2025-09-10/sandboxes/{sandboxId}
 
 #### 创建上下文
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/contexts
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "language": "python",
   "cwd": "/home/user"  // 可选
 }
-```
+```text
 
 **响应**:
+
 ```json
 {
   "id": "271f70d5-9065-4403-8ea3-4d541f7d2bb8",
   "language": "python",
   "cwd": "/home/user"
 }
-```
+```text
 
 #### 列出上下文
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/contexts
-```
+```text
 
 **响应**:
+
 ```json
 [
   {
@@ -398,13 +410,13 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
     "cwd": "/tmp/sandbox/home/user"
   }
 ]
-```
+```text
 
 #### 删除上下文
 
-```
+```sql
 DELETE https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/contexts/{contextId}
-```
+```markdown
 
 - **响应**: 204 No Content
 
@@ -412,11 +424,12 @@ DELETE https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxI
 
 #### 同步执行代码
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/contexts/execute
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "contextId": "kernel-12345-67890",  // 可选，不提供则需 language
@@ -424,9 +437,10 @@ POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}
   "code": "print('hello')",
   "timeout": 30
 }
-```
+```text
 
 **响应**:
+
 ```json
 {
   "results": [
@@ -445,17 +459,18 @@ POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}
   ],
   "contextId": "kernel-12345-67890"
 }
-```
+```markdown
 
 ### 3.3 文件系统
 
 #### 列出目录
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem?path=/home/user&depth=1
-```
+```text
 
 **响应**:
+
 ```json
 {
   "path": "/home/user",
@@ -473,15 +488,16 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
     }
   ]
 }
-```
+```text
 
 #### 读取文件
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/files?path=/workspace/example.txt
-```
+```text
 
 **响应**:
+
 ```json
 {
   "name": "example.txt",
@@ -491,98 +507,105 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
   "content": "Hello, World!",
   "encoding": "utf-8"  // 二进制文件为 "base64"
 }
-```
+```text
 
 #### 写入文件
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/files
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "path": "example.txt",
   "content": "Hello, World!",
   "encoding": "utf-8"
 }
-```
+```markdown
 
 **限制**:
+
 - 不支持隐藏文件（`.` 开头）
 - 自动创建父目录
 - 默认权限 0644
 
 **响应**:
+
 ```json
 {
   "path": "/home/user/example.txt",
   "size": 25
 }
-```
+```text
 
 #### 下载文件
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem/download?path=/workspace/file.bin
-```
+```text
 
 **响应**: 文件二进制流
 
 #### 创建目录
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem/mkdir
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "path": "/home/user/testDir"
 }
-```
+```text
 
 **幂等**: 如果已存在，返回 200
 
 #### 移动/重命名
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem/move
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "source": "/workspace/old.txt",
   "destination": "/workspace/new.txt"
 }
-```
+```text
 
 **幂等**: 是
 
 #### 删除文件/目录
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem/remove
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "path": "/home/user/test_dir"
 }
-```
+```text
 
 **幂等**: 是（不存在返回 200）
 
 #### 上传文件
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/filesystem/upload
 Content-Type: multipart/form-data
-```
+```markdown
 
 **表单字段**:
+
 | 字段 | 说明 |
 |---|---|
 | `file` | 文件内容（最大 100MB） |
@@ -593,21 +616,23 @@ Content-Type: multipart/form-data
 
 #### 同步执行命令
 
-```
+```text
 POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/cmd
-```
+```text
 
 **请求体**:
+
 ```json
 {
   "command": "ls -la /home/user",
   "cwd": "/tmp/code-interpreter-sandbox/home/user"
 }
-```
+```text
 
 **硬超时**: 30 秒（数据面网关强制）
 
 **响应**:
+
 ```json
 {
   "executionId": "tty_exec_001",
@@ -621,13 +646,13 @@ POST https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}
   },
   "executionTimeMs": 150
 }
-```
+```markdown
 
 ### 3.5 WebSocket TTY
 
-```
+```text
 GET wss://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/tty?protocol=json&tenantId={accountID}
-```
+```markdown
 
 详见 [websocket-tty.md](websocket-tty.md)。
 
@@ -635,11 +660,12 @@ GET wss://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/pr
 
 #### 列出进程
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes
-```
+```text
 
 **响应**:
+
 ```json
 {
   "items": [
@@ -653,15 +679,16 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
   ],
   "total": 1
 }
-```
+```text
 
 #### 获取进程详情
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/{pid}
-```
+```text
 
 **响应**:
+
 ```json
 {
   "processId": 12345,
@@ -677,17 +704,18 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
     "memoryMb": 128.0
   }
 }
-```
+```text
 
 #### 强制停止进程
 
-```
+```sql
 DELETE https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/processes/{pid}
-```
+```text
 
 **行为**: SIGTERM → 失败则 SIGKILL
 
 **响应**:
+
 ```json
 {
   "pid": 12345,
@@ -695,15 +723,16 @@ DELETE https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxI
   "stopped_at": "2025-11-15T10:35:00Z",
   "message": "Process stopped successfully"
 }
-```
+```markdown
 
 ### 3.7 健康检查
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/health
-```
+```text
 
 **响应**:
+
 ```json
 {
   "status": "ok",
@@ -712,7 +741,7 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
   "timestamp": "2025-11-15T09:45:01.068104+08:00",
   "uptime": 1142269582541
 }
-```
+```markdown
 
 ---
 
@@ -728,7 +757,7 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
     "details": {}
   }
 }
-```
+```markdown
 
 ### 4.2 状态码与错误处理
 

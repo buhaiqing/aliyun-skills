@@ -41,6 +41,7 @@ metadata:
 > 以下所有代码块中的 `aliyun polardb ...` 命令在执行时应替换为 `./scripts/polardb-mysql-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun polardb` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Overview
 
 PolarDB MySQL is Alibaba Cloud's cloud-native relational database, MySQL-compatible,
@@ -93,6 +94,7 @@ response validation, and failure recovery.
 - User mentions "AIOps", "智能运维", "预测分析" with PolarDB context
 
 > **⚠️ 与 DAS skill 边界说明：**
+>
 > - **本 Skill 负责**：SQL 执行（ExecuteSQL/ExecuteSQLFile）、慢日志统计查询（DescribeSlowLogRecords）
 > - **DAS Skill 负责**：慢 SQL **诊断优化**、SQL 性能分析、锁分析、自动 SQL 限流
 > - 边界关键词："执行 SQL" → PolarDB；"优化 SQL"、"诊断慢 SQL" → DAS
@@ -202,11 +204,13 @@ PolarDB 集群创建/删除等为异步操作；shell 轮询模板、delete 消�
 ## Quick Start
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region: `ALIBABA_CLOUD_REGION_ID`
 
 ### First Command
+
 ```bash
 # List all PolarDB MySQL clusters in region
 aliyun polardb DescribeDBClusters --DBType MySQL --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
@@ -241,7 +245,7 @@ Every operation: **Pre-flight → Execute (CLI + SDK) → Validate → Recover**
 
 ### Operation: Create DB Cluster
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create DB Cluster)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -393,6 +397,7 @@ aliyun polardb ModifyDBCluster \
 ```
 
 To upgrade version:
+
 ```bash
 aliyun polardb UpgradeDBCluster \
   --DBClusterId "{{user.db_cluster_id}}" \
@@ -644,7 +649,7 @@ PolarDB MySQL 支持通过 mysql 客户端执行 SQL，提供多种 Endpoint 类
 
 ### Operation: Slow Query Analysis (慢查询分析)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Slow Query Analysis (慢查询分析))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -789,19 +794,24 @@ Professional cost optimization, capacity prediction, and anomaly detection workf
 ## Prerequisites
 
 1. **Install `aliyun` CLI** (primary execution path):
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
    ```
+
 2. **Bootstrap Go runtime** (JIT SDK fallback — see execution-environment.md)
 3. **Configure Credentials**:
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
    ```
+
    > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
 4. **Verify Configuration**:
+
    ```bash
    aliyun polardb DescribeDBClusters --DBType MySQL
    ```
@@ -916,6 +926,7 @@ Eleventh rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-cri
 | Endpoint selection | Primary (writes) / Cluster (RW-split) / Custom (node group) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Eleventh rollout; canonical for polar-postgresql, polar-oracle, polar-pg.
 
 ---

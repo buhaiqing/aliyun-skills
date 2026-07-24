@@ -17,7 +17,7 @@ flowchart TD
     E --> F[Generate Index Recommendations]
     F --> G[Produce Analysis Report]
     G --> H[End]
-```
+```markdown
 
 ## Stage 1: Data Collection
 
@@ -30,9 +30,10 @@ aliyun polardb DescribeSlowLogs \
   --DBClusterId "{{user.db_cluster_id}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 **Key Response Fields:**
+
 - `SlowLogCounts`: Number of slow query occurrences
 - `TotalCounts`: Total query executions
 - `MaxQueryTime` / `AvgQueryTime` / `MinQueryTime`: Time statistics
@@ -49,7 +50,7 @@ aliyun polardb DescribeSlowLogRecords \
   --EndTime "{{user.end_time}}" \
   --PageSize 100 \
   --PageNumber 1
-```
+```text
 
 **Paginated retrieval (for complete analysis):**
 
@@ -82,13 +83,14 @@ while true; do
 done
 
 echo "$ALL_RECORDS" > slow_query_records.json
-```
+```markdown
 
 ## Stage 2: Top N Analysis
 
 ### 2.1 Identify Top N Slow Queries
 
 **Algorithm:**
+
 1. Group by SQL pattern (SQL hash or normalized SQL)
 2. Calculate total execution time per pattern
 3. Sort by total time (descending)
@@ -112,7 +114,7 @@ jq '
   sort_by(-.total_time_ms) |
   .[:10]
 ' slow_query_records.json > top_10_slow_queries.json
-```
+```markdown
 
 ### 2.2 Response Format
 
@@ -128,7 +130,7 @@ jq '
     "databases": ["ecommerce_db"]
   }
 ]
-```
+```markdown
 
 ### 2.3 Scripted Aggregation Tool (Recommended)
 
@@ -157,7 +159,7 @@ python3 scripts/slow-sql-aggregator.py \
   --end-time "2026-06-10T09:28Z" \
   --top-n 15 \
   --output slow_sql_report.txt
-```
+```markdown
 
 **Output sections:**
 
@@ -181,7 +183,7 @@ python3 scripts/slow-sql-aggregator.py \
   --cluster-id "{{output.db_cluster_id}}" \
   --start-time "{{user.start_time}}" \
   --end-time "{{user.end_time}}"
-```
+```markdown
 
 **Security note:** The script only reads credentials from environment variables
 (`ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`). It never
@@ -267,7 +269,7 @@ for r in high_risk[:5]:
     print(f"\nSQL: {r['sql']}")
     print(f"Patterns: {', '.join(r['patterns_detected'])}")
     print(f"Risk: {r['risk_level']}")
-```
+```markdown
 
 ## Stage 4: Index Optimization Recommendations
 
@@ -337,7 +339,7 @@ def extract_order_columns(sql):
         columns = [c.strip().split()[0] for c in order_clause.split(',')]
         return columns
     return []
-```
+```markdown
 
 ## Stage 5: Report Generation
 
@@ -371,7 +373,8 @@ def extract_order_columns(sql):
 - {{reason}}
   ```sql
   {{sql}}
-  ```
+```json
+
 {{/each}}
 
 ---
@@ -388,15 +391,19 @@ def extract_order_columns(sql):
 ## 根因分析
 
 ### 热点查询模式
+
 - {{hot_query_count}} 个高频慢SQL占总执行时间的 {{hot_query_percentage}}%
 - 主要涉及表: {{affected_tables}}
 
 ### 索引缺失统计
+
 - {{missing_index_count}} 张表缺少合适的索引
 - 建议创建 {{recommended_index_count}} 个新索引
 
 ### 潜在风险
+
 {{#each risks}}
+
 - **{{level}}:** {{description}}
 {{/each}}
 
@@ -411,19 +418,22 @@ def extract_order_columns(sql):
 ## 附录
 
 ### A. 完整SQL样例
+
 ```sql
 {{sample_full_sql}}
-```
+```markdown
 
 ### B. 执行计划示例
-```
+
+```json
 {{explain_output}}
-```
+```markdown
 
 ---
 *报告生成时间: {{report_time}}*
 *分析工具: alicloud-polar-mysql-ops Skill v1.1.0*
-```
+
+```markdown
 
 ## Stage 6: Integration
 
@@ -465,11 +475,12 @@ slow_query_analysis:
       template: slow_query_report.md
       inputs:
         analysis_results: "{{output.generate_recommendations}}"
-```
+```markdown
 
 ### 6.2 API Response Validation
 
 **Success Criteria:**
+
 - `TotalRecordCount` > 0: Data collected successfully
 - `TotalRecordCount` = 0: No slow queries in time range (INFO level)
 - HTTP 200: Valid response

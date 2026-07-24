@@ -475,7 +475,7 @@ Phase 4: Storm Closure
 
 ### 7.1 Storm Response Checklist
 
-```
+```text
 Detection:
 □ Alarm count exceeds threshold (>10/min or >30/5min)
 □ Storm pattern classified (API, Network, Cascade, Cluster)

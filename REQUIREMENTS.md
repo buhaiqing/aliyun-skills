@@ -19,7 +19,7 @@
     - 3.8 [alicloud-das-ops — 数据库自治服务 DAS](#38-alicloud-das-ops--数据库自治服务-das)
     - 3.9 [alicloud-kms-ops — 密钥管理服务 KMS](#39-alicloud-kms-ops--密钥管理服务-kms)
     - 3.10 [alicloud-topo-discovery — 网络拓扑与资源清单](#310-alicloud-topo-discovery--网络拓扑与资源清单)
-  4. [Meta Skill — Skill 生成器](#4-meta-skill--skill-生成器)
+4. [Meta Skill — Skill 生成器](#4-meta-skill--skill-生成器)
 5. [跨技能协同协议](#5-跨技能协同协议)
 6. [技术规范](#6-技术规范)
 7. [开发与贡献指南](#7-开发与贡献指南)
@@ -45,7 +45,7 @@
 
 ### 1.3 项目结构
 
-```
+```text
 aliyun-skills/
 ├── README.md                              # 项目总览
 ├── REQUIREMENTS.md                         # 需求开发文档（本文档）
@@ -68,11 +68,11 @@ aliyun-skills/
 ├── alicloud-cms-ops/                      # [产品 Skill] 云监控 CMS
 └── alicloud-das-ops/                      # [产品 Skill] 数据库自治服务 DAS
 └── alicloud-topo-discovery/              # [发现类 Skill] 网络拓扑与资源清单
-```
+```markdown
 
 ### 1.4 每个 Skill 的标准目录结构
 
-```
+```text
 alicloud-<product>-ops/
 ├── SKILL.md                               # Skill 主文件（声明式规范 + 执行流程）
 ├── references/
@@ -92,7 +92,7 @@ alicloud-<product>-ops/
 
 ### 2.1 总体架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Agent Runtime                           │
 │   (Harness AI Agent / Claude Code / Cursor / 兼容 Runtime)  │
@@ -131,7 +131,7 @@ alicloud-<product>-ops/
 ┌─────────────────────────────────────────────────────────────┐
 │                  Alibaba Cloud OpenAPI                       │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ### 2.2 执行路径策略
 
@@ -145,7 +145,7 @@ alicloud-<product>-ops/
 
 ### 2.3 凭证安全架构
 
-```
+```text
 ┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
 │  Agent Runtime│───►│ 环境变量          │───►│ 阿里云 OpenAPI│
 │  上下文       │    │ ALIBABA_CLOUD_   │    │              │
@@ -155,8 +155,8 @@ alicloud-<product>-ops/
 └──────────────┘    └──────────────────┘    └──────────────┘
 ```
 
-**安全规则：**
-- `{{env.*}}` 变量由运行时环境提供，Agent **绝不**向用户索要
+**安全规则：**- `{{env.*}}` 变量由运行时环境提供，Agent**绝不**向用户索要
+
 - 任何输出中 **必须遮盖** `access_key_secret` 等敏感字段值
 - `{{output.access_key_secret}}` 仅展示一次，**绝不**记录到日志
 
@@ -164,7 +164,7 @@ alicloud-<product>-ops/
 
 所有**破坏性操作**（删除实例/用户/策略、重置密码等）必须执行安全检查：
 
-```
+```text
 操作请求
    │
    ▼
@@ -187,7 +187,7 @@ alicloud-<product>-ops/
 │  - 状态轮询           │
 │  - 响应校验           │
 └─────────────────────┘
-```
+```markdown
 
 ---
 
@@ -700,6 +700,7 @@ CMS Skill 内置了 **4 层异常检测框架**，用于 CLI 安装问题的诊�
 #### 3.9.2 安全约束
 
 **绝对只读 (Read-Only Only):**
+
 - 仅允许 `Describe*`, `List*`, `Get*` API
 - 自动拦截所有写操作前缀 (Create/Delete/Modify/Update/Associate 等)
 - 不修改/创建/删除/绑定任何云资源
@@ -730,7 +731,7 @@ CMS Skill 内置了 **4 层异常检测框架**，用于 CLI 安装问题的诊�
 
 | 功能 | 说明 |
 |------|------|
-| 新 Skill 脚手架 | 从模板创建标准目录结构（SKILL.md + references/* + assets/*） |
+| 新 Skill 脚手架 | 从模板创建标准目录结构（SKILL.md + references/*+ assets/*） |
 | OpenAPI 对齐 | 基于 OpenAPI/Swagger 规范生成操作列表、请求/响应字段、错误映射 |
 | CLI 支持验证 | 自动检测 `aliyun help <product>` 确认 CLI 支持情况 |
 | 占位符注入 | 生成标准化的 `{{env.*}}` / `{{user.*}}` / `{{output.*}}` 占位符表 |
@@ -741,7 +742,7 @@ CMS Skill 内置了 **4 层异常检测框架**，用于 CLI 安装问题的诊�
 
 ### 4.3 生成流程
 
-```
+```text
 Step 0: 环境准备（aliyun CLI + Go runtime）
 Step 1: 收集产品信息（产品名、API 版本、文档 URL、OpenAPI 规范）
 Step 2: 创建目录结构
@@ -750,7 +751,7 @@ Step 4: 生成 reference 文档（CLI、API、核心概念、集成、监控、�
 Step 5: 生成 assets/ 示例配置
 Step 6: 治理审查与对抗性评审
 Step 7: 提交 PR
-```
+```markdown
 
 ### 4.4 引用文档
 
@@ -836,7 +837,7 @@ metadata:
     - ALIBABA_CLOUD_ACCESS_KEY_SECRET
     - ALIBABA_CLOUD_REGION_ID
 ---
-```
+```markdown
 
 ### 6.2 占位符规范
 
@@ -861,7 +862,7 @@ metadata:
 
 ### 6.4 SKILL.md 文档结构规范
 
-```
+```text
 ┌─────────────────────────────────┐
 │  YAML Frontmatter (元数据)       │
 ├─────────────────────────────────┤
@@ -895,9 +896,9 @@ metadata:
 
 每个操作必须包含四个阶段：
 
-```
+```text
 Pre-flight → Execute → Validate → Recover
-```
+```markdown
 
 | 阶段 | 说明 |
 |------|------|
@@ -944,6 +945,7 @@ pip install markdownlint-cli2
 ### 7.3 JIT 部署脚本
 
 提供 [alicloud-jit-setup.sh](alicloud-jit-setup.sh) 一键部署脚本，自动完成：
+
 - aliyun CLI 安装检测与自动安装
 - Go Runtime 检测与自动安装
 - Go SDK 包下载与编译
@@ -955,7 +957,7 @@ pip install markdownlint-cli2
 
 # 指定产品、操作和凭据文件
 ./alicloud-jit-setup.sh rds DescribeDBInstances .env
-```
+```markdown
 
 ### 7.4 新增产品 Skill 流程
 
@@ -1007,8 +1009,9 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 - 版本号遵循语义化版本（SemVer）：`主版本.次版本.修订`
 - 每次变更必须在 SKILL.md 末尾的 Changelog 表中记录
 - Changelog 格式：
-  ```
+
+```markdown
   | Version | Date | Changes |
   |---------|------|---------|
   | x.y.z   | YYYY-MM-DD | 变更描述 |
-  ```
+```text

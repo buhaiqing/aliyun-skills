@@ -1,6 +1,9 @@
 # TODO for alicloud-sls-ops
+
 ## Post-Update Self-Review Checks
+
 ### Round 1: Structural Checks
+
 - [ ] Frontmatter valid
 - [ ] Trigger/Scope clear
 - [ ] Variables correctly defined
@@ -9,6 +12,7 @@
 - [ ] All quality gates passed (C1-C6)
 
 ### Round 2: Content Checks
+
 - [ ] CLI commands verified (14.1-14.6)
 - [ ] Error codes ≥10 present
 - [ ] Safety gates in place

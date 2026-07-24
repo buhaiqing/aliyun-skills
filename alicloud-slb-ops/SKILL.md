@@ -39,7 +39,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```bash
 # Create LB:           $.{LoadBalancerId,Address,VSwitchId,VpcId}
 # Describe LBs:        $.LoadBalancers.LoadBalancer[].{LoadBalancerId,LoadBalancerStatus,Address}
 # Describe LB Attr:    $.{LoadBalancerId,LoadBalancerStatus,Address,VpcId,CreateTime}
@@ -49,7 +49,7 @@ metadata:
 # Create ACL:          $.AclId
 # Create Rules:        $.Rules.Rule[].RuleId
 # Delete/Set/Modify:   $.RequestId
-```
+```markdown
 
 ## Overview
 
@@ -237,7 +237,7 @@ Every operation: **Pre-flight → Execute (CLI primary, SDK fallback) → Valida
 
 ### Operation: Create Load Balancer
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Load Balancer)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -281,7 +281,7 @@ aliyun slb CreateLoadBalancer \
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 3. On success, report `{{output.load_balancer_id}}`, `Address`, and key fields.
 4. On terminal failure, go to **Failure Recovery**.
@@ -347,7 +347,7 @@ aliyun slb DescribeLoadBalancers --RegionId "{{user.region}}" \
 ```bash
 aliyun slb DescribeLoadBalancerAttribute \
   --LoadBalancerId "{{user.load_balancer_id}}"
-```
+```markdown
 
 #### Present to User
 
@@ -396,7 +396,7 @@ Poll until `LoadBalancerStatus` matches target:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -433,7 +433,7 @@ Verify name change via DescribeLoadBalancerAttribute.
 aliyun slb ModifyLoadBalancerInstanceSpec \
   --LoadBalancerId "{{user.load_balancer_id}}" \
   --LoadBalancerSpec "{{user.new_load_balancer_spec}}"
-```
+```markdown
 
 > **Note:** Available specs: slb.s1.small, slb.s2.small, slb.s2.medium, slb.s3.small,
   slb.s3.medium, slb.s3.large. Performance guarantee instances only.
@@ -466,7 +466,7 @@ Poll until spec change is reflected:
 aliyun slb DeleteLoadBalancer \
   --RegionId "{{user.region}}" \
   --LoadBalancerId "{{user.load_balancer_id}}"
-```
+```markdown
 
 > **Note:** `--RegionId` is required for the delete operation to correctly route
 > the request.
@@ -501,7 +501,7 @@ aliyun slb CreateLoadBalancerTCPListener \
   --HealthCheckType "{{user.health_check_type|tcp}}" \
   --PersistenceTimeout "{{user.persistence_timeout|0}}" \
   --EstablishedTimeout "{{user.established_timeout|500}}"
-```
+```markdown
 
 > **Note:** `Bandwidth` = -1 means unlimited.
 
@@ -539,7 +539,7 @@ aliyun slb CreateLoadBalancerHTTPListener \
   --StickySession "{{user.sticky_session|off}}" \
   --HealthCheck "{{user.health_check|on}}" \
   --XForwardedFor "{{user.x_forwarded_for|on}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -595,7 +595,7 @@ aliyun slb CreateLoadBalancerUDPListener \
   --UnhealthyThreshold "{{user.unhealthy_threshold|3}}" \
   --HealthCheckTimeout "{{user.health_check_timeout|5}}" \
   --HealthCheckInterval "{{user.health_check_interval|2}}"
-```
+```bash
 
 > **Note:** UDP listeners do not support layer-7 features (sticky sessions by cookie,
 > X-Forwarded-For, etc.). Health check uses UDP packets.
@@ -625,7 +625,7 @@ aliyun slb DescribeLoadBalancerListeners \
 aliyun slb DescribeLoadBalancerListeners \
   --LoadBalancerId "{{user.load_balancer_id}}" \
   --ListenerProtocol "{{user.listener_protocol}}"
-```
+```markdown
 
 #### Present to User
 
@@ -661,7 +661,7 @@ Verify listener status is `running`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -686,7 +686,7 @@ Verify listener status is `stopped`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -727,9 +727,10 @@ aliyun slb CreateVServerGroup \
   --VServerGroupName "{{user.vserver_group_name}}" \
   --BackendServers '[{"ServerId":"{{user.backend_server_id}}","Weight":"100","Type":"ecs","Port":"80"}]' \
   --ClientToken "{{output.client_token}}"
-```
+```markdown
 
 > **Note:** `BackendServers` is a JSON array string. Each element has:
+>
 > - `ServerId`: ECS/ENI/ECI instance ID
 > - `Weight`: 0-100 (default 100)
 > - `Type`: ecs (default), eni, eci
@@ -759,7 +760,7 @@ aliyun slb DescribeVServerGroupAttribute \
 ```bash
 aliyun slb DescribeVServerGroups \
   --LoadBalancerId "{{user.load_balancer_id}}"
-```
+```markdown
 
 #### Present to User
 
@@ -801,7 +802,7 @@ aliyun slb DescribeVServerGroupAttribute \
 aliyun slb AddVServerGroupBackendServers \
   --VServerGroupId "{{user.vserver_group_id}}" \
   --BackendServers '[{"ServerId":"{{user.backend_server_id}}","Weight":"100","Type":"ecs","Port":"80"}]'
-```
+```markdown
 
 ---
 
@@ -835,7 +836,7 @@ aliyun slb RemoveVServerGroupBackendServers \
 ```bash
 aliyun slb DeleteVServerGroup \
   --VServerGroupId "{{user.vserver_group_id}}"
-```
+```markdown
 
 ---
 
@@ -871,7 +872,7 @@ aliyun slb AddBackendServers \
 aliyun slb RemoveBackendServers \
   --LoadBalancerId "{{user.load_balancer_id}}" \
   --BackendServers '["{{user.backend_server_id}}"]'
-```
+```markdown
 
 ---
 
@@ -902,7 +903,7 @@ aliyun slb SetBackendServers \
 aliyun slb DescribeHealthStatus \
   --LoadBalancerId "{{user.load_balancer_id}}" \
   --ListenerPort "{{user.listener_port}}"
-```
+```markdown
 
 #### Present to User
 
@@ -947,7 +948,7 @@ aliyun slb UploadServerCertificate \
 aliyun slb DescribeServerCertificates \
   --RegionId "{{user.region}}" \
   --ServerCertificateId "{{output.certificate_id}}"
-```
+```bash
 
 ---
 
@@ -984,7 +985,7 @@ aliyun slb DescribeServerCertificates --RegionId "{{user.region}}"
 ```bash
 aliyun slb DeleteServerCertificate \
   --ServerCertificateId "{{user.certificate_id}}"
-```
+```bash
 
 ---
 
@@ -1013,7 +1014,7 @@ aliyun slb CreateAccessControlList \
 aliyun slb AddAccessControlListEntry \
   --AclId "{{user.acl_id}}" \
   --AclEntrys '[{"entry":"10.0.0.0/8","comment":"office-network"},{"entry":"192.168.0.0/16","comment":"vpc-network"}]'
-```
+```markdown
 
 > **Note:** `AclEntrys` is a JSON array string with `entry` (IP or CIDR) and
 > optional `comment` fields.
@@ -1050,7 +1051,7 @@ aliyun slb DescribeAccessControlLists --RegionId "{{user.region}}"
 ```bash
 aliyun slb DeleteAccessControlList \
   --AclId "{{user.acl_id}}"
-```
+```markdown
 
 ---
 
@@ -1083,7 +1084,7 @@ aliyun slb CreateRules \
 aliyun slb DescribeRules \
   --LoadBalancerId "{{user.load_balancer_id}}" \
   --ListenerPort "{{user.listener_port}}"
-```
+```bash
 
 ---
 
@@ -1120,7 +1121,7 @@ aliyun slb DescribeRules \
 ```bash
 aliyun slb DeleteRules \
   --RuleIds '["{{user.rule_id}}"]'
-```
+```markdown
 
 ---
 
@@ -1213,6 +1214,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Cross-skill delegation | EIP → `alicloud-eip-ops` GCL |
 
 ### Changelog
+
 1.1.1 | 2026-06-16 | Added Microsoft SkillOpt integration for self-repair and dynamic configuration optimization capabilities for SLB operations
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for slb-ops.
 

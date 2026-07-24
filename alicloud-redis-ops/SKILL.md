@@ -51,6 +51,7 @@ metadata:
 > 以下所有代码块中的 `aliyun r-kvstore ...` 命令在执行时应替换为 `./scripts/redis-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun r-kvstore` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Overview
 
 Alibaba Cloud Redis / Tair (KVStore) provides managed Redis-compatible and
@@ -246,7 +247,7 @@ aliyun r-kvstore create-instance \
   --ChargeType "{{user.charge_type|PostPaid}}" \
   --Password "{{user.password}}" \
   --Token "{{user.token}}"
-```
+```markdown
 
 > **Note:** Output is JSON by default. Parse `InstanceId` from response.
 
@@ -261,7 +262,7 @@ aliyun r-kvstore create-instance \
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 3. On success, report `{{output.instance_id}}`, connection domain, and key fields.
 4. On terminal failure, go to **Failure Recovery**.
@@ -295,7 +296,7 @@ aliyun r-kvstore describe-instances \
 # Extract specific fields with JMESPath
 aliyun r-kvstore describe-instances --RegionId "{{user.region}}" \
   --output cols=InstanceId,InstanceStatus,InstanceClass,EngineVersion rows=Instances.KVStoreInstance[].{InstanceId,InstanceStatus,InstanceClass,EngineVersion}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -334,7 +335,7 @@ aliyun r-kvstore describe-instances --RegionId "{{user.region}}" \
 ```bash
 aliyun r-kvstore describe-instance-attribute \
   --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -368,7 +369,7 @@ aliyun r-kvstore describe-instance-attribute \
 
 ```bash
 aliyun r-kvstore restart-instance --InstanceId "{{user.instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -380,7 +381,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -398,7 +399,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 aliyun r-kvstore delete-instance --InstanceId "{{user.instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -411,7 +412,7 @@ Poll **DescribeInstances** until instance is absent (returns empty list or
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -430,7 +431,7 @@ aliyun r-kvstore modify-instance-spec \
   --InstanceId "{{user.instance_id}}" \
   --InstanceClass "{{user.instance_class}}" \
   --OrderType "UPGRADE"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -442,7 +443,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -453,7 +454,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 ```bash
 aliyun r-kvstore describe-accounts \
   --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -485,7 +486,7 @@ aliyun r-kvstore create-account \
   --AccountName "{{user.account_name}}" \
   --AccountPassword "{{user.account_password}}" \
   --AccountType "{{user.account_type|Normal}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -497,7 +498,7 @@ Poll until account status is `Available`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -514,7 +515,7 @@ Poll until account status is `Available`:
 aliyun r-kvstore delete-account \
   --InstanceId "{{user.instance_id}}" \
   --AccountName "{{user.account_name}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -526,7 +527,7 @@ Poll **DescribeAccounts** until account is absent:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -544,7 +545,7 @@ aliyun r-kvstore reset-account-password \
   --InstanceId "{{user.instance_id}}" \
   --AccountName "{{user.account_name}}" \
   --AccountPassword "{{user.new_password}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -556,7 +557,7 @@ Verify account status returns to `Available`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -575,7 +576,7 @@ aliyun r-kvstore describe-backups \
 aliyun r-kvstore describe-backups \
   --InstanceId "{{user.instance_id}}" \
   --output cols=BackupId,BackupStatus,BackupType,BackupStartTime rows=Backups.Backup[].{BackupId,BackupStatus,BackupType,BackupStartTime}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -607,7 +608,7 @@ aliyun r-kvstore describe-backups \
 ```bash
 aliyun r-kvstore create-backup \
   --InstanceId "{{user.instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -619,7 +620,7 @@ Poll **DescribeBackups** until backup status is `Success`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -636,7 +637,7 @@ Poll **DescribeBackups** until backup status is `Success`:
 aliyun r-kvstore restore-instance \
   --InstanceId "{{user.instance_id}}" \
   --BackupId "{{user.backup_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -648,7 +649,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -659,7 +660,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 ```bash
 aliyun r-kvstore describe-security-ips \
   --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -688,7 +689,7 @@ aliyun r-kvstore modify-security-ips \
   --InstanceId "{{user.instance_id}}" \
   --SecurityIps "{{user.security_ips}}" \
   --SecurityIpGroupName "{{user.security_ip_group_name|default}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -702,7 +703,7 @@ Verify whitelist updated via DescribeSecurityIps:
 aliyun r-kvstore describe-security-ips \
   --InstanceId "{{user.instance_id}}" \
   --output cols=SecurityIpList rows=SecurityIpGroups.SecurityIpGroup[?SecurityIpGroupName=='{{user.security_ip_group_name|default}}'].SecurityIpList
-```
+```markdown
 
 ---
 
@@ -713,7 +714,7 @@ aliyun r-kvstore describe-security-ips \
 ```bash
 aliyun r-kvstore describe-parameters \
   --InstanceId "{{user.instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -745,7 +746,7 @@ aliyun r-kvstore modify-parameter \
   --InstanceId "{{user.instance_id}}" \
   --ParameterName "{{user.parameter_name}}" \
   --ParameterValue "{{user.parameter_value}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -759,7 +760,7 @@ Verify parameter updated via DescribeParameters:
 aliyun r-kvstore describe-parameters \
   --InstanceId "{{user.instance_id}}" \
   --output cols=ParameterName,ParameterValue rows=RunningParameters.Parameter[?ParameterName=='{{user.parameter_name}}'].{ParameterName,ParameterValue}
-```
+```markdown
 
 ---
 
@@ -772,7 +773,7 @@ aliyun r-kvstore describe-slow-logs \
   --InstanceId "{{user.instance_id}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -800,7 +801,7 @@ aliyun r-kvstore describe-history-monitor-values \
   --MonitorKeys "{{user.monitor_keys}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -828,7 +829,7 @@ aliyun r-kvstore modify-instance-maintain-time \
   --InstanceId "{{user.instance_id}}" \
   --MaintainStartTime "{{user.maintain_start_time}}" \
   --MaintainEndTime "{{user.maintain_end_time}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -843,7 +844,7 @@ aliyun r-kvstore describe-instances \
   --RegionId "{{user.region}}" \
   --InstanceId "{{user.instance_id}}" \
   --output cols=MaintainStartTime,MaintainEndTime rows=Instances.KVStoreInstance[0].{MaintainStartTime,MaintainEndTime}
-```
+```markdown
 
 ---
 
@@ -860,7 +861,7 @@ aliyun r-kvstore describe-instances \
 aliyun r-kvstore modify-instance-ssl \
   --InstanceId "{{user.instance_id}}" \
   --SSLEnabled "{{user.ssl_enabled|Enable}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -872,7 +873,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -889,7 +890,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 aliyun r-kvstore modify-intranet-bandwidth \
   --InstanceId "{{user.instance_id}}" \
   --Bandwidth "{{user.bandwidth}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -903,7 +904,7 @@ Verify bandwidth updated via DescribeIntranetAttribute:
 aliyun r-kvstore describe-intranet-attribute \
   --InstanceId "{{user.instance_id}}" \
   --output cols=Bandwidth rows=Bandwidth
-```
+```markdown
 
 ---
 
@@ -921,7 +922,7 @@ aliyun r-kvstore describe-intranet-attribute \
 aliyun r-kvstore migrate-to-other-zone \
   --InstanceId "{{user.instance_id}}" \
   --ZoneId "{{user.zone_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -933,7 +934,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -950,7 +951,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 ```bash
 aliyun r-kvstore upgrade-minor-version \
   --InstanceId "{{user.instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -962,7 +963,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -979,7 +980,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 ```bash
 aliyun r-kvstore flush-instance \
   --InstanceId "{{user.instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -991,7 +992,7 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -1017,11 +1018,13 @@ Poll until `InstanceStatus` returns to `Normal`:
 **Output format** — Same JSON schema as all other inspection skills (score, dimensions, recommendations).
 
 ### Supported Anomaly Patterns
+
   1. 内存-连接数双高: Memory>85% + Connections>阈值
   2. 响应延迟-吞吐瓶颈: Latency突增 + Throughput下降
   3. 缓存命中率突降: HitRate从95%降至80%
   4. 键空间-内存碎片: Keyspace大 + Memory碎片率高
-```
+
+```markdown
 
 ### DAS 联动引用
 
@@ -1123,7 +1126,7 @@ bash scripts/preflight-check.sh
 # 0 = PASS (all checks passed, ready to execute)
 # 1 = FAIL (critical issues, cannot proceed)
 # 2 = WARNING (warnings present, proceed with caution)
-```
+```markdown
 
 ### Check Categories
 
@@ -1139,6 +1142,7 @@ bash scripts/preflight-check.sh
 ### Automatic Issue Detection and Resolution
 
 The script automatically:
+
 1. **Detects .env file** and loads environment variables
 2. **Checks plugin installation** and attempts auto-install if missing
 3. **Handles permission restrictions** gracefully (CI environments)
@@ -1147,7 +1151,7 @@ The script automatically:
 
 ### Output Example
 
-```
+```text
 === Enhanced Pre-flight Check for Redis/Tair Operations ===
 
 [1] Environment Detection
@@ -1179,11 +1183,12 @@ The script automatically:
 
 Overall Status: WARNING
 Recommended Execution Path: SDK Fallback (due to plugin permission issue)
-```
+```markdown
 
 ### Integration with Execution Flows
 
 **Every operation MUST start with:**
+
 ```bash
 # Step 1: Run pre-flight check
 bash scripts/preflight-check.sh
@@ -1201,7 +1206,7 @@ else
     echo "Cannot proceed. Fix critical issues first."
     exit 1
 fi
-```
+```markdown
 
 ## Prerequisites
 
@@ -1209,7 +1214,7 @@ fi
 
    ```bash
    /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
-   ```
+```text
 
 2. **Bootstrap Go runtime** (for JIT SDK fallback):
 
@@ -1228,19 +1233,22 @@ fi
        export GOPROXY="https://goproxy.cn,direct"
    fi
    go version
-   ```
+```text
 
 3. **Configure Credentials** (automatic .env loading supported):
 
    **Option A: Environment Variables**
+
    ```bash
    export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
    export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
    export ALIBABA_CLOUD_REGION_ID="{{env.ALIBABA_CLOUD_REGION_ID}}"
-   ```
+```text
+
    > **IMPORTANT:** When outputting the above commands to console or logs, the agent MUST replace `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` with the masking format `****` instead of the actual secret value (i.e., display as `export ALIBABA_CLOUD_ACCESS_KEY_SECRET="****"`). Never resolve `{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}` to its actual value in any visible output.
 
    **Option B: .env File (Recommended for CI)**
+
    ```bash
    # Create .env file in project root
    cat > .env <<EOF
@@ -1251,14 +1259,14 @@ fi
    
    # Pre-flight check will auto-load .env file
    bash scripts/preflight-check.sh
-   ```
+```text
 
 4. **Verify Configuration** (via pre-flight check):
 
    ```bash
    # Use enhanced pre-flight check instead of manual verification
    bash scripts/preflight-check.sh
-   ```
+```bash
 
 > **Note:** The `--waiter` flag is supported by the `aliyun` CLI. See [CLI Usage](references/cli-usage.md) for details.
 
@@ -1369,7 +1377,7 @@ primary, Go SDK fallback). The trace MUST record which path was used:
     ...
   }
 }
-```
+```markdown
 
 Path selection rules (inherited from `prompt-templates.md` §1):
 

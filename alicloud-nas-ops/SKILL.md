@@ -287,17 +287,20 @@ the web console as the primary agent execution path** in `SKILL.md` or
 ## Quick Start
 
 ### What This Skill Does
+
 Manage the full NAS lifecycle: create file systems (4 families), mount targets,
 permission groups, access points, snapshots, lifecycle policies, recycle bin,
 and CPFS filesets — via `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials configured: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region set: `ALIBABA_CLOUD_REGION_ID`
 - [ ] NAS activated in the target region (run `OpenNASService` once if not)
 
 ### Verify Setup
+
 ```bash
 # Check CLI and credentials
 aliyun nas DescribeRegions
@@ -307,12 +310,14 @@ aliyun nas DescribeFileSystems --PageSize 1
 ```
 
 ### Your First Command
+
 ```bash
 # List existing file systems in the current region
 aliyun nas DescribeFileSystems --FileSystemType standard --PageSize 10
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — NAS architecture, FS types, mount topology
 - [API & SDK Usage](references/api-sdk-usage.md) — All operations, request/response snippets
 - [CLI Usage](references/cli-usage.md) — `aliyun nas` command map, coverage table
@@ -404,6 +409,7 @@ func main() {
 ```
 
 Execute (once per workspace):
+
 ```bash
 mkdir -p /tmp/aliyun-sdk-workspace
 cd /tmp/aliyun-sdk-workspace
@@ -422,7 +428,7 @@ go get github.com/alibabacloud-go/nas-20170626/v3/client
 > **Required first step in any new region.** Calling `CreateFileSystem` in a
 > region where NAS has not been activated returns `ServiceNotOpened`.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Activate NAS Service (OpenNASService))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -468,7 +474,7 @@ printResponse(response.Body)
 > **Creates a billed resource.** Confirm with user before execution. Required
 > parameters vary by `FileSystemType` — see the parameter matrix below.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create File System (CreateFileSystem))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -569,7 +575,7 @@ aliyun nas DescribeFileSystems \
 > Mount targets bind a file system to a specific VPC + vSwitch + access group.
 > A file system can have multiple mount targets (e.g., one per VPC).
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Mount Target (CreateMountTarget))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -613,6 +619,7 @@ printResponse(response.Body)
 2. Parse `$.MountTargetId` → `{{output.mount_target_id}}`
 3. Poll `DescribeMountTargets` until `$.MountTargets.MountTarget[0].Status == "Active"`
 4. Present the mount command to the user (Linux):
+
    ```bash
    sudo mount -t nfs <MountTargetDomain>:/ /mnt/nas
    ```
@@ -674,7 +681,7 @@ aliyun nas CreateAccessRule \
 
 ### Operation: Create Snapshot (CreateSnapshot)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Snapshot (CreateSnapshot))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -755,7 +762,7 @@ aliyun nas ResetFileSystem \
 > `CreateRecycleBinRestoreJob`. **Strongly recommended before any destructive
 > operation.** Only supported on `standard` (General-purpose) NAS.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Enable Recycle Bin (EnableRecycleBin))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -779,7 +786,7 @@ aliyun nas EnableRecycleBin \
 
 ### Operation: Restore from Recycle Bin (CreateRecycleBinRestoreJob)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Restore from Recycle Bin (CreateRecycleBinRestoreJob))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|

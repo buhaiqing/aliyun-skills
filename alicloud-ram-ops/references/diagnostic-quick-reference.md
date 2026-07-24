@@ -44,4 +44,4 @@ Quick error lookup for common RAM operation failures. For detailed troubleshooti
 
 - `InternalError` persists after 3 retries → HALT; provide RequestId to user
 - `NoPermission` on RAM itself → User needs `AliyunRAMFullAccess` or equivalent
-- Unexpected error not in this table → HALT; ask user to check Alibaba Cloud status page: https://status.aliyun.com
+- Unexpected error not in this table → HALT; ask user to check Alibaba Cloud status page: <https://status.aliyun.com>

@@ -77,6 +77,7 @@ aliyun actiontrail GetInsightTypes
 **Cause:** Trails are created in disabled state by default.
 
 **Fix:**
+
 ```bash
 aliyun actiontrail StartLogging --Name {{user.trail_name}}
 ```
@@ -84,12 +85,14 @@ aliyun actiontrail StartLogging --Name {{user.trail_name}}
 ### Issue: LookupEvents Returns No Results
 
 **Possible causes:**
+
 1. Time range is outside the 90-day retention window
 2. Time range exceeds 30 days
 3. No matching events for the specified filters
 4. Event type filter is too restrictive
 
 **Fix:**
+
 - Verify time range is within the last 90 days
 - Ensure time range span ≤ 30 days
 - Broaden filter criteria
@@ -100,6 +103,7 @@ aliyun actiontrail StartLogging --Name {{user.trail_name}}
 **Cause:** Maximum 5 trails per region.
 
 **Fix:**
+
 ```bash
 # List existing trails
 aliyun actiontrail DescribeTrails
@@ -111,11 +115,13 @@ aliyun actiontrail DeleteTrail --Name {{unused_trail_name}}
 ### Issue: AccessKey Audit Returns No Data
 
 **Possible causes:**
+
 1. AccessKey ID is incorrect
 2. AccessKey has never been used
 3. AccessKey was used more than 90 days ago
 
 **Fix:**
+
 - Verify the AccessKey ID
 - Check if the AccessKey exists in RAM
 - Use LookupEvents with the AccessKey ID filter to find historical usage
@@ -125,6 +131,7 @@ aliyun actiontrail DeleteTrail --Name {{unused_trail_name}}
 **Cause:** Insight events take at least 24 hours to generate after enabling.
 
 **Fix:**
+
 - Wait at least 24 hours after enabling the InsightType
 - Verify the InsightType is enabled: `aliyun actiontrail GetInsightTypes`
 - Check if there are enough historical events for analysis (requires 7 days of data)
@@ -134,6 +141,7 @@ aliyun actiontrail DeleteTrail --Name {{unused_trail_name}}
 **Cause:** The specified InsightType is invalid or not yet available.
 
 **Fix:**
+
 ```bash
 # List valid InsightType values
 # Valid types: IpInsight, ApiCallRateInsight, ApiErrorRateInsight,
@@ -147,10 +155,12 @@ aliyun actiontrail GetInsightTypes
 ### Issue: Trail Deletion Fails
 
 **Possible causes:**
+
 1. Trail has active data event selectors
 2. Trail has active delivery history jobs
 
 **Fix:**
+
 ```bash
 # List data event selectors
 aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}

@@ -69,6 +69,7 @@ aliyun vpc DescribeNatGateways \
 | DeleteNatGateway | 🚫 CAB Approval + Dual Confirm | 🚫 CAB Approval | ⚠️ Change Window | ✅ Auto |
 
 **Legend:**
+
 - ✅ Auto: Agent can execute directly
 - ⚠️ Notify: Notify ops team, proceed after 5 min
 - ⚠️ Change Window: Only during approved change window

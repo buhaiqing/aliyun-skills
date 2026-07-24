@@ -7,6 +7,7 @@
 ### Problem Statement
 
 Java business containers calling AgentRun Sandbox APIs directly face these challenges:
+
 - Complex ACS3-HMAC-SHA256 signing (~250 lines of Java code)
 - AK/SK credential exposure risk in application memory
 - Each language must re-implement signing logic
@@ -15,7 +16,7 @@ Java business containers calling AgentRun Sandbox APIs directly face these chall
 
 ### Solution: Sidecar Proxy Pattern
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                      K8s Pod / FC Container                      │
 │                                                                 │
@@ -64,7 +65,7 @@ Java business containers calling AgentRun Sandbox APIs directly face these chall
                     │  Control: agentrun.{region}...   │
                     │  Data: {account}.agentrun-data...│
                     └─────────────────────────────────┘
-```
+```markdown
 
 ## 2. Deployment Mode Decision Matrix
 
@@ -83,7 +84,7 @@ Java business containers calling AgentRun Sandbox APIs directly face these chall
 
 ### 3.1 Module Dependency Graph
 
-```
+```text
                     ┌─────────────┐
                     │   main()    │
                     │   entry     │
@@ -118,7 +119,7 @@ Java business containers calling AgentRun Sandbox APIs directly face these chall
 │ Data Plane       │──► {account}.agentrun-data.{region}.aliyuncs.com
 │ WebSocket Proxy  │──► WS upgrade + proxy
 └──────────────────┘
-```
+```markdown
 
 ### 3.2 Module Responsibilities
 
@@ -163,7 +164,7 @@ WS   /ws/tty/:id                             → WS {account}.agentrun-data....
 
 GET  /metrics                          → Prometheus metrics endpoint
 GET  /healthz                          → Sidecar health check
-```
+```markdown
 
 ## 5. State Synchronization Architecture
 

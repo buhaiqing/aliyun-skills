@@ -69,7 +69,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```markdown
 # CreatePtsScene / SavePtsScene:     $.SceneId
 # ListPtsScene:                      $.SceneViewList[].{SceneId,SceneName,Status,CreateTime}
 # GetPtsScene:                       $.Scene.{SceneName,LoadConfig,RelationList}
@@ -78,7 +78,7 @@ metadata:
 # GetPtsReportDetails:               $.Report.{SceneId,StartTime,EndTime,SuccessRate,AvgRt}
 # ListPtsReports:                    $.ReportList[].{ReportId,SceneId,SceneName,Status}
 # DeletePtsScene:                    $.Success
-```
+```markdown
 
 ## Overview
 
@@ -159,7 +159,7 @@ Alibaba Cloud PTS (Performance Testing Service) provides API-driven load testing
 
 ```bash
 aliyun pts list-pts-scene --page-number 1 --page-size 10 --region "${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}"
-```
+```markdown
 
 ### Next Steps
 
@@ -211,7 +211,7 @@ aliyun pts list-pts-scene \
   --page-size {{user.page_size|default:10}} \
   --region "${ALIBABA_CLOUD_REGION_ID}" \
   ${user.key_word:+--key-word "${user.key_word}"}
-```
+```markdown
 
 #### Validate
 
@@ -257,7 +257,7 @@ aliyun pts create-pts-scene --region "${ALIBABA_CLOUD_REGION_ID}" --scene "$(cat
 }
 EOF
 )"
-```
+```text
 
 Full `Scene` schema: [api-sdk-usage.md](references/api-sdk-usage.md).
 
@@ -290,7 +290,7 @@ Full `Scene` schema: [api-sdk-usage.md](references/api-sdk-usage.md).
 
 ```bash
 aliyun pts start-debug-pts-scene --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```text
 
 #### Validate
 
@@ -298,7 +298,7 @@ Poll `get-pts-scene-running-status` until debug completes or timeout (interval 1
 
 ```bash
 aliyun pts get-pts-debug-sample-logs --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 ---
 
@@ -323,13 +323,13 @@ aliyun pts get-pts-debug-sample-logs --scene-id "{{user.scene_id}}" --region "${
 
 ```bash
 aliyun pts start-pts-scene --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```text
 
 #### Validate
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（60×30s → Finished/WaitStart）
-```
+```markdown
 
 Then fetch report via `get-pts-reports-by-scene-id` or `list-pts-reports`.
 
@@ -347,7 +347,7 @@ Then fetch report via `get-pts-reports-by-scene-id` or `list-pts-reports`.
 
 ```bash
 aliyun pts stop-pts-scene --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 Validate: `get-pts-scene-running-status` no longer `Running`.
 
@@ -365,7 +365,7 @@ Validate: `get-pts-scene-running-status` no longer `Running`.
 ```bash
 aliyun pts stop-pts-scene --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}" 2>/dev/null || true
 aliyun pts delete-pts-scene --scene-id "{{user.scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 #### Validate
 
@@ -381,7 +381,7 @@ aliyun pts list-pts-reports --region "${ALIBABA_CLOUD_REGION_ID}" \
 
 aliyun pts get-pts-report-details --report-id "{{user.report_id}}" \
   --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 Present: success rate, avg RT, TPS, error breakdown — paths in [monitoring.md](references/monitoring.md).
 

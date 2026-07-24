@@ -5,6 +5,7 @@
 > **状态**：Phase 1–5 **已完成**（2026-06-22）。
 >
 > **相关文档**：
+>
 > - [memory-observability-relationship.md](./memory-observability-relationship.md) — Trace 双轨、Layer 0–3 分工
 > - [memory-strategy.md](./memory-strategy.md) — 三层记忆 Local-first
 > - [harness-session-trace-system-design.md](./harness-session-trace-system-design.md) — Session / Trace schema
@@ -40,7 +41,7 @@
 
 ## 3. 本地存储布局
 
-```
+```text
 ${SKILLS_DIR}/.runtime/
 ├── traces/<skill-tag>/              # Wrapper trace（含 llm_generations[]）
 ├── sessions/<skill-tag>/            # Session 级 live rollup（skillopt-session-*.json）
@@ -66,7 +67,7 @@ ${SKILLS_DIR}/.runtime/
 │       └── efficiency-YYYYMMDD.md
 ├── audit/gcl/gcl-trace-*.json       # GCL trace（含 critic llm_usage）
 └── memory/、reflexion/              # ❌ 不含 runtime token
-```
+```markdown
 
 Legacy `alicloud-*/.runtime/` 已废弃；测试可用 `ALIBABA_CLOUD_RUNTIME_DIR` 覆盖为扁平目录。
 
@@ -250,7 +251,7 @@ flowchart LR
     }
   }
 }
-```
+```markdown
 
 | 字段 | 含义 |
 |------|------|
@@ -434,7 +435,7 @@ fixtures/mcp-context/cursor/
   02-invoked-only/         # 仅 postToolUse JSON → invoked 去重
   03-loaded-and-invoked/   # 二者合并 → utilization = |invoked|/|loaded|
   04-empty-config/         # 无 MCP → 空数组，confidence=estimated
-```
+```markdown
 
 编排器 `test-mcp-context-adapters.sh` 依次调用五个 `test-mcp-context-*.sh`；`skill-change-critic-gate` 在 Phase 4.5 diff 时 **机械要求** 五脚本均出现在 `regression_suites`。
 

@@ -46,6 +46,7 @@ aliyun ess CreateScalingGroup \
 **Output:** `$.ScalingGroupId`
 
 **JIT Go SDK fallback:**
+
 ```go
 request := &ess.CreateScalingGroupRequest{
     RegionId:         tea.String(os.Getenv("ALIBABA_CLOUD_REGION_ID")),

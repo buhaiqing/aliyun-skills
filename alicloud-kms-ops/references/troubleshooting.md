@@ -30,11 +30,13 @@
 ## Diagnostic Order
 
 1. **Check credential validity:**
+
    ```bash
    aliyun kms DescribeRegions
    ```
 
 2. **Describe the resource by ID:**
+
    ```bash
    # For keys
    aliyun kms DescribeKey --KeyId "{{user.key_id}}"
@@ -43,6 +45,7 @@
    ```
 
 3. **List related resources if API supports filters:**
+
    ```bash
    aliyun kms ListKeys --Filters '[{"Key":"KeyState","Values":["Enabled"]}]'
    ```
@@ -52,11 +55,13 @@
    - Cross-region key access requires cross-region key material export/import
 
 5. **Verify CLI metadata coverage:**
+
    ```bash
    aliyun help kms
    ```
 
 6. **Check KMS service activation:**
+
    ```bash
    aliyun kms DescribeAccountKmsStatus --RegionId "{{user.region}}"
    ```

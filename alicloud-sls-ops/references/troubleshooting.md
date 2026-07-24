@@ -72,12 +72,14 @@ aliyun sls GET /logstores/{{user.logstore}}/logs --header "x-log-apiversion=0.9.
 **Symptoms:** `$.count` is 0, `$.logs` is empty
 
 **Diagnosis:**
+
 1. Check time range — logs may be outside query window
 2. Check index configuration — fields may not be indexed
 3. Check log ingestion — logs may not be collected yet
 4. Check query syntax — SQL may be invalid
 
 **Recovery:**
+
 ```bash
 # Expand time range
 aliyun sls GET /logstores/{{user.logstore}}/logs --header "x-log-apiversion=0.9.0" \
@@ -92,10 +94,12 @@ aliyun sls GET /logstores/{{user.logstore}}/logs --header "x-log-apiversion=0.9.
 **Symptoms:** `IndexNotFound` error when querying logs
 
 **Diagnosis:**
+
 1. Check if index exists
 2. Check index configuration
 
 **Recovery:**
+
 ```bash
 # Create index
 aliyun sls POST /logstores/{{user.logstore}}/index \
@@ -109,10 +113,12 @@ aliyun sls POST /logstores/{{user.logstore}}/index \
 **Symptoms:** `Throttling` or `WriteShardExhausted` errors
 
 **Diagnosis:**
+
 1. Check shard count
 2. Check write QPS
 
 **Recovery:**
+
 ```bash
 # Increase shard count
 aliyun sls PUT /logstores/{{user.logstore}} \
@@ -126,11 +132,13 @@ aliyun sls PUT /logstores/{{user.logstore}} \
 **Symptoms:** Alert created but no notifications
 
 **Diagnosis:**
+
 1. Check alert configuration
 2. Check notification settings
 3. Check alert schedule
 
 **Recovery:**
+
 ```bash
 # Verify alert exists
 aliyun sls GET /alerts/{{user.alert_name}} --header "x-log-apiversion=0.9.0" --project "{{user.project_name}}"
@@ -174,11 +182,13 @@ aliyun sls PUT /alerts/{{user.alert_name}} \
 ### Logtail Not Collecting Logs
 
 **Diagnosis:**
+
 1. Check Logtail agent status
 2. Check log path configuration
 3. Check machine group membership
 
 **Recovery:**
+
 ```bash
 # Check Logtail status (on ECS)
 ps aux | grep logtail
@@ -193,11 +203,13 @@ sudo service logtail restart
 ### Logs Ingested but Not Queryable
 
 **Diagnosis:**
+
 1. Check index configuration
 2. Check query syntax
 3. Check time range
 
 **Recovery:**
+
 ```bash
 # Create index if missing
 aliyun sls POST /logstores/{{user.logstore}}/index \
@@ -211,11 +223,13 @@ aliyun sls POST /logstores/{{user.logstore}}/index \
 ### Slow Queries
 
 **Diagnosis:**
+
 1. Check query complexity
 2. Check index coverage
 3. Check shard count
 
 **Recovery:**
+
 - Simplify queries
 - Add indexes for frequently queried fields
 - Increase shard count for write throughput
@@ -223,11 +237,13 @@ aliyun sls POST /logstores/{{user.logstore}}/index \
 ### High Latency
 
 **Diagnosis:**
+
 1. Check network connectivity
 2. Check endpoint selection
 3. Check region proximity
 
 **Recovery:**
+
 - Use regional endpoint
 - Check Alibaba Cloud network status
 - Consider cross-region replication for global access

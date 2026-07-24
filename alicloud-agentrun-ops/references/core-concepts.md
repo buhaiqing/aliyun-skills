@@ -12,6 +12,7 @@
 | **Data Plane** | `{account}.agentrun-data.{region}.aliyuncs.com` | Code execution, files, TTY | ACS3-HMAC-SHA256 |
 
 **关键区别**:
+
 - Control Plane: 管理资源 CRUD（模板、沙箱实例）
 - Data Plane: 沙箱内操作（执行代码、读写文件、终端交互）
 
@@ -46,11 +47,13 @@
 | `status` | enum | Template status | `CREATING` \| `READY` \| `DELETING` |
 
 **状态机**:
-```
+
+```text
 CREATING ──► READY ──► DELETING ──► (deleted)
 ```
 
 **网络模式**:
+
 - `PUBLIC`: 公网访问，适合简单场景
 - `PRIVATE`: VPC 网络隔离，需指定 `vpcId` 和 `securityGroupId`
 
@@ -69,13 +72,15 @@ CREATING ──► READY ──► DELETING ──► (deleted)
 | `metadata.fcSessionDetails` | object | FC session info |
 
 **状态机**:
-```
+
+```text
 CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)──► TERMINATED
               │
               └──(PauseSandbox / 深休眠)──► HIBERNATED ──(ResumeSandbox)──► READY
 ```
 
 **生命周期约束**:
+
 | Constraint | Value | Configurable |
 |---|---|---|
 | Maximum hard lifecycle | **6 hours** | ❌ No |
@@ -92,6 +97,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 | `cwd` | string | Working directory |
 
 **使用场景**:
+
 - 多次代码执行共享状态
 - 保持变量、导入模块、文件系统变更
 
@@ -104,6 +110,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 **用途**: 执行 Python/Node.js/Go 代码，处理数据分析、文件操作。
 
 **Capabilities**:
+
 - 代码执行 (同步)
 - 文件读写、上传下载
 - 终端命令执行
@@ -116,6 +123,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 **用途**: 网页自动化、截图、数据提取。
 
 **Capabilities**:
+
 - 浏览器控制 (Playwright-like)
 - 网页截图
 - DOM 操作
@@ -128,6 +136,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 **用途**: 综合沙箱，支持代码执行 + 浏览器 + MCP 服务。
 
 **Capabilities**:
+
 - Code Interpreter 功能
 - BrowserTool 功能
 - MCP 服务集成
@@ -163,7 +172,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
   "enabledTools": ["health", "run_code", "read_file", "write_file"],
   "transport": "streamable-http"
 }
-```
+```markdown
 
 **StopTemplateMCP**: 停止 MCP 服务，删除相关资源（端点不可访问）。
 
@@ -221,6 +230,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 ### 6.1 Authentication
 
 **ACS3-HMAC-SHA256 Signing**:
+
 1. Build Canonical Request
 2. Generate StringToSign
 3. Derive Signing Key (HMAC chain)
@@ -232,6 +242,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 ### 6.2 Authorization (RAM)
 
 **Required Permissions**:
+
 | Action | RAM Policy Action |
 |---|---|
 | CreateTemplate | `fc:CreateTemplate` |
@@ -244,6 +255,7 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 ### 6.3 Network Isolation
 
 **PRIVATE Network Mode**:
+
 - 沙箱实例在指定 VPC 内运行
 - 需配置 `vpcId` 和 `securityGroupId`
 - 适合访问内部服务、数据库
@@ -268,11 +280,12 @@ CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)─�
 
 ### 7.3 Health Check
 
-```
-GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/health
-```
+```text
+GET <https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/health>
+```text
 
 **Response**:
+
 ```json
 {
   "status": "ok",
@@ -281,7 +294,7 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
   "timestamp": "2025-11-15T09:45:01Z",
   "uptime": 1142269582541
 }
-```
+```markdown
 
 ---
 
@@ -301,6 +314,7 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
 **文件系统恢复**: 仅恢复文件系统，不恢复执行环境
 
 详见官方文档:
+
 - [仅恢复文件系统](https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-sleep-file-system-only-recovery)
 - [暂停与恢复会话](https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-hibernation-pause-and-resume-session)
 
@@ -334,14 +348,14 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
 
 | Category | URL |
 |---|---|
-| AgentRun 平台总览 | https://help.aliyun.com/zh/functioncompute/fc/what-is-agentrun |
-| AgentRun Sandbox 索引 | https://help.aliyun.com/zh/functioncompute/fc/sandbox-function |
-| 动态挂载自定义 Skills | https://help.aliyun.com/zh/functioncompute/fc/dynamically-mount-custom-skills-for-sandboxes |
-| Sandbox Agent & Skills | https://help.aliyun.com/functioncompute/fc/using-sandbox-agent-skills-in-beta |
-| 工具市场 | https://help.aliyun.com/zh/functioncompute/fc/tool-marketplace |
+| AgentRun 平台总览 | <https://help.aliyun.com/zh/functioncompute/fc/what-is-agentrun> |
+| AgentRun Sandbox 索引 | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-function> |
+| 动态挂载自定义 Skills | <https://help.aliyun.com/zh/functioncompute/fc/dynamically-mount-custom-skills-for-sandboxes> |
+| Sandbox Agent & Skills | <https://help.aliyun.com/functioncompute/fc/using-sandbox-agent-skills-in-beta> |
+| 工具市场 | <https://help.aliyun.com/zh/functioncompute/fc/tool-marketplace> |
 | Knowledge Base (本仓库) | [knowledge-base.md](knowledge-base.md) |
-| Code Interpreter | https://help.aliyun.com/zh/functioncompute/fc/sandbox-sandbox-code-interepreter |
-| BrowserTool | https://help.aliyun.com/zh/functioncompute/fc/sandbox-browsertool |
-| AIO Sandbox | https://help.aliyun.com/zh/functioncompute/fc/aio-sandbox |
-| Deep Hibernation | https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-hibernation-pause-and-resume-session |
-| OpenAPI Explorer | https://next.api.aliyun.com/api/ > AgentRun |
+| Code Interpreter | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-sandbox-code-interepreter> |
+| BrowserTool | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-browsertool> |
+| AIO Sandbox | <https://help.aliyun.com/zh/functioncompute/fc/aio-sandbox> |
+| Deep Hibernation | <https://help.aliyun.com/zh/functioncompute/fc/sandbox-deep-hibernation-pause-and-resume-session> |
+| OpenAPI Explorer | <https://next.api.aliyun.com/api/> > AgentRun |

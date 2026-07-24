@@ -7,6 +7,7 @@ Alibaba Cloud SMS Service (短信服务, Dysmsapi) provides short message servic
 ## Key Concepts
 
 ### SMS Signature (短信签名)
+
 - Required for all SMS sending operations
 - Must be approved before use (review typically 1-2 business days)
 - Sources: verification code (0), marketing (1), notification (2), utility (3)
@@ -14,6 +15,7 @@ Alibaba Cloud SMS Service (短信服务, Dysmsapi) provides short message servic
 - Must be unique across your account
 
 ### SMS Template (短信模板)
+
 - Required for all SMS sending operations
 - Must be approved before use
 - Types: verification (0), marketing (1), notification (2), utility (3)
@@ -21,21 +23,25 @@ Alibaba Cloud SMS Service (短信服务, Dysmsapi) provides short message servic
 - Max 500 characters per template
 
 ### SendSms (发送短信)
+
 - Single SMS sending API
 - Requires: PhoneNumbers, SignName, TemplateCode
 - Optional: TemplateParam (JSON), OutId (tracking ID)
 - Returns: BizId for delivery tracking
 
 ### SendBatchSms (批量发送)
+
 - Batch SMS sending API (up to 100 numbers per call)
 - Requires: PhoneNumberJson, SignNameJson, TemplateCode, TemplateParamJson
 - Phone count must match parameter count
 
 ### QuerySendDetails (查询发送详情)
+
 - Query delivery reports for specific phone/date
 - Returns: SendStatus, SendTime, Receiver, Content, ErrCode, ErrMsg
 
 ### QuerySendStatistics (查询发送统计)
+
 - Query daily sending statistics for date range
 - Returns: SmsSendCount, SmsSuccessCount, SmsSpeed, SmsSuccessRate
 
@@ -70,12 +76,12 @@ Alibaba Cloud SMS Service (短信服务, Dysmsapi) provides short message servic
 
 ## Resource Dependencies
 
-```
+```text
 SMS Signature → Required for SendSms
 SMS Template → Required for SendSms
 SendSms → Produces BizId
 BizId → Input for QuerySendDetails
-```
+```markdown
 
 ## Important Notes
 

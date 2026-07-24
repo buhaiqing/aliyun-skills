@@ -6,7 +6,7 @@
 
 ## Problem
 
-Layer 2 today captures **failure** and **near-miss** patterns (`failure-patterns.md`, `{{known_traps}}`).
+Layer 2 today captures **failure**and**near-miss** patterns (`failure-patterns.md`, `{{known_traps}}`).
 It does not record **what worked** after recovery — the command shape, iteration count, or context that led to a durable PASS.
 
 Without positive reference:
@@ -25,8 +25,8 @@ R4 adds **success pattern memory**: small, deduped, retrieval-bounded records of
 
 | Term | Meaning |
 |------|---------|
-| **Ordinary PASS** | First-iteration success with no relevant pre-flight traps and strong critic scores — expected baseline; **do not store**. |
-| **Hard-won PASS** | PASS that required recovery, prior trap context, or multi-iteration refinement — **store** as success pattern. |
+| **Ordinary PASS**| First-iteration success with no relevant pre-flight traps and strong critic scores — expected baseline;**do not store**. |
+| **Hard-won PASS**| PASS that required recovery, prior trap context, or multi-iteration refinement —**store** as success pattern. |
 
 ### Capture gate (all required)
 
@@ -53,7 +53,7 @@ R4 adds **success pattern memory**: small, deduped, retrieval-bounded records of
 | **OR-3** | `min(final_critic.scores.values()) >= 0.95` |
 | **OR-4** | No HW-3 / HW-4 trajectory in earlier iterations |
 
-> **Rationale**: OR-* avoids polluting the store with routine read-only Describe* that always pass. HW-* ensures we only index passes that carry transferable signal.
+> **Rationale**: OR-*avoids polluting the store with routine read-only Describe* that always pass. HW-* ensures we only index passes that carry transferable signal.
 
 ### Non-capture (explicit bans)
 

@@ -73,6 +73,7 @@ as the primary agent execution path** in `SKILL.md`.
   shared endpoint map. The endpoint is **fixed** to
   `das.cn-shanghai.aliyuncs.com` (public) regardless of the target instance's
   region.
+
   ```bash
   # Example: CLI call with mandatory endpoint
   aliyun das DescribeSqlLogConfig \
@@ -80,6 +81,7 @@ as the primary agent execution path** in `SKILL.md`.
     --RegionId cn-shanghai \
     --InstanceId "{{user.instance_id}}"
   ```
+
 - **JIT Go SDK** is the preferred path when CLI returns endpoint errors or
   for complex operations. The Go SDK package is
   `github.com/alibabacloud-go/das-20200116/v5/client`.
@@ -282,6 +284,7 @@ func main() {}
 ```
 
 Execute (once per workspace):
+
 ```bash
 mkdir -p /tmp/aliyun-sdk-workspace
 cd /tmp/aliyun-sdk-workspace
@@ -637,13 +640,16 @@ cd /tmp/aliyun-sdk-workspace && go run ./main.go
 This skill includes a comprehensive troubleshooting enhancement framework:
 
 ### Assessment & Optimization
+
 - [Troubleshooting Capability Assessment](references/troubleshooting.md) — Root cause identification efficiency analysis, optimization proposals, and standardized evaluation metrics
 - [Cross-Skill Collaboration Protocol](references/cross-skill-collaboration.md) — Trigger conditions, context passing format, and best practices for multi-skill diagnosis
 
 ### Prompt Templates (Advanced — Lazy-Loaded)
+
 - [Troubleshooting Prompt Templates](references/advanced/prompt-templates.md) — Structured prompt templates categorized by fault type (connection_timeout, performance_degradation, data_anomaly) and diagnosis phase (symptom_collection, log_analysis, root_cause_identification, resolution)
 
 ### Configuration Assets
+
 - [Fault Pattern Library](assets/das-fault-pattern-library.yaml) — 12 standardized fault patterns with symptoms, root causes, diagnostic APIs, and resolution APIs
 - [Alert Thresholds](assets/das-alert-thresholds.yaml) — Static and dynamic baseline thresholds for 11 key metrics with special period adjustments
 - [Log Analysis Patterns](assets/das-log-analysis-patterns.yaml) — 8 multi-source correlation analysis patterns for complex fault diagnosis

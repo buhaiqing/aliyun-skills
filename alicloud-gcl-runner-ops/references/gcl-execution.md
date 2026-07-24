@@ -26,7 +26,7 @@ metadata:
 `alicloud-gcl-runner-ops/scripts/gcl_runner.py` is a standalone Python 3.10+ CLI
 that implements the GCL loop:
 
-```
+```yaml
 [0] Pre-flight   — load rubric, resolve env.* / user.*, sanitize secrets
 [0.5] Memory     — R2: retrieve Layer 1–3 hints → trace["memory_preflight"] +
                    trace["generator_prompt_with_memory"] (Local-first P0)

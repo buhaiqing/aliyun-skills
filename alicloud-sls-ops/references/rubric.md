@@ -119,12 +119,14 @@ response, and any error are captured in `./audit-results/gcl-trace-*.json`.
 ### 2.1 SLS REST Headers Enforcement
 
 All `aliyun sls` commands **MUST** include appropriate REST headers, specifically `--header "x-log-apiversion=0.9.0"`.
+
 - **Score 1:** Correct version header present.
 - **Score 0:** Missing version header (leads to API protocol error).
 
 ### 2.2 SLS Project/Endpoint Scope
 
 SLS requires proper target project scope routing via `--project <project_name>` for all non-root paths.
+
 - **Score 1:** Correct project scope applied.
 - **Score 0:** Missing or mismatched `--project` parameter where required.
 

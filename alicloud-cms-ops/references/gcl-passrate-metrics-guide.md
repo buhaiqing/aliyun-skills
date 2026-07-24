@@ -28,7 +28,7 @@ metadata:
 
 ## 1. Architecture
 
-```
+```text
 cron (every N hours)
   │
   ├── gcl_runner.py                          (Phase 2)
@@ -106,7 +106,7 @@ These alarms are defined in `scripts/gcl_cms_alarm_setup.py` as Phase 4 entries.
 Initial thresholds are conservative (low false-positive). After 30 days of
 data, review and adjust:
 
-```
+```markdown
 # Check per-skill correctness pass-rate
 python3 scripts/gcl_passrate_reporter.py --trace-dir audit-results/ --since 7d --dry-run
 
@@ -114,6 +114,7 @@ python3 scripts/gcl_passrate_reporter.py --trace-dir audit-results/ --since 7d -
 ```
 
 If a dimension consistently hits the alarm, either:
+
 - The rubric is too strict for that skill → relax dimension thresholds per skill
 - The Generator has a systematic bug → fix the skill's prompt templates
 - The skill is genuinely dangerous → keep the alarm and investigate each firing

@@ -54,13 +54,16 @@ export ARCH_ADVISOR_LANG=zh_CN   # Chinese (default)
 ## 📦 工作模式
 
 ### Mode A: 架构逆向与分析
+
 - 自动识别架构模式 (single-node, 3-tier, microservice, serverless, multi-region)
 - 生成 Mermaid 拓扑图
 - 输出架构文档 (Markdown)
 - 资源清单 (JSON)
 
 ### Mode B: WAF 成熟度评估
+
 基于阿里云 Well-Architected Framework 的**五支柱**评估:
+
 1. **Security** (安全)
 2. **Reliability** (可靠性)
 3. **Performance** (性能)
@@ -70,7 +73,9 @@ export ARCH_ADVISOR_LANG=zh_CN   # Chinese (default)
 输出: 评分卡 + 风险清单 + 改进建议
 
 ### Mode C: 架构方案推荐
+
 **支持的场景**:
+
 - 🛒 E-commerce (电商)
 - 💼 SaaS Application
 - 📊 Data Platform (数据平台)
@@ -108,6 +113,7 @@ export ARCH_ADVISOR_LANG=zh_CN   # Chinese (default)
 ```
 
 **测试覆盖**:
+
 - ✅ Cost Estimation (5)
 - ✅ Progress Bar (5)
 - ✅ Error Classification (6)
@@ -199,6 +205,7 @@ alicloud-arch-advisor/
 欢迎提交 Issue 和 Pull Request!
 
 ### 开发流程
+
 1. Fork 仓库
 2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
 3. 运行测试 (`./tests/test-core-functions.sh`)
@@ -207,6 +214,7 @@ alicloud-arch-advisor/
 6. 创建 Pull Request
 
 ### 代码规范
+
 - 遵循 [AGENTS.md](../AGENTS.md) 规范
 - 所有新功能必须有单元测试
 - 更新 CHANGELOG.md

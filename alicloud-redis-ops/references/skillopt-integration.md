@@ -16,11 +16,13 @@ legacy `skillopt-lib.sh` symlink) sources
 ## Usage
 
 ### Direct Command
+
 ```bash
 aliyun redis DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 ```
 
 ### Wrapper Script
+
 ```bash
 cd $(pwd)/alicloud-redis-ops
 ./scripts/redis-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou

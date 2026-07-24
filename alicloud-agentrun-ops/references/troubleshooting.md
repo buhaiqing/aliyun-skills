@@ -102,6 +102,7 @@
 **Symptom: CreateTemplate fails with `InvalidParameter`**
 
 Diagnostic Steps:
+
 1. Validate `templateName`: regex `[a-zA-Z0-9-_]{1,64}`
 2. Check `cpu`: integer 1-8
 3. Check `memory`: integer 1024-16384
@@ -111,6 +112,7 @@ Diagnostic Steps:
 **Symptom: CreateTemplate fails with `TemplateAlreadyExists`**
 
 Diagnostic Steps:
+
 1. Call `GetTemplate(templateName)` to check existing
 2. If exists and needs update → use `UpdateTemplate`
 3. If new template needed → use different name
@@ -120,6 +122,7 @@ Diagnostic Steps:
 **Symptom: CreateSandbox fails with `TemplateNotFound`**
 
 Diagnostic Steps:
+
 1. Call `ListTemplates` to verify template exists
 2. Check template `status` = `READY`
 3. If CREATING → poll until READY (interval 5s, max 60s)
@@ -127,6 +130,7 @@ Diagnostic Steps:
 **Symptom: Sandbox stuck in CREATING state**
 
 Diagnostic Steps:
+
 1. Poll `GetSandbox(sandboxId)` every 5 seconds
 2. If > 120 seconds in CREATING → service issue
 3. Call `DeleteSandbox` to clean up
@@ -135,6 +139,7 @@ Diagnostic Steps:
 **Symptom: ExecuteCode returns `SandboxNotReady`**
 
 Diagnostic Steps:
+
 1. Call `GetSandbox(sandboxId)` check status
 2. If TERMINATED → create new sandbox
 3. If CREATING → wait until READY
@@ -144,6 +149,7 @@ Diagnostic Steps:
 **Symptom: ExecuteCode timeout (30 seconds)**
 
 Diagnostic Steps:
+
 1. Check code complexity (loops, I/O operations)
 2. Reduce dataset size
 3. Set explicit `timeout` parameter (< 30)
@@ -152,6 +158,7 @@ Diagnostic Steps:
 **Symptom: ExecuteCode returns error in results**
 
 Diagnostic Steps:
+
 1. Parse `results[type="stderr"]` for error message
 2. Check `results[type="endOfExecution"].status`
 3. If `error` → check code syntax, runtime errors
@@ -162,6 +169,7 @@ Diagnostic Steps:
 **Symptom: File upload fails with `FileSizeExceeded`**
 
 Diagnostic Steps:
+
 1. Check file size (must be < 100MB)
 2. Split large files into chunks
 3. Use external storage (OSS) for large data
@@ -169,12 +177,14 @@ Diagnostic Steps:
 **Symptom: WriteFile fails with hidden file error**
 
 Diagnostic Steps:
+
 1. Check filename (cannot start with `.`)
 2. Use valid filename pattern
 
 **Symptom: `StorageQuotaExceeded`**
 
 Diagnostic Steps:
+
 1. List files with `ListFiles` to check disk usage
 2. Remove unnecessary files
 3. Increase `diskSize` in template (requires UpdateTemplate + new sandbox)
@@ -184,6 +194,7 @@ Diagnostic Steps:
 **Symptom: `SignatureDoesNotMatch`**
 
 Diagnostic Steps:
+
 1. Verify header ordering (alphabetical, lowercase)
 2. Check header values (trim spaces)
 3. Verify body hash matches actual body
@@ -193,6 +204,7 @@ Diagnostic Steps:
 **Symptom: `RequestExpired`**
 
 Diagnostic Steps:
+
 1. Check system clock: `date -u`
 2. Ensure timestamp within 15 minutes
 3. Use NTP to sync clock
@@ -230,11 +242,13 @@ def retry_with_backoff(func, max_retries=3):
 ### 4.3 Graceful Degradation
 
 **Sandbox Failure → Create New Sandbox**:
+
 1. Delete failed sandbox
 2. Create new sandbox from template
 3. Restore state from file backups
 
 **Template Failure → Use Default Template**:
+
 1. Fallback to pre-created default template
 2. Create sandbox from default
 
@@ -329,6 +343,7 @@ curl -X GET "https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sa
 ## 8. Debug Checklist
 
 **Before API Call**:
+
 - [ ] AK/SK configured and valid
 - [ ] Region and Account ID correct
 - [ ] RAM permissions verified
@@ -336,17 +351,20 @@ curl -X GET "https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sa
 - [ ] Network connectivity verified
 
 **For Template Operations**:
+
 - [ ] templateName valid (1-64 chars)
 - [ ] CPU 1-8, Memory 1024-16384
 - [ ] NetworkMode valid (PUBLIC/PRIVATE)
 - [ ] No existing template conflict
 
 **For Sandbox Operations**:
+
 - [ ] Template exists and READY
 - [ ] SandboxId format valid (ULID)
 - [ ] Sandbox status = READY for data plane ops
 
 **For Signing**:
+
 - [ ] Headers lowercase, sorted alphabetically
 - [ ] Header values trimmed
 - [ ] Body hash matches

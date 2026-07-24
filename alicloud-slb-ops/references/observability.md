@@ -31,6 +31,7 @@ aliyun log GetLogs \
 ## 降级策略
 
 若 SLS/ARMS 不可用：
+
 1. 检查 SLB 健康检查状态
 2. 逐一检查后端服务器响应
 3. 启用精细化监控（`EnableHighDefinationMonitor`）

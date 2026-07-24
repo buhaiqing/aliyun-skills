@@ -49,6 +49,7 @@
 ### "Bucket creation fails with `InvalidBucketName`"
 
 Common causes:
+
 - Uppercase letters → **must be lowercase**
 - Underscore `_` → **not allowed**; use hyphen `-`
 - Length < 3 or > 63 → **invalid**
@@ -94,6 +95,7 @@ Common causes:
 ### "High request costs (charges spike)"
 
 OSS charges per 10,000 requests. High cost usually indicates:
+
 - **Lifecycle is missing** — Standard-class objects accumulate forever.
 - **List operations are chatty** — each `ListObjects` page is 1 request.
 - **Image processing** — every `?x-oss-process=` query is a request.

@@ -1,6 +1,7 @@
 # Post-Update Self-Review Checklist for alicloud-elasticsearch-ops
 
 ## Round 1: Structural Checks
+
 - [x] C1: Frontmatter complete (name, description, license, compatibility, metadata) with description < 1024 chars
 - [x] C2: SHOULD/SHOULD NOT triggers with precise delegation rules
 - [x] C3: Correctly classified {{env.*}} vs {{user.*}} variables; no hardcoded secrets
@@ -9,6 +10,7 @@
 - [x] C6: Token Efficiency rules TE-1~TE-7 all satisfied (MUST PASS)
 
 ## Round 2: Content & Functional Checks
+
 - [x] F1: CLI command validation: `aliyun elasticsearch help` confirms product exists; command params match real API
 - [x] F2: All operationIds, field names, JSON paths traceable to OpenAPI/official docs
 - [x] F3: ≥10 product-specific error codes with recovery actions; retry/HALT boundaries clear
@@ -19,12 +21,15 @@
 - [x] F8: All新增/修改功能已在TODO.md中更新为✅ (同步更新此文件)
 
 ## Round 3: Lessons Learned
+
 - [x] L1: Extract reusable failure patterns to failure-patterns.md if applicable
 - [x] L2: Deduplicate patterns if already present
 - [x] L3: Keep failure-patterns.md under 200 lines if needed
 
 ---
+
 ## Review Status
+
 - [x] Round 1 completed
 - [x] Round 2 completed
 - [x] Round 3 completed

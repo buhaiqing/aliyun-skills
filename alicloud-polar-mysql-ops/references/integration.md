@@ -10,9 +10,9 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/polardb-20220530/v3/client
-```
+```markdown
 
 ## JIT Go SDK Workflow
 
@@ -26,7 +26,7 @@ go get github.com/alibabacloud-go/tea
 go get github.com/alibabacloud-go/tea-utils/v2/service
 go get github.com/alibabacloud-go/polardb-20220530/v3/client
 go run ./main.go
-```
+```markdown
 
 ## Go SDK Script Template
 
@@ -65,7 +65,7 @@ func main() {
 
 	fmt.Println(tea.ToString(resp.Body))
 }
-```
+```markdown
 
 ## Self-Healing Framework
 
@@ -77,6 +77,6 @@ See [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../
 export ALIBABA_CLOUD_ACCESS_KEY_ID=***
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET=***
 export ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 > **SECURITY:** Never echo secret values. Verify existence only: `test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET"`

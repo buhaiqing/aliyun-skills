@@ -30,7 +30,7 @@
 
 #### 示例输出
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏗️  Architecture Recommendation Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -88,7 +88,7 @@ else
         log_error "操作失败(退出码: ${exit_code})"
     fi
 fi
-```
+```markdown
 
 #### 应用范围
 
@@ -115,7 +115,7 @@ elapsed = now - start_time
 steps_per_sec = current_step / elapsed
 remaining_steps = total_steps - current_step
 eta_seconds = remaining_steps / steps_per_sec
-```
+```markdown
 
 ### 兼容性
 
@@ -158,7 +158,7 @@ eta_seconds = remaining_steps / steps_per_sec
 ✓ common.sh 语法检查通过
 ✓ recommend.sh 语法检查通过
 ✓ interactive-wizard.sh 语法检查通过
-```
+```markdown
 
 ---
 
@@ -166,25 +166,26 @@ eta_seconds = remaining_steps / steps_per_sec
 
 ### 使用前
 
-```
+```json
 [INFO] [Step 1/7] Checking dependencies...
 [INFO] [Step 2/7] Initializing recommendation report...
 [INFO] [Step 3/7] Validating scenario...
 ...
 (用户不知道还要等多久，是否卡死)
-```
+```markdown
 
 ### 使用后
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏗️  Architecture Recommendation Engine
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ▌██████████████████████████░░░░░░░░░░░░░░░░▐ 64% | ⏱ 28s | ETA 16s
   → Validating component availability in cn-hangzhou...
-```
+```markdown
 
 **优势**:
+
 - ✅ **透明度**: 清晰显示当前进度和预计完成时间
 - ✅ **信心**: 用户知道系统正在工作，没有卡死
 - ✅ **规划**: ETA 帮助用户安排等待时间
@@ -201,6 +202,7 @@ eta_seconds = remaining_steps / steps_per_sec
 | F-003 | P1 | interactive-wizard.sh 缺少超时控制 | ✅ 已修复 |
 
 **修复详情**:
+
 - 添加了 `timeout 1800` (30分钟) 到所有模式执行
 - 区分超时错误 (exit code 124) 和其他错误
 - 提供友好的错误提示
@@ -241,7 +243,7 @@ progress_update 2 "Completed step 2"
 
 # 3. 完成
 progress_complete "Operation finished"
-```
+```markdown
 
 ### 自定义进度条
 
@@ -254,7 +256,7 @@ readonly PROGRESS_COLOR='\033[0;35m'  # 紫色
 
 # 禁用 ETA (如果不需要)
 # 注释掉 progress_update 中的 ETA 计算部分
-```
+```markdown
 
 ---
 
@@ -263,6 +265,7 @@ readonly PROGRESS_COLOR='\033[0;35m'  # 紫色
 ### P1 优先级
 
 1. **支持嵌套进度条**: 主进度条 + 子任务进度条
+
    ```bash
    progress_start 3 "Main task"
    progress_update 1 "Sub-task 1"
@@ -273,6 +276,7 @@ readonly PROGRESS_COLOR='\033[0;35m'  # 紫色
    ```
 
 2. **持久化进度状态**: 支持中断后恢复
+
    ```bash
    # 保存进度到文件
    echo "$_progress_current_step" > .progress_state
@@ -284,6 +288,7 @@ readonly PROGRESS_COLOR='\033[0;35m'  # 紫色
    ```
 
 3. **图形化进度条**: 支持 iTerm2 等终端的图形进度条
+
    ```bash
    # iTerm2 progress bar escape sequence
    echo -ne "\033]9;4;3;${percentage}\007"

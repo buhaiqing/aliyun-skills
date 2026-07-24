@@ -19,7 +19,7 @@ aliyun plugin list | grep waf
 
 # Expected output:
 # waf-openapi   Web Application Firewall
-```
+```bash
 
 ## Go Runtime Bootstrap
 
@@ -34,7 +34,7 @@ if ! command -v go &> /dev/null; then
     [ "$ARCH" = "aarch64" ] && ARCH="arm64"
     
     mkdir -p /tmp/go-runtime
-    curl -fsSL "https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.gz" | tar -xz -C /tmp/go-runtime
+    curl -fsSL "<https://go.dev/dl/go1.24.0.${OS}-${ARCH}.tar.g>z" | tar -xz -C /tmp/go-runtime
     export PATH="/tmp/go-runtime/go/bin:$PATH"
     export GOPATH="/tmp/go-workspace"
     export GOCACHE="/tmp/go-cache"
@@ -44,6 +44,7 @@ go version
 ```
 
 > **Go version strategy:**
+>
 > - **JIT download:** Go 1.24+ (latest stable)
 > - **Script compatibility:** Go 1.21+ (minimum)
 
@@ -55,13 +56,13 @@ go version
 mkdir -p /tmp/aliyun-sdk-workspace
 cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script
-```
+```bash
 
 ### 2. Get dependencies
 
 ```bash
 # Set proxy for China CDN mirror (faster download)
-export GOPROXY="https://goproxy.cn,direct"
+export GOPROXY="<https://goproxy.cn,direc>t"
 
 # Core dependencies
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
@@ -80,7 +81,7 @@ Agent dynamically creates operation-specific .go file.
 
 ```bash
 go run ./main.go
-```
+```markdown
 
 ## SDK Package Reference
 
@@ -88,13 +89,13 @@ go run ./main.go
 |---------|---------------|
 | WAF 3.0 | `github.com/alibabacloud-go/waf-openapi-20211001/v2/client` |
 
-> Find package names at: https://github.com/alibabacloud-go
+> Find package names at: <https://github.com/alibabacloud-go>
 
 ## Environment Variable Loading
 
 Credentials can be sourced from multiple locations:
 
-```
+```text
 Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
 ```
 
@@ -105,7 +106,7 @@ Shell env (highest) > `.env` file > aliyun config.json > defaults (lowest)
 ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=your_access_key_secret
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 - **Security**: `.env` MUST be in `.gitignore` — never commit credentials
 
@@ -190,7 +191,7 @@ func main() {
     
     fmt.Println(tea.ToString(response.Body))
 }
-```
+```markdown
 
 > Use `os.Getenv("KEY")` for all credentials. Never hardcode secrets in scripts.
 

@@ -35,6 +35,7 @@ aliyun actiontrail LookupEvents \
 ## 降级策略
 
 若 SLS 不可用：
+
 1. 直接使用 `aliyun actiontrail LookupEvents` API 查询最近 90 天事件
 2. 检查 ActionTrail 控制台的 Trail 状态
 3. 确认事件是否正常投递到 OSS（如启用了 OSS 投递）

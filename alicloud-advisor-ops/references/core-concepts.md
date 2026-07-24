@@ -16,7 +16,7 @@ Advisor's job is to answer three questions:
 
 ## The Inspection Model
 
-```
+```text
 [ Schedule (default daily)        ]
 [ User-triggered Refresh          ]
 [ Resource change event           ]  -- triggers scan
@@ -59,7 +59,7 @@ Key terms:
 
 ## Advice Lifecycle
 
-```
+```text
 [ Check rule evaluates resource ]
             |
             v
@@ -115,7 +115,7 @@ The cost optimization API surface (`DescribeCost*` and
 advice pipeline. The two have **different** check IDs and inspection
 schedules.
 
-```
+```text
 [ Cost check engine ]  -- separate from health checks
         |
         v
@@ -139,7 +139,7 @@ changes itself.
 
 ## Inspection Task Lifecycle
 
-```
+```text
 RefreshAdvisorCheck
     |
     v
@@ -182,7 +182,7 @@ symptom. See [Troubleshooting](troubleshooting.md) for throttle handling.
 
 ## Cross-Skill Architecture Position
 
-```
+```markdown
 +----------------+      +----------------+      +----------------+
 | alicloud-cms-  |      | alicloud-      |      | alicloud-      |
 | ops            |      | advisor-ops    |      | actiontrail-   |

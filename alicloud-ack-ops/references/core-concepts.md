@@ -11,12 +11,15 @@
 ## Key Resources
 
 ### Cluster
+
 A Kubernetes cluster consists of a control plane (managed by Alibaba Cloud for
 ManagedKubernetes) and worker nodes (managed by user or auto-managed). Identified
 by `cluster_id`.
 
 ### Node Pool
+
 A homogeneous group of worker nodes sharing:
+
 - Instance type
 - VSwitch
 - Operating system image
@@ -25,7 +28,9 @@ A homogeneous group of worker nodes sharing:
 Node pools enable independent scaling and upgrade of different workload tiers.
 
 ### Addon
+
 Cluster components extending Kubernetes functionality:
+
 - **Ingress:** Traffic routing (NGINX, ALB)
 - **Monitoring:** Metrics collection (CloudMonitor, Prometheus)
 - **Logging:** Log collection (Logtail)
@@ -61,5 +66,6 @@ aliyun cs GET /k8s/{cluster_id}/user_config
 ```
 
 Two endpoint types:
+
 - **Public:** Accessible from internet (requires public API server enabled)
 - **Internal:** Accessible only within VPC

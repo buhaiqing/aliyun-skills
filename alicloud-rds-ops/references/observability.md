@@ -26,7 +26,7 @@ aliyun das GetSlowSQLRecord \
 aliyun das GetRequestAnalysis \
   --DBInstanceId "{{user.rds_instance_id}}" \
   --StartTime "2026-05-16T00:00:00Z"
-```
+```markdown
 
 ## Metrics → Traces 联动
 
@@ -57,11 +57,12 @@ aliyun das CreateDiagnosticReport \
 # 获取诊断报告
 aliyun das DescribeDiagnosticReport \
   --ReportId "{{output.report_id}}"
-```
+```markdown
 
 ## 降级策略
 
 若 DAS 不可用：
+
 1. 直接连接 RDS 使用 `SHOW PROCESSLIST`、`EXPLAIN`、`SHOW ENGINE INNODB STATUS` 排查
 2. 查询慢 SQL 日志文件
 3. 使用 RDS 控制台的 SQL 洞察功能
@@ -114,7 +115,7 @@ aliyun das CreateDiagnosticReport \
   --DiagnosticType "AnomalyAnalysis" \
   --StartTime "2026-05-16T00:00:00Z" \
   --EndTime "2026-05-16T01:00:00Z"
-```
+```markdown
 
 ### 预测报告解读
 
@@ -128,7 +129,7 @@ aliyun das CreateDiagnosticReport \
 
 ### 预测 → 告警 → 诊断 联动流程
 
-```
+```text
 预测性分析触发
 │
 ├─ 磁盘增长预测 → Days_to_90 < 7
@@ -143,6 +144,6 @@ aliyun das CreateDiagnosticReport \
 └─ 连接增长预测 → 预计 6h 内耗尽
    ├─ 触发诊断 (alert-diagnosis.md §1.3)
    └─ 建议: 连接泄漏排查 + 紧急扩容
-```
+```markdown
 
 > **详细预测分析**: 参考 [AIOps Prediction & Anomaly Detection](../references/advanced/aiops-prediction.md)

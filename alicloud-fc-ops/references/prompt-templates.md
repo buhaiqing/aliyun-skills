@@ -49,6 +49,7 @@ You are the Generator in a GCL for Alibaba Cloud FC.
 - `DeleteTrigger`: require user to confirm trigger ARN.
 - All `{{user.*}}` resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -85,4 +86,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | FC GCL prompt templates (Phase 5, recommended).

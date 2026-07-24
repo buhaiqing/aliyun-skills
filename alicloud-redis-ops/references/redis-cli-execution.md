@@ -14,12 +14,12 @@
 
 ## 执行流程一览
 
-```
+```text
 Step 1: 获取 Redis 连接地址        → aliyun r-kvstore describe-instance-attribute
 Step 2: 幂等 ensure redis-cli      → aliyun ecs RunCommand (内联 ensure_redis_cli)
 Step 3: 配置 REDISCLI_AUTH（可选）  → aliyun ecs RunCommand (export 即时生效)
 Step 4: 执行 Redis 命令            → aliyun ecs RunCommand (redis-cli DEL/GET/SET...)
-```
+```markdown
 
 **推荐使用「合并执行」脚本**（Step 2 → Step 3 → Step 4 一次调用）— 见本文末尾。
 
@@ -33,7 +33,7 @@ Step 4: 执行 Redis 命令            → aliyun ecs RunCommand (redis-cli DEL/
 aliyun r-kvstore describe-instance-attribute \
   --InstanceId "{{user.redis_instance_id}}" \
   --output cols=ConnectionDomain rows=InstanceAttribute.ConnectionDomain
-```
+```text
 
 赋值到变量（后续步骤使用）：
 
@@ -41,7 +41,7 @@ aliyun r-kvstore describe-instance-attribute \
 REDIS_HOST="{{user.redis_host}}"
 REDIS_PORT="{{user.redis_port|6379}}"
 REDIS_PASSWORD="{{user.redis_password|}}"
-```
+```markdown
 
 ---
 
@@ -72,7 +72,7 @@ BIZ
   --Type "RunShellScript" \
   --Name "ensure-redis-cli" \
   --Timeout 300
-```
+```markdown
 
 > 说明：`<<'BIZ'`（**带引号**）保证 here-doc 内不做变量插值，避免 shell 注入。
 > `REQUIRED_VERSION` / `REDIS_CLI_BIN_URL` 由调用方在 **本地 shell** 中预先 `export`
@@ -109,7 +109,7 @@ if [ -n "$REDIS_PASSWORD" ] && [ "${PERSIST_AUTH:-no}" = "yes" ]; then
     echo "[$(date +%H:%M:%S)] [RESULT] AUTH_PERSISTED=ALREADY"
   fi
 fi
-```
+```markdown
 
 ---
 
@@ -195,7 +195,7 @@ exit 0
   --Type "RunShellScript" \
   --Name "exec-redis-command" \
   --Timeout 120
-```
+```markdown
 
 ### ExitCode 速查
 
@@ -336,7 +336,7 @@ aliyun ecs RunCommand \
   --Type "RunShellScript" \
   --Name "redis-cli-exec" \
   --Timeout 300
-```
+```markdown
 
 ### 它做了什么（5 个关键点）
 
@@ -355,12 +355,14 @@ aliyun ecs RunCommand \
 （任何 RunCommand 都必须传递完整脚本内容），**无法在本方案内规避**。
 
 **实际审计风险**：
+
 - ✅ 阿里云审计日志（ActionTrail）**默认不记录** `--CommandContent` 字段值
   （记录调用元数据但不记录脚本内容）
 - ⚠️ 本机 shell 历史（`~/.bash_history`）**会记录**完整命令——执行前请 `unset HISTFILE`
 - ⚠️ CI/CD 系统的 job log 可能记录——确保 CI 配置中 mask 密码变量
 
 **如果需要绝对零密码进入 RunCommand**：
+
 - 方案 A：在 ECS 上预先把密码写入 `/etc/profile.d/redis-auth.sh`（chmod 600），脚本读环境变量
 - 方案 B：使用阿里云 KMS Secrets Manager，脚本里 `aliyun kms get-secret-value` 拉取
 - 方案 C：使用阿里云 RAM 临时凭据 + ACL 而非密码鉴权（Redis 6.0+）
@@ -378,7 +380,7 @@ bash -n alicloud-redis-ops/scripts/redis-cli-install.sh && echo "✓ 安装脚�
 # 完整拼装预览（不执行）：
 ( cd /your/repo/root && bash -n <(cat alicloud-redis-ops/scripts/redis-cli-install.sh) ) \
   && echo "✓ 拼装语法 OK"
-```
+```markdown
 
 
 > _上一个版本（v1.2.x）这里有一段含 `[PASTE FUNCTIONS HERE]` 占位的合并脚本骨架，已被上方「即时拼装」方案替代。如需历史版本，参见 git log。_
@@ -431,7 +433,7 @@ for i in $(seq 1 60); do
     *) sleep 5 ;;
   esac
 done
-```
+```markdown
 
 ---
 
@@ -453,43 +455,48 @@ done
 ## 日志解读示例
 
 **正常删除 Key（已装 redis-cli）：**
-```
+
+```json
 [14:32:01] [RESULT] SKIP_INSTALL=YES                ← 幂等命中，跳过安装
 [14:32:01] [RESULT] REDIS_CLI_VERSION=6.2.6
 [14:32:01] [RESULT] NETWORK=REACHABLE
 [14:32:01] [EXEC] redis-cli -h host -p 6379 DEL mykey
 [14:32:01] [RESULT] REDIS_EXEC=SUCCESS
 [14:32:01] [SUMMARY] Result: (integer) 1            ← 删除成功
-```
+```text
 
 **首次安装（Alibaba Cloud Linux 3）：**
-```
+
+```json
 [14:32:01] [DIAG] os=alinux version=3 aliyun_ecs=yes
 [14:32:01] [INSTALL] pkg_manager=dnf pkg=redis os=alinux
 [14:32:08] [RESULT] INSTALL=SUCCESS
 [14:32:08] [RESULT] REDIS_CLI_VERSION=6.2.7
-```
+```text
 
 **离线模式（专有云）：**
-```
+
+```json
 [14:32:01] [DIAG] aliyun_ecs=no
 [14:32:01] [INSTALL] strategy=offline url=https://internal-mirror.intra/bin/redis-cli
 [14:32:03] [RESULT] INSTALL=SUCCESS
-```
+```text
 
 **网络不可达：**
-```
+
+```json
 [14:32:01] [RESULT] NETWORK=UNREACHABLE
 [14:32:01] [DIAG] DNS_RESULT=xxx.redis.rds.aliyuncs.com  ← DNS 解析成功但端口不通
 exit code 30 → 人工排查 VPC/安全组/白名单
-```
+```text
 
 **密码错误：**
-```
+
+```json
 [14:32:01] [RESULT] NETWORK=REACHABLE
 [14:32:01] [ERROR] TYPE=AUTH_FAILED FIX=Check password
 exit code 40 → 人工检查密码
-```
+```markdown
 
 ---
 
@@ -514,47 +521,54 @@ exit code 40 → 人工检查密码
 ## 使用示例
 
 **示例 1：删除特定 Redis Key**
+
 ```bash
 ECS_INSTANCE_ID="i-bp1xxxxx"
 REDIS_HOST="r-bp1xxxxx.redis.rds.aliyuncs.com"
 REDIS_PASSWORD="MyPass123"
 REDIS_COMMAND="DEL 8560pfuat:gpas_lsym_funding_token"
 # → 执行合并脚本
-```
+```text
 
 **示例 2：查询 Key 剩余 TTL**
+
 ```bash
 REDIS_COMMAND="TTL session:token:abc123"
 # Output: -1 (永不过期), -2 (已过期), >=0 (剩余秒数)
-```
+```text
 
 **示例 3：批量删除匹配前缀的 Key（生产慎用）**
+
 ```bash
 REDIS_COMMAND="EVAL \"return redis.call('DEL', unpack(redis.call('KEYS', ARGV[1])))\" 0 'cache:temp:*'"
 # ⚠️ 会阻塞 Redis，建议低峰期执行
-```
+```text
 
 **示例 4：bigkey 扫描**
+
 ```bash
 REDIS_COMMAND="--bigkeys"
 # Output: 各种 type 的 top key 报告
-```
+```text
 
 **示例 5：hotkey 扫描（需先设 maxmemory-policy 为 LFU）**
+
 ```bash
 REDIS_COMMAND="--hotkeys"
 # 前置：CONFIG SET maxmemory-policy allkeys-lfu
-```
+```text
 
 **示例 6：要求 redis-cli 6.0+（用于 RESP3 / TLS）**
+
 ```bash
 # 通过 user.redis_cli_version 触发版本检查
 # 当前版本不达标时会自动 upgrade
-```
+```text
 
 **示例 7：专有云离线模式**
+
 ```bash
 # 在 .env 中：
 #   REDIS_CLI_BIN_URL=https://internal-mirror.intra/bin/redis-cli-6.2-musl-amd64
 # 合并脚本会优先尝试离线 URL，跳过外网拉取
-```
+```text

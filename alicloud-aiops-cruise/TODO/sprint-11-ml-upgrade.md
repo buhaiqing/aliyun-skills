@@ -32,6 +32,7 @@
 ### 1.3 实测数据特征
 
 最近 8 次 daily-health-check 实测：
+
 - Critical = 3 (固定: 1 SLB + 2 RDS 磁盘)
 - Warning = 3 (固定: 3 RDS 磁盘)
 - Anomaly Score = 0-1 (极低, 因为指标没出 P95 突刺)
@@ -72,7 +73,7 @@
 
 ### 3.1 算法原理
 
-```
+```yaml
 原始时序 Y(t) = 趋势 T(t) + 季节性 S(t) + 残差 R(t)
 
 异常 = |R(t) - μ(R)| / σ(R) > threshold
@@ -113,7 +114,7 @@ def compute_anomaly_score_stl(values_30d_1h, current_val):
         return round(z, 2), "NORMAL"
     except Exception as e:
         return None, None  # 回退到 Z-Score
-```
+```markdown
 
 ### 3.3 集成到现有 anomaly 方法选择
 
@@ -129,7 +130,7 @@ METRIC_ANOMALY_METHOD_V2 = {
     # 其余指标保持 Z-Score/Percentile
     ...
 }
-```
+```markdown
 
 ### 3.4 依赖与体积
 
@@ -145,6 +146,7 @@ METRIC_ANOMALY_METHOD_V2 = {
 ### 3.5 缓解方案: Go 编译版本
 
 `dynamic-baseline.md` §方法 3 Level 4 提到 Go 编译版本（零运行时依赖）:
+
 - 把 statsmodels 算法用 Go 移植 (gonum.org/v1/gonum 已有 STL)
 - 编译成单二进制, ~5MB
 - 启动 < 100ms
@@ -189,6 +191,7 @@ METRIC_ANOMALY_METHOD_V2 = {
 **问题**: Sprint 11 是否立即实施?
 
 **建议**: **不立即实施**, 标记为 Stage 3 工作。原因:
+
 1. 当前 Sprint 8/9 刚闭环, Stage 1 -> Stage 2 过渡期
 2. Stage 2 验收项 (D2 检测精度) 要求 ≥3 次真实环境巡检, 当前 6 次有, 但**没有季节性案例**触发
 3. 推迟到 Stage 2 准入后, 用真实流量数据训练 STL 模型, 效果更显著
@@ -200,20 +203,24 @@ METRIC_ANOMALY_METHOD_V2 = {
 ## 五、决策建议
 
 **选项 A (推荐)**: **调研完成, 推迟实施**
+
 - 现在不实施, 等 Stage 2 准入 + 真实数据 + 业务驱动后再启动
 - 风险: 项目堆积, 优先级被其他工作挤掉
 - 收益: 不引入 100MB 依赖, 不影响架构稳定性
 
 **选项 B**: **立即实施 STL MVP (3 天)**
+
 - 引入 statsmodels, 实施 4 指标 STL 分解
 - 风险: 依赖膨胀, 30d 历史采集可能拖慢巡检
 - 收益: 误报率从 25% -> 10%, 文档进度加速
 
 **选项 C**: **只做规范 (规范已写)**
+
 - 写 `references/stl-implementation-plan.md` 详细实施计划
 - 不实际写代码, 留 Sprint 11.1 启动
 
 **我的建议**: **选项 A** — 配合 Stage 2 准入节奏, 6 月底启动 Sprint 11.1
+
 - 当前项目状态: Stage 1 7/7, Stage 2 准入完成, Sprint 8/9 闭环
 - 下一优先级: 跑 Stage 2 真实环境验证, 启动 Sprint 10 (SLS/ARMS) 或 Sprint 12 (双引擎)
 - Sprint 11 (ML) 是 Stage 3 工作, 不在当前阶段紧急

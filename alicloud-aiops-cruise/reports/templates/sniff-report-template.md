@@ -18,7 +18,7 @@ phase: "Phase 1: 拓扑初判"
 
 ## VPC 网络结构
 
-```
+```json
 {{topology_tree}}
 ```
 
@@ -34,7 +34,7 @@ phase: "Phase 1: 拓扑初判"
 
 ## 链路拓扑
 
-```
+```text
 客户入口 (EIP)
   DOWN
 SLB (负载均衡)
@@ -87,6 +87,7 @@ NAT (出网) ── 安全组防护
 
 {% for sg in security_groups %}
 {% if sg.has_danger_rules %}
+
 - [WARN] **{{sg.id}}** ({{sg.name}}): 存在高危规则 `0.0.0.0/0` 开放端口 {{sg.danger_ports}}
 {% endif %}
 {% endfor %}
@@ -96,6 +97,7 @@ NAT (出网) ── 安全组防护
 ## 待确认的资源
 
 {% if unclassified_resources %}
+
 | 资源类型 | 资源ID | 名称 | 原因 |
 |---|---|---|---|
 {% for r in unclassified_resources %}

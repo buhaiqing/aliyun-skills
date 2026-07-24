@@ -97,7 +97,7 @@ the official `aliyun` CLI, and capture a full execution trace.
 
 ### Add Domain
 
-```
+```markdown
 You are a DNS operations agent. Your task is to add a domain to Alibaba Cloud DNS service.
 
 **Pre-flight Checks:**
@@ -130,7 +130,7 @@ You are a DNS operations agent. Your task is to add a domain to Alibaba Cloud DN
 
 ### List Domains
 
-```
+```markdown
 You are a DNS operations agent. Your task is to list all domains managed in Alibaba Cloud DNS.
 
 **Pre-flight Checks:**
@@ -161,7 +161,7 @@ You are a DNS operations agent. Your task is to list all domains managed in Alib
 
 ### Add DNS Record
 
-```
+```markdown
 You are a DNS operations agent. Your task is to add a DNS record to a domain.
 
 **Pre-flight Checks:**
@@ -197,7 +197,7 @@ You are a DNS operations agent. Your task is to add a DNS record to a domain.
 
 ### Update DNS Record
 
-```
+```markdown
 You are a DNS operations agent. Your task is to update an existing DNS record.
 
 **Pre-flight Checks:**
@@ -233,7 +233,7 @@ You are a DNS operations agent. Your task is to update an existing DNS record.
 
 ### Delete DNS Record
 
-```
+```markdown
 You are a DNS operations agent. Your task is to delete a DNS record.
 
 **Pre-flight Checks:**
@@ -269,7 +269,7 @@ You are a DNS operations agent. Your task is to delete a DNS record.
 
 ### Add Line Record
 
-```
+```markdown
 You are a DNS operations agent. Your task is to add a DNS record with line-based routing.
 
 **Pre-flight Checks:**
@@ -305,7 +305,7 @@ You are a DNS operations agent. Your task is to add a DNS record with line-based
 
 ### Create PrivateZone
 
-```
+```markdown
 You are a DNS operations agent. Your task is to create a PrivateZone for internal DNS resolution.
 
 **Pre-flight Checks:**
@@ -339,7 +339,7 @@ You are a DNS operations agent. Your task is to create a PrivateZone for interna
 
 ### Add PrivateZone Record
 
-```
+```markdown
 You are a DNS operations agent. Your task is to add a record to a PrivateZone.
 
 **Pre-flight Checks:**
@@ -374,7 +374,7 @@ You are a DNS operations agent. Your task is to add a record to a PrivateZone.
 
 ### Configure GTM
 
-```
+```markdown
 You are a DNS operations agent. Your task is to configure Global Traffic Manager (GTM) for disaster recovery.
 
 **Pre-flight Checks:**
@@ -411,7 +411,7 @@ You are a DNS operations agent. Your task is to configure Global Traffic Manager
 
 ### Throttling Error
 
-```
+```markdown
 You are a DNS operations agent. You encountered a throttling error.
 
 **Error Details:**
@@ -437,7 +437,7 @@ You are a DNS operations agent. You encountered a throttling error.
 
 ### Permission Error
 
-```
+```markdown
 You are a DNS operations agent. You encountered a permission error.
 
 **Error Details:**
@@ -465,7 +465,7 @@ You are a DNS operations agent. You encountered a permission error.
 
 ### Pre-flight Validation
 
-```
+```markdown
 You are a DNS operations agent. Perform pre-flight validation before DNS changes.
 
 **Validation Checklist:**
@@ -496,7 +496,7 @@ You are a DNS operations agent. Perform pre-flight validation before DNS changes
 
 ### Post-change Validation
 
-```
+```markdown
 You are a DNS operations agent. Perform post-change validation after DNS changes.
 
 **Validation Checklist:**
@@ -528,7 +528,7 @@ You are a DNS operations agent. Perform post-change validation after DNS changes
 
 ### Record Rollback
 
-```
+```markdown
 You are a DNS operations agent. Perform rollback for a DNS record change.
 
 **Rollback Steps:**
@@ -552,7 +552,7 @@ You are a DNS operations agent. Perform rollback for a DNS record change.
 
 ### Domain Rollback
 
-```
+```markdown
 You are a DNS operations agent. Perform rollback for a domain deletion.
 
 **Rollback Steps:**

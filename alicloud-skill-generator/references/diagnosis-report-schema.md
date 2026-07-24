@@ -41,7 +41,7 @@ Schema 信息:
   format: "Markdown + YAML Frontmatter"
   required_fields: 15
   optional_fields: 8
-```
+```markdown
 
 ---
 
@@ -57,7 +57,7 @@ Schema 信息:
     - "i-bp67acfmxazb4p-20260520120000-diagnosis.md"
     - "rm-2ze8g6nm93j0-20260520120000-diagnosis.md"
     - "lb-2ze8g6nm93j0-20260520120000-diagnosis.md"
-```
+```markdown
 
 ### 2.2 Schema 结构
 
@@ -105,7 +105,7 @@ UnifiedDiagnosisReport:
   sla_impact:         object  # SLA 影响评估
   recovery_time_estimate: int  # 预估恢复时间(秒)
   similar_incidents:  array   # 历史相似事件
-```
+```markdown
 
 ---
 
@@ -131,7 +131,7 @@ alarm_source:
   enum: ["CMS", "DAS", "CloudMonitor", "User", "Manual", "AutoInspection"]
   description: "告警触发来源"
   example: "CMS"
-```
+```markdown
 
 ### 3.2 资源信息字段
 
@@ -156,7 +156,7 @@ resource_status:
   examples:
     ECS: ["Running", "Stopped", "Starting", "Stopping", "Abnormal"]
     RDS: ["Running", "Creating", "Deleting", "Rebooting", "Abnormal"]
-```
+```markdown
 
 ### 3.3 指标信息字段
 
@@ -184,7 +184,7 @@ metric_trend:
   type: string
   enum: ["rising", "falling", "stable", "fluctuating"]
   description: "指标变化趋势"
-```
+```markdown
 
 ### 3.4 异常模式字段
 
@@ -228,7 +228,7 @@ anomaly_patterns:
         - "cpu > 90%"
         - "memory > 90%"
         - "duration > 5min"
-```
+```markdown
 
 ### 3.5 深度诊断字段
 
@@ -265,7 +265,7 @@ deep_diagnosis:
     historical_comparison:
       type: object
       description: "历史对比分析"
-```
+```markdown
 
 ### 3.6 关联信息字段
 
@@ -322,7 +322,7 @@ correlated_events:
       timestamp: "2026-05-20T11:55:00Z"
       description: "应用版本升级 v2.1.0 -> v2.2.0"
       correlation_score: 0.85
-```
+```markdown
 
 ### 3.7 根因与建议字段
 
@@ -374,7 +374,7 @@ recommendation:
       skill: "das-ops"
       estimated_time: 300
       risk_level: "medium"
-```
+```markdown
 
 ### 3.8 Skill 委托字段
 
@@ -406,7 +406,7 @@ delegated_skills:
       trigger_condition: "默认触发"
       status: "completed"
       result: "确认应用层指标异常"
-```
+```markdown
 
 ### 3.9 置信度评分字段
 
@@ -422,7 +422,7 @@ confidence_score:
     "0.5-0.69": "中等置信度 - 需要更多证据"
     "0.3-0.49": "低置信度 - 建议深入调查"
     "0.0-0.29": "极低置信度 - 信息不足"
-```
+```markdown
 
 ---
 
@@ -430,7 +430,7 @@ confidence_score:
 
 ### 4.1 标准流程
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    诊断报告生成流程                          │
 └─────────────────────────────────────────────────────────────┘
@@ -464,7 +464,7 @@ confidence_score:
     ┌──────────┐  ┌──────────┐  ┌──────────┐
     │ 生成报告  │  │ 补充信息  │  │ 报错终止  │
     └──────────┘  └──────────┘  └──────────┘
-```
+```markdown
 
 ### 4.2 验证流程
 
@@ -565,7 +565,7 @@ var DefaultValidator = &Validator{
         "metric_trend":      {"rising", "falling", "stable", "fluctuating"},
     },
 }
-```
+```markdown
 
 ---
 
@@ -599,7 +599,7 @@ var DefaultValidator = &Validator{
     - confidence_score < 0.5: 低置信度警告
     - correlated_alarms 为空: 关联信息缺失警告
     - recommendation 数量 < 2: 建议数量不足警告
-```
+```markdown
 
 ### 5.2 验证命令
 
@@ -674,7 +674,7 @@ validate_report() {
 
 # 主入口
 validate_report "$1"
-```
+```markdown
 
 ---
 
@@ -888,7 +888,7 @@ confidence_score: {{confidence_score}}
 ---
 
 *本报告由阿里云 Skill 自动生成，遵循统一诊断报告 Schema v1.0.0*
-```
+```markdown
 
 ---
 
@@ -918,7 +918,7 @@ confidence_score: {{confidence_score}}
         condition: "后端 ECS 异常"
       - skill: "cms-ops"
         condition: "流量异常"
-```
+```markdown
 
 ### 7.2 委托记录格式
 
@@ -931,7 +931,7 @@ delegated_skills:
     result: "string"          # 执行结果摘要
     report_path: "string"     # 子报告路径 (可选)
     confidence_delta: float   # 置信度变化 (可选)
-```
+```markdown
 
 ---
 
@@ -1047,7 +1047,7 @@ type Finding struct {
 }
 
 // ... 其他结构体定义
-```
+```markdown
 
 ---
 
@@ -1091,7 +1091,7 @@ Schema 合规检查清单:
   质量评分:
     - [ ] confidence_score 在 0.0-1.0 范围内
     - [ ] confidence_score >= 0.3 (警告阈值)
-```
+```markdown
 
 ### 9.2 自动化测试
 
@@ -1157,7 +1157,7 @@ echo ""
 rm -rf "$TEST_DIR"
 
 echo "=== 测试完成 ==="
-```
+```markdown
 
 ---
 

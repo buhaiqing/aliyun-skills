@@ -4,7 +4,7 @@
 
 ## 1. 签名流程概览
 
-```
+```text
 请求准备
 │
 ├─ 1. 构建规范的 HTTP 请求
@@ -34,7 +34,7 @@
 │
 └─ 7. 构建 Authorization Header
     └─ "ACS3-HMAC-SHA256 Credential=AK/Scope, SignedHeaders=headers, Signature=hex"
-```
+```markdown
 
 ## 2. Go 实现关键点
 
@@ -56,7 +56,7 @@ func (s *Signer) Sign(req *http.Request, body []byte) error {
     
     // 注意：header 名称必须小写，值必须 TrimSpace
 }
-```
+```markdown
 
 ### 2.2 Header 排序规则
 
@@ -67,43 +67,44 @@ func (s *Signer) Sign(req *http.Request, body []byte) error {
 
 ### 2.3 CanonicalRequest 格式
 
-```
+```text
 HTTPMethod
 CanonicalURI
 CanonicalQueryString
 CanonicalHeaders
 SignedHeaders
 HashedPayload
-```
+```text
 
 每个字段之间用 `\n` 分隔（6 行总共）。**注意最后一个字段后也有隐式的换行分隔**。
 
 完整拼接为：
-```
+
+```text
 fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s", 
     method, uri, query, headers, signedHeaders, hash)
-```
+```markdown
 
 ### 2.4 StringToSign 格式
 
-```
+```text
 ACS3-HMAC-SHA256
 20250910T083000Z
 20250910/cn-hangzhou/agentrun/aliyun_v4_request
 <hashed-canonical-request>
-```
+```markdown
 
 4 行，用 `\n` 分隔。
 
 ### 2.5 Signing Key 派生链
 
-```
+```text
 kSecret = "ACS3" + SecretKey  (注意是字符串拼接，不是 HMAC)
 kDate    = HMAC-SHA256(kSecret, Date)
 kRegion  = HMAC-SHA256(kDate, Region)
 kService = HMAC-SHA256(kRegion, Service)
 kSigning = HMAC-SHA256(kService, "aliyun_v4_request")
-```
+```markdown
 
 ## 3. Python 实现关键点
 
@@ -162,7 +163,7 @@ def sign_request(method, path, query, body, ak, sk, region, service="agentrun"):
         "X-Acs-Date": date_time,
         "X-Acs-Content-Sha256": body_hash,
     }
-```
+```markdown
 
 ## 4. 常见错误排查
 
@@ -194,7 +195,7 @@ curl -X GET "https://{account}.agentrun-data.cn-hangzhou.aliyuncs.com/sandboxes/
   -H "Content-Type: application/json" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -H "Authorization: <generated-auth-header>"
-```
+```markdown
 
 ## 6. 安全最佳实践
 

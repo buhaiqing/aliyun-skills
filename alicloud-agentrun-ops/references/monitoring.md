@@ -5,6 +5,7 @@
 ## 1. Observability Overview
 
 AgentRun Sandbox provides two levels of observability:
+
 - **Control Plane**: Template and sandbox lifecycle via ActionTrail
 - **Data Plane**: Sandbox health, execution metrics, process monitoring
 
@@ -14,11 +15,12 @@ AgentRun Sandbox provides two levels of observability:
 
 ### 2.1 Sandbox Health API
 
-```
+```text
 GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/health
 ```
 
 **Response**:
+
 ```json
 {
   "status": "ok",
@@ -27,9 +29,10 @@ GET https://{account}.agentrun-data.{region}.aliyuncs.com/sandboxes/{sandboxId}/
   "timestamp": "2025-11-15T09:45:01Z",
   "uptime": 1142269582541
 }
-```
+```markdown
 
 **Usage**:
+
 - Pre-execution check before running code
 - Post-creation validation after sandbox becomes READY
 - Periodic monitoring for long-running sandboxes
@@ -51,7 +54,7 @@ def check_sandbox_health(sandbox_id, account, region, auth_headers):
 # Pre-execution pattern
 if not check_sandbox_health(sandbox_id, ...):
     raise Exception("Sandbox not healthy, cannot execute code")
-```
+```markdown
 
 ---
 
@@ -70,6 +73,7 @@ if not check_sandbox_health(sandbox_id, ...):
 ### 3.2 Execution Metrics
 
 **ExecuteCode Response Fields**:
+
 ```json
 {
   "results": [
@@ -78,9 +82,10 @@ if not check_sandbox_health(sandbox_id, ...):
     {"type": "endOfExecution", "status": "ok", "executionTimeMs": 150}
   ]
 }
-```
+```markdown
 
 **Metric Extraction**:
+
 - `executionTimeMs`: Execution duration
 - `status`: `ok` / `error` / `timeout`
 - `stdout.length`: Output size
@@ -88,27 +93,30 @@ if not check_sandbox_health(sandbox_id, ...):
 ### 3.3 Resource Metrics
 
 **ListFiles Response**:
+
 ```json
 {
   "entries": [
     {"name": "file.txt", "size": 1024, "type": "file"}
   ]
 }
-```
+```markdown
 
 **Metric Extraction**:
+
 - Total file count
 - Total disk usage (sum of `size`)
 - Largest file identification
 
 **Process Metrics** (ListProcesses):
+
 ```json
 {
   "items": [
     {"processId": 12345, "status": "running", "command": "...", "createdAt": "..."}
   ]
 }
-```
+```markdown
 
 ---
 
@@ -117,11 +125,13 @@ if not check_sandbox_health(sandbox_id, ...):
 ### 4.1 ActionTrail (Control Plane)
 
 **Logged Operations**:
+
 - CreateTemplate, UpdateTemplate, DeleteTemplate
 - CreateSandbox, StopSandbox, DeleteSandbox
 - ActivateTemplateMCP, StopTemplateMCP
 
 **Query via ActionTrail API**:
+
 ```bash
 # Query sandbox creation events
 aliyun actiontrail LookupEvents \
@@ -129,11 +139,12 @@ aliyun actiontrail LookupEvents \
   --ResourceType "acs:agentrun:*:*:sandbox/*" \
   --StartTime "2025-01-01T00:00:00Z" \
   --EndTime "2025-01-02T00:00:00Z"
-```
+```markdown
 
 ### 4.2 Execution Logs (Data Plane)
 
 **stdout/stderr via ExecuteCode**:
+
 ```json
 {
   "results": [
@@ -141,9 +152,10 @@ aliyun actiontrail LookupEvents \
     {"type": "stderr", "text": "error messages"}
   ]
 }
-```
+```markdown
 
 **Log Analysis Patterns**:
+
 - Error detection: grep `stderr` for "Error", "Exception", "Traceback"
 - Performance profiling: analyze `executionTimeMs`
 - Output validation: check `stdout` for expected patterns
@@ -188,7 +200,7 @@ def check_execution_timeout_rate(sandbox_id, sample_size=10):
         alert(f"High timeout rate {rate:.0%} for sandbox {sandbox_id}")
         return "WARNING"
     return "OK"
-```
+```markdown
 
 ---
 
@@ -229,7 +241,7 @@ def collect_sandbox_metrics():
         # ...
     
     return metrics
-```
+```markdown
 
 ---
 

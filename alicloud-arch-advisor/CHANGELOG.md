@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-06-11
 
 ### 🔒 Security
+
 - **F-001** Fixed command injection vulnerability in `interactive-wizard.sh` by adding double quotes around all parameter variables in `bash` calls
 
 ### ✨ Added
+
 - **Advanced Progress Bar Features**:
   - Nested progress bars (main task + sub-tasks) with `progress_nested_*` functions
   - Progress state persistence and resume capability (`progress_persistence_*`, `progress_resume`)
@@ -33,11 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 100% pass rate
 
 ### 🔧 Changed
+
 - **F-002** Enhanced cost estimation in `recommend.sh` with instance type-aware pricing (g6.xlarge, g6.2xlarge, g6.4xlarge, g6.8xlarge, g6.16xlarge, etc.)
 - **F-003** Added `GLOBAL_TIMEOUT=1800` (30 minutes) and `timeout` command wrapper in `assess.sh`
 - Common.sh now includes 4 major sections: Colors, Logging, Progress Bars (with nested/persistence/graphic), Error Handling
 
 ### 📊 Statistics
+
 - New files: 4 (error-handler.sh, test-framework.sh, test-core-functions.sh, test-progress-advanced.sh)
 - New functions: 30+ (progress_*, classify_error, handle_error, retry_operation, etc.)
 - Lines added: ~1,200
@@ -48,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0] - 2026-06-11
 
 ### ✨ Added
+
 - Multi-language support (中英文切换) via `scripts/i18n.sh`
 - Language detection from `ARCH_ADVISOR_LANG` or `LANG` environment variables
 - Translation dictionary for ~80 strings (common, wizard menu, parameters, execution messages, validation, recommend steps)
@@ -60,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-06-11
 
 ### ✨ Added
+
 - Interactive Wizard (`scripts/interactive-wizard.sh`):
   - Three modes: Architecture Analysis (A), WAF Assessment (B), Recommendation (C)
   - Smart parameter collection with validation
@@ -70,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Common functions: `progress_start`, `progress_update`, `progress_complete`
 
 ### 🔧 Changed
+
 - Component availability validation in `recommend.sh` (Step 4.5)
   - ECS instance type validation
   - RDS class validation
@@ -81,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2026-06-11
 
 ### 🔧 Changed
+
 - Token efficiency optimization in SKILL.md
   - Mode descriptions simplified
   - Tables compressed
@@ -88,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Token budget: ~8000 → ~5000 (-37.5%)
 
 ### ✨ Added
+
 - WAF Integration table with 5 pillars (Security, Reliability, Performance, Cost, Efficiency)
 - Data source dependency documentation
 - Updated Changelog (this file)
@@ -97,6 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-06-07
 
 ### ✨ Initial Release
+
 - Three operating modes:
   - **Mode A**: Architecture reverse engineering (analysis)
   - **Mode B**: WAF maturity assessment (5-pillar evaluation)
@@ -122,15 +132,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upgrade Guide
 
 ### From 1.3.0 to 1.4.0
+
 - New files added: `error-handler.sh`, `test-framework.sh`, `tests/test-core-functions.sh`
 - No breaking changes to existing APIs
 - Optional: Run `./tests/test-core-functions.sh` to verify
 
 ### From 1.2.0 to 1.3.0
+
 - New file added: `i18n.sh`
 - Set `ARCH_ADVISOR_LANG=en_US` to use English
 - No breaking changes
 
 ### From 1.1.0 to 1.2.0
+
 - New file added: `interactive-wizard.sh`
 - No breaking changes to existing CLI usage

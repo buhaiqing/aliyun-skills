@@ -4,7 +4,7 @@ Calculate per-namespace resource consumption and cost split for ACK clusters.
 
 ## Cost Formula
 
-```
+```text
 Namespace_Cost = Σ(Pod_CPU_Request / Node_CPU_Total × Node_Hourly_Cost)
               + Σ(Pod_Memory_Request / Node_Memory_Total × Node_Hourly_Cost)
               + Σ(PVC_Size × Disk_Price_GB_Month / Month_Days)
@@ -46,4 +46,4 @@ kubectl get pvc -A -o custom-columns='NAMESPACE:.metadata.namespace,PVC:.metadat
 
 echo ""
 echo "Note: For precise cost calculation, integrate with billing data via alicloud-billing-ops"
-```
+```text

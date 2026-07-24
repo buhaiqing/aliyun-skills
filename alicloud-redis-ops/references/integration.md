@@ -5,6 +5,7 @@
 All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
+
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
 - **Intelligent Error Classification:** Network, permission, resource, configuration errors
 - **Multi-Path Self-Healing:** Multiple recovery strategies per error type
@@ -16,6 +17,7 @@ All installation flows MUST follow the **Enhanced Self-Healing Framework** defin
 The Agent MUST use enhanced self-healing for Go runtime JIT download:
 
 **Multi-Version & Multi-Mirror Strategy:**
+
 - **Primary:** Go 1.24+ (latest stable)
 - **Fallback:** Go 1.23 → 1.22 → 1.21 (minimum compatibility)
 - **Mirrors:** Official + China CDN mirrors (4 mirrors)
@@ -31,6 +33,7 @@ The Agent MUST use enhanced self-healing for Go runtime JIT download:
 | PATH setup fail | Use absolute path, verify binary exists | 1 |
 
 **Health Check:**
+
 - Go binary exists and executable
 - Version ≥ go1.21
 - Workspace initialized
@@ -56,11 +59,11 @@ aliyun vpc describe-vpcs --RegionId "{{user.region}}" --VpcId "{{user.vpc_id}}"
 
 # Verify VSwitch exists
 aliyun vpc describe-v-switches --RegionId "{{user.region}}" --VSwitchId "{{user.vswitch_id}}"
-```
+```markdown
 
 ### Network Architecture
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │              VPC                        │
 │  ┌─────────────────────────────────┐    │
@@ -77,7 +80,7 @@ aliyun vpc describe-v-switches --RegionId "{{user.region}}" --VSwitchId "{{user.
 │  │  └─────────────────┘            │    │
 │  └─────────────────────────────────┘    │
 └─────────────────────────────────────────┘
-```
+```markdown
 
 ## RAM Integration
 
@@ -137,7 +140,7 @@ aliyun vpc describe-v-switches --RegionId "{{user.region}}" --VSwitchId "{{user.
     }
   ]
 }
-```
+```markdown
 
 ### Read-Only Policy
 
@@ -154,7 +157,7 @@ aliyun vpc describe-v-switches --RegionId "{{user.region}}" --VSwitchId "{{user.
     }
   ]
 }
-```
+```markdown
 
 ## CI/CD Integration
 
@@ -175,7 +178,7 @@ resource "alicloud_kvstore_instance" "example" {
     slowlog_log_slower_than = "10000"
   }
 }
-```
+```markdown
 
 ### Pulumi Integration
 
@@ -191,7 +194,7 @@ const redis = new alicloud.kvstore.Instance("example", {
     vswitchId: vswitch.id,
     securityIps: ["10.0.0.0/8"],
 });
-```
+```markdown
 
 ### Ansible Integration
 
@@ -205,7 +208,7 @@ const redis = new alicloud.kvstore.Instance("example", {
     engine_version: "5.0"
     vswitch_id: "{{ vswitch_id }}"
     security_ips: "10.0.0.0/8"
-```
+```markdown
 
 ## Application Integration
 
@@ -247,7 +250,7 @@ rc = RedisCluster(
     skip_full_coverage_check=True,
     max_connections_per_node=50
 )
-```
+```text
 
 ```java
 // Java (Jedis) example
@@ -263,7 +266,7 @@ JedisPool jedisPool = new JedisPool(
     5000,  // timeout
     "your-password"
 );
-```
+```markdown
 
 ## Multi-Region Integration
 
@@ -276,11 +279,11 @@ Tair Enterprise supports global multi-active replication:
 aliyun r-kvstore describe-instance-attribute --InstanceId "{{user.instance_id}}"
 
 # Configure cross-region replication via console or advanced APIs
-```
+```markdown
 
 ### Disaster Recovery Pattern
 
-```
+```text
 Region A (Primary)          Region B (DR)
 ┌─────────────┐            ┌─────────────┐
 │  Tair Instance │◄────────►│  Tair Instance │
@@ -294,7 +297,7 @@ Region A (Primary)          Region B (DR)
             │  Application │
             │  (Multi-Active)│
             └───────────┘
-```
+```markdown
 
 ## Backup Integration
 
@@ -324,7 +327,7 @@ aliyun r-kvstore create-instance \
 aliyun r-kvstore restore-instance \
   --InstanceId "{{output.new_instance_id}}" \
   --BackupId "{{user.backup_id}}"
-```
+```markdown
 
 ## Monitoring Integration
 
@@ -341,7 +344,7 @@ scrape_configs:
     metrics_path: /metrics
     params:
       instance_id: ['r-bp1zxszhcgatnx****']
-```
+```markdown
 
 ### Grafana Dashboard
 
@@ -382,7 +385,7 @@ aliyun cms DescribeMetricList \
   --MetricName ConnectionUsage \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 ### Alarm Rule Management
 
@@ -401,7 +404,7 @@ aliyun cms PutMetricAlarm \
   --Period 300 \
   --EvaluationCount 3 \
   --ContactGroups '["{{user.contact_group}}"]'
-```
+```markdown
 
 ### Alarm-to-Diagnosis Delegation
 
@@ -416,7 +419,7 @@ When CMS alarms fire for Redis/Tair, the following delegation protocol applies:
 
 ### Delegation Protocol
 
-```
+```json
 [CMS Alarm Fires (acs_kvstore_dashboard)]
     │
     ├── 1. Identify metric from alarm rule
@@ -424,7 +427,7 @@ When CMS alarms fire for Redis/Tair, the following delegation protocol applies:
     ├── 3. If resource abnormal → check config, slow logs, connections
     ├── 4. If cache analysis needed → invoke alicloud-das-ops
     └── 5. Compile unified diagnosis report
-```
+```markdown
 
 ## Security Integration
 
@@ -438,7 +441,7 @@ aliyun r-kvstore modify-instance-ssl \
 
 # Client connection with SSL
 # redis-cli --tls -h r-bp1zxszhcgatnx****.redis.rds.aliyuncs.com -p 6379 -a your-password
-```
+```markdown
 
 ### PrivateLink Integration
 
@@ -450,7 +453,7 @@ aliyun vpc create-vpc-endpoint \
   --RegionId "{{user.region}}" \
   --VpcId "{{user.vpc_id}}" \
   --ServiceName "com.aliyuncs.r-kvstore"
-```
+```markdown
 
 ## Event-Driven Integration
 
@@ -487,4 +490,4 @@ def handler(event, context):
             # Trigger notification (DingTalk, SMS, etc.)
     
     return 'success'
-```
+```text

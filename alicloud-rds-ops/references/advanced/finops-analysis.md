@@ -78,7 +78,7 @@ echo "[Step 3] Generating utilization report..."
 # 建议用 Python/JMESPath 处理数据并生成报告
 
 echo "=== FinOps Audit Complete ==="
-```
+```markdown
 
 ### 1.3 利用率计算公式
 
@@ -99,7 +99,7 @@ conn_utilization = conn_avg_7d / max_connections * 100
 
 # 综合利用率
 overall_utilization = (cpu_avg_7d + iops_utilization + conn_utilization) / 3
-```
+```markdown
 
 ---
 
@@ -161,7 +161,7 @@ fi
 if [ "$DATA_RATIO" -lt 50 ]; then
   echo "⚠️ WARNING: Data ratio < 50%, check for fragmentation or unnecessary logs."
 fi
-```
+```markdown
 
 ### 2.3 存储类型成本对比
 
@@ -172,6 +172,7 @@ fi
 | **local_ssd** | Highest | 1.5-2.0x | 高性能 OLTP |
 
 **优化建议**:
+
 - 开发环境 → SSD
 - 生产环境 → ESSD PL1
 - 高性能需求 → ESSD PL2/PL3 或 Local SSD
@@ -209,7 +210,7 @@ savings_ratio = (monthly_on_demand - monthly_reserved) / monthly_on_demand * 100
 # 按量: ¥0.8/小时 × 24 × 30 = ¥576/月
 # 包年: ¥2400/年 = ¥200/月
 # 节省: (576 - 200) / 576 = 65%
-```
+```markdown
 
 ### 3.3 预留覆盖率分析
 
@@ -237,7 +238,7 @@ echo ""
 echo "Recommendation:"
 echo "- If coverage < 50%: Increase reserved instances"
 echo "- If coverage > 80%: Good optimization"
-```
+```markdown
 
 ### 3.4 预留即将到期预警
 
@@ -282,7 +283,7 @@ if [ "$CONN_UTIL" -lt 20 ]; then
   echo "⚠️ Low connection utilization: ${CONN_UTIL}%"
   echo "Recommendation: Reduce max_connections or downgrade instance"
 fi
-```
+```markdown
 
 ### 4.3 低 IOPS 利用率检测
 
@@ -311,7 +312,7 @@ fi
   ],
   "ContactGroups": ["finops-team"]
 }
-```
+```markdown
 
 ### 5.2 单实例成本异常预警
 
@@ -326,7 +327,7 @@ fi
   },
   "Action": "GenerateCostAnalysisReport"
 }
-```
+```markdown
 
 ### 5.3 预留到期预警
 
@@ -340,7 +341,7 @@ fi
     {"Level": "P0", "Threshold": 7, "Action": "Emergency renewal"}
   ]
 }
-```
+```markdown
 
 ---
 
@@ -359,7 +360,7 @@ downgrade_savings_ratio = downgrade_savings / current_monthly_cost * 100
 # Current: rds.mysql.s3.xlarge (¥2.0/hour)
 # Target: rds.mysql.s2.large (¥0.8/hour)
 # Savings = (2.0 - 0.8) × 24 × 30 = ¥864/月 = 60%
-```
+```markdown
 
 ### 6.2 预留节省计算
 
@@ -375,7 +376,7 @@ reserved_savings_ratio = reserved_savings / on_demand_annual_cost * 100
 # On-demand annual: ¥2.0 × 24 × 365 = ¥17,520
 # Reserved annual: ¥4,800 (包年价格)
 # Savings = ¥17,520 - ¥4,800 = ¥12,720/年 = 72%
-```
+```markdown
 
 ### 6.3 合计节省潜力
 
@@ -394,7 +395,7 @@ print(f"预留节省潜力: ¥{reserved_total}/年")
 print(f"存储节省潜力: ¥{storage_total}/月")
 print(f"闲置实例删除节省: ¥{idle_total}/月")
 print(f"合计节省潜力: ¥{total_savings_potential}/月")
-```
+```markdown
 
 ---
 
@@ -460,8 +461,9 @@ print(f"合计节省潜力: ¥{total_savings_potential}/月")
 ```bash
 # 验证利用率
 aliyun rds DescribeDBInstancePerformance --DBInstanceId "{{instance_id}}" --Key MySQL_CPUUsage
-```
-```
+```text
+
+```markdown
 
 ---
 
@@ -478,7 +480,8 @@ aliyun rds DescribeDBInstancePerformance --DBInstanceId "{{instance_id}}" --Key 
 
 ### 9.2 FinOps 持续改进循环
 
-```
+```text
+
 FinOps 循环
 │
 ├─ Inform (了解)
@@ -499,4 +502,5 @@ FinOps 循环
    ├─ 成本趋势 → 月度成本报告
    ├─ 节省实现 → 已节省金额统计
    └─ 覆盖率 → 预留覆盖率跟踪
-```
+
+```text

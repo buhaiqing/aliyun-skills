@@ -4,8 +4,7 @@
 > **状态**: 已落地并通过灰度 Skill 集成测试；Trace Judge 默认策略已确定（设计规格，runtime 尚未接入）  
 > **最后更新**: 2026-06-17  
 > **适用范围**: 当前 `skillopt-lib.sh` bash 体系  
->  
-> ⚠️ **注意**：本文档中关于 Trace Judge（LLM/rule_engine）的默认开启、配置变量、判定流程等描述为**设计规格**，当前 `alicloud-runtime-harness-ops/scripts/harness-core-lib.sh` 与 `alicloud-skillopt-ops/scripts/skillopt-core-lib.sh` 暂未实现相关逻辑，仅保留 `skillopt.trace_judgement` span 的写入位置。
+> > ⚠️ **注意**：本文档中关于 Trace Judge（LLM/rule_engine）的默认开启、配置变量、判定流程等描述为**设计规格**，当前 `alicloud-runtime-harness-ops/scripts/harness-core-lib.sh` 与 `alicloud-skillopt-ops/scripts/skillopt-core-lib.sh` 暂未实现相关逻辑，仅保留 `skillopt.trace_judgement` span 的写入位置。
 
 ---
 
@@ -41,7 +40,7 @@
 
 ```bash
 bash scripts/test-langfuse-gray-skills.sh
-```
+```text
 
 验证结果：
 
@@ -92,7 +91,7 @@ PASS=52, FAIL=0, TOTAL=52
 
 ### 2.1 层级关系
 
-```
+```text
 IDE 窗口 (Trae / Claude Code / Open Code / ...)
 │
 ├── Session ID = f(IDE 环境变量 或 工作目录+日期)
@@ -102,7 +101,7 @@ IDE 窗口 (Trae / Claude Code / Open Code / ...)
     └── 持久化: .runtime/traces/<skill-tag>/{trace_id}.json
     │
     └── Span = 修复/优化/熔断等子操作
-```
+```markdown
 
 ### 2.2 Session ID 生成规则
 
@@ -138,7 +137,7 @@ session_id   = "sess-${workdir_hash}-${today}"
 
 **效果**：
 
-```
+```yaml
 Claude Code 对话 A（工作目录: /Users/xxx/project-a）:
   Session: sess-a1b2c3d4-20260617
   ├── Trace 1: CMS DescribeMetricList
@@ -154,7 +153,7 @@ Claude Code 对话 C（不同工作目录: /Users/xxx/project-b）:
 
 第二天再调用:
   Session: sess-a1b2c3d4-20260618  ← 新的一天，新 Session
-```
+```markdown
 
 ### 2.3 Trace ID 生成规则
 
@@ -181,7 +180,7 @@ trace_id = "trace-{session_id}-{timestamp}-{RANDOM}"
     "trace_count": 5,
     "status": "active"
 }
-```
+```markdown
 
 **Phase 3 TEL 扩展**（`skillopt-session-*.json`，2026-06）：
 
@@ -284,7 +283,7 @@ trace_id = "trace-{session_id}-{timestamp}-{RANDOM}"
         "trace_display_severity_source": "rule_engine_fallback"
     }
 }
-```
+```markdown
 
 ### 2.6 Span 事实层与 Trace Judge 层
 
@@ -363,7 +362,7 @@ Span runtime facts
   -> rule_* deterministic judgment
   -> optional LLM-as-a-Judge writes judge_*
   -> trace_display_* selects final display severity/source
-```
+```text
 
 Langfuse 实际上报约定：
 
@@ -418,7 +417,7 @@ LLM 覆盖规则判定时必须写入：
   "trace_display_severity": "ERROR",
   "trace_display_severity_source": "llm_judge"
 }
-```
+```markdown
 
 ---
 
@@ -530,7 +529,7 @@ skillopt_session_init() {
         printf '%s\n' "$updated" > "$session_file"
     fi
 }
-```
+```bash
 
 ### 3.3 Trace 管理
 
@@ -768,7 +767,7 @@ _skillopt_langfuse_update_trace() {
             }
         }]}')"
 }
-```
+```bash
 
 ### 3.5 集成到 skillopt_wrap()
 
@@ -869,7 +868,7 @@ skillopt_wrap() {
 ```bash
 # Trae 为每个任务窗口自动设置
 export TRAE_SESSION_ID="task-abc123"
-```
+```bash
 
 #### Claude Code
 
@@ -883,7 +882,7 @@ export CLAUDE_CONVERSATION_ID="conv-20260617-abc123"
 ```bash
 # Open Code 在 Agent 执行时注入
 export OPENCODE_SESSION_ID="session-xyz789"
-```
+```markdown
 
 #### 无 IDE（CLI 直接使用）
 
@@ -898,7 +897,7 @@ export OPENCODE_SESSION_ID="session-xyz789"
 
 ### 4.3 实际效果
 
-```
+```text
 Trae 任务窗口 A（配置了 TRAE_SESSION_ID=task-aaa）:
 ┌─ Session: sess-trae-task-aaa ──────────────────┐
 │  ├── Trace: CMS DescribeMetricList (success)   │
@@ -916,13 +915,13 @@ CLI 直接使用（未配置，工作目录: /Users/xxx/project-b）:
 ┌─ Session: sess-e5f6g7h8-20260617 ─────────────┐
 │  └── Trace: SLB DescribeLoadBalancers (success)│
 └────────────────────────────────────────────────┘
-```
+```markdown
 
 ---
 
 ## 5. 与现有功能的映射
 
-```
+```text
 skillopt_wrap() 执行流程:
 │
 ├── skillopt_session_init()         ← Session 初始化
@@ -998,7 +997,7 @@ export LANGFUSE_SECRET_KEY="sk-lf-xxxxx"
 ./scripts/cms-skillopt-wrapper.sh DescribeMetricList \
     --skillopt-enable \
     --Namespace acs_ecs_dashboard --MetricName CPUUtilization
-```
+```markdown
 
 ### 7.2 可选配置（Session ID 相关）
 
@@ -1045,10 +1044,10 @@ Trace Judge 默认开启，默认优先使用 LLM-as-a-Judge。Judge **不 gate*
 
 **如果以上 Session ID 环境变量均未配置**，系统自动生成：
 
-```
+```text
 Session ID = sess-{工作目录hash}-{日期}
 示例: sess-a1b2c3d4-20260617
-```
+```markdown
 
 - 同项目同天的调用自动归为同一 Session
 - 不同项目或不同天自动隔离
@@ -1067,7 +1066,7 @@ Session ID = sess-{工作目录hash}-{日期}
 
 ## 8. 文件布局
 
-```
+```text
 ${SKILLS_DIR}/.runtime/
 ├── sessions/<skill-tag>/
 │   └── skillopt-session-{session_id}.json    ← Session 文件
@@ -1141,7 +1140,7 @@ test_trace_lifecycle() {
     skillopt_trace_end "success"
     assert_empty "$SKILLOPT_CURRENT_TRACE_ID"
 }
-```
+```markdown
 
 ### 11.2 集成测试
 
@@ -1177,7 +1176,7 @@ bash scripts/test-langfuse-gray-skills.sh
 ```text
 Session: sess-gray-skills-it-1781658940
 PASS=52, FAIL=0, TOTAL=52
-```
+```markdown
 
 ---
 
@@ -1207,6 +1206,7 @@ bash scripts/test-langfuse-gray-skills.sh
 **时间**: 2026-06-17  
 **决策**: 采用"工作目录 hash + 日期"作为兜底  
 **理由**:
+
 - Claude Code / Open Code 共享终端，终端 Session ID 无法区分任务
 - Session ID 永远不为空，确保 Langfuse 中始终有分组
 - 同项目同天的调用自然归为一组，隔离粒度合理
@@ -1217,6 +1217,7 @@ bash scripts/test-langfuse-gray-skills.sh
 **时间**: 2026-06-17  
 **决策**: 在 `skillopt-lib.sh` 中直接实现，不引入微服务  
 **理由**:
+
 - 与现有 Runtime Harness 架构一致
 - 零额外依赖（仅 curl + jq）
 - 部署简单，无需独立服务
@@ -1227,6 +1228,7 @@ bash scripts/test-langfuse-gray-skills.sh
 **时间**: 2026-06-17  
 **决策**: curl 同步发送，并使用 `|| true` 保证 Langfuse 故障不影响 Skill 主流程  
 **理由**:
+
 - bash wrapper 是短生命周期进程，后台 `curl &` 存在上报丢失风险
 - 集成测试验证 Langfuse ingestion 存在最终一致性延迟，需要轮询直查
 - 同步发送能保证请求发出，`|| true` 能保证上报失败不阻断主流程
@@ -1237,6 +1239,7 @@ bash scripts/test-langfuse-gray-skills.sh
 **时间**: 2026-06-17  
 **决策**: `SKILLOPT_JUDGE_ENABLED=true`、`SKILLOPT_JUDGE_MODE=llm`、`SKILLOPT_JUDGE_FAIL_OPEN=true`  
 **理由**:
+
 - Span 必须忠实记录执行事实，不能由 AI 修改；Trace 级可以引入 Judge 做整体结果判定
 - 默认启用 Judge 为本地 trace 追加整体判定 metadata（不 gate trace 创建）
 - 默认优先 LLM-as-a-Judge，便于判断“局部 ERROR Span 但整体是否失败”的复杂场景
@@ -1248,6 +1251,7 @@ bash scripts/test-langfuse-gray-skills.sh
 **时间**: 2026-06-21  
 **决策**: 每次 `skillopt_wrap()` 始终写 `${SKILLS_DIR}/.runtime/traces/<skill-tag>/trace-*.json`；`SKILLOPT_LANGFUSE_ENABLED` 仅触发远端 HTTP 镜像；TTL 默认 7 天（`TRACE_KEEP_DAYS`），纳入 `make memory-maintain-apply`  
 **理由**:
+
 - 与 Local-first 记忆架构一致：本地 canonical，远端可观测性为增强层
 - 无 Langfuse 时仍闭合 Layer 1（`memory_store_lite` + `error_code`）、Layer 2 plan **B**（allowlisted failures）、R2 preflight 合并
 - 与 logs retention 对齐，防止 `.runtime/traces/` 膨胀

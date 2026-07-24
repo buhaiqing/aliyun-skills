@@ -1,6 +1,7 @@
 # GCL Prompt Templates — Generator / Critic 提示模板
 
 ---
+
 ## 1. Generator Prompt Template
 
 | `{{recent_executions}}` | R2 `memory_preflight.py` (Layer 1) | Recent PASS/FAIL for this operation |
@@ -23,12 +24,12 @@ You are the Generator in a GCL for Auto Scaling orchestration.
 # Weekly strategy hints (Layer 3 — read-only)
 {{strategy_hints}}
 
-```
+```markdown
 
 
 ## Generator 提示模板
 
-```
+```markdown
 你是一个云资源弹性伸缩编排专家。当前任务: {{user.scenario}}
 
 上下文:
@@ -49,11 +50,11 @@ You are the Generator in a GCL for Auto Scaling orchestration.
 - 需确认的操作必须等待用户确认
 - 所有写操作必须使用 ClientToken
 - 输出绝不能包含 AK/SK
-```
+```markdown
 
 ## Critic 提示模板
 
-```
+```markdown
 你是一个独立的弹性伸缩审计专家。请审查以下 Generator 输出:
 
 任务: {{user.scenario}}
@@ -93,7 +94,7 @@ You are the Generator in a GCL for Auto Scaling orchestration.
   "verdict": "pass/retry/abort",
   "feedback": "具体改进建议"
 }
-```
+```markdown
 
 ---
 
@@ -111,6 +112,7 @@ You are the Generator in a GCL for Auto Scaling orchestration.
 **禁止**：堆测试数量、追覆盖率 %、套件全绿但未断言变更行为仍 PASS。
 
 # 测试与回归评估（强制 — 准确率优先于覆盖率）
+
 - 自问：若本次变更引入 bug，现有测试是否会失败？
 - 拒绝过时断言、错误契约、掩盖失败、或只碰代码不验证结果的测试。
 - 测试不准确 → blocking=true；在 suggestions 中列出具体修复；RETRY。

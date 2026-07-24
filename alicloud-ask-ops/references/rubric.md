@@ -20,6 +20,7 @@ metadata:
 # ASK GCL Rubric (Phase 5 — recommended, max_iter=3)
 
 Inherits ACK rubric. ASK-specific deviations:
+
 - No node pools → `DeleteNodePool` not applicable
 - `DeleteCluster` is the primary destructive op
 - ASK clusters have `deletion_protection` field in `DescribeClusterDetail`
@@ -33,6 +34,7 @@ Inherits ACK rubric. ASK-specific deviations:
 | `ModifyCluster` (downscale) | (a) user confirmation; (b) no active critical Pods would be evicted |
 
 ## 2. Changelog
+
 1.0.0 | 2026-06-04 | ASK GCL rubric (Phase 5, recommended).
 
 

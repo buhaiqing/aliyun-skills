@@ -17,6 +17,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 | **Logging** | Access logs available via SLS | Enable SLS integration for audit trail |
 
 **Security Best Practices:**
+
 - Enable RAM policy conditions for IP-based access
 - Use VPC endpoints for private connectivity
 - Enable logging and audit trail
@@ -32,6 +33,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 | **Health Monitoring** | Integration with CloudMonitor | Set up alarms for traffic anomalies |
 
 **Reliability Best Practices:**
+
 - Configure origin health checks
 - Use SLB for origin load balancing
 - Test failover scenarios regularly
@@ -47,6 +49,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 | **Reserved Capacity** | Discounted pricing for annual plans | Consider annual plans for production workloads |
 
 **Cost Optimization Tips:**
+
 - Monitor protected domains count
 - Clean up unused domain configurations
 - Review defense rule quotas
@@ -62,6 +65,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 | **Automation** | Full API coverage | Automate common operations via Agent |
 
 **Operational Best Practices:**
+
 - Use consistent naming conventions for domains and rules
 - Document standard operating procedures
 - Regular security rule reviews
@@ -77,6 +81,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 | **Caching** | Static content caching supported | Enable caching for static assets |
 
 **Performance Best Practices:**
+
 - Minimize complex regular expressions in rules
 - Use caching for static content
 - Monitor origin response times
@@ -95,6 +100,7 @@ This document evaluates the operational excellence of Alibaba Cloud WAF based on
 ## Overall Recommendation
 
 WAF is well-suited for protecting web applications. Key areas for improvement:
+
 1. **Security:** Enable logging and audit trail
 2. **Reliability:** Configure origin health checks
 3. **Cost:** Monitor and optimize protected domains

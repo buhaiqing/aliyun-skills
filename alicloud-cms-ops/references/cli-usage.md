@@ -133,7 +133,9 @@ aliyun cms DescribeMetricList \
 ```
 
 ### Using Aliases (Recommended for Persistent Sessions)
+
 Add this to your `.bashrc` or `.zshrc` to enable SkillOpt by default for all CMS commands:
+
 ```bash
 # Replace SKILLS_DIR with the actual path to aliyun-skills repo.
 export SKILLS_DIR="$HOME/opensource/git/aliyun-skills"
@@ -141,6 +143,7 @@ alias aliyun-cms='source "$SKILLS_DIR/alicloud-cms-ops/scripts/skillopt-lib.sh" 
 ```
 
 Then use it like any standard CMS command:
+
 ```bash
 aliyun-cms DescribeMetricList --skillopt-enable \
     --Namespace acs_ecs_dashboard --MetricName CPUUtilization \
@@ -150,7 +153,9 @@ aliyun-cms DescribeMetricList --skillopt-enable \
 ---
 
 ### Dual Optimization Capabilities
+
 SkillOpt provides two complementary optimization layers to ensure robust and efficient CMS operations:
+
 1. **Static Pre-Execution Optimization** (事前优化): Runs before command execution to fix parameter format errors, validate cloud resources, and check permissions proactively
 2. **Dynamic Runtime Optimization** (运行时优化): Adjusts query parameters, retry strategies, and quota usage in real-time based on runtime performance, error rates, and API usage patterns
 
@@ -162,6 +167,7 @@ SkillOpt provides two complementary optimization layers to ensure robust and eff
 - Use `[]?` to safely handle empty/null arrays: `.Datapoints[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun cms DescribeMetricList --PageSize 50 | jq '{code: .Code, metrics: [.Values[]]}'
 ```

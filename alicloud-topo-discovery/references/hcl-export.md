@@ -5,7 +5,7 @@ used by `export-hcl.py` and consumed by `baseline-manager.py`.
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  CLI Layer:                                                 │
 │    export-hcl.py (orchestrator)                             │
@@ -31,7 +31,7 @@ used by `export-hcl.py` and consumed by `baseline-manager.py`.
 │    fixtures/*.json (test data)                             │
 │    references/field-mappings/*.md (mapping specs)          │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ## Resource Type Coverage (18 types)
 
@@ -85,10 +85,12 @@ For each export, 8 files are written atomically:
 ## Sensitive Data Handling
 
 The following fields are masked to variable references:
+
 - `rds.accountpassword` → `var.rds_password`
 - `ecs.password` → `var.ecs_password`
 
 Sensitive values NEVER appear in:
+
 - HCL output (replaced with var ref)
 - manifest.json sensitive_masked (path only)
 - import.sh (only IDs, not values)

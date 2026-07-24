@@ -8,7 +8,7 @@ ASK is Alibaba Cloud's **fully-managed Serverless Kubernetes** offering
 > **There are no nodes to manage. The K8s control plane is Alibaba-managed.
 > Each Pod runs as an ECI (Elastic Container Instance) on demand.**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                       ASK Cluster                                │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -144,7 +144,7 @@ probably doesn't work in ASK. If it's a workload running in Pods, it's fine.
 
 ## Cost Model
 
-```
+```text
 Hourly ASK cost = Σ over running ECI Pods of
                   (vCPU_request × vCPU_price_per_sec) +
                   (memory_request_GB × mem_price_per_sec) +
@@ -156,6 +156,7 @@ Hourly ASK cost = Σ over running ECI Pods of
 ```
 
 **Cost optimization levers:**
+
 - Set HPA `minReplicas` low for dev, higher for prod
 - Use CronHPA to scale down overnight
 - Use ECI Savings Plans for stable 24/7 baseline

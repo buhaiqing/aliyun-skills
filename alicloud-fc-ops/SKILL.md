@@ -157,7 +157,7 @@ Alibaba Cloud Function Compute (FC) is a fully managed, event-driven serverless 
 
 ### FC Resource State Machine
 
-```
+```text
 [CreateFunction] → PENDING → ACTIVE → [Invoke/Trigger]
                                       ↓
                     [UpdateFunction] → IN_PROGRESS → ACTIVE
@@ -170,24 +170,29 @@ Alibaba Cloud Function Compute (FC) is a fully managed, event-driven serverless 
 ## Quick Start
 
 ### What This Skill Does
+
 Manage Alibaba Cloud Function Compute (FC 3.0) functions — lifecycle, triggers, provisioned instances, concurrency, VPC bindings, and AIOps diagnostics.
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region: `ALIBABA_CLOUD_REGION_ID`
 
 ### Verify Setup
+
 ```bash
 aliyun fc-open GET /2023-03-30/functions
 ```
 
 ### Your First Command
+
 ```bash
 aliyun fc-open GET /2023-03-30/functions/{{user.function_name}}
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — FC 3.0 architecture, limits, dependency graph
 - [GPU Inference (vLLM & Batch)](references/gpu-inference.md) — GPU function paths, batching, warmup, LLM metrics
 - [Execution Flows](#execution) — CRUD operations, CLI + SDK paths
@@ -243,7 +248,7 @@ Every operation: **Pre-flight → Execute (CLI + SDK) → Validate → Recover**
 
 ### Operation: Create FC Function
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create FC Function)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -476,6 +481,7 @@ EOF
 ```
 
 #### Post-execution Validation
+
 1. Poll `GetFunction` until `$.state == "ACTIVE"` or `$.lastUpdateStatus == "SUCCESSFUL"`
 2. Test invocation with known payload to verify new code works
 3. If rollback needed: restore from previous OSS package and update again
@@ -483,6 +489,7 @@ EOF
 ### Operation: Update Function
 
 #### Safety Gate
+
 - **Non-destructive**: Updates config, does NOT stop running instances
 - **Qualifiers**: Unpublished (LATEST) only — cannot update published versions
 - **Backup**: Get current config before update
@@ -520,9 +527,11 @@ aliyun fc-open DELETE /2023-03-30/functions/{{user.function_name}}
 ```
 
 #### Post-execution Validation
+
 - Poll GetFunction until 404 ResourceNotFound (interval 5s, max 120s)
 
 #### Failure Recovery
+
 | Error | Agent Action | UX |
 |-------|-------------|-----|
 | `ResourceInUse` | HALT; function being invoked | `[ERROR] Function in use. Wait for invocations to complete.` |
@@ -693,6 +702,7 @@ Phase 5 rollout for `recommended` skills per [`AGENTS.md` §12](../docs/gcl-spec
 | Most-scrutinized | `DeleteFunction` (no active triggers; backup function config), `DeleteService` (no functions inside; cascade warning) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Phase 5 `recommended` rollout for fc-ops.
 
 ---

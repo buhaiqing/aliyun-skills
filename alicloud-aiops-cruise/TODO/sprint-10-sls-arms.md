@@ -13,6 +13,7 @@
 ### 1.1 当前盲区
 
 现有 4 个 runbook 覆盖：
+
 - ✅ CloudMonitor (CMS) 指标：CPU、内存、磁盘、连接数
 - ✅ DAS 慢查询：RDS 性能洞察
 - ✅ ACK 资源：节点、Pod、Limits
@@ -20,7 +21,8 @@
 - ❌ **调用链**：ARMS 慢调用、依赖超时、SQL 耗时
 
 **痛点场景**：
-```
+
+```text
 用户反馈: "下单接口超时"
 ↓
 Runbook 检查: SLB/RDS/Redis 指标全部正常
@@ -55,7 +57,7 @@ aliyun log getLogStore --project-name k8s-log-c351xxxx --logstore-name stdout-lo
 
 # 3. 测试查询权限
 aliyun log getLogs --project-name k8s-log-c351xxxx --logstore-name stdout-logstore --from-time 1717200000 --to-time 1717286400 --query "ERROR"
-```
+```markdown
 
 ### 2.2 查询封装
 
@@ -107,7 +109,7 @@ def query_sls_error_logs(
     now = int(time.time())
     query = " OR ".join(keywords)
     return query_sls_logs(project, logstore, query, now - time_minutes*60, now)
-```
+```markdown
 
 ### 2.3 推理规则示例
 
@@ -139,7 +141,7 @@ action: |
   1. 提取 SQL 指纹
   2. 关联 DAS 慢查询分析
   3. 建议添加索引或优化 SQL
-```
+```markdown
 
 ---
 
@@ -153,7 +155,7 @@ aliyun arms GetArmsConsolePageUrl --RegionId cn-hangzhou
 
 # 2. 获取应用列表（需确认 API 权限）
 aliyun arms SearchTraces --RegionId cn-hangzhou --StartTime 1717200000 --EndTime 1717286400
-```
+```markdown
 
 ### 3.2 查询封装
 
@@ -205,7 +207,7 @@ def query_arms_trace_detail(
         "--TraceID", trace_id
     ]
     return q(cmd, timeout=30)
-```
+```markdown
 
 ### 3.3 推理规则示例
 
@@ -234,7 +236,7 @@ action: |
   1. 提取慢 SQL
   2. 关联 DAS 分析执行计划
   3. 建议优化或扩容
-```
+```markdown
 
 ---
 
@@ -326,11 +328,13 @@ action: |
 **问题**：是否立即启动 Sprint 10？
 
 **选项**：
+
 - **A. 立即启动** — 需先确认 SLS/ARMS API 权限可用
 - **B. 推迟到 Stage 2 准入后** — 当前 Stage 1 刚闭环，先跑通 Stage 2 基础验收
 - **C. 只做调研** — 验证 API 可用性，不实际集成到 runbook
 
 **建议**：**选项 C** — 先完成 Q10.1/Q10.3 验证 API 权限
+
 - 如 API 可用：继续实施 10.2-10.7
 - 如 API 不可用：改为纯文档 Sprint，输出 `sls-arms-setup-guide.md` 说明如何配置权限
 

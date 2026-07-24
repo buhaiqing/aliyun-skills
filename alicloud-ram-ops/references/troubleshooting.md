@@ -68,6 +68,7 @@ aliyun ram GetPolicy --PolicyName "{{user.policy_name}}" --PolicyType "Custom"
 ```
 
 **Decision Tree:**
+
 - No policies attached → Attach required policy (e.g., `AliyunECSReadOnlyAccess`)
 - Policy exists but action not included → Update policy to include required action
 - Policy has `"Effect": "Deny"` with `"Resource": "*"` → Deny overrides Allow; remove deny
@@ -104,6 +105,7 @@ aliyun ram DeleteAccessKey --UserName "{{user.user_name}}" --UserAccessKeyId "{{
 ```
 
 **Decision Tree:**
+
 - Key count = 2 (max) → Must delete one key before creating new one
 - Key unused > 90 days → Safe to delete immediately
 - Key used recently → Follow rotation flow with grace period
@@ -137,6 +139,7 @@ aliyun sts AssumeRole --RoleArn "{{output.role_arn}}" --RoleSessionName "test-se
 ```
 
 **Decision Tree:**
+
 - Role not found → Create role with correct trust policy
 - Trust policy has wrong account ID → Update trust policy with correct account
 - Trust policy missing `sts:AssumeRole` → Add `sts:AssumeRole` action
@@ -173,6 +176,7 @@ aliyun ram ListEntitiesForPolicy --PolicyName "{{user.policy_name}}" --PolicyTyp
 ```
 
 **Decision Tree:**
+
 - Policy not attached → Attach to user/group/role
 - Wrong policy version active → SetDefaultPolicyVersion to correct version
 - Policy has `"Effect": "Deny"` → Deny overrides Allow; remove deny statement

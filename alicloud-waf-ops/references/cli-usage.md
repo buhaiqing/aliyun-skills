@@ -35,6 +35,7 @@ aliyun configure
 ### Critical: WAF 3.0 CLI Options
 
 **ALL WAF 3.0 commands MUST include:**
+
 - `--version 2021-10-01` — API version
 - `--force` — Force call to WAF 3.0 API
 

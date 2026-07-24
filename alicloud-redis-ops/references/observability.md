@@ -29,6 +29,7 @@
 ## 降级策略
 
 若 SLS/ARMS 不可用：
+
 1. 直接 Redis CLI `INFO`、`SLOWLOG GET`、`CLIENT LIST`、`MEMORY DOCTOR` 排查
 2. 使用 `redis-cli --bigkeys` 和 `redis-cli --hotkeys`
 3. 检查 Redis 实例慢日志文件

@@ -47,7 +47,7 @@ five pillars.
     }
   ]
 }
-```
+```markdown
 
 > **Do NOT use `cs:*` wildcard in production.** Scope to specific actions.
 > ECI actions may be needed for advanced debugging.
@@ -119,7 +119,7 @@ five pillars.
 
 #### DR Runbook
 
-```
+```markdown
 Phase 1: Verify
     - Check cluster API health: kubectl get --raw=/healthz
     - Check ECI quota: aliyun cms DescribeMetricList
@@ -135,7 +135,7 @@ Phase 3: Validate
     - Pod scheduling: kubectl get pods -A
     - Service connectivity: kubectl get svc,endpoints -A
     - Application health: curl /healthz from outside
-```
+```markdown
 
 ### Explicit Confirmation on Destructive Ops
 
@@ -194,6 +194,7 @@ Phase 3: Validate
 ### Batch Operations
 
 For creating many clusters / applying many manifests:
+
 - Use **ArgoCD / Flux** for GitOps (not imperative apply)
 - Use **Helm** for templated deployments
 - Use **kubectl -l** to operate on label-selected resources

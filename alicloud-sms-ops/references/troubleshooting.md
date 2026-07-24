@@ -37,6 +37,7 @@
 ## Common Issues
 
 ### SMS Not Delivered
+
 - **Check signature**: Must be approved (SignStatus=1)
 - **Check template**: Must be approved (TemplateStatus=1)
 - **Check phone number**: Valid 11-digit format
@@ -44,21 +45,25 @@
 - **Check delivery status**: QuerySendDetails for ErrCode/ErrMsg
 
 ### Signature/Template Rejected
+
 - **Review rejection reason**: QuerySmsSign/QuerySmsTemplate returns Reason
 - **Fix content**: Ensure no forbidden words or format issues
 - **Resubmit**: ModifySmsSign/ModifySmsTemplate after fixes
 
 ### Rate Limiting
+
 - **Per-signature limit**: 1 SMS per 100ms
 - **Per-account limit**: Check QuerySendStatistics
 - **Backoff strategy**: Exponential backoff on `isv.BUSINESS_LIMIT_CONTROL`
 
 ### Batch Send Failures
+
 - **Array length mismatch**: Phone numbers, signatures, and params must have same count
 - **JSON format**: Ensure valid JSON arrays
 - **Template compatibility**: All numbers must use same template
 
 ### Verification Code Issues
+
 - **Template type**: Must be verification type (TemplateType=0)
 - **Code format**: 4-6 digits recommended
 - **Validity**: 5-10 minutes typical
@@ -74,12 +79,14 @@
 4. **Package Usage Exhausted**: All SMS in the package have been used
 
 ### Troubleshooting Steps
+
 1. **Check Package Details**: Use the Alibaba Cloud console or `aliyun bssopenapi QueryResourcePackageList` to view SMS package details
 2. **Verify Expiry Date**: Confirm the package has not expired
 3. **Check Usage Statistics**: Use `aliyun dysmsapi QuerySendStatistics` to compare usage against package limits
 4. **Recharge or Purchase New Package**: If usage is exhausted, purchase a new SMS package
 
 ### Recovery Strategies
+
 1. For `isv.AMOUNT_NOT_ENOUGH`: Purchase additional SMS packages or recharge your account
 2. For expired packages: Renew or purchase a new package
 3. For unactivated packages: Activate the package via the Alibaba Cloud console
@@ -87,6 +94,7 @@
 ## Recovery Strategies
 
 ### Signature/Template Not Ready
+
 1. Query current status
 2. If rejected, review Reason field
 3. Fix issues and use Modify operation
@@ -94,17 +102,20 @@
 5. Poll status until approved
 
 ### Send Failures
+
 1. Check error code from API response
 2. Fix parameter issues (phone, template, signature)
 3. Retry with correct parameters
 4. For rate limits, implement backoff
 
 ### Quota Exceeded
+
 1. Query current usage via QuerySendStatistics
 2. Check daily/monthly limits
 3. Wait for quota reset (daily) or contact support (monthly)
 
 ### SMS Package Issues
+
 1. Follow the SMS Package-Related Issues troubleshooting steps above
 
 ## Error Code Reference

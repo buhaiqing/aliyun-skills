@@ -72,6 +72,7 @@ kubectl get pod {{user.pod_name}} -n {{user.namespace}} -o json \
 ```
 
 **Decision Tree:**
+
 - Events show `FailedScheduling: 0/N nodes are available` → ECI quota exhausted
 - Events show `Insufficient eci vcpu` / `Insufficient eci memory` → Quota exhausted; raise ECI quota
 - Events show `vSwitch ip insufficient` → VSwitch CIDR exhausted; add a larger VSwitch or remove unused ENIs
@@ -103,6 +104,7 @@ aliyun ecs DescribeSecurityGroups --RegionId $REGION
 ```
 
 **Decision Tree:**
+
 - VSwitch `AvailableIpAddress < Pod count` → Expand VSwitch CIDR or add VSwitch
 - ECI profile has narrow instance family → Use broader profile or `default`
 - Security group too restrictive → Loosen inbound from K8s API server CIDR
@@ -133,6 +135,7 @@ aliyun ram GetRole --RoleName "AliyunCSDefaultRole" 2>/dev/null \
 ```
 
 **Decision Tree:**
+
 - VPC/VSwitch not found → Create first via `alicloud-vpc-ops`
 - ECI quota insufficient → Raise ECI quota in ECI console
 - RAM role `AliyunCSDefaultRole` missing → Create via `alicloud-ram-ops`
@@ -159,6 +162,7 @@ aliyun cs GET /clusters/{{user.cluster_id}} | jq '{state, vpc_id, tags}'
 ```
 
 **Decision Tree:**
+
 - `deletion_protection = true` → Ask user to disable; retry
 - `DependencyResourceExist` → User must release SLB / PVCs / DNS records
 - Cluster state = `updating` / `initial` → Wait for stable state, retry
@@ -189,6 +193,7 @@ kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/{{user.namespace}}/pod
 ```
 
 **Decision Tree:**
+
 - metrics-server missing → Install via addon (or via `kubectl apply` of metrics-server manifest)
 - ECI quota exhausted → HPA can't create more ECI Pods; raise quota
 - HPA `minReplicas` is the cap → Check if HPA has maxReplicas configured
@@ -215,6 +220,7 @@ kubectl get --raw /apis/metrics.k8s.io/v1beta1/namespaces/{{user.namespace}}/pod
 ```
 
 **Decision Tree:**
+
 - Image > 1GB → Optimize (multi-stage build, distroless)
 - Cross-region image pull → Mirror to same-region ACR
 - `minReplicas=0` for latency-sensitive service → Set `minReplicas >= 1`
@@ -241,6 +247,7 @@ aliyun ecs DescribeSecurityGroupAttribute --SecurityGroupId {{user.sg_id}}
 ```
 
 **Decision Tree:**
+
 - No NAT Gateway in VPC → Create via `alicloud-nat-ops`
 - No SNAT entry for VSwitch → Add SNAT entry
 - Security group egress restricted → Add egress rule for 0.0.0.0/0 (or specific destinations)

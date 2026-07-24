@@ -7,7 +7,7 @@
 ```bash
 aliyun pts get-pts-scene-running-data --scene-id "{{scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
 aliyun pts get-pts-scene-running-status --scene-id "{{scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 | Field (typical) | Meaning |
 |-----------------|---------|
@@ -20,7 +20,7 @@ aliyun pts get-pts-scene-running-status --scene-id "{{scene_id}}" --region "${AL
 
 ```bash
 aliyun pts get-pts-report-details --report-id "{{report_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 | Metric | Use |
 |--------|-----|
@@ -34,13 +34,13 @@ List reports:
 ```bash
 aliyun pts list-pts-reports --page-number 1 --page-size 10 --region "${ALIBABA_CLOUD_REGION_ID}"
 aliyun pts get-pts-reports-by-scene-id --scene-id "{{scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 ## Baseline Comparison
 
 ```bash
 aliyun pts get-pts-scene-base-line --scene-id "{{scene_id}}" --region "${ALIBABA_CLOUD_REGION_ID}"
-```
+```markdown
 
 Workflow:
 
@@ -53,7 +53,7 @@ Workflow:
 ```bash
 aliyun pts get-jmeter-report-details --report-id "{{report_id}}"
 aliyun pts get-jmeter-sample-metrics --report-id "{{report_id}}"
-```
+```markdown
 
 ## CloudMonitor Integration
 
@@ -65,7 +65,7 @@ aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard \
   --MetricName CPUUtilization \
   --Dimensions '[{"instanceId":"{{instance_id}}"}]' \
   --Period 60 --Length 300
-```
+```markdown
 
 ## Suggested Alarms (Target Side)
 
@@ -77,8 +77,8 @@ aliyun cms DescribeMetricList --Namespace acs_ecs_dashboard \
 
 ## Dashboard Layout
 
-```
+```text
 Row 1: [PTS TPS] [PTS Avg RT] [PTS Error %]
 Row 2: [Target CPU] [Target Memory] [SLB ActiveConnections]
 Row 3: [Baseline vs Current P99] [Success Rate Delta]
-```
+```text

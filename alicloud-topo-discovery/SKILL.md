@@ -140,7 +140,7 @@ Generator → Critic loop details are in [references/gcl-rubric.md](references/g
 
 Before running a scan, **MUST** confirm the following options with the user:
 
-```
+```json
 📋 Topology Scan Configuration:
 
 1. Report mode (required):
@@ -168,7 +168,7 @@ Before running a scan, **MUST** confirm the following options with the user:
    [input]: Patrol JSON report path (auto-overlay health status onto topology)
 
 Reply with option numbers or descriptions to confirm before scanning begins.
-```
+```markdown
 
 ## Variable Convention
 
@@ -191,14 +191,17 @@ Reply with option numbers or descriptions to confirm before scanning begins.
 **Must complete before any CLI execution:**
 
 1. Verify credentials exist:
+
    ```bash
    test -n "$ALIBABA_CLOUD_ACCESS_KEY_ID" && test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" || { echo "ERROR: Credentials not set"; exit 1; }
    ```
 
 2. Check CLI availability:
+
    ```bash
    command -v aliyun >/dev/null || { echo "ERROR: aliyun CLI not found"; exit 1; }
-   ```
+
+```text
 
 3. Verify read-only mode:
    - Review the list of commands planned for execution
@@ -206,6 +209,7 @@ Reply with option numbers or descriptions to confirm before scanning begins.
    - If found → HALT and report to the user
 
 4. Test API connectivity (read-only):
+
    ```bash
    aliyun vpc DescribeRegions --RegionId "$ALIBABA_CLOUD_REGION_ID" >/dev/null 2>&1 || { echo "ERROR: API check failed"; exit 1; }
    ```
@@ -221,7 +225,7 @@ aliyun ecs DescribeInstances --RegionId $REGION_ID
 # After: ID + Name + Type + Status only
 aliyun ecs DescribeInstances --RegionId $REGION_ID \
   | jq '.Instances.Instance[] | {InstanceId, InstanceName, InstanceType, Status}'
-```
+```markdown
 
 Field filtering rules per API are in the JSON output path mapping in `references/execution-commands.md`.
 
@@ -300,7 +304,7 @@ Supports **ASCII tree + Mermaid diagram** formats; selectable via pre-execution 
 ---
 
 {{statistics_output}}
-```
+```markdown
 
 **Multi-file mode:**
 
@@ -311,14 +315,17 @@ Supports **ASCII tree + Mermaid diagram** formats; selectable via pre-execution 
 ### Phase 5: Post-Execution Validation
 
 1. Verify output file exists and size > 0:
+
    ```bash
    test -s report.md && echo "Report generated successfully"
    ```
 
 2. Check for credential leakage:
+
    ```bash
    grep -E 'LTAI|AKIA|wJalr|SECRET|secret' report.md && { echo "WARNING: Possible credential leak"; exit 1; }
-   ```
+
+```markdown
 
 3. Verify read-only compliance (meta-check, no command execution):
    - Confirm execution log contains no write-operation commands
@@ -364,6 +371,7 @@ performance for network topology discovery scenarios.
 ### Cost
 
 This skill uses read-only Describe APIs and incurs no API charges. Call volume is minimal:
+
 - **Optimization**: Use batch APIs where possible; set `PageSize` to 50 to reduce call count
 - **Waste**: Not applicable for read-only discovery
 

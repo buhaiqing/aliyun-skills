@@ -8,7 +8,7 @@
 
 Runtime Harness 可观测性体系采用**三位一体**设计，覆盖 Metrics、Logs、Traces 三个维度：
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    SkillOpt 可观测性架构                      │
 ├─────────────────────────────────────────────────────────────┤
@@ -32,7 +32,7 @@ Runtime Harness 可观测性体系采用**三位一体**设计，覆盖 Metrics�
 │    └─────────┘      └─────────┘      └─────────┘          │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ## 2. 数据流
 
@@ -49,7 +49,7 @@ Runtime Harness 在以下关键节点产生可观测性数据：
 
 ### 2.2 数据流向
 
-```
+```json
 ┌─────────────────┐
 │  SkillOpt 执行  │
 └────────┬────────┘
@@ -71,6 +71,7 @@ Runtime Harness 在以下关键节点产生可观测性数据：
 **目标**: 结构化日志 + Prometheus 指标导出
 
 **能力**:
+
 - ✅ JSON Lines 格式日志（机器可解析）
 - ✅ Prometheus text format 指标文件
 - ✅ 7 个核心指标（调用量、错误率、修复成功率等）
@@ -85,6 +86,7 @@ Runtime Harness 在以下关键节点产生可观测性数据：
 **目标**: Langfuse 集成，实现端到端追踪
 
 **能力**:
+
 - ✅ 追踪事件上报
 - ✅ Agent 调用链关联
 - ✅ 修复效果分析
@@ -98,6 +100,7 @@ Runtime Harness 在以下关键节点产生可观测性数据：
 **目标**: 主动告警 + Grafana 仪表盘
 
 **能力**:
+
 - 📋 Prometheus 告警规则
 - 📋 Grafana 仪表盘模板
 - 📋 运营报告增强（趋势分析）
@@ -129,7 +132,7 @@ export LANGFUSE_HOST="https://cloud.langfuse.com"
 export LANGFUSE_PUBLIC_KEY="pk-lf-..."
 export LANGFUSE_SECRET_KEY="sk-lf-..."
 export SKILLOPT_SESSION_ID="agent-session-123" # 多 Skill 共享 Session（推荐）
-```
+```markdown
 
 ### 4.2 命令行参数
 
@@ -202,7 +205,7 @@ JSON Lines 格式日志包含以下字段：
   "repair_succeeded": false,
   "circuit_breaker_state": "closed"
 }
-```
+```markdown
 
 ### 6.3 追踪事件
 
@@ -255,7 +258,7 @@ export LANGFUSE_SESSION_ID="user-456"
     --skillopt-enable \
     --Namespace acs_ecs_dashboard \
     --MetricName CPUUtilization
-```
+```markdown
 
 ## 8. 采集配置示例
 
@@ -342,7 +345,7 @@ scrape_configs:
           level:
       - output:
           source: msg
-```
+```markdown
 
 #### Fluentd 配置
 
@@ -381,7 +384,7 @@ node_exporter --collector.textfile.directory=/var/lib/node_exporter/textfile
 
 # 2. SkillOpt 指标文件自动写入该目录
 export SKILLOPT_METRICS_DIR="/var/lib/node_exporter/textfile"
-```
+```markdown
 
 #### Prometheus scrape 配置
 
@@ -418,7 +421,7 @@ scrape_configs:
     file_sd_configs:
       - files:
           - '/var/lib/node_exporter/textfile/*.prom'
-```
+```bash
 
 ### 8.3 Langfuse 追踪配置（Phase 2）
 
@@ -465,7 +468,7 @@ services:
 
 volumes:
   postgres_data:
-```
+```markdown
 
 ### 8.4 告警规则配置
 
@@ -529,7 +532,7 @@ groups:
           severity: critical
         annotations:
           summary: "SkillOpt {{ $labels.skill }} 熔断器已触发"
-```
+```markdown
 
 ### 8.5 Grafana 仪表盘配置
 
@@ -560,7 +563,7 @@ sum(skillopt_repair_success{skill="$skill"}) / sum(skillopt_total_failures{skill
 
 # 熔断器状态
 skillopt_circuit_breaker_state{skill="$skill"}
-```
+```markdown
 
 ## 9. 监控与告警
 
@@ -605,27 +608,31 @@ groups:
 ### 9.1 日志未生成
 
 **检查点**:
+
 1. `SKILLOPT_LOG_FORMAT` 是否设置为 `json`
 2. 日志目录权限是否正确
 3. `skillopt_log()` 函数是否被调用
 
 **诊断命令**:
+
 ```bash
 # 检查日志文件
 ls -lh ${ALIBABA_CLOUD_LOG_DIR:-.runtime}/cms-skillopt-*.log
 
 # 查看最新日志
 tail -f ${ALIBABA_CLOUD_LOG_DIR:-.runtime}/cms-skillopt-$(date +%Y%m%d).log
-```
+```markdown
 
 ### 9.2 指标未导出
 
 **检查点**:
+
 1. `SKILLOPT_METRICS_DIR` 是否设置
 2. 目录是否存在且可写
 3. `skillopt_export_metrics()` 是否被调用
 
 **诊断命令**:
+
 ```bash
 # 检查指标文件
 ls -lh ${SKILLOPT_METRICS_DIR}/skillopt_*.prom
@@ -637,16 +644,18 @@ cat ${SKILLOPT_METRICS_DIR}/skillopt_cms.prom
 ### 9.3 追踪未上报
 
 **检查点**:
+
 1. `SKILLOPT_LANGFUSE_ENABLED` 是否为 `true`
 2. Langfuse 配置是否正确
 3. 网络连接是否正常
 
 **诊断命令**:
+
 ```bash
 # 检查 Langfuse 连接
 curl -H "Authorization: Bearer ${LANGFUSE_PUBLIC_KEY}:${LANGFUSE_SECRET_KEY}" \
      ${LANGFUSE_HOST}/api/public/health
-```
+```markdown
 
 ## 10. 性能影响
 

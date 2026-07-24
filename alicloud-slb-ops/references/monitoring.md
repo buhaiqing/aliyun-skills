@@ -58,7 +58,7 @@ aliyun cms DescribeMetricList \
   --Dimensions '{"instanceId":"lb-bp67acfmxazb4ph***","port":"80","protocol":"http"}' \
   --StartTime "2026-05-14T00:00:00Z" \
   --EndTime "2026-05-14T23:59:59Z"
-```
+```bash
 
 > **Note:** CloudMonitor metrics require the `alicloud-cms-ops` skill for detailed
 > metric queries and alert configuration.
@@ -99,7 +99,7 @@ aliyun slb SetAccessLogsDownloadAttribute \
   --LogsDownloadStatus on \
   --LogProject slb-log-project \
   --LogStore slb-log-store
-```
+```markdown
 
 > **Note:** Access log configuration requires the `alicloud-oss-ops` skill for
 > OSS bucket management.
@@ -156,7 +156,7 @@ When >10 SLB alarms trigger within 5 minutes, enter storm mode:
 
 ## Alert-Driven Diagnostic Decision Tree
 
-```
+```json
 [SLB Alarm Fires]
     │
     ├── Step 1: Verify alarm validity — Current metric vs threshold
@@ -175,7 +175,7 @@ When >10 SLB alarms trigger within 5 minutes, enter storm mode:
     │       └── If 5xx from RDS → Delegate to `alicloud-rds-ops`
     │
     └── Step 6: Generate unified diagnostic report
-```
+```bash
 
 ## Fine-Grained Monitoring
 

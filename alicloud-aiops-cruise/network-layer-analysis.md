@@ -21,6 +21,7 @@
 ### 1.2 关键缺失项
 
 #### EIP 深度监控缺失
+
 ```yaml
 缺失指标:
   - net_in.rate_percentage / net_out.rate_percentage  # 已有，但缺少阈值告警
@@ -28,9 +29,10 @@
   - outdrop_rate / indrop_rate                        # 丢包率 - 缺失
   - BandwidthLimitExceeded                            # 带宽超限 - 缺失
   - 异常流量模式检测 (突发/DDoS)                      # 缺失
-```
+```markdown
 
 #### SLB/CLB 深度监控缺失
+
 ```yaml
 已有指标 (基础):
   - UnhealthyServerCount            # 健康检查失败数
@@ -46,9 +48,10 @@
   - 证书过期检测                     # 缺失
 
 注意: CloudMonitor 中 SLB 指标需要 Instance 前缀，如 InstanceActiveConnection
-```
+```markdown
 
 #### NAT 深度监控缺失
+
 ```yaml
 已有指标 (基础):
   - SnatConnection                    # SNAT连接数
@@ -60,9 +63,10 @@
   - MaxConnection                     # 最大连接数
   
 注意: NAT 带宽指标为 InRatePercent/OutRatePercent
-```
+```markdown
 
 #### ALB 完全缺失
+
 ```yaml
 ALB 需要补充的完整监控体系 (命名空间: acs_alb):
   实例层:
@@ -83,7 +87,7 @@ ALB 需要补充的完整监控体系 (命名空间: acs_alb):
     - UnhealthyServerCount        # 不健康后端数
 
 注意: ALB 命名空间为 acs_alb (非 acs_alb_dashboard)，指标名区分大小写
-```
+```markdown
 
 ---
 
@@ -178,7 +182,7 @@ for EIP in $(aliyun vpc DescribeEipAddresses --RegionId "$REGION" --PageSize 50 
     echo "[ALERT] EIP $EIP $ALERTS"
   fi
 done
-```
+```markdown
 
 ### 2.2 增强 SLB/CLB 巡检 (runbooks/01-daily-health-check.md)
 
@@ -343,7 +347,7 @@ for LB_ID in $(echo "$SLB_LIST" | jq -r '.LoadBalancerId'); do
     echo "[ALERT] SLB $LB_ID $ALERTS"
   fi
 done
-```
+```markdown
 
 ### 2.3 增强 NAT 巡检 (runbooks/01-daily-health-check.md)
 
@@ -447,7 +451,7 @@ for NAT_ID in $(aliyun vpc DescribeNatGateways --RegionId "$REGION" | jq -r '.Na
     echo "[ALERT] NAT $NAT_ID $ALERTS"
   fi
 done
-```
+```markdown
 
 ### 2.4 新增 ALB 完整巡检 (runbooks/01-daily-health-check.md)
 
@@ -609,7 +613,7 @@ for ALB_ID in $(echo "$ALB_LIST" | jq -r '.[].LoadBalancerId'); do
     echo "[ALERT] ALB $ALB_ID $ALERTS"
   fi
 done
-```
+```markdown
 
 ---
 
@@ -639,18 +643,19 @@ if ! command -v bc &> /dev/null; then
 else
   compare_gt() { (( $(echo "$1 > $2" | bc -l) )); }
 fi
-```
+```markdown
 
 ### 3.3 新增 Runbook 建议
 
 考虑新增专门的网络层巡检 Runbook:
 
-```
+```text
 runbooks/
 ├── 11-network-layer-inspection.md    # 新增: 网络层专项巡检
-```
+```markdown
 
 内容覆盖:
+
 - 全链路连通性测试 (VPC 内/跨 VPC/公网)
 - 安全组规则审计 (开放端口/源 IP 范围)
 - 网络 ACL 检查

@@ -24,6 +24,7 @@ aliyun sas <OperationName> --Param1 value1 --Param2 value2
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun sas DescribeVulList --PageSize 50 | jq '{total: .TotalCount, vulns: [.VulList[]? | {name: .Name, severity: .Severity}]}'
 ```

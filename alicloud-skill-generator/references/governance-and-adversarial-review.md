@@ -24,6 +24,7 @@
 | **C6** | **Token Efficiency 6 条规则落实** | 检查 TE-1~TE-6 每条已应用 | **自动修复** — Agent 必须按 Token Efficiency Requirements 逐条修复 |
 
 > **自解规则**：如果任何 C1-C6 不满足，Agent 必须：
+>
 > 1. 立即停止，报告违规项
 > 2. 自动修复缺失章节（使用模板内容填充）
 > 3. 重新执行合规检查
@@ -46,6 +47,7 @@ Every generated skill MUST pass three review stages before merge:
 ### 1.2 Review Triggers
 
 Review is REQUIRED when:
+
 - New `alicloud-[product]-ops` skill is generated
 - Existing skill undergoes material update (new operations, API version bump)
 - OpenAPI spec changes affect operation signatures
@@ -58,16 +60,20 @@ Review is REQUIRED when:
 ### 2.1 Security Scenarios
 
 #### Scenario 1: Destructive without Confirmation
+
 **Test:** Search all delete/destroy/remove operations.
 **Pass Criteria:** Every destructive operation has explicit user confirmation with resource identifier.
 **Fail Action:** Block merge until confirmation pattern added.
 
 #### Scenario 2: Credential Echo / Masking Failure
+
 **Test:** Search all execution flows (CLI output, JIT Go SDK stdout/stderr, log statements, error messages, debug/verbose output, verification scripts) for:
+
 - `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `access_key_secret`, `AccessKeySecret`, `Secret` (as field value context)
 - Any case where credential values might leak (e.g., `fmt.Println(config)`, `log.Printf("%+v", ...)`, `echo $ALIBABA_CLOUD_ACCESS_KEY_SECRET`)
 - JSON/YAML/INI output that includes un-masked credential fields
 **Pass Criteria:**
+
 1. No secret value is printed, logged, or echoed in any execution path.
 2. ALL credential-related output uses masking: `***`, `<masked>`, or equivalent.
 3. Verification scripts check existence only (e.g., `test -n "$var"`), never echo the value.
@@ -76,6 +82,7 @@ Review is REQUIRED when:
 **Fail Action:** Block merge; treat as security incident.
 
 #### Scenario 3: API Hallucination
+
 **Test:** Cross-reference all operationIds, field names, and JSON paths against OpenAPI spec.
 **Pass Criteria:** 100% traceability to OpenAPI or verified CLI output.
 **Fail Action:** Require doc verification for each hallucinated item.
@@ -83,21 +90,25 @@ Review is REQUIRED when:
 ### 2.2 Resilience Scenarios
 
 #### Scenario 4: Idempotency Gap
+
 **Test:** Simulate executing the same create operation twice.
 **Pass Criteria:** Behavior is documented (error, reuse, or duplicate).
 **Fail Action:** Document idempotency behavior or add client token.
 
 #### Scenario 5: Throttling Blindness
+
 **Test:** Verify retry logic for 429/Throttling errors.
 **Pass Criteria:** Exponential backoff documented; max retries specified.
 **Fail Action:** Add throttling handling to recovery table.
 
 #### Scenario 6: Region Drift
+
 **Test:** Check for hardcoded regions in any flow.
 **Pass Criteria:** All regions use `{{env.*}}` or `{{user.*}}` placeholders.
 **Fail Action:** Replace hardcoded regions with placeholders.
 
 #### Scenario 7: Error Recovery Gap
+
 **Test:** Verify handling of `QuotaExceeded`, `InsufficientBalance`, `InvalidParameter`.
 **Pass Criteria:** Each error has documented recovery action.
 **Fail Action:** Add missing error patterns to recovery table.
@@ -105,26 +116,31 @@ Review is REQUIRED when:
 ### 2.3 UX Scenarios (NEW)
 
 #### Scenario 8: Onboarding Friction
+
 **Test:** Have a first-time user attempt to execute the first command.
 **Pass Criteria:** User succeeds within 60 seconds without external help.
 **Fail Action:** Simplify Quick Start; add verification commands.
 
 #### Scenario 9: Excessive Prompting
+
 **Test:** Count interactive prompts for common operations (describe, create, delete).
 **Pass Criteria:** ≤ 3 prompts per common operation.
 **Fail Action:** Add smart defaults; reduce required user input.
 
 #### Scenario 10: Cryptic Errors
+
 **Test:** Simulate each error category and evaluate message quality.
 **Pass Criteria:** Error message follows `[ERROR] code: summary → explanation → fix → next step` format.
 **Fail Action:** Rewrite error messages per `user-experience-spec.md` Section 5.
 
 #### Scenario 11: Missing Progress Feedback
+
 **Test:** Execute operations taking > 5 seconds.
 **Pass Criteria:** Progress indicator visible with elapsed time and ETA.
 **Fail Action:** Add polling progress to long-running operations.
 
 #### Scenario 12: Silent Failures
+
 **Test:** Verify that every operation produces observable output.
 **Pass Criteria:** Success/failure is always reported; state changes are visible.
 **Fail Action:** Add explicit success/failure feedback to all operations.
@@ -132,56 +148,67 @@ Review is REQUIRED when:
 ### 2.4 AIOps Scenarios (NEW)
 
 #### Scenario 13: Missing Multi-Metric Correlation
+
 **Test:** Search for multi-metric inspection patterns in monitoring/diagnosis skills.
 **Pass Criteria:** Skill defines ≥ 4 anomaly patterns with detection logic and severity.
 **Fail Action:** Require multi-metric correlation per `aiops-best-practices.md` Section 2.
 
 #### Scenario 14: No Cross-Skill Delegation Matrix
+
 **Test:** Verify `integration.md` contains Alarm-to-Diagnosis delegation matrix.
 **Pass Criteria:** Matrix maps each alarm namespace/metric to primary/secondary diagnosis skill.
 **Fail Action:** Require delegation matrix per `aiops-best-practices.md` Section 4.
 
 #### Scenario 15: Missing DAS Integration
+
 **Test:** Check database-related skills for DAS delegation triggers.
 **Pass Criteria:** RDS/PolarDB/Redis skills define DAS trigger conditions and operations.
 **Fail Action:** Require DAS integration per `aiops-best-practices.md` Section 3.3.
 
 #### Scenario 16: No Alarm Storm Handling
+
 **Test:** Search for alarm storm detection and handling logic.
 **Pass Criteria:** Skill defines storm detection criteria and aggregation/suppression workflow.
 **Fail Action:** Require alarm storm handling per `aiops-best-practices.md` Section 6.
 
 #### Scenario 17: Missing Knowledge Base
+
 **Test:** Check if `references/knowledge-base.md` exists for diagnostic skills.
 **Pass Criteria:** Knowledge base contains ≥ 3 product fault patterns + ≥ 1 cascade pattern.
 **Fail Action:** Require knowledge base per `aiops-best-practices.md` Section 7.
 
 #### Scenario 18: No Multi-Round Reflection
+
 **Test:** Check troubleshooting.md for multi-round diagnosis review process.
 **Pass Criteria:** Document defines 3-round review with critical reflection questions.
 **Fail Action:** Require multi-round reflection per `aiops-best-practices.md` Section 11.
 
 #### Scenario 19: Missing Self-Healing Framework (NEW)
+
 **Test:** Verify all installation flows reference `enhanced-self-healing-framework.md`.
 **Pass Criteria:** CLI install, Go runtime JIT, dependency download all follow enhanced self-healing framework with pre-flight checks, error classification, multi-path recovery, health verification, and graceful degradation.
 **Fail Action:** Require self-healing framework implementation per `enhanced-self-healing-framework.md`.
 
 #### Scenario 20: Insufficient Self-Healing Coverage (NEW)
+
 **Test:** Check self-healing paths per error type in installation flows.
 **Pass Criteria:** Each error type (network, permission, resource, configuration) has ≥ 3 self-healing paths documented.
 **Fail Action:** Add missing self-healing paths per error category.
 
 #### Scenario 21: Missing Health Verification (NEW)
+
 **Test:** Verify post-installation health check exists.
 **Pass Criteria:** Health check script validates binary existence, permissions, PATH, version, and basic functionality with health score ≥ 8/10.
 **Fail Action:** Add health verification step to installation flow.
 
 #### Scenario 22: No Self-Healing Metrics (NEW)
+
 **Test:** Check if self-healing success criteria are documented.
 **Pass Criteria:** Self-healing duration < 30s, user intervention rate < 20%, health score ≥ 8/10 documented as success criteria.
 **Fail Action:** Add self-healing metrics to success criteria section.
 
 #### Scenario 23: Missing Graceful Degradation (NEW)
+
 **Test:** Verify degradation path exists when self-healing exhausted.
 **Pass Criteria:** Clear fallback path (JIT Go SDK → Console → Manual) with user guidance template.
 **Fail Action:** Add graceful degradation path and user guidance template.
@@ -191,32 +218,39 @@ Review is REQUIRED when:
 > **重要性：所有其他检查的前提条件，必须在其他场景之前执行**
 
 #### Scenario 24: Missing Frontmatter (C1)
+
 **Test:** Check first 3 lines start with `---` and contain YAML with required fields.
 **Pass Criteria:** Frontmatter exists with `name`, `description`, `license`, `compatibility`, `metadata`.
 **Fail Action:** **自动修复** — Add complete frontmatter from `alicloud-skill-template.md`.
 
 #### Scenario 25: Missing SHOULD/SHOULD NOT (C2)
+
 **Test:** Search for `### SHOULD Use` and `### SHOULD NOT Use` sections.
 **Pass Criteria:** Both trigger sections present with product-specific conditions.
 **Fail Action:** **自动修复** — Add Trigger & Scope section from template.
 
 #### Scenario 26: Missing Five Core Standards (C3)
+
 **Test:** Search for `## Five Core Standards (Quality Gates)` table.
 **Pass Criteria:** 5-row table present with Clear Boundaries, Structured I/O, Actionable Steps, Failure Strategies, Single Responsibility.
 **Fail Action:** **自动修复** — Add Five Core Standards table from template.
 
 #### Scenario 27: Missing Well-Architected Framework (C4)
+
 **Test:** Search for `Well-Architected Framework Integration` table.
 **Pass Criteria:** 5-pillar table present (安全/稳定/成本/效率/性能).
 **Fail Action:** **自动修复** — Add Well-Architected Framework table from template.
 
 #### Scenario 28: Missing Variables (C5)
+
 **Test:** Search for `## Variables` section with placeholder table.
 **Pass Criteria:** Table with `{{env.*}}`, `{{user.*}}`, `{{output.*}}` placeholders.
 **Fail Action:** **自动修复** — Add Variables section with standard placeholders.
 
 #### Scenario 29: Token Efficiency Violations (C6)
+
 **Test:** Check TE-1~TE-6 compliance in generated skill.
+
 | Sub-Scenario | Test | Pass Criteria | Auto-Fix |
 |--------------|------|--------------|----------|
 | TE-1 | Static data tables? | No static version/port/limit tables | Replace with API commands |
@@ -245,7 +279,9 @@ Review is REQUIRED when:
 - [ ] **C6:** Token Efficiency applied (TE-1~TE-6)
 
 #### Scenario 29: Token Efficiency Violations (C6)
+
 **Test:** Check TE-1~TE-6 compliance in generated skill.
+
 | Sub-Scenario | Test | Pass Criteria | Auto-Fix |
 |--------------|------|--------------|----------|
 | TE-1 | Static data tables? | No static version/port/limit tables | Replace with API commands |
@@ -296,6 +332,7 @@ Review is REQUIRED when:
 ### 3.2 Post-Merge Monitoring
 
 After merge, monitor for:
+
 - User escalation rate (target: < 10%)
 - Task completion rate (target: > 90%)
 - Error recovery rate (target: > 80%)
@@ -398,6 +435,7 @@ Reviewer: _______________ Date: _______________ Result: PASS / FAIL
 ### 5.1 Exception Process
 
 If a skill cannot meet a requirement:
+
 1. Document the exception with justification
 2. Propose mitigation or workaround
 3. Obtain approval from skill owner and security reviewer

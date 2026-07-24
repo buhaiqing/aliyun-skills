@@ -18,7 +18,7 @@
 
 ### 1.2 Observability Stack Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    Observability Stack                               │
 ├─────────────────────────────────────────────────────────────────────┤
@@ -191,7 +191,8 @@ type SlowQuery struct {
 ### 4.1 Grafana Dashboard Panels
 
 **Dashboard 1: Instance Overview**
-```
+
+```text
 Panel Group: Instance Health
 - Instance Status (gauge)
 - Cluster Health (gauge)
@@ -206,7 +207,8 @@ Panel Group: Resource Utilization
 ```
 
 **Dashboard 2: Performance Metrics**
-```
+
+```text
 Panel Group: Query Performance
 - Search QPS (graph)
 - Search Latency (P50, P95, P99)
@@ -221,7 +223,8 @@ Panel Group: Write Performance
 ```
 
 **Dashboard 3: JVM Analysis**
-```
+
+```text
 Panel Group: JVM Health
 - Heap Memory Usage (graph)
 - GC Collection Count (graph)
@@ -235,7 +238,8 @@ Panel Group: GC Analysis
 ```
 
 **Dashboard 4: Cluster Health**
-```
+
+```text
 Panel Group: Cluster State
 - Cluster Health (gauge)
 - Active Shards (stat)
@@ -422,7 +426,7 @@ DingTalk/Slack:
 
 ### 6.1 Observability → AIOps Data Flow
 
-```
+```text
 Metrics → Anomaly Detection → Pattern Matching → Remediation
 Logs → Error Analysis → Root Cause Hypothesis → Diagnosis
 Traces → Request Analysis → Bottleneck Identification → Optimization
@@ -443,7 +447,7 @@ Traces → Request Analysis → Bottleneck Identification → Optimization
 
 ### 7.1 Configuration Checklist
 
-```
+```text
 Metrics Collection:
 □ CMS namespace configured (acs_elasticsearch)
 □ All core metrics collected

@@ -19,6 +19,7 @@ Phase 2 实现了 Langfuse 追踪集成，支持：
 截至 2026-06-17，Phase 2 已完成 9 个 Skill 的分阶段接入和验证：
 
 **试点阶段（5 个）**:
+
 | Skill | 产品 | 状态 | 验证 API | 验证结果 |
 |-------|------|------|----------|----------|
 | `alicloud-cms-ops` | CMS | ✅ 已接入 | `DescribeMetricRuleList` / `DescribeProjectMeta` | Langfuse trace、input、output、session 验证通过 |
@@ -28,6 +29,7 @@ Phase 2 实现了 Langfuse 追踪集成，支持：
 | `alicloud-redis-ops` | Redis (`r-kvstore`) | ✅ 已接入 | `DescribeInstances` | trace 直查、input/output 验证通过 |
 
 **灰度阶段（新增 4 个）**:
+
 | Skill | 产品 | 状态 | 验证结果 |
 |-------|------|------|----------|
 | `alicloud-ack-ops` | ACK | ✅ 已接入 | 失败链路入库验证通过 |
@@ -155,6 +157,7 @@ skillopt_trace_event() {
 ### 3.2 集成点
 
 **参数优化时**:
+
 ```bash
 skillopt_optimize_params() {
     # ... 现有逻辑 ...
@@ -168,6 +171,7 @@ skillopt_optimize_params() {
 ```
 
 **API 调用前后**:
+
 ```bash
 skillopt_wrap() {
     # 调用前
@@ -193,6 +197,7 @@ skillopt_wrap() {
 ```
 
 **修复流程**:
+
 ```bash
 skillopt_repair_error() {
     skillopt_trace_event "repair_start" \
@@ -211,6 +216,7 @@ skillopt_repair_error() {
 ```
 
 **熔断器状态变化**:
+
 ```bash
 skillopt_cb_record_failure() {
     if [[ $consecutive_failures -ge $SKILLOPT_CB_THRESHOLD ]]; then
@@ -334,6 +340,7 @@ Agent 应转换为如下命令参数：
 ### 5.1 修复效果分析
 
 在 Langfuse Dashboard 查看：
+
 - 各类错误的修复成功率
 - 平均修复时间
 - 需要改进的修复策略
@@ -341,6 +348,7 @@ Agent 应转换为如下命令参数：
 ### 5.2 性能瓶颈定位
 
 追踪 API 调用耗时分布：
+
 - 发现慢查询
 - 识别频繁重试的场景
 - 优化参数调优策略
@@ -348,6 +356,7 @@ Agent 应转换为如下命令参数：
 ### 5.3 Agent 调用链追踪
 
 将 Runtime Harness 事件关联到 Agent 的完整调用链：
+
 - 端到端可视化请求处理过程
 - 分析 Agent 决策路径
 - 优化 Agent 工作流
@@ -355,6 +364,7 @@ Agent 应转换为如下命令参数：
 ### 5.4 质量评估
 
 基于追踪数据评估 Runtime Harness 的效果：
+
 - 整体修复成功率
 - 错误率趋势
 - 为 Skill 进化提供数据支撑
@@ -372,12 +382,14 @@ Agent 应转换为如下命令参数：
 ### 6.2 Prometheus 指标
 
 追踪事件触发指标更新：
+
 - `skillopt_repair_success` 计数器增加
 - `skillopt_total_failures` 计数器增加
 
 ### 6.3 运营报告
 
 报告包含追踪统计摘要：
+
 - 追踪事件总数
 - 各类事件分布
 - 追踪成功率
@@ -468,6 +480,7 @@ curl ... >/dev/null 2>&1 || skillopt_log "trace: send failed"
 ### 9.1 敏感信息脱敏
 
 追踪事件中不包含：
+
 - API Key/Secret
 - 密码
 - 其他敏感凭证
@@ -475,6 +488,7 @@ curl ... >/dev/null 2>&1 || skillopt_log "trace: send failed"
 ### 9.2 数据最小化
 
 只发送必要的追踪数据：
+
 - 事件类型
 - 关键属性
 - 时间戳
@@ -482,6 +496,7 @@ curl ... >/dev/null 2>&1 || skillopt_log "trace: send failed"
 ### 9.3 传输安全
 
 使用 HTTPS 传输：
+
 ```bash
 curl -X POST "https://${LANGFUSE_HOST}/api/public/ingestion" ...
 ```
@@ -517,6 +532,7 @@ PASS=52, FAIL=0, TOTAL=52
 ```
 
 验证覆盖：
+
 - `scripts/skillopt-lib.sh` 路径规范检查
 - wrapper 正确 source 路径验证
 - `bash -n` 语法检查

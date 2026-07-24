@@ -34,6 +34,7 @@ aliyun log GetLogs \
 ## 降级策略
 
 若 SLS/FlowLog 不可用：
+
 1. 直接检查安全组/NACL 规则
 2. 使用 `ping`/`telnet`/`curl` 从不同位置测试连通性
 3. 检查 ECS 实例 `iptables` 和本地防火墙规则

@@ -50,9 +50,10 @@ metadata:
 > 以下所有代码块中的 `aliyun dyvmsapi ...` 命令在执行时应替换为 `./scripts/voice-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dyvmsapi` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Common JSON Paths (Centralized)
 
-```
+```bash
 # SingleCallByVoice:        $.Code, $.Message, $.RequestId, $.CallId
 # SingleCallByTts:          $.Code, $.Message, $.RequestId, $.CallId
 # BatchCallByVoice:         $.Code, $.Message, $.RequestId, $.TaskId
@@ -63,7 +64,7 @@ metadata:
 # QueryCallTaskDetail:      $.TaskDetail[].{TaskId, TaskName, Status, TotalCount, SuccessCount}
 # QueryVoiceFileAuditInfo:  $.AuditStatus, $.FileName, $.CreateTime
 # QueryRobotTaskList:       $.RobotTasks[].{TaskId, TaskName, Status, CreateTime}
-```
+```markdown
 
 ## Pre-flight Checks
 
@@ -94,6 +95,7 @@ metadata:
 ## Execution Overview
 
 Core operations for voice messaging service:
+
 1. **Send Single Voice Notification**: Use `SingleCallByVoice` or `SingleCallByTts` for one recipient
 2. **Send Batch Voice Notifications**: Use `BatchCallByVoice` for multiple recipients
 3. **Start Smart Outbound Task**: Use `StartRobotTask` to initiate robot outbound calls (智能外呼)
@@ -108,6 +110,7 @@ Full command references are available in [references/cli-usage.md](references/cl
 ## Post-execution Validation
 
 After any voice send operation, validate the response:
+
 1. Check if `$.Code` is `OK` or `Success`
 2. Capture `CallId` or `TaskId` for follow-up queries
 3. Verify recipient number matches the request
@@ -115,6 +118,7 @@ After any voice send operation, validate the response:
 ## Failure Recovery
 
 Common error codes and fixes:
+
 | Error Code | Meaning | Fix |
 |------------|---------|-----|
 | `InvalidPhoneNumber` | Invalid recipient phone number | Verify phone number format (E.164 standard) |
@@ -165,6 +169,7 @@ Phase 5 extension rollout for `recommended` skills per [`AGENTS.md` §12](../doc
 ## Post-Update Self-Review
 
 This skill passes all mandatory quality gates:
+
 1. ✅ Clear Boundaries: Focused on voice messaging service only
 2. ✅ Structured I/O: Uses {{user.*}}, {{env.*}}, {{output.*}} conventions
 3. ✅ Explicit Steps: Pre-flight → Execute → Validate → Recover

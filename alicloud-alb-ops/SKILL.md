@@ -31,7 +31,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```markdown
 # CreateLoadBalancer:        $.LoadBalancerId
 # Describe/Get LB:           $.LoadBalancer.{Id,LoadBalancerStatus,Address,AddressType,DNSName}
 # ListLoadBalancers:         $.LoadBalancers[].{LoadBalancerId,LoadBalancerStatus,Address}
@@ -161,15 +161,17 @@ ALB is Alibaba Cloud's Layer 7 (HTTP/HTTPS/QUIC) load balancer. This skill is an
 ## Quick Start
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials: `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`
 - [ ] Region: `ALIBABA_CLOUD_REGION_ID`
 
 ### First Command
+
 ```bash
 # List all ALB instances in region
 aliyun alb ListLoadBalancers --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### Capabilities at a Glance
 
@@ -233,7 +235,7 @@ aliyun alb CreateLoadBalancer \
   --ZoneMappings "[{\"VSwitchId\":\"{{user.vswitch_id}}\"}]" \
   --LoadBalancerEdition "{{user.lb_edition|Basic}}" \
   --ClientToken "{{output.client_token}}"
-```
+```markdown
 
 > **Output:** Parse `LoadBalancerId` from JSON response. LB creation is async — poll with ListAsynJobs.
 > Full command variants (public ALB, bandwidth package) at [references/cli-usage.md](references/cli-usage.md).
@@ -255,15 +257,17 @@ request := &alb.CreateLoadBalancerRequest{
     LoadBalancerEdition: tea.String("Basic"),
 }
 response, err := client.CreateLoadBalancer(request)
-```
+```markdown
 
 #### Post-execution Validation
 
 1. Capture `{{output.lb_id}}` from `$.LoadBalancerId`.
 2. Poll job status via `ListAsynJobs` until complete:
+
    ```bash
    aliyun alb ListAsynJobs --ResourceType LoadBalancer --ResourceIds "[\"{{output.lb_id}}\"]" --RegionId "{{user.region}}"
    ```
+
 3. On API-level completion, verify `GetLoadBalancerAttribute` returns `LoadBalancerStatus == Active`.
 4. On success, report `{{output.lb_id}}`, Address, and DNSName.
 5. On failure, check job status error message.
@@ -291,7 +295,7 @@ aliyun alb GetLoadBalancerAttribute --LoadBalancerId "{{user.lb_id}}"
 
 # List all ALB instances in region
 aliyun alb ListLoadBalancers --RegionId "{{user.region}}"
-```
+```markdown
 
 > Full field extraction examples at [references/cli-usage.md](references/cli-usage.md).
 
@@ -300,6 +304,7 @@ aliyun alb ListLoadBalancers --RegionId "{{user.region}}"
 ### Operation: Update Load Balancer Attribute
 
 #### Pre-flight
+
 - Verify ALB exists; check `ModificationProtectionStatus`.
 
 #### Execution — CLI
@@ -313,7 +318,7 @@ aliyun alb UpdateLoadBalancerAttribute \
 # Enable/disable deletion protection
 aliyun alb EnableDeletionProtection --ResourceId "{{user.lb_id}}" --RegionId "{{user.region}}"
 aliyun alb DisableDeletionProtection --ResourceId "{{user.lb_id}}" --RegionId "{{user.region}}"
-```
+```markdown
 
 > Full update operations (address type, zones, edition) at [references/cli-usage.md](references/cli-usage.md).
 
@@ -338,16 +343,17 @@ aliyun alb CreateListener \
   --ListenerPort "{{user.listener_port|80}}" \
   --LoadBalancerId "{{user.lb_id}}" \
   --DefaultActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]}}]"
-```
+```markdown
 
 > Full examples (HTTPS with certs, QUIC) at [references/cli-usage.md](references/cli-usage.md).
 
 #### Post-execution Validation
 
 Capture `{{output.listener_id}}` from `$.ListenerId`. Verify via:
+
 ```bash
 aliyun alb GetListenerAttribute --ListenerId "{{output.listener_id}}"
-```
+```markdown
 
 ---
 
@@ -368,7 +374,7 @@ aliyun alb AddServersToServerGroup \
   --ServerGroupId "{{user.server_group_id}}" \
   --Servers "[{\\"ServerId\\":\\"{{user.server_id}}\\",\\"ServerIp\\":\\"{{user.server_ip}}\\",\\"ServerType\\":\\"Ecs\\",\\"Port\\":{{user.server_port}},\\"Weight\\":{{user.server_weight|100}}}]" \
   --RegionId "{{user.region}}"
-```
+```markdown
 
 > Full operations (remove servers, list servers, delete SG) at [references/cli-usage.md](references/cli-usage.md). Note: `AddServersToServerGroup` is async — poll `ListAsynJobs`.
 
@@ -390,7 +396,7 @@ aliyun alb CreateRule \
   --Priority "{{user.rule_priority|10}}" \
   --RuleConditions "[{\\"Type\\":\\"Host\\",\\"HostConfig\\":{\\"Values\\":[\\"{{user.host_name}}\\"]}}]" \
   --RuleActions "[{\\"Type\\":\\"ForwardGroup\\",\\"ForwardGroupConfig\\":{\\"ServerGroupTuples\\":[{\\"ServerGroupId\\":\\"{{user.server_group_id}}\\"}]},\\"Order\\":1}]"
-```
+```markdown
 
 > Batch create (CreateRules) at [references/cli-usage.md](references/cli-usage.md).
 
@@ -414,7 +420,7 @@ aliyun alb AssociateAclsWithListener \
   --ListenerId "{{user.listener_id}}" \
   --AclIds "[\\"{{user.acl_id}}\\"]" \
   --AclType "Black"
-```
+```markdown
 
 > Full operations (dissociate, delete ACL) at [references/cli-usage.md](references/cli-usage.md).
 
@@ -434,7 +440,7 @@ aliyun alb AssociateAclsWithListener \
 aliyun alb DeleteLoadBalancer \
   --LoadBalancerId "{{user.lb_id}}" \
   --RegionId "{{user.region}}"
-```
+```markdown
 
 #### Post-execution Validation
 
@@ -462,7 +468,7 @@ aliyun alb CreateHealthCheckTemplate \
 aliyun alb ApplyHealthCheckTemplateToServerGroup \
   --ServerGroupId "{{user.server_group_id}}" \
   --HealthCheckTemplateId "{{user.health_check_template_id}}"
-```
+```markdown
 
 ---
 
@@ -479,7 +485,7 @@ aliyun alb CreateSecurityPolicy \
   --SecurityPolicyName "{{user.sp_name}}" \
   --TLSVersion "TLSv1.2" \
   --Ciphers "[\\"ECDHE-RSA-AES128-GCM-SHA256\\",\\"ECDHE-RSA-AES256-GCM-SHA384\\"]"
-```
+```markdown
 
 > Associate with HTTPS listener at [references/cli-usage.md](references/cli-usage.md).
 
@@ -494,7 +500,7 @@ aliyun alb CreateSecurityPolicy \
 aliyun alb CreateAScripts \
   --ListenerId "{{user.listener_id}}" \
   --AScripts "[{\\"AScriptName\\":\\"{{user.ascript_name}}\\",\\"ScriptContent\\":\\"{{user.script_content}}\\",\\"Enabled\\":true}]"
-```
+```markdown
 
 ---
 
@@ -514,7 +520,7 @@ aliyun alb UnTagResources \
   --ResourceType "loadbalancer" \
   --ResourceIds "[\\"{{user.lb_id}}\\"]" \
   --Tag "[{\\"Key\\":\\"{{user.tag_key}}\\"}]"
-```
+```markdown
 
 ---
 
@@ -531,7 +537,7 @@ aliyun alb EnableLoadBalancerAccessLog \
 
 # Disable access log
 aliyun alb DisableLoadBalancerAccessLog --LoadBalancerId "{{user.lb_id}}"
-```
+```markdown
 
 ## Reference Directory
 
@@ -566,4 +572,5 @@ First rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic
 | Hard rule | `DeleteLoadBalancer` requires verification of non-serving-production AND disabled deletion protection before execution |
 
 ### Changelog
+
 1.0.0 | 2026-06-07 | First rollout.

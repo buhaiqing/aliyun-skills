@@ -13,6 +13,7 @@
 ## Resource Lifecycle
 
 ### Status Flow
+
 - **Creating**: Resource is being provisioned
 - **Running/Available**: Resource is operational
 - **Modifying**: Resource configuration is being changed

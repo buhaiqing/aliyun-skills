@@ -24,7 +24,7 @@
 
 ### 1.3 架构分层
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  Input: 资源标识                          │
 │  - 资源 ID 列表                            │
@@ -66,7 +66,7 @@
 │  - State 验证                             │
 │  - Drift 检测                             │
 └─────────────────────────────────────────┘
-```
+```markdown
 
 ## 2. 资源发现
 
@@ -146,7 +146,7 @@ association_rules:
 
 **输入**: `vpc-bp1xxxxxx`
 
-```
+```text
 Step 1: 查询 VPC
   └─ aliyun vpc DescribeVpcs --VpcId vpc-bp1xxxxxx
      └─ 获取 VPC 基础信息
@@ -183,7 +183,7 @@ Step 4: ECS 关联资源
 
 Step 5: 去重与排序
   └─ 生成资源图谱
-```
+```markdown
 
 ## 3. 属性映射
 
@@ -225,6 +225,7 @@ Step 5: 去重与排序
 **问题**: API 返回的是资源 ID，但 Terraform 需要资源引用。
 
 **方案**:
+
 ```hcl
 # 原始 API 数据
 {
@@ -243,6 +244,7 @@ resource "alicloud_instance" "imported" {
 ```
 
 **转换规则**:
+
 1. 如果关联资源也在导入列表 → 使用 TF 引用
 2. 如果关联资源不在列表 → 使用 Data Source 查询
 3. 如果无法确定 → 标记为变量，需人工填写
@@ -275,7 +277,7 @@ handling_strategy:
   - 生成敏感变量声明
   - 标记 `sensitive = true`
   - 提示用户后续设置
-```
+```markdown
 
 ## 4. 分级导入策略
 
@@ -290,12 +292,14 @@ handling_strategy:
 ### 4.2 分级规则
 
 #### PASS 条件
+
 - 资源类型在支持列表
 - 所有必需属性可获取
 - 无敏感数据或敏感数据可脱敏
 - 关联资源可解析
 
 #### WARN 条件
+
 - 资源配置复杂（如 SLB 大量监听规则）
 - 包含可能变更的属性（如公网 IP）
 - 关联资源不在导入范围内
@@ -303,6 +307,7 @@ handling_strategy:
 - 存在自定义脚本（UserData）
 
 #### SKIP 条件
+
 - 资源类型不支持
 - 使用了 Terraform 无法管理的特殊配置
 - 资源处于异常状态
@@ -338,7 +343,7 @@ checkpoint_status:
 
 ### 5.1 五步流程
 
-```
+```text
 Step 1: 资源发现 (Discovery)
    └─ 输入: 资源标识
    └─ 输出: 资源列表 + 关联图谱
@@ -370,11 +375,11 @@ Step 6: 导入执行 (Execution)
    └─ 输出: terraform state
    └─ 操作: terraform import / apply
    └─ 验证: terraform plan 无漂移
-```
+```markdown
 
 ### 5.2 输出文件结构
 
-```
+```text
 import-<vpc-id>-20240608/
 ├── main.tf              # 生成的 HCL 配置
 ├── import.tf            # terraform import 块 (1.5+)
@@ -412,7 +417,7 @@ import {
 }
 
 # ... 更多 import 块
-```
+```bash
 
 ### 5.4 import.sh 格式（兼容旧版本）
 
@@ -528,13 +533,13 @@ resource "alicloud_instance" "imported_ecs_1" {
 }
 
 # ... 更多资源
-```
+```markdown
 
 ## 6. 与 HITL 集成
 
 ### 6.1 CheckPoint 模式工作流
 
-```
+```json
 User: "导入这个 VPC 的所有资源: vpc-bp1xxxxxx"
 
 Agent: [发现中...]
@@ -660,7 +665,7 @@ $ pi "继续上次的导入任务"
 > 1
 
 [恢复会话，继续审核...]
-```
+```markdown
 
 ## 7. Dry-Run 支持
 
@@ -674,7 +679,7 @@ $ pi "继续上次的导入任务"
 
 ### 7.2 Dry-Run 流程 (Reverse Engineering)
 
-```
+```json
 用户: "导入这个 VPC 的所有资源，先 dry-run 验证"
 
 Agent: [资源发现中...]
@@ -760,7 +765,7 @@ hitl:
           show_cost: false  # 导入不产生新费用
       - review        # 人工审核
       - import        # 实际导入
-```
+```markdown
 
 ### 7.5 限制
 
@@ -806,6 +811,7 @@ terraform plan
 **输入**: `i-bp1xxxxxx`
 
 **输出**:
+
 - main.tf: ECS + 关联 Disk + SecurityGroup
 - import.sh: 3 个 import 命令
 - 分级: [PASS]
@@ -815,6 +821,7 @@ terraform plan
 **输入**: `vpc-bp1xxxxxx` (含 2 VSwitch, 3 ECS, 1 SLB, 1 RDS)
 
 **输出**:
+
 - 资源图谱
 - 分级: [PASS] 10, [WARN] 2 (SLB, RDS), [SKIP] 1 (Custom Image)
 - 完整 Terraform 模块
@@ -824,6 +831,7 @@ terraform plan
 **输入**: `tag:Project=legacy,Environment=production`
 
 **输出**:
+
 - 跨 VPC 的所有带标签资源
 - 资源清单报表
 - 分批导入建议（按依赖关系分组）

@@ -50,6 +50,7 @@ You are the Generator in a GCL for Alibaba Cloud SMS (dysmsapi).
 - All CLI via `./scripts/sms-skillopt-wrapper.sh`.
 - All `{{user.*}}` resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text

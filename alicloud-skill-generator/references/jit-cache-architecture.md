@@ -37,7 +37,7 @@
   - 缓存位置: ~/.cache/aliyun-skills/
   - Go build -buildmode=archive 复用
   - 增量构建支持
-```
+```markdown
 
 ---
 
@@ -45,7 +45,7 @@
 
 ### 2.1 当前瓶颈
 
-```
+```text
 JIT SDK 冷启动流程:
   1. 解析产品/操作 → 查找 SDK 版本
   2. go mod init → 初始化模块 (2s)
@@ -68,7 +68,7 @@ JIT SDK 冷启动流程:
 
 ### 3.1 总体架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                     Skill 调用层                            │
 └─────────────────────────────────────────────────────────────┘
@@ -87,11 +87,11 @@ JIT SDK 冷启动流程:
     │ 预编译二进制  │ │ 源码缓存     │ │ 依赖镜像     │
     │ .bin/        │ │ .src/        │ │ .pkg/        │
     └──────────────┘ └──────────────┘ └──────────────┘
-```
+```markdown
 
 ### 3.2 缓存目录结构
 
-```
+```text
 ~/.cache/aliyun-skills/
 ├── bin/                              # 预编译二进制
 │   ├── ecs-20200430-
@@ -135,7 +135,7 @@ CacheKey = "{product}-{api_version}-{operation}"
 // 示例
 cacheKey := "ecs-20200430-DescribeInstances"
 cacheKey := "rds-20140815-DescribeDBInstances"
-```
+```markdown
 
 ### 3.4 版本管理
 
@@ -188,7 +188,7 @@ cacheKey := "rds-20140815-DescribeDBInstances"
   P0: 核心产品核心操作 (ECS DescribeInstances, RDS DescribeDBInstances)
   P1: 常用诊断操作 (CMS DescribeMetricList, DAS CreateDiagnosticReport)
   P2: 低频操作 (按需编译)
-```
+```markdown
 
 ### 4.2 缓存生命周期
 
@@ -207,7 +207,7 @@ cacheKey := "rds-20140815-DescribeDBInstances"
 
 ### 4.3 缓存命中率优化
 
-```
+```text
 热点操作识别:
   ┌────────────────────────┬─────────────┬──────────────┐
   │ 操作                   │ 日调用频次  │ 预编译状态   │
@@ -219,7 +219,7 @@ cacheKey := "rds-20140815-DescribeDBInstances"
   │ DescribeSlowLogs       │ 100+        │ 按需编译   │
   │ RestartInstance        │ 50+         │ 按需编译   │
   └────────────────────────┴─────────────┴──────────────┘
-```
+```markdown
 
 ---
 
@@ -263,11 +263,11 @@ go build -buildmode=archive -o ~/.cache/aliyun-skills/pkg/archive/common-client.
 # 产品特定 archive
 go build -buildmode=archive -o ~/.cache/aliyun-skills/pkg/archive/ecs-20200430.a \
   github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
-```
+```markdown
 
 ### 5.2 增量编译流程
 
-```
+```text
 增量构建流程:
   1. 检查 archive 缓存
      └─> 存在 → 直接使用
@@ -340,7 +340,7 @@ clean:
 init:
 	go env -w GOPROXY=https://goproxy.cn,direct
 	go env -w GOMODCACHE=$(CACHE_DIR)/pkg/go-mod-cache
-```
+```markdown
 
 ---
 
@@ -413,7 +413,7 @@ du -sh ~/.cache/aliyun-skills/
   - sdk_compile_duration       # 编译耗时
   - sdk_cache_size_bytes       # 缓存大小
   - sdk_precompile_queue_size  # 预编译队列大小
-```
+```markdown
 
 ---
 

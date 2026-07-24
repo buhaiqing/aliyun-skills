@@ -3,6 +3,7 @@
 ## Overview
 
 Alibaba Cloud Voice Messaging Service (Dyvmsapi) provides short voice notification and verification call capabilities, including:
+
 - **Voice Verification Calls**: Automated phone calls with pre-recorded or TTS-generated verification codes
 - **Voice Notifications**: Automated phone calls to notify users of important events
 - **Batch Voice Calls**: Bulk voice notifications to multiple phone numbers
@@ -12,12 +13,15 @@ Alibaba Cloud Voice Messaging Service (Dyvmsapi) provides short voice notificati
 ## Key Concepts
 
 ### Voice Signature
+
 A signature is the identity credential used when sending voice messages. You must apply for and obtain approval for a voice signature before you can send voice messages.
 
 ### Voice Template
+
 A template is the content framework for voice messages. You must create and obtain approval for a voice template before you can send voice messages.
 
 ### Call Status
+
 - **0**: Calling in progress
 - **1**: Call successful
 - **2**: Call failed
@@ -27,6 +31,7 @@ A template is the content framework for voice messages. You must create and obta
 ### Supported Regions
 
 Voice Messaging Service is available in these Alibaba Cloud regions:
+
 - **cn-hangzhou** (Hangzhou)
 - **cn-shanghai** (Shanghai)
 - **cn-beijing** (Beijing)

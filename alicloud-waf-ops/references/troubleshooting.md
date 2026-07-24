@@ -89,6 +89,7 @@ curl -I http://origin_ip:port
 **Cause:** Domain is already protected in WAF.
 
 **Resolution:**
+
 ```bash
 # List existing domains to find the duplicate
 aliyun waf-openapi DescribeDomainList \
@@ -109,6 +110,7 @@ aliyun waf-openapi DeleteDomain --Domain example.com --version 2021-10-01 --forc
 **Cause:** WAF cannot connect to origin server.
 
 **Resolution:**
+
 1. Verify origin server IP/hostname is correct
 2. Check origin server port is open
 3. Verify security groups allow WAF IP ranges
@@ -119,6 +121,7 @@ aliyun waf-openapi DeleteDomain --Domain example.com --version 2021-10-01 --forc
 **Cause:** API rate limit exceeded.
 
 **Resolution:**
+
 ```bash
 # Wait and retry with backoff
 sleep 2
@@ -130,6 +133,7 @@ sleep 2
 **Cause:** Missing `--version 2021-10-01 --force` options.
 
 **Resolution:**
+
 ```bash
 # Always include both options
 aliyun waf-openapi <Operation> \
@@ -143,6 +147,7 @@ aliyun waf-openapi <Operation> \
 **Cause:** DNS not updated or propagation delay.
 
 **Resolution:**
+
 ```bash
 # Check current DNS
 nslookup example.com

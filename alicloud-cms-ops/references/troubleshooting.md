@@ -5,20 +5,24 @@
 ### Issue 1: Throttling / Rate Limiting
 
 **Symptoms:**
+
 - Error: `Throttling.User` or `Request was denied due to user flow control`
 - API calls fail intermittently
 
 **Root Cause:**
+
 - CMS metric query APIs share a quota of **1,000,000 calls/month** (free tier)
 - Per-API limit: **50 calls/second** per account
 
 **Resolution:**
+
 1. Implement exponential backoff: 1s → 2s → 4s → max 3 retries
 2. Reduce query frequency or batch requests
 3. Enable CloudMonitor pay-as-you-go if quota exceeded
 4. Use longer Period values (300s instead of 60s) to reduce call volume
 
 **Prevention:**
+
 - Cache metric data when possible
 - Use DescribeMetricLast instead of DescribeMetricList for latest values
 - Implement client-side rate limiting
@@ -28,6 +32,7 @@
 ### Issue 2: No Metric Data Returned
 
 **Symptoms:**
+
 - `DescribeMetricList` returns empty `Datapoints` array
 - `Success: true` but no data
 
@@ -44,6 +49,7 @@
 | Region mismatch | Instance region | Query the correct region |
 
 **Debug Steps:**
+
 ```bash
 # 1. Verify namespace
 aliyun cms DescribeProjectMeta --RegionId cn-hangzhou
@@ -74,6 +80,7 @@ aliyun cms DescribeMetricList \
 ### Issue 3: Alarm Rule Not Triggering
 
 **Symptoms:**
+
 - Alarm rule exists but no notifications received
 - State shows `OK` when it should be `ALARM`
 
@@ -90,6 +97,7 @@ aliyun cms DescribeMetricList \
 | Silence period | Alarm history | Check if in silence period |
 
 **Debug Steps:**
+
 ```bash
 # 1. Check alarm rule details
 aliyun cms DescribeMetricAlarmList \
@@ -112,13 +120,16 @@ aliyun cms DescribeContactGroupList --RegionId cn-hangzhou
 ### Issue 4: Permission Denied (Forbidden)
 
 **Symptoms:**
+
 - Error: `Forbidden` or `User not authorized`
 - Error: `NoPermission`
 
 **Root Cause:**
+
 - RAM user lacks CloudMonitor permissions
 
 **Resolution:**
+
 1. Attach policy `AliyunCloudMonitorReadOnlyAccess` for read operations
 2. Attach policy `AliyunCloudMonitorFullAccess` for write operations
 3. For custom policies, ensure these actions are allowed:
@@ -130,6 +141,7 @@ aliyun cms DescribeContactGroupList --RegionId cn-hangzhou
    - `cms:DescribeMetricMetaList`
 
 **Verify Permissions:**
+
 ```bash
 aliyun ram ListPoliciesForUser --UserName your-username
 ```
@@ -139,6 +151,7 @@ aliyun ram ListPoliciesForUser --UserName your-username
 ### Issue 5: InvalidParameter Errors
 
 **Symptoms:**
+
 - Error: `InvalidParameter` with various messages
 
 **Common Causes:**
@@ -158,10 +171,12 @@ aliyun ram ListPoliciesForUser --UserName your-username
 ### Issue 6: CLI Not Found or Outdated
 
 **Symptoms:**
+
 - `command not found: aliyun`
 - CLI version too old, missing CMS commands
 
 **Resolution:**
+
 ```bash
 # Check version
 aliyun version
@@ -180,10 +195,12 @@ aliyun cms --help
 ### Issue 7: SDK Import Errors
 
 **Symptoms:**
+
 - Go build fails with `module not found`
 - Import path errors
 
 **Resolution:**
+
 ```bash
 # Initialize module
 cd /tmp/aliyun-sdk-workspace
@@ -203,6 +220,7 @@ go get github.com/alibabacloud-go/cms-2024-03-30/v2/client
 ### Issue 8: CLI Installation Failure (Enhanced Diagnosis)
 
 **Symptoms:**
+
 - `command not found: aliyun` after install attempt
 - Install script exits with errors
 - CLI binary exists but fails to execute
@@ -304,6 +322,7 @@ curl -o /tmp/aliyun-cli-linux-amd64.tgz \
 ```
 
 **Prevention:**
+
 - Verify environment compatibility before install
 - Use package manager where available (brew, apt)
 - Configure Go proxy in shell profile
@@ -314,6 +333,7 @@ curl -o /tmp/aliyun-cli-linux-amd64.tgz \
 ### Issue 9: SDK Build/Resolution Failure (Enhanced Diagnosis)
 
 **Symptoms:**
+
 - `go build` fails with network timeout
 - `go get` hangs or fails
 - Module checksum mismatch
@@ -345,7 +365,7 @@ ls -la $(go env GOMODCACHE)/github.com/alibabacloud-go/ 2>/dev/null || echo "No 
 | Network timeout | Test: `curl -s --connect-timeout 5 https://github.com` | Configure proxy or use VPN |
 | CGO dependency | Build error mentions `cgo` or `gcc` | Install build tools: `xcode-select --install` (macOS) or `apt install gcc` (Linux) |
 | Module checksum mismatch | `go: checksum mismatch` error | `go clean -modcache && go mod download` |
-| Go version too old | `go version` < 1.21 | Upgrade Go: `brew upgrade go` or download from https://go.dev/dl/ |
+| Go version too old | `go version` < 1.21 | Upgrade Go: `brew upgrade go` or download from <https://go.dev/dl/> |
 | Disk space | `df -h $(go env GOMODCACHE)` | Free space: `go clean -modcache` removes cached modules |
 
 **Auto-Heal Script:**
@@ -361,6 +381,7 @@ go get github.com/alibabacloud-go/cms-20190101/v7/client
 ```
 
 **Prevention:**
+
 - Configure `GOPROXY=https://goproxy.cn,direct` in shell profile
 - Pre-download SDK packages in CI/CD pipeline
 - Use Go module mirror for faster downloads
@@ -370,6 +391,7 @@ go get github.com/alibabacloud-go/cms-20190101/v7/client
 ### Issue 10: Credential Validation Failure (Enhanced Diagnosis)
 
 **Symptoms:**
+
 - `Forbidden` error on API calls
 - `InvalidAccessKeyId` or `SignatureDoesNotMatch` error
 - API returns `Code: "404"` or `Code: "500"` for credential issues
@@ -419,6 +441,7 @@ aliyun ram AttachPolicyToUser \
 ```
 
 **Prevention:**
+
 - Use RAM sub-account with minimal required permissions
 - Set up AK rotation policy (90-day expiry)
 - Store credentials securely (environment variables, not in code)
@@ -429,6 +452,7 @@ aliyun ram AttachPolicyToUser \
 ### Issue 11: Network Connectivity Failure for CLI Operations
 
 **Symptoms:**
+
 - All CLI commands time out
 - `curl: (28) Connection timeout` or `Connection refused`
 - DNS resolution failures
@@ -497,6 +521,7 @@ export ALIBABA_CLOUD_ENDPOINT="${CMS_ENDPOINT}"
 ```
 
 **Prevention:**
+
 - Configure corporate proxy in environment
 - Use VPC internal endpoints for Alibaba Cloud VPC deployments
 - Add Go proxy to shell profile (`export GOPROXY=https://goproxy.cn,direct`)
@@ -648,6 +673,7 @@ fi
 Triggered by: `CPUUtilization >= Threshold` on `acs_ecs_dashboard`
 
 #### Step 1: Verify Alarm Validity
+
 ```bash
 aliyun cms DescribeMetricLast \
   --RegionId {{user.region}} \
@@ -655,17 +681,21 @@ aliyun cms DescribeMetricLast \
   --MetricName CPUUtilization \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]'
 ```
+
 **If metric < threshold:** False positive → Check alarm rule `EvaluationCount` and `Statistics`
 
 #### Step 2: Check Resource Status (Delegate to alicloud-ecs-ops)
+
 ```bash
 aliyun ecs DescribeInstances \
   --RegionId {{user.region}} \
   --InstanceIds '["{{user.instance_id}}"]'
 ```
+
 **If status != Running:** Resource stopped → Start instance or investigate
 
 #### Step 3: Multi-Metric Correlation
+
 ```bash
 for metric in memory_usedutilization DiskUsage LoadAverage InternetInRate InternetOutRate; do
   aliyun cms DescribeMetricList \
@@ -687,9 +717,11 @@ done
 | CPU high alone | Runaway process | Delegate to ECS for process-level diagnosis |
 
 #### Step 4: Deep Diagnosis (Optional)
+
 If pattern indicates deep issue, delegate to DAS for AI diagnosis.
 
 #### Step 5: Compile Report
+
 ```markdown
 ## Diagnosis Report: ECS High CPU
 - Resource: {{user.instance_id}}
@@ -707,6 +739,7 @@ If pattern indicates deep issue, delegate to DAS for AI diagnosis.
 Triggered by: `ConnectionUsage >= Threshold` on `acs_rds_dashboard`
 
 #### Step 1: Verify Alarm Validity
+
 ```bash
 aliyun cms DescribeMetricLast \
   --RegionId {{user.region}} \
@@ -716,6 +749,7 @@ aliyun cms DescribeMetricLast \
 ```
 
 #### Step 2: Check Resource Status (Delegate to alicloud-rds-ops)
+
 ```bash
 aliyun rds DescribeDBInstances \
   --RegionId {{user.region}} \
@@ -723,6 +757,7 @@ aliyun rds DescribeDBInstances \
 ```
 
 #### Step 3: Multi-Metric Correlation
+
 ```bash
 for metric in CpuUsage MemoryUsage DiskUsage IOPSUsage; do
   aliyun cms DescribeMetricList \
@@ -743,6 +778,7 @@ done
 | ConnectionUsage high, IOPSUsage high | Query causing high IO | Check indexes; delegate to DAS |
 
 #### Step 4: Deep Diagnosis (Delegate to alicloud-das-ops — **Recommended**)
+
 ```bash
 # DAS: GetInstanceInspections (health score)
 # DAS: CreateDiagnosticReport (SQL/performance diagnosis)
@@ -757,6 +793,7 @@ done
 Triggered by: `DropConnection > 0` on `acs_slb_dashboard`
 
 #### Step 1: Verify Alarm Validity
+
 ```bash
 aliyun cms DescribeMetricLast \
   --RegionId {{user.region}} \
@@ -766,18 +803,21 @@ aliyun cms DescribeMetricLast \
 ```
 
 #### Step 2: Check SLB Status (Delegate to alicloud-slb-ops)
+
 ```bash
 aliyun slb DescribeLoadBalancerAttribute \
   --LoadBalancerId {{user.instance_id}}
 ```
 
 #### Step 3: Check Backend Server Health
+
 ```bash
 aliyun slb DescribeVServerGroups --LoadBalancerId {{user.instance_id}}
 aliyun slb DescribeVServerGroupAttribute --VServerGroupId {{user.vserver_group_id}}
 ```
 
 #### Step 4: If Backend Unhealthy → Delegate to alicloud-ecs-ops
+
 ```bash
 aliyun ecs DescribeInstances \
   --RegionId {{user.region}} \
@@ -845,6 +885,7 @@ for metric in MemoryUsage ConnectionUsage IOPSUsage DataSize; do
     --Dimensions '[{"instanceId":"{{user.instance_id}}"}]'
 done
 ```
+
 > PolarDB has tight DAS integration; **always recommend DAS diagnosis** for PolarDB alarms.
 
 ---
@@ -876,6 +917,7 @@ This section covers issues specific to **dynamic instance discovery**, **HITL wo
 ### Issue: Empty Instance List (0 Instances Match Filter)
 
 **Symptoms:**
+
 - Delegation to product skill returns `instance_count: 0`
 - Confidence score drops to 0, triggering HITL
 - Filter appears correct but no instances found
@@ -915,7 +957,7 @@ aliyun <product> DescribeInstances --RegionId <region> --PageSize 100
 
 **HITL Prompt when Auto-Correction Fails:**
 
-```
+```markdown
 [HITL] No instances matched filter: {"tag:env": "prod", "status": "Running"}
 
 Auto-Diagnosis Results:
@@ -943,6 +985,7 @@ Choose action (1-3) or CANCEL: __
 ### Issue: Too Many Instances Match (> 100)
 
 **Symptoms:**
+
 - `instance_count: 247` returned
 - Confidence score reduced to 0
 - HITL triggered due to safety threshold
@@ -981,7 +1024,7 @@ done
 
 **HITL Prompt for Large Scope:**
 
-```
+```markdown
 [HITL] Filter matches 247 instances (> 100 safety threshold)
 
 ⚠️  This operation will affect 247 instances across:
@@ -1004,6 +1047,7 @@ Your choice: __
 ### Issue: Cross-Skill Delegation Failure
 
 **Symptoms:**
+
 - Delegation to product skill returns error
 - Cannot query instances dynamically
 - Fallback to manual instance ID list required
@@ -1050,13 +1094,14 @@ aliyun cms PutResourceMetricRule \
 ### Issue: Confidence Score Below Threshold (60-79)
 
 **Symptoms:**
+
 - Calculated confidence: 65
 - HITL recommended but not mandatory
 - User unsure whether to proceed
 
 **Confidence Breakdown & Improvement:**
 
-```
+```markdown
 Current Confidence: 65/100 (HITL_RECOMMENDED)
 
 Breakdown:
@@ -1089,6 +1134,7 @@ Current recommendation: Proceed with caution or use HITL
 ### Issue: Instance Existence Verification Failure
 
 **Symptoms:**
+
 - Generator creates rule successfully
 - Critic verification finds instances don't exist
 - Score mismatch: `correctness: 0`
@@ -1130,6 +1176,7 @@ Current recommendation: Proceed with caution or use HITL
 ### Issue: HITL Prompt Timeout / No Response
 
 **Symptoms:**
+
 - HITL prompt displayed but user doesn't respond
 - Operation hangs waiting for input
 - Need automatic timeout handling
@@ -1157,6 +1204,7 @@ export CMS_HITL_TIMEOUT_ACTION=cancel
 ### Issue: Rollback After Failed Operation
 
 **Symptoms:**
+
 - Operation partially succeeded
 - Some instances affected, others not
 - Need to undo changes

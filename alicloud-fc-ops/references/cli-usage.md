@@ -14,6 +14,7 @@
 - Use `[]?` to safely handle empty/null arrays: `.items[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun fc-open GET /services | jq '{services: [.services[]? | {name: .serviceName, qualifier: .qualifier}]}'
 ```

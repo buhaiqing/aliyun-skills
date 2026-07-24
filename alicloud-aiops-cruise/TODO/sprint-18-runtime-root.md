@@ -25,7 +25,7 @@
 
 ## 目录结构
 
-```
+```text
 .runtime/                              # 根目录 (RUNTIME_ROOT)
 ├── baseline/                          # 拓扑基线 (Sprint 16/17 用)
 │   └── YYYY-MM-DD/                    # 日期目录
@@ -117,7 +117,7 @@ bash alicloud-aiops-cruise/scripts/agents/perceive/infra/configdrift.sh
 # 3. 旧路径仍能工作 (软链接兼容)
 ls -la audit-results infra-baseline
 # 预期: 都是软链接 -> .runtime/...
-```
+```markdown
 
 ---
 

@@ -84,7 +84,7 @@ aliyun cms DescribeMetricList \
   --MetricName cpu.utilization \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 ## Kubernetes-Native Monitoring
 
@@ -106,7 +106,7 @@ kubectl describe nodes | grep -A5 Conditions
 
 # Check pod events
 kubectl get events --all-namespaces --sort-by='.lastTimestamp'
-```
+```markdown
 
 ### Key kubectl Commands for Monitoring
 
@@ -125,7 +125,7 @@ kubectl describe node {{user.node_name}} | grep -A3 "Allocated resources"
 
 # Check persistent volume claims
 kubectl get pvc --all-namespaces
-```
+```markdown
 
 ## Multi-Metric Anomaly Inspection
 
@@ -164,7 +164,7 @@ aliyun cms DescribeMetricList \
   --MetricName cpu.utilization \
   --Dimensions '[{"instanceId":"i-xxx"}]' \
   --Period 300
-```
+```markdown
 
 ### Recovery & Cross-Skill Delegation
 
@@ -188,7 +188,7 @@ When ACK generates >10 alarms within 5 minutes:
 
 ## Alert-Driven Diagnostic Decision Tree
 
-```
+```json
 [ACK Alarm Fires]
     │
     ├── Step 1: Verify alarm validity — Current metric vs threshold
@@ -208,7 +208,7 @@ When ACK generates >10 alarms within 5 minutes:
     │       └── App issue → Application logs (SLS)
     │
     └── Step 7: Generate unified diagnostic report
-```
+```markdown
 
 ## Log Collection
 
@@ -221,7 +221,7 @@ ACK supports log collection via Logtail (SLS):
 ```bash
 # Check if logtail addon is installed
 aliyun cs GET /clusters/{{user.cluster_id}}/addons | jq '.addons[] | select(.name=="logtail-ds")'
-```
+```markdown
 
 ## Alert Recommendations
 
@@ -272,7 +272,7 @@ aliyun cs POST /clusters/{{user.cluster_id}}/addons \
 
 # Verify installation
 aliyun cs GET /clusters/{{user.cluster_id}}/addons | jq '.addons[] | select(.name=="arms-prometheus")'
-```
+```markdown
 
 ### ARMS Prometheus Query Examples
 
@@ -297,11 +297,12 @@ sum(rate(nginx_ingress_controller_requests{cluster_id="{{user.cluster_id}}"}[1m]
 
 # PVC usage percentage
 kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes * 100
-```
+```markdown
 
 ### Grafana Dashboard Templates
 
 #### Dashboard 1: Cluster Overview
+
 ```yaml
 panels:
   - title: "Cluster CPU Usage"
@@ -319,9 +320,10 @@ panels:
   - title: "Node Ready Count"
     type: stat
     query: "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})"
-```
+```markdown
 
 #### Dashboard 2: Workload Health
+
 ```yaml
 panels:
   - title: "Deployment Replicas"
@@ -339,9 +341,10 @@ panels:
   - title: "Container Memory Top 10"
     type: graph
     query: "topk(10, container_memory_working_set_bytes)"
-```
+```markdown
 
 #### Dashboard 3: Network & Ingress
+
 ```yaml
 panels:
   - title: "Ingress Request Rate"
@@ -355,7 +358,7 @@ panels:
   - title: "Service Latency P95"
     type: graph
     query: "histogram_quantile(0.95, sum(rate(nginx_ingress_controller_request_duration_seconds_bucket[5m])) by (le))"
-```
+```markdown
 
 ---
 
@@ -369,6 +372,7 @@ panels:
    - Dynamic thresholds for variable workloads
 
 2. **Alert Severity Classification**
+
    | Severity | Response Time | Example |
    |----------|---------------|---------|
    | P0-Critical | Immediate | Cluster unavailable, API Server down |
@@ -426,7 +430,7 @@ alerts:
     promql: "rate(kube_pod_container_status_restarts_total[1h]) > 5"
     severity: P3
     duration: 10m
-```
+```markdown
 
 ---
 
@@ -440,6 +444,7 @@ alerts:
    - Include peak and low traffic periods
 
 2. **Baseline Metrics**
+
    | Metric | Collection Method | Purpose |
    |--------|------------------|---------|
    | CPU baseline | avg_over_time(7d) + P95 | Capacity planning |
@@ -449,6 +454,7 @@ alerts:
    | Pod count baseline | avg_over_time(7d) | Scaling reference |
 
 3. **Baseline Query Templates**
+
 ```promql
 # CPU baseline (7-day average + P95)
 avg_over_time(sum(rate(container_cpu_usage_seconds_total[5m]))[7d])
@@ -463,7 +469,7 @@ quantile_over_time(0.99, sum(container_memory_working_set_bytes)[7d])
 # API latency baseline (P95 over 30 days)
 histogram_quantile(0.95, 
   sum(rate(apiserver_request_duration_seconds_bucket[30d])) by (le))
-```
+```markdown
 
 ### Baseline Deviation Detection
 
@@ -485,7 +491,7 @@ deviation_alerts:
       / avg_over_time(sum(container_memory_working_set_bytes)[7d]) > 0.25
     severity: P2
     message: "Memory usage deviates >25% from baseline"
-```
+```markdown
 
 ---
 
@@ -510,7 +516,7 @@ cost_metrics:
   - name: "NetworkCostMonthly"
     description: "Monthly network traffic cost"
     formula: "network_out_bytes * price_per_gb"
-```
+```markdown
 
 ### Cost Optimization Indicators
 
@@ -539,13 +545,13 @@ budget_alerts:
     condition: "storage_cost_monthly_growth > 20%"
     severity: P3
     action: "Audit PVC usage and resize"
-```
+```markdown
 
 ---
 
 ## Monitoring Architecture Recommendation
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    ACK Monitoring Stack                      │
 ├─────────────────────────────────────────────────────────────┤
@@ -569,7 +575,7 @@ budget_alerts:
 │  ├── Cost Monitoring (Resource optimization)                │
 │  └── Capacity Planning (Predictive scaling)                 │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ---
 

@@ -118,12 +118,14 @@ response, and any error are captured in `./audit-results/gcl-trace-*.json`.
 ### 2.1 CLI Option Enforcement
 
 All `aliyun waf-openapi` CLI commands **MUST** include `--version 2021-10-01` and `--force`.
+
 - **Score 1:** Both flags present.
 - **Score 0:** Any missing (leads to 2.0 API call or silent failure).
 
 ### 2.2 Region Compliance
 
 WAF 3.0 has specific regional scopes (`cn-hangzhou` for mainland China, `ap-southeast-1` for international).
+
 - **Score 1:** Correct RegionId applied to WAF endpoints.
 - **Score 0:** Mismatched or default regional parameters causing cross-region or failed calls.
 

@@ -24,7 +24,7 @@ python3 terraform_ops.py resume <checkpoint-id>
 # PR 审核 (Mode B)
 python3 terraform_ops.py pr-create --workflow-type nl2hcl --env dev --files-dir ./generated
 python3 terraform_ops.py pr-status pr-1
-```
+```markdown
 
 别名: `python3 wizard_cli.py nl2hcl` (standalone wizard)
 
@@ -70,7 +70,7 @@ python3 hitl_mode_a.py --list
 
 # 恢复指定检查点
 python3 hitl_mode_a.py --resume cp-nl2hcl-dev-20240608-143052
-```
+```markdown
 
 ### 3. 程序化使用
 
@@ -115,12 +115,13 @@ except UserAbortedError:
 ## 检查点存储
 
 检查点默认存储在:
-```
+
+```text
 ~/.pi/terraform-ops/checkpoints/
 ├── cp-nl2hcl-dev-20240608-143052.json
 ├── cp-import-uat-20240608-150123.json
 └── ...
-```
+```markdown
 
 ## 依赖
 

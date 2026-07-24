@@ -294,7 +294,7 @@ pipeline.
 
 ### Operation: Get Latest Health Advices (Most Common)
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Latest Health Advices (Most Common))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -302,7 +302,7 @@ pipeline.
 | Credentials | `env \| grep ALIBABA_CLOUD_ACCESS_KEY` | Non-empty | HALT; user configures env |
 | Connectivity | `aliyun advisor get-product-list` | Non-empty product list | HALT; check network / credentials / Advisor service activation |
 
-#### CLI Execution
+#### CLI Execution (Get Latest Health Advices (Most Common))
 
 ```bash
 # All advices (unpaginated)
@@ -328,7 +328,7 @@ inspection call must be embedded in a Go program (e.g. CI pipeline).
 See [API & SDK Usage](references/api-sdk-usage.md) for the canonical
 SDK snippet.
 
-#### Validation
+#### Validation (Get Latest Health Advices (Most Common))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -336,7 +336,7 @@ SDK snippet.
 | Advices array | `$.Advices` | Array (may be empty if account is clean) |
 | Severity distribution | Sum of `Critical` + `Warning` + `Info` across `$.Advices[].Severity` | Non-negative count |
 
-#### Recovery
+#### Recovery (Get Latest Health Advices (Most Common))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -364,7 +364,7 @@ SDK snippet.
 > Triggers an inspection task (may take several minutes, consumes API
 > quota, may produce new advices the user is then expected to act on).
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Trigger Inspection Refresh (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -372,7 +372,7 @@ SDK snippet.
 | User intent | User has asked to "run inspection" or "refresh" | Explicit intent | HALT; ask user to confirm |
 | Scope | Determine: full account vs single product vs single resource | Clear scope | Ask user for scope |
 
-#### CLI Execution
+#### CLI Execution (Trigger Inspection Refresh (Side Effect))
 
 ```bash
 # Full inspection (no product filter)
@@ -392,7 +392,7 @@ aliyun advisor refresh-advisor-check \
   --resource-dimension-list "Cost=e" "Performance=f"
 ```
 
-#### Validation
+#### Validation (Trigger Inspection Refresh (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -400,7 +400,7 @@ aliyun advisor refresh-advisor-check \
 | Task progresses | `GetInspectProgress --task-id {{output.task_id}}` | `Status: Finished` (within 600s) |
 | New advices visible | `DescribeAdvices` after status `Finished` | New entries appear |
 
-#### Recovery
+#### Recovery (Trigger Inspection Refresh (Side Effect))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -410,13 +410,13 @@ aliyun advisor refresh-advisor-check \
 
 ### Operation: Get Cost Optimization Overview
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Cost Optimization Overview)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Plugin / creds | Same as above | All pass | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get Cost Optimization Overview)
 
 ```bash
 # Full account overview
@@ -431,14 +431,14 @@ aliyun advisor describe-cost-optimization-overview --check-plan-id {{user.check_
 See [API & SDK Usage](references/api-sdk-usage.md). CLI is the primary
 path; SDK is only for embedding in Go programs.
 
-#### Validation
+#### Validation (Get Cost Optimization Overview)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Overview object | `$.Overview` | Object with at least `TotalSavings`, `Items` |
 | Item count | `$.Overview.Items` | Non-negative integer |
 
-#### Recovery
+#### Recovery (Get Cost Optimization Overview)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -505,14 +505,14 @@ them into **real operator workflows** (the core value of Advisor as a
 **Chain:** `describe-advices` → filter `Critical` → group by `Product` →
 rank → delegate per-product remediation.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Plugin / creds | `aliyun advisor version` + env grep | Pass | HALT |
 | Account size | `describe-advices-page --page-number 1 --page-size 1` → `$.TotalCount` | Known count | Use pagination if > 1000 |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # 1. Pull current advices (paginate for large accounts)
@@ -528,7 +528,7 @@ aliyun advisor describe-advices \
   | sort | awk -F'\t' '{c[$1]++} END {for (p in c) print c[p], p}' | sort -rn
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -553,13 +553,13 @@ aliyun advisor describe-advices \
 `describe-cost-check-results --group-by Product` →
 `describe-cost-check-advices` (savings/spec) → delegate per-product resize.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Plugin / creds | `aliyun advisor version` | Pass | HALT |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # 1. Headline savings
@@ -577,7 +577,7 @@ aliyun advisor describe-cost-check-advices \
   | jq -r '.Advices[] | {id:.AdviceId, save:.EstimatedSavings, cur:.CurrentSpec, rec:.RecommendedSpec, res:.ResourceId}'
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -600,14 +600,14 @@ aliyun advisor describe-cost-check-advices \
 (confirm advice cleared). `RefreshAdvisorResource` is **synchronous**
 (no `TaskId`); confirmation is implicit if the user named the resource.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Plugin / creds | `aliyun advisor version` | Pass | HALT |
 | Resource named | User gave `{{user.resource_id}}` + `{{user.product}}` | Present | Ask; `--product` required (SAF-RAR-01) |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # 1. Refresh Advisor's view of the fixed resource (side effect, synchronous)
@@ -621,14 +621,14 @@ aliyun advisor describe-advices \
 # Expected: empty output = advice cleared
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Refresh OK | `$.RequestId` | Non-empty |
 | Advice cleared | Filtered `$.Advices[]` for resource | Empty (advice gone) |
 
-#### Recovery
+#### Recovery (Refresh Advisor Cost Check (Side Effect))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -645,7 +645,7 @@ aliyun advisor describe-advices \
 `describe-advices` (read new results). **Requires explicit user
 confirmation** (SAF-RAC-01) before the trigger.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -653,7 +653,7 @@ confirmation** (SAF-RAC-01) before the trigger.
 | **User confirmation** | User explicitly said "run inspection" | Confirmed | **HALT — do not trigger** |
 | Scope | Full / product / resource | Clear | Ask |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # 1. Trigger (SIDE EFFECT — confirmation already obtained)
@@ -673,7 +673,7 @@ aliyun advisor describe-advices --product {{user.product}} \
   | jq -r '.Advices[] | {id:.AdviceId, sev:.Severity, name:.AdviceName}'
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -681,7 +681,7 @@ aliyun advisor describe-advices --product {{user.product}} \
 | Finished | `get-inspect-progress` → `Status: Finished` | Within 600s |
 | New advices | `describe-advices` | Entries reflect post-scan state |
 
-#### Recovery
+#### Recovery (Refresh Advisor Cost Check (Side Effect))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -698,14 +698,14 @@ aliyun advisor describe-advices --product {{user.product}} \
 **Chain:** `get-history-advices` (window A: last week) →
 `get-history-advices` (window B: this week) → compare `Critical` counts.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Date range ≤ 90d | `end - start` per window | ≤ 90 days | HALT; shorten window |
 | Both dates present | `--start-date` / `--end-date` | Provided | Ask user |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # Window A (previous week)
@@ -720,14 +720,14 @@ aliyun advisor get-history-advices \
 # Compare A_count vs B_count: down = improving, up = worsening
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Both windows returned | `$.TotalCount` | Integer per window |
 | Range valid | `end - start` | ≤ 90 days each |
 
-#### Recovery
+#### Recovery (Refresh Advisor Cost Check (Side Effect))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -744,7 +744,7 @@ aliyun advisor get-history-advices \
 account IDs → `describe-advices` (Critical) + `describe-cost-check-results`
 (savings) → aggregate per account.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -752,7 +752,7 @@ account IDs → `describe-advices` (Critical) + `describe-cost-check-results`
 | Account IDs | `{{user.account_ids}}` list | Provided | Ask user |
 | AssumeRole trust | One `describe-advices --assume-aliyun-id X` | Succeeds | HALT; fix RAM trust |
 
-#### CLI Execution
+#### CLI Execution (Refresh Advisor Cost Check (Side Effect))
 
 ```bash
 # Per-account Critical count + savings (read-only, no confirmation needed)
@@ -767,14 +767,14 @@ done
 aliyun advisor describe-cost-check-results --group-by Product --assume-aliyun-id-list {{user.account_ids}}
 ```
 
-#### Validation
+#### Validation (Refresh Advisor Cost Check (Side Effect))
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Per-account success | Each loop iteration returns `$.Advices` / `$.Overview` | Non-error |
 | Aggregated | Tabular output per `acct` | One row per account |
 
-#### Recovery
+#### Recovery (Refresh Advisor Cost Check (Side Effect))
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -903,6 +903,7 @@ resource operations).
 | Prompt templates | [`references/prompt-templates.md`](references/prompt-templates.md) |
 
 ### Changelog
+
 1.0.0 | 2026-06-06 | Initial release. 16 operations covered; CLI-first
 path with JIT Go SDK fallback; full read+side-effect flow documentation;
 GCL rubric and prompt templates.

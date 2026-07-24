@@ -18,7 +18,7 @@ Phase 1 实现了 Runtime Harness 的基础可观测性能力，包括：
 ```bash
 # 环境变量
 export SKILLOPT_LOG_FORMAT="json"  # text | json（默认 text）
-```
+```markdown
 
 ### 2.2 JSON Lines 格式
 
@@ -42,13 +42,14 @@ export SKILLOPT_LOG_FORMAT="json"  # text | json（默认 text）
 
 ### 2.4 日志文件路径
 
-```
+```text
 ${ALIBABA_CLOUD_LOG_DIR:-<skill>/.runtime}/<cli>-skillopt-YYYYMMDD.log
-```
+```markdown
 
 ### 2.5 日志采集配置
 
 **Filebeat**:
+
 ```yaml
 filebeat.inputs:
   - type: filestream
@@ -61,6 +62,7 @@ filebeat.inputs:
 ```
 
 **Promtail**:
+
 ```yaml
 scrape_configs:
   - job_name: skillopt
@@ -79,7 +81,7 @@ scrape_configs:
       - labels:
           skill:
           level:
-```
+```bash
 
 ## 3. Prometheus 指标导出
 
@@ -96,9 +98,9 @@ export SKILLOPT_METRICS_DIR="/var/lib/node_exporter/textfile"
 
 每个 Skill 生成独立的 `.prom` 文件：
 
-```
+```text
 ${SKILLOPT_METRICS_DIR}/skillopt_<skill_tag>.prom
-```
+```markdown
 
 例如：`skillopt_cms.prom`、`skillopt_ecs.prom`
 
@@ -163,7 +165,7 @@ node_exporter \
   --web.listen-address=":9100" \
   --collector.textfile \
   --collector.textfile.directory="/var/lib/node_exporter/textfile_collector"
-```
+```text
 
 Runtime Harness 将指标文件写入该目录，例如：
 
@@ -182,7 +184,7 @@ scrape_configs:
           - 'localhost:9100'
         labels:
           role: skillopt-host
-```
+```text
 
 采集链路：
 
@@ -197,7 +199,7 @@ SkillOpt -> *.prom 文件 -> node_exporter textfile collector -> Prometheus scra
 ```bash
 curl -s http://localhost:9100/metrics | grep skillopt
 curl -s http://localhost:9100/metrics | grep node_textfile
-```
+```text
 
 重点关注：
 
@@ -227,7 +229,7 @@ node_textfile_mtime_seconds{file="/var/lib/node_exporter/textfile_collector/skil
 | 日志格式 | json |
 | 指标导出目录 | /var/lib/node_exporter/textfile |
 | Skill 标识 | cms |
-```
+```bash
 
 ### 4.2 生成报告
 
@@ -263,7 +265,7 @@ Phase 1 已覆盖所有 36 个 agent skills：
 ```bash
 # 向后兼容测试（50 个用例）
 cd alicloud-cms-ops && bash test-skillopt-backward-compatibility.sh
-```
+```markdown
 
 ### 6.2 集成测试
 
@@ -273,6 +275,7 @@ cd alicloud-cms-ops && ./test-observability-integration.sh
 ```
 
 测试覆盖：
+
 - ✅ 配置变量默认值
 - ✅ Text 格式日志
 - ✅ JSON Lines 格式日志

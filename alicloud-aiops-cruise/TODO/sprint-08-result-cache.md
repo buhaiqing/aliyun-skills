@@ -33,6 +33,7 @@
 | Phase 3 拓扑渲染 | 20s | 13.5% | 部分可缓存（health JSON 可缓存 1min） |
 
 **关键发现**：
+
 - **7d 回溯（48s）+ K8s limits（19s）+ ACK 采集（24s）= 91s = 总耗时 60%** — 这三块是缓存的最大杠杆点
 - **指标采集（37s）= 25%** — 中等杠杆
 - **拓扑发现（3s）+ 拓扑渲染（20s）= 23s = 15%** — 小杠杆
@@ -62,6 +63,7 @@ def q(cmd: list, timeout=30) -> dict | None:
 ```
 
 **问题**：
+
 - 每次都直接打 aliyun CLI，无任何缓存层
 - 跨进程（4 个脚本独立运行）无法共享缓存
 - 跨时间（同一脚本短时间内重复执行）也走全链路
@@ -75,10 +77,12 @@ def q(cmd: list, timeout=30) -> dict | None:
 **实现**：在 `_shared.py` 中加 `functools.lru_cache` 装饰 `q()` 函数，按 `tuple(cmd)` 做 key
 
 **优点**：
+
 - 零依赖，5 行代码
 - 同一进程内调用自动复用
 
 **缺点**：
+
 - 跨进程不共享（4 个脚本 = 4 个独立缓存）
 - 无法设置 TTL
 - 内存无限增长风险
@@ -119,11 +123,13 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
 ```
 
 **优点**：
+
 - 跨进程共享（4 个脚本都读同一目录）
 - TTL 可控
 - 简单可靠（无外部依赖）
 
 **缺点**：
+
 - 文件 I/O 比内存慢（~ms 级，可接受）
 - 需要缓存清理策略（cron 或 LRU）
 
@@ -135,11 +141,13 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
 **实现**：用 SQLite 存 `(cache_key, value, expires_at)` 三元组
 
 **优点**：
+
 - 支持复杂查询（按时间范围、按资源类型）
 - 内置 LRU（手动实现）
 - 跨平台、零依赖
 
 **缺点**：
+
 - 单文件锁竞争（4 进程并发写）
 - 比文件缓存重
 
@@ -174,6 +182,7 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
 | **拓扑 health JSON** | 1 min | 跨脚本共享，可接受 1min 延迟 |
 
 **失效策略**：
+
 - TTL 到期：下次读取时刷新
 - 强制失效：CLI 参数 `--no-cache` 或 `--cache-bust`
 - 缓存污染防护：校验响应 `Code/Message` 字段，失败则不写缓存
@@ -277,11 +286,13 @@ def q_cached(cmd, ttl=DEFAULT_TTL.get(cmd[1], 60)):
 **问题**：是否启动 Sprint 8 实施？
 
 **选项**：
+
 - **A. 立即启动** — 6h 实施，API 减 66%，符合"Stage 2 自动化深度"验收项
 - **B. 推迟到 Stage 2 准入后** — 先做 Incident 落地（Sprint 9），缓存等真实流量起来再加
 - **C. 只做轻量级 (策略 A)** — 进程内 LRU 即可，1h 实施，不碰文件系统
 
 **我的建议**：**选项 A** — Sprint 8 与 Sprint 9 互不阻塞，可并行
+
 - Sprint 8 (缓存)：纯性能优化，6h 实施，影响面小（只在 _shared.py 改）
 - Sprint 9 (落地)：数据契约集成，需要重构 4 个脚本输出格式
 

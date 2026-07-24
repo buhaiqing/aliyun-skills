@@ -43,7 +43,7 @@ You are the Generator in a GCL for Alibaba Cloud Terraform IaC.
 {{strategy_hints}}
 
 # Operation-specific sub-templates (NL2HCL / Import / Apply) follow in §1b below.
-```
+```markdown
 
 ## 1b. Operation-Specific Generator Templates
 
@@ -100,7 +100,8 @@ Generate these files:
     "warnings": []
   }
 }
-```
+```text
+
 ```
 
 ### 1.2 Reverse Engineering Generator
@@ -129,19 +130,22 @@ resource "alicloud_{{resource}}" "imported_{{id_suffix}}" {
   # Mapped attributes from API response
   # Sensitive values masked with <sensitive>
 }
-```
+```text
 
 **generated/import.sh**
+
 ```bash
 #!/bin/bash
 # Auto-generated import script
 cd "$(dirname "$0")"
 terraform import alicloud_{{resource}}.imported_{{id_suffix}} {{id}}
-```
+```bash
 
 ## Dry-Run Mode
+
 {{#if dry_run}}
 [DRY-RUN ENABLED]
+
 - Generate HCL without executing import
 - Validate HCL syntax with `terraform validate`
 - Preview import result:
@@ -152,6 +156,7 @@ terraform import alicloud_{{resource}}.imported_{{id_suffix}} {{id}}
 {{/if}}
 
 ## Response Schema
+
 ```json
 {
   "generated_files": ["generated/vpc.tf", "generated/import.sh"],
@@ -167,8 +172,9 @@ terraform import alicloud_{{resource}}.imported_{{id_suffix}} {{id}}
   ],
   "dry_run_passed": true|false
 }
-```
-```
+```text
+
+```markdown
 
 ### 1.3 Terraform Operation Generator
 
@@ -227,7 +233,8 @@ For destroy: Show what would be destroyed, require explicit confirmation
   },
   "safety_checks_passed": ["backend_ok", "no_state_lock", "environment_validated"]
 }
-```
+```text
+
 ```
 
 ## 2. Critic Prompt Templates
@@ -302,15 +309,17 @@ Stderr: {{output.generator.stderr_excerpt}}
     "remediation": "..."
   }
 }
-```
+```bash
 
 ## Critical Rules
+
 - Safety = 0 MUST set blocking = true
 - If blocking = true, provide actionable remediation
 - Suggestions must be executable (specific commands or code changes)
 - **Test accuracy over coverage:** Ask if existing tests would fail on breakage;
   inaccurate tests → blocking; targeted regression (AGENTS.md §11.1) when ambiguous
-```
+
+```markdown
 
 ### 2.2 NL2HCL-Specific Critic
 
@@ -385,8 +394,9 @@ Flag attributes where:
   "drift_warnings": [...],
   "blocking_issues": [...]
 }
-```
-```
+```text
+
+```markdown
 
 ## 3. Hallucination Detector Prompt
 
@@ -438,12 +448,14 @@ Check command text against patterns:
   },
   "hallucination_report": "..."
 }
-```
+```bash
 
 ## Actions
+
 - PASS: Proceed to execution
 - FAIL: Regenerate (max 1 retry)
 - Persistent FAIL after retry → HALLUCINATION_ABORT
+
 ```
 
 ## 4. Orchestrator Decision Prompt
@@ -496,8 +508,9 @@ Status: {{output.hallucination.status}}
   },
   "next_prompt_additions": "Inject into G: ..."
 }
-```
-```
+```text
+
+```markdown
 
 ## 5. Placeholder Reference
 
@@ -519,7 +532,8 @@ Status: {{output.hallucination.status}}
 
 ### Dry-Run Flow for NL2HCL
 
-```
+```json
+
 User: "创建一个 VPC"
   ↓
 G (NL2HCL): Generate HCL files
@@ -541,11 +555,13 @@ C: Score dry-run result
    Spec Compliance: Backend skipped appropriately? → 1
   ↓
 O: Decision (all pass → CP3 for user confirmation)
+
 ```
 
 ### Dry-Run Flow for Reverse Engineering
 
-```
+```json
+
 User: "导入这个 VPC"
   ↓
 G (Reverse): Query API, generate HCL
@@ -566,7 +582,8 @@ C: Score import readiness
    Spec Compliance: Import script executable? → 1
   ↓
 O: Decision → CP4 for user confirmation
-```
+
+```markdown
 
 ---
 

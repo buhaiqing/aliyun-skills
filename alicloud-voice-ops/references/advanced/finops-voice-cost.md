@@ -3,11 +3,13 @@
 ## Cost Structure
 
 ### Pricing Models
+
 1. **Pay-As-You-Go**: Pay per successful call
 2. **Package Plans**: Pre-purchased call packages with discounts
 3. **Dedicated Number Fees**: Monthly fees for dedicated caller IDs
 
 ### Key Cost Factors
+
 | Factor | Description |
 |--------|-------------|
 | **Call Volume** | Number of successful calls (answered calls count towards cost) |
@@ -19,27 +21,32 @@
 ## Cost Optimization
 
 ### 1. Optimize Call Volume
+
 - Use batch operations to reduce API calls and fees
 - Implement retries only for valid cases, avoid unnecessary calls
 - Filter invalid phone numbers before sending
 
 ### 2. Reduce Call Duration
+
 - Use shorter voice files for notifications
 - Use text-to-speech for dynamic content instead of pre-recorded files
 - Limit playback attempts to 1-2 times unless required
 
 ### 3. Optimize Dedicated Resources
+
 - Delete unused dedicated numbers and service instances
 - Use shared mode for low-volume applications
 - Right-size service instances based on usage
 
 ### 4. Storage Optimization
+
 - Delete old voice recordings after 30 days
 - Use low-cost storage for archived recordings
 
 ## Cost Monitoring
 
 ### CloudMonitor Cost Metrics
+
 | Metric | Description |
 |--------|-------------|
 | `TotalCost` | Total monthly cost for voice service |
@@ -48,6 +55,7 @@
 | `InstanceCost` | Cost from service instances |
 
 ### Cost Reports
+
 1. Navigate to [Billing Console](https://billing.console.aliyun.com/)
 2. Select **Cost Management** > **Cost Analysis**
 3. Filter by product **Voice Messaging Service**
@@ -56,6 +64,7 @@
 ## Budget Alerts
 
 Set up budget alerts to avoid unexpected costs:
+
 1. Go to [Billing Budget Management](https://billing.console.aliyun.com/budget)
 2. Create a budget for voice messaging service
 3. Set alerts for 80%, 100%, and 120% of budget

@@ -31,7 +31,7 @@ Generator-Critic-Loop (GCL) adversarial quality gate, defined in
 
 Implements the loop flow from `AGENTS.md` §12.4:
 
-```
+```text
 [0] Pre-flight  — load rubric, resolve env.* / user.*, sanitize secrets
 [0.5] Memory    — R2: `memory_preflight.py` → trace["memory_preflight"] + prompt slots
 [1] Generate    — invoke the command (subprocess) and capture trace
@@ -41,7 +41,7 @@ Implements the loop flow from `AGENTS.md` §12.4:
 
 And persists the trace per `AGENTS.md` §12.6:
 
-```
+```text
 ./audit-results/gcl-trace-YYYYMMDD-HHMMSS-<rand6>.json
 ```
 
@@ -194,6 +194,7 @@ Critic via `--critic-mode llm|hybrid` and configure endpoint in `.env`:
 - **llm**: pure LLM scoring, mechanical is not used
 
 The current implementation:
+
 - Reuses existing `prompt-templates.md` (already present for every required/recommended skill)
 - Calls OpenAI-compatible `/v1/chat/completions` endpoint (configurable via `GCL_CRITIC_LLM_ENDPOINT`)
 - Strict JSON output matching the mechanical schema; scores clamped to 0/0.5/1

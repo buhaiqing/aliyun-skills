@@ -193,21 +193,24 @@ aliyun vpc DescribeNatGateways --RegionId {{env.ALIBABA_CLOUD_REGION_ID}} \
 ### Operation: Create NAT Gateway
 
 **When to use:**
+
 - You need private ECS instances to access the internet (outbound via SNAT)
 - You need to expose private instances via port mapping (inbound via DNAT)
 - Enhanced NAT Gateway (recommended) or VPC NAT gateway
 
 **What you need:**
+
 - VPC ID
 - VSwitch ID (must be in the same VPC — Required for Enhanced NAT)
 - NAT type: `Enhanced` (recommended) or `Normal`
 - Billing method: `PayBySpec` (fixed spec) or `PayByActualUsage` (usage-based)
 
 **What to expect:**
+
 - NAT Gateway provisioning takes ~1-2 minutes
 - Enters `Available` state when ready
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create NAT Gateway)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -245,19 +248,22 @@ aliyun vpc DescribeNatGateways \
 ### Operation: Create SNAT Entry
 
 **When to use:**
+
 - You need instances in a vSwitch/CIDR to access the internet via NAT
 - You want to use specific EIPs as the SNAT source IP
 
 **What you need:**
+
 - NAT Gateway ID (must be `Available`)
 - EIP Allocation ID for SNAT source
 - Source CIDR or vSwitch ID
 
 **What to expect:**
+
 - SNAT entry created within seconds
 - Instances in source range can now reach internet via the EIP
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create SNAT Entry)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -288,10 +294,12 @@ aliyun vpc DescribeSnatTableEntries \
 ### Operation: Create DNAT Entry (Forward Entry)
 
 **When to use:**
+
 - You need to expose a private port to the internet (e.g., port 80, 443, SSH)
 - You want to map an external port on an EIP to an internal port on an ECS
 
 **What you need:**
+
 - NAT Gateway ID (Available)
 - EIP address for external IP
 - Internal IP (private ECS IP)
@@ -299,6 +307,7 @@ aliyun vpc DescribeSnatTableEntries \
 - External port and Internal port
 
 **What to expect:**
+
 - DNAT entry created within seconds
 - External traffic to EIP:port is forwarded to internal_ip:internal_port
 
@@ -418,6 +427,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | **Incident Response** | 5-phase runbook: Detect → Contain → Investigate → Recover → Post-Incident | [Security Enhancement §7](references/security-enhancement.md#7-security-incident-response) |
 
 **Security P0 Checklist:**
+
 - [ ] No high-risk ports (22/3306/6379/3389/27017) exposed via DNAT
 - [ ] RAM policy scoped to NAT Gateway operations only (not `*`)
 - [ ] Credential masking enforced (never print `ALIBABA_CLOUD_ACCESS_KEY_SECRET`)
@@ -443,6 +453,7 @@ This skill's operations are evaluated against Alibaba Cloud's [Well-Architected 
 | **Cost Anomaly Detection** | NAT cost spike > 30% MoM, EIP count growing, bandwidth over-provisioned | [FinOps Optimization §6](references/advanced/finops-optimization.md#6-finops-inspection-workflow) |
 
 **Cost P0 Checklist:**
+
 - [ ] No idle NAT Gateways (0 SNAT + 0 DNAT for 7d)
 - [ ] No orphaned EIPs (allocated but not associated for 7d)
 - [ ] Billing mode matches traffic pattern (PayBySpec vs PayByActualUsage)
@@ -525,6 +536,7 @@ Eighth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-criti
 | Production NAT | Deletion requires `maintenance_window_confirmed` |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Eighth rollout.
 
 ---

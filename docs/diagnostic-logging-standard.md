@@ -5,9 +5,9 @@
 
 All scripts executed via Cloud Assistant or other remote channels MUST use a consistent log format:
 
-```
+```json
 [HH:MM:SS] [PHASE] key=value
-```
+```markdown
 
 ## Log Phase Prefix
 
@@ -23,7 +23,7 @@ All scripts executed via Cloud Assistant or other remote channels MUST use a con
 
 ## Error Classification (ERROR TYPE)
 
-```
+```json
 [ERROR] TYPE={category} FIX={one-line action}
 ```
 

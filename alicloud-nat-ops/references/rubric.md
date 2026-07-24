@@ -62,6 +62,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 
 ## 3. Other Dimensions
+
 - **Correctness**: 1.0 for `Delete*` (verify with `Describe*` follow-up).
 - **Idempotency**: `CreateNatGateway` must check `DescribeNatGateways --Name` first (NAT name unique per region).
 - **Traceability**: `DeleteNatGateway` requires 3-step cascade trace.
@@ -95,10 +96,12 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 ```
 
 ## 5. Anti-Patterns
+
 - ❌ `DeleteNatGateway` with active SNAT/DNAT/EIPs
 - ❌ SNAT CIDR overlap
 - ❌ DNAT port conflict
 - ❌ Production NAT deletion without maintenance window
 
 ## 6. Changelog
+
 1.0.0 | 2026-06-04 | Initial NAT GCL rubric (Phase 1, eighth skill). 3-step cascade (SNAT + DNAT + EIP) for `DeleteNatGateway`. CIDR/port overlap rules for create ops.

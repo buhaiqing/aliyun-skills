@@ -62,6 +62,7 @@ Minimum RAM permissions required for DTS operations:
 ### Emergency Recovery
 
 **Phase 1: Backup Verification**
+
 ```bash
 # Verify source database has valid backup (via relevant DB skill)
 # e.g., for RDS MySQL
@@ -69,6 +70,7 @@ aliyun rds DescribeBackups --DBInstanceId "{{user.source_instance_id}}"
 ```
 
 **Phase 2: DTS Recovery**
+
 ```bash
 # Check task status
 aliyun dts DescribeDtsJobDetail \
@@ -84,6 +86,7 @@ aliyun dts StartDtsJob \
 ```
 
 **Phase 3: Post-Recovery Validation**
+
 ```bash
 # Verify data consistency
 aliyun dts DescribeCheckJobs \

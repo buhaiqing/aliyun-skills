@@ -26,6 +26,7 @@
 ### P0-SEC-1: RAM Policy Overly Permissive
 
 **Current State:**
+
 ```json
 {
   "Action": ["elasticsearch:*"],
@@ -36,6 +37,7 @@
 **Risk:** Violates least privilege principle. `elasticsearch:*` grants unnecessary permissions.
 
 **Recommendation:** Replace with fine-grained actions:
+
 ```json
 {
   "Action": [
@@ -60,6 +62,7 @@
 **Risk:** Invalid credentials may leak or cause misconfiguration
 
 **Recommendation:** Add format validation:
+
 - AK ID: 16-24 alphanumeric characters
 - AK Secret: 30-40 alphanumeric + special characters
 - STS Token: Validate expiration timestamp
@@ -71,6 +74,7 @@
 **Risk:** Cannot trace sensitive operation history; compliance gap
 
 **Recommendation:** Add ActionTrail integration section:
+
 - Enable ActionTrail for Elasticsearch events
 - Query operation history via `alicloud-actiontrail-ops`
 - Audit report generation for compliance
@@ -101,6 +105,7 @@
 **Risk:** Destructive operations may execute during business peak hours
 
 **Recommendation:** Add change window check:
+
 - Define change window (e.g., 02:00-06:00 local time)
 - Check current time before destructive operations
 - Warn if outside change window; require explicit override
@@ -114,6 +119,7 @@
 **Current State:** Static pricing table only
 
 **Recommendation:** Integrate pricing API for real-time estimation:
+
 ```go
 // Call Pricing API before CreateInstance
 priceRequest := &pricing.GetPriceRequest{
@@ -130,6 +136,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** No tagging guidance
 
 **Recommendation:** Add tagging best practices:
+
 - Mandatory tags: Project, Environment, Owner, CostCenter
 - Tag-based cost allocation
 - Tag enforcement during instance creation
@@ -143,6 +150,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** Manual CMS metric configuration
 
 **Recommendation:** Add automated baseline collection:
+
 - Collect 7-day metrics on instance creation
 - Store baseline in instance metadata
 - Compare current metrics against baseline for anomaly detection
@@ -152,6 +160,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** Static JVM tuning recommendations
 
 **Recommendation:** Add dynamic JVM analysis:
+
 - Analyze JVM heap usage patterns
 - Generate tuning recommendations based on actual usage
 - Suggest heap size, GC policy adjustments
@@ -165,6 +174,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** One batch example in integration.md
 
 **Recommendation:** Create `operations/batch-operations.md`:
+
 - Batch restart with staggered timing
 - Batch spec upgrade with validation
 - Batch snapshot creation with naming convention
@@ -174,6 +184,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** Diagnosis exists but no auto-recovery scripts
 
 **Recommendation:** Add self-healing templates:
+
 - Throttling auto-retry with exponential backoff
 - Snapshot retry on quota exceeded
 - Instance status stuck → auto-trigger diagnostics
@@ -183,6 +194,7 @@ priceRequest := &pricing.GetPriceRequest{
 **Current State:** No dedicated knowledge base document
 
 **Recommendation:** Create `references/knowledge-base.md`:
+
 - Common error patterns and resolutions
 - Known limitations and workarounds
 - Version-specific behaviors

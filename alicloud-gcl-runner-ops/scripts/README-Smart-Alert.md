@@ -15,7 +15,7 @@
 
 ## 组件架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                         GCL Smart Alert Loop                             │
 │                                                                          │
@@ -38,7 +38,7 @@
 
 ### 联动流程
 
-```
+```text
 Step 1: gcl_runner 执行操作
     ├─ 生成 trace 文件 (gcl-trace-*.json)
     └─ 如启用 --adaptive，读取降级状态调整 max_iter
@@ -152,7 +152,7 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py \
 
 当 `--adaptive` 检测到资源被降级时，输出会显示：
 
-```
+```text
 [ADAPTIVE] max_iter adjusted: 2 → 1
 [ADAPTIVE] Reason: Resource i-bp1xxxxxxxxxxxxxx downgraded due to 资源级Safety反复失败 (restore at 2026-06-13T10:30:00Z)
 [GCL] skill=alicloud-ecs-ops op=DescribeInstanceAttribute status=PASS iter=1 [ADAPTIVE]
@@ -173,6 +173,7 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py \
 ## 状态文件
 
 降级状态存储在：
+
 - 默认路径: `${ALIYUN_SKILLS_RUNTIME_ROOT}/gcl-degradation-state.json`
 - Fallback: `.runtime/metrics/alicloud-gcl-runner-ops/gcl-degradation-state.json` (legacy: `alicloud-gcl-runner-ops/.runtime/`)
 
@@ -231,7 +232,7 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_smart_alarm_cms_setup.py \
 
 ## 与现有GCL组件的关系
 
-```
+```text
 Phase 1 (GCL Spec) → Phase 2 (Runner) → Phase 3-B (Phantom Alarm)
                                            ↓
 Phase 6 (Hallucination Detection) → Phase 7 (Smart Alert Loop) ← 你在这里
@@ -240,6 +241,7 @@ Phase 6 (Hallucination Detection) → Phase 7 (Smart Alert Loop) ← 你在这�
 ```
 
 智能告警闭环**增强但不替代**现有组件：
+
 - 保留所有Phase 1-6功能
 - 新增模式检测层
 - 动态调整max_iter
@@ -346,8 +348,10 @@ print(f'Reason: {reason}')
 ### 问题：降级未生效
 
 检查清单：
+
 1. 确认`--adaptive`参数已传递给gcl_runner.py
 2. 检查资源ID是否能从命令中正确提取
+
    ```bash
    python3 -c "
    import sys; sys.path.insert(0, 'alicloud-gcl-runner-ops/scripts')
@@ -355,7 +359,9 @@ print(f'Reason: {reason}')
    print(runner._extract_resource_id('alicloud-ecs-ops', 'your-command'))
    "
    ```
+
 3. 查看degradation-state.json是否存在且可写
+
    ```bash
    cat .runtime/gcl-degradation-state.json | python3 -m json.tool
    ```
@@ -363,6 +369,7 @@ print(f'Reason: {reason}')
 ### 问题：误报过多
 
 调整策略：
+
 1. 增加`window_minutes`（如30→60）
 2. 增加`min_occurrences`阈值（如2→3）
 3. 在gcl_smart_alarm_engine.py中修改RISK_PATTERNS
@@ -370,9 +377,11 @@ print(f'Reason: {reason}')
 ### 问题：恢复未发生
 
 检查：
+
 1. 确认`--restore-expired`参数已传递
 2. 检查系统时间是否正确
 3. 查看degradation-state.json中的`auto_restore_at`字段
+
    ```bash
    python3 -c "
    import json
@@ -388,6 +397,7 @@ print(f'Reason: {reason}')
 ### 问题：Runner 和 Engine 状态不一致
 
 检查环境变量：
+
 ```bash
 # 确保两者使用相同的 RUNTIME_ROOT
 echo $ALIYUN_SKILLS_RUNTIME_ROOT

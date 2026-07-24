@@ -16,67 +16,67 @@ to the linked reference for the full pre-flight + execution + validation.
 
 #### Task: Create a RAM user and grant ECS read-only access
 
-```
+```text
 Step 1: CreateUser                                 → [user-operations.md §Create](operations/user-operations.md#operation-create-ram-user)
 Step 2: AttachPolicyToUser (AliyunECSReadOnlyAccess) → [policy-operations.md §Attach to User](operations/policy-operations.md#operation-attach-policy-to-user)
 Done
-```
+```text
 
 #### Task: Create a RAM role for ECS instances
 
-```
+```text
 Step 1: GetCallerIdentity                          → [role-operations.md §GetCallerIdentity](operations/role-operations.md#operation-get-caller-identity)
 Step 2: CreateRole (with ECS service principal)     → [role-operations.md §Create](operations/role-operations.md#operation-create-ram-role)
 Done
-```
+```text
 
 #### Task: Rotate an access key
 
-```
+```text
 Step 1: CreateAccessKey (new key shown once)        → [user-operations.md §Create AK](operations/user-operations.md#operation-create-access-key-for-ram-user)
 Step 2: Display new key pair ONCE
 Step 3: Wait for user confirmation
 Step 4: UpdateAccessKey (old key → Inactive)        → [user-operations.md §Update AK](operations/user-operations.md#operation-update-access-key-status)
 Step 5: Wait grace period (default 24h)
 Step 6: DeleteAccessKey (old key)                   → [user-operations.md §Delete AK](operations/user-operations.md#operation-delete-access-key)
-```
+```text
 
 #### Task: Audit all permissions (least-privilege)
 
-```
+```text
 Step 1: ListUsers + ListRoles + ListGroups         → [audit-operations.md §Audit](operations/audit-operations.md#operation-least-privilege-audit)
 Step 2: For each identity → ListPoliciesForX
 Step 3: GetAccessKeyLastUsed for each AK
 Step 4: Report findings (High / Medium / Low) + remediation
-```
+```text
 
 #### Task: Set up MFA for a user
 
-```
+```text
 Step 1: SetPasswordPolicy                          → [audit-operations.md §Set Password Policy](operations/audit-operations.md#operation-set-password-policy)
 Step 2: CreateVirtualMFADevice                     → [user-operations.md §Create MFA](operations/user-operations.md#operation-create-virtual-mfa-device)
 Step 3: Present QR code / base32 seed to user
 Step 4: User provides 2 consecutive TOTP codes
 Step 5: BindMFADevice (with TOTP code 1 + 2)        → [user-operations.md §Bind MFA](operations/user-operations.md#operation-bind-mfa-device)
 Done
-```
+```text
 
 #### Task: Enable console login for a user
 
-```
+```text
 Step 1: CreateLoginProfile (password shown once)   → [user-operations.md §Create LoginProfile](operations/user-operations.md#operation-create-login-profile)
 Step 2: Display initial password to user once
 Step 3: Force reset on first login (PasswordResetRequired=true) — recommended
 Done
-```
+```text
 
 #### Task: Create a custom policy for ECS management in cn-hangzhou
 
-```
+```text
 Step 1: CreatePolicy (with region-restricted policy document)
         → [policy-operations.md §Create](operations/policy-operations.md#operation-create-ram-policy)
 Done
-```
+```markdown
 
 ---
 

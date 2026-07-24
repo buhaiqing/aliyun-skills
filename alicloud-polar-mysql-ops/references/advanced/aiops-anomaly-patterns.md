@@ -34,6 +34,7 @@
 ### P001: CPU Spike (CPU 突增)
 
 **Pattern Definition**
+
 - **Code**: P001
 - **Name**: CPU Spike
 - **Severity**: Critical
@@ -120,6 +121,7 @@ func DetectCPUAnomaly(points []MetricPoint, thresholds ThresholdConfig) *Anomaly
 ### P002: Memory Pressure (内存压力)
 
 **Pattern Definition**
+
 - **Code**: P002
 - **Name**: Memory Pressure
 - **Severity**: Warning
@@ -166,6 +168,7 @@ correlations:
 ### P003: IOPS Bottleneck (IOPS 瓶颈)
 
 **Pattern Definition**
+
 - **Code**: P003
 - **Name**: IOPS Bottleneck
 - **Severity**: Critical
@@ -212,6 +215,7 @@ correlations:
 ### P004: Connection Surge (连接突增)
 
 **Pattern Definition**
+
 - **Code**: P004
 - **Name**: Connection Surge
 - **Severity**: Warning
@@ -246,6 +250,7 @@ correlations:
 ### P005: Slow Query Spike (慢查询突增)
 
 **Pattern Definition**
+
 - **Code**: P005
 - **Name**: Slow Query Spike
 - **Severity**: Warning
@@ -279,6 +284,7 @@ correlations:
 ### P006: Buffer Pool Hit Rate Drop (缓冲池命中率下降)
 
 **Pattern Definition**
+
 - **Code**: P006
 - **Name**: Buffer Pool Hit Rate Drop
 - **Severity**: Warning
@@ -311,6 +317,7 @@ correlations:
 ### P007: Active Session Spike (活跃会话突增)
 
 **Pattern Definition**
+
 - **Code**: P007
 - **Name**: Active Session Spike
 - **Severity**: Critical
@@ -345,6 +352,7 @@ correlations:
 ### P008: Replication Lag (主从延迟异常)
 
 **Pattern Definition**
+
 - **Code**: P008
 - **Name**: Replication Lag
 - **Severity**: Critical
@@ -436,6 +444,7 @@ func DetectReplicationLag(clusterId string, threshold int64) *AnomalyEvent {
 ### P009: Read Node Imbalance (只读节点不均衡)
 
 **Pattern Definition**
+
 - **Code**: P009
 - **Name**: Read Node Imbalance
 - **Severity**: Warning
@@ -502,6 +511,7 @@ func DetectReadNodeImbalance(clusterId string, diffThreshold float64) *AnomalyEv
 ### P010: Storage IO Bottleneck (存储 IO 瓶颈)
 
 **Pattern Definition**
+
 - **Code**: P010
 - **Name**: Storage IO Bottleneck
 - **Severity**: Critical
@@ -535,6 +545,7 @@ func DetectReadNodeImbalance(clusterId string, diffThreshold float64) *AnomalyEv
 ### P011: GDN Sync Lag (GDN 同步延迟)
 
 **Pattern Definition**
+
 - **Code**: P011
 - **Name**: GDN Sync Lag
 - **Severity**: Critical
@@ -568,6 +579,7 @@ func DetectReadNodeImbalance(clusterId string, diffThreshold float64) *AnomalyEv
 ### P012: Serverless Elasticity Frequent (Serverless 弹性频繁)
 
 **Pattern Definition**
+
 - **Code**: P012
 - **Name**: Serverless Elasticity Frequent
 - **Severity**: Warning

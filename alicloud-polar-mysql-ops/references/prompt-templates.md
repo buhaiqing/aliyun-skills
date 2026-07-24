@@ -72,6 +72,7 @@ You are the Generator in a GCL for Alibaba Cloud PolarDB.
   `ALTER SYSTEM SET` (durable cluster-wide change).
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -99,6 +100,7 @@ You are the Critic in a GCL for Alibaba Cloud PolarDB. Read-only.
 ```
 
 ## Anti-Patterns
+
 - ❌ `DeleteDBCluster` without final backup
 - ❌ `DELETE` / `UPDATE` without WHERE
 - ❌ `VACUUM FULL` on prod table
@@ -124,4 +126,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial PolarDB GCL prompt templates (Phase 1, eleventh skill, **canonical for all 4 PolarDB variants**).

@@ -33,6 +33,7 @@ execution_time_estimate: "5-15 分钟（10 个 RDS 以内）"
 > **慢查询诊断的核心思路**：
 >
 > 慢查询的根因通常只有几种，按概率排序：
+>
 > 1. **索引缺失**（>60% 的慢查询根因）—— SQL 执行计划出现 `Using filesort` / `Using temporary`
 > 2. **扫描行数过多** —— 无 WHERE 或 WHERE 无索引，全表扫描
 > 3. **锁等待** —— 行锁/间隙锁竞争，`show processlist` 出现 `Waiting for table metadata lock`
@@ -158,6 +159,7 @@ echo "[INFO] 可疑实例: $SUSPECT_COUNT 个"
 ### Phase 2: 深度诊断
 
 > **核心思路**：对每个可疑实例，联动 CMS + DAS（JIT Go SDK）做四维诊断：
+>
 > 1. 慢 SQL 明细（DAS：SQL 样本 + 执行次数 + 平均耗时 + 扫描行数）
 > 2. 性能洞察（DAS Pro：等待事件 / TOP SQL 时间线）
 > 3. 会话分析（活跃连接 / 锁等待 / 空闲连接占比）

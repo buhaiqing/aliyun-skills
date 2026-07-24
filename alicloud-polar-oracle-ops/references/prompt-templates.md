@@ -22,6 +22,7 @@ metadata:
 # PolarDB Oracle GCL Prompt Templates (Phase 1 — Thirteenth Skill)
 
 Inherits from `alicloud-polar-mysql-ops`. **Oracle additions:**
+
 - Client: `sqlplus` (or `sqlcl`).
 - Password env var: `ORACLE_PASSWORD` / `POLARDB_ORACLE_NEW_PASSWORD`.
 - Engine-specific hot-spots: `DROP USER ... CASCADE`, `ALTER SYSTEM SET ...
@@ -70,6 +71,7 @@ You are the Generator in a GCL for Alibaba Cloud PolarDB Oracle-compatible.
 - Inherits canonical PolarDB rules: `DeleteDBCluster` requires final
   backup, `DELETE` / `UPDATE` without `WHERE` → Safety = 0, etc.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -96,6 +98,7 @@ You are the Critic in a GCL for Alibaba Cloud PolarDB Oracle. Read-only.
 ```
 
 ## Anti-Patterns (Oracle additions)
+
 - ❌ `DROP USER ... CASCADE` without `expdp`
 - ❌ `ALTER SYSTEM SET ... SCOPE=SPFILE` without original_value_backup
 - ❌ `GRANT DBA` without justification
@@ -121,4 +124,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | PolarDB Oracle GCL prompt templates (Phase 1, thirteenth skill).

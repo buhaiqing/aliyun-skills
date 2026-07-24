@@ -127,11 +127,13 @@ credential rules, pre-flight checks, **dual-path execution** (official **SDK/API
 ## Quick Start
 
 ### Prerequisites
+
 - [ ] `aliyun` CLI installed
 - [ ] Credentials configured
 - [ ] Region set
 
 ### First Command
+
 ```bash
 aliyun polardb-io DescribeDBClusters --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
 ```
@@ -145,7 +147,7 @@ aliyun polardb-io DescribeDBClusters --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}
 
 ### Operation: Create DB Cluster
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create DB Cluster)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -208,6 +210,7 @@ func main() {
 #### Post-execution Validation
 
 Poll until `DBClusterStatus` is `Running`:
+
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)（CreateDBCluster → Running, 60×10s）
 ```
@@ -486,6 +489,7 @@ Thirteenth rollout of GCL per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-c
 | Credential surface | `ORACLE_PASSWORD` / `POLARDB_ORACLE_NEW_PASSWORD` env vars (NOT `sqlplus user/pass@host`) |
 
 ### Changelog
+
 1.0.0 | 2026-06-04 | Thirteenth rollout; inherits canonical + Oracle-specific.
 
 ---

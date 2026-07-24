@@ -172,6 +172,7 @@ exposes. If the CLI covers **only part** of the API, add a **coverage gap** tabl
 ## Quick Start
 
 ### What This Skill Does
+
 This skill enables you to configure, query, and manage ActionTrail audit logging on
 Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 
@@ -180,18 +181,21 @@ Alibaba Cloud using the `aliyun` CLI (primary) or JIT Go SDK (fallback).
 见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ### Verify Setup
+
 ```bash
 # Check CLI and credentials
 aliyun actiontrail DescribeRegions
 ```
 
 ### Your First Command
+
 ```bash
 # List all trails
 aliyun actiontrail DescribeTrails
 ```
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand ActionTrail architecture
 - [Common Operations](#execution-flows-agent-readable) — Create, manage, and query trails and events
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
@@ -238,7 +242,7 @@ operations CLI does not expose.
 
 ### Operation: Create Trail
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Trail)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -249,7 +253,7 @@ operations CLI does not expose.
 | Trail name | Validate name: 6-36 chars, lowercase start, alphanumeric/hyphen/underscore | Valid name | Ask user for valid name |
 | Delivery target | At least one of OssBucketName, SlsProjectArn, MaxComputeProjectArn specified | At least one set | Ask user for delivery target |
 
-#### CLI Execution
+#### CLI Execution (Create Trail)
 
 ```bash
 aliyun actiontrail CreateTrail \
@@ -271,7 +275,7 @@ aliyun actiontrail CreateTrail \
 go run main.go {{user.trail_name}} {{user.oss_bucket_name}}
 ```
 
-#### Validation
+#### Validation (Create Trail)
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -279,7 +283,7 @@ go run main.go {{user.trail_name}} {{user.oss_bucket_name}}
 | Trail name matches | `$.TrailList[0].TrailName` | Matches `{{user.trail_name}}` |
 | Delivery target set | `$.TrailList[0].OssBucketName` | Matches `{{user.oss_bucket_name}}` |
 
-#### Recovery
+#### Recovery (Create Trail)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -289,13 +293,13 @@ go run main.go {{user.trail_name}} {{user.oss_bucket_name}}
 
 ### Operation: Describe Trails
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Describe Trails)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Describe Trails)
 
 ```bash
 # List all trails
@@ -310,14 +314,14 @@ aliyun actiontrail DescribeTrails --IncludeOrganizationTrail true
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Describe Trails)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Response received | `$.RequestId` | Non-empty |
 | Trail list | `$.TrailList` | Array (may be empty) |
 
-#### Recovery
+#### Recovery (Describe Trails)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -325,13 +329,13 @@ aliyun actiontrail DescribeTrails --IncludeOrganizationTrail true
 
 ### Operation: Get Trail Status
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Trail Status)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
 
-#### CLI Execution
+#### CLI Execution (Get Trail Status)
 
 ```bash
 aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
@@ -339,14 +343,14 @@ aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get Trail Status)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Status received | `$.IsLogging` | Boolean value |
 | Latest delivery time | `$.LatestDeliveryTime` | ISO 8601 timestamp |
 
-#### Recovery
+#### Recovery (Get Trail Status)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -354,14 +358,14 @@ aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
 
 ### Operation: Start Logging
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Start Logging)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Trail exists | `DescribeTrails` | Trail in list | HALT |
 | Trail is disabled | `GetTrailStatus` | `IsLogging: false` | Already enabled; no action needed |
 
-#### CLI Execution
+#### CLI Execution (Start Logging)
 
 ```bash
 aliyun actiontrail StartLogging --Name {{user.trail_name}}
@@ -369,13 +373,13 @@ aliyun actiontrail StartLogging --Name {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Start Logging)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Logging enabled | `aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}` | `IsLogging: true` |
 
-#### Recovery
+#### Recovery (Start Logging)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -384,14 +388,14 @@ aliyun actiontrail StartLogging --Name {{user.trail_name}}
 
 ### Operation: Stop Logging
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Stop Logging)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Trail exists | `DescribeTrails` | Trail in list | HALT |
 | Trail is enabled | `GetTrailStatus` | `IsLogging: true` | Already disabled; no action needed |
 
-#### CLI Execution
+#### CLI Execution (Stop Logging)
 
 ```bash
 aliyun actiontrail StopLogging --Name {{user.trail_name}}
@@ -399,13 +403,13 @@ aliyun actiontrail StopLogging --Name {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Stop Logging)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Logging disabled | `aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}` | `IsLogging: false` |
 
-#### Recovery
+#### Recovery (Stop Logging)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -413,13 +417,13 @@ aliyun actiontrail StopLogging --Name {{user.trail_name}}
 
 ### Operation: Update Trail
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Update Trail)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Trail exists | `DescribeTrails` | Trail in list | HALT |
 
-#### CLI Execution
+#### CLI Execution (Update Trail)
 
 ```bash
 aliyun actiontrail UpdateTrail \
@@ -430,13 +434,13 @@ aliyun actiontrail UpdateTrail \
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Update Trail)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Trail updated | `aliyun actiontrail DescribeTrails` | Updated configuration reflected |
 
-#### Recovery
+#### Recovery (Update Trail)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -447,14 +451,14 @@ aliyun actiontrail UpdateTrail \
 
 > **⚠️ DESTRUCTIVE — Requires explicit user confirmation before execution.**
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Delete Trail)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Trail exists | `DescribeTrails` | Trail in list | HALT; trail not found |
 | User confirmation | Ask user: "Are you sure you want to delete trail `{{user.trail_name}}`?" | Explicit "yes" | HALT |
 
-#### CLI Execution
+#### CLI Execution (Delete Trail)
 
 ```bash
 aliyun actiontrail DeleteTrail --Name {{user.trail_name}}
@@ -462,13 +466,13 @@ aliyun actiontrail DeleteTrail --Name {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Delete Trail)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Trail deleted | `aliyun actiontrail DescribeTrails` | Trail no longer in list |
 
-#### Recovery
+#### Recovery (Delete Trail)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -477,13 +481,13 @@ aliyun actiontrail DeleteTrail --Name {{user.trail_name}}
 
 ### Operation: Lookup Events
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Lookup Events)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Lookup Events)
 
 ```bash
 # Basic event lookup (last 7 days by default)
@@ -514,14 +518,14 @@ aliyun actiontrail LookupEvents \
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Lookup Events)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Events received | `$.Events` | Array of event records |
 | Pagination | `$.NextToken` | Present if more results |
 
-#### Recovery
+#### Recovery (Lookup Events)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -531,13 +535,13 @@ aliyun actiontrail LookupEvents \
 
 ### Operation: Get AccessKey Last Used Info
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get AccessKey Last Used Info)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get AccessKey Last Used Info)
 
 ```bash
 aliyun actiontrail GetAccessKeyLastUsedInfo --AccessKeyId {{user.access_key_id}}
@@ -545,13 +549,13 @@ aliyun actiontrail GetAccessKeyLastUsedInfo --AccessKeyId {{user.access_key_id}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get AccessKey Last Used Info)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Info received | `$.AccountId` | Non-empty |
 
-#### Recovery
+#### Recovery (Get AccessKey Last Used Info)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -562,13 +566,13 @@ aliyun actiontrail GetAccessKeyLastUsedInfo --AccessKeyId {{user.access_key_id}}
 
 Queries the specific events invoked by an AccessKey, providing detailed audit context such as event names, target resources, and timestamps.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get AccessKey Last Used Events)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get AccessKey Last Used Events)
 
 ```bash
 aliyun actiontrail GetAccessKeyLastUsedEvents --AccessKeyId {{user.access_key_id}}
@@ -576,13 +580,13 @@ aliyun actiontrail GetAccessKeyLastUsedEvents --AccessKeyId {{user.access_key_id
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get AccessKey Last Used Events)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Events received | `$.Events` | Array of event records |
 
-#### Recovery
+#### Recovery (Get AccessKey Last Used Events)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -593,13 +597,13 @@ aliyun actiontrail GetAccessKeyLastUsedEvents --AccessKeyId {{user.access_key_id
 
 Queries the source IP addresses from which an AccessKey has made API calls, enabling geographic and network-based anomaly detection.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get AccessKey Last Used IPs)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get AccessKey Last Used IPs)
 
 ```bash
 aliyun actiontrail GetAccessKeyLastUsedIps --AccessKeyId {{user.access_key_id}}
@@ -607,13 +611,13 @@ aliyun actiontrail GetAccessKeyLastUsedIps --AccessKeyId {{user.access_key_id}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get AccessKey Last Used IPs)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | IPs received | `$.Ips` | Array of IP address strings |
 
-#### Recovery
+#### Recovery (Get AccessKey Last Used IPs)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -624,13 +628,13 @@ aliyun actiontrail GetAccessKeyLastUsedIps --AccessKeyId {{user.access_key_id}}
 
 Queries the Alibaba Cloud products (services) that an AccessKey has accessed, providing visibility into which services the key has permissions for and is actively using.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get AccessKey Last Used Products)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get AccessKey Last Used Products)
 
 ```bash
 aliyun actiontrail GetAccessKeyLastUsedProducts --AccessKeyId {{user.access_key_id}}
@@ -638,13 +642,13 @@ aliyun actiontrail GetAccessKeyLastUsedProducts --AccessKeyId {{user.access_key_
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get AccessKey Last Used Products)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Products received | `$.Products` | Array of product code strings |
 
-#### Recovery
+#### Recovery (Get AccessKey Last Used Products)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -655,13 +659,13 @@ aliyun actiontrail GetAccessKeyLastUsedProducts --AccessKeyId {{user.access_key_
 
 Queries the specific resources that an AccessKey has accessed, providing the most granular view of AK activity for forensic investigation and resource-level audit.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get AccessKey Last Used Resources)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get AccessKey Last Used Resources)
 
 ```bash
 aliyun actiontrail GetAccessKeyLastUsedResources --AccessKeyId {{user.access_key_id}}
@@ -669,13 +673,13 @@ aliyun actiontrail GetAccessKeyLastUsedResources --AccessKeyId {{user.access_key
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get AccessKey Last Used Resources)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Resources received | `$.Resources` | Array of resource ARN strings |
 
-#### Recovery
+#### Recovery (Get AccessKey Last Used Resources)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -684,13 +688,13 @@ aliyun actiontrail GetAccessKeyLastUsedResources --AccessKeyId {{user.access_key
 
 ### Operation: Enable Insight
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Enable Insight)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Enable Insight)
 
 ```bash
 # Enable IP insight — detect operations from unfamiliar IP addresses
@@ -729,13 +733,13 @@ aliyun actiontrail EnableInsight --InsightType TrailConcealmentInsight
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Enable Insight)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Insight enabled | `aliyun actiontrail GetInsightTypes` | InsightType appears in list |
 
-#### Recovery
+#### Recovery (Enable Insight)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -743,14 +747,14 @@ aliyun actiontrail EnableInsight --InsightType TrailConcealmentInsight
 
 ### Operation: Lookup Insight Events
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Lookup Insight Events)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 | Insight enabled | `aliyun actiontrail GetInsightTypes` | At least one InsightType enabled | HALT; enable insight first |
 
-#### CLI Execution
+#### CLI Execution (Lookup Insight Events)
 
 ```bash
 # Query all insight events for a specific type
@@ -766,13 +770,13 @@ aliyun actiontrail LookupInsightEvents \
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Lookup Insight Events)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Events received | `$.InsightEvents` | Array of insight event records |
 
-#### Recovery
+#### Recovery (Lookup Insight Events)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -781,14 +785,14 @@ aliyun actiontrail LookupInsightEvents \
 
 ### Operation: Disable Insight
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Disable Insight)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 | Insight enabled | `aliyun actiontrail GetInsightTypes` | InsightType in list | HALT; insight already disabled |
 
-#### CLI Execution
+#### CLI Execution (Disable Insight)
 
 ```bash
 aliyun actiontrail DisableInsight --InsightType IpInsight
@@ -796,13 +800,13 @@ aliyun actiontrail DisableInsight --InsightType IpInsight
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Disable Insight)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Insight disabled | `aliyun actiontrail GetInsightTypes` | InsightType no longer in list |
 
-#### Recovery
+#### Recovery (Disable Insight)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -811,13 +815,13 @@ aliyun actiontrail DisableInsight --InsightType IpInsight
 
 ### Operation: Get Insight Types
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Insight Types)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 
-#### CLI Execution
+#### CLI Execution (Get Insight Types)
 
 ```bash
 aliyun actiontrail GetInsightTypes
@@ -830,14 +834,14 @@ request := &actiontrail.GetInsightTypesRequest{}
 response, err := client.GetInsightTypes(request)
 ```
 
-#### Validation
+#### Validation (Get Insight Types)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Response received | `$.RequestId` | Non-empty |
 | Insight types list | `$.InsightTypes` | Array of enabled insight type strings |
 
-#### Recovery
+#### Recovery (Get Insight Types)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -847,14 +851,14 @@ response, err := client.GetInsightTypes(request)
 
 Lists all data event selectors configured for a trail. Data event selectors control which **data-plane** events (e.g., OSS object read/write) are collected by ActionTrail.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (List Data Event Selectors)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 | Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
 
-#### CLI Execution
+#### CLI Execution (List Data Event Selectors)
 
 ```bash
 aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}
@@ -862,13 +866,13 @@ aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (List Data Event Selectors)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Selectors received | `$.DataEventSelectors` | Array of selector objects (may be empty) |
 
-#### Recovery
+#### Recovery (List Data Event Selectors)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -879,14 +883,14 @@ aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}
 
 Gets the details of a specific data event selector configuration, including which data event types, resources, and regions are being monitored.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Data Event Selector)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
 | Credentials | Env vars set | Non-empty | HALT |
 | Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
 
-#### CLI Execution
+#### CLI Execution (Get Data Event Selector)
 
 ```bash
 aliyun actiontrail GetDataEventSelector --TrailName {{user.trail_name}}
@@ -894,13 +898,13 @@ aliyun actiontrail GetDataEventSelector --TrailName {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Get Data Event Selector)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Selector details received | `$.DataEventSelector` | Selector configuration object |
 
-#### Recovery
+#### Recovery (Get Data Event Selector)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -913,7 +917,7 @@ Configures or updates a data event selector for a trail. This operation enables 
 
 > **Typical use case:** Enable OSS data event auditing to track who accessed, uploaded, or deleted objects in sensitive buckets.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Put Data Event Selector)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -921,7 +925,7 @@ Configures or updates a data event selector for a trail. This operation enables 
 | Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
 | EventSelector JSON | Validate JSON structure | Valid JSON | HALT; fix JSON syntax |
 
-#### CLI Execution
+#### CLI Execution (Put Data Event Selector)
 
 ```bash
 # Example: Enable OSS data event collection for all buckets
@@ -954,13 +958,13 @@ aliyun actiontrail PutDataEventSelector \
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Put Data Event Selector)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Selector configured | `aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}` | New or updated selector appears in list |
 
-#### Recovery
+#### Recovery (Put Data Event Selector)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -974,7 +978,7 @@ Removes a data event selector from a trail, stopping collection of data-plane ev
 
 > **⚠️ WARNING:** Deleting a data event selector permanently stops data-plane event collection. Historical data in OSS/SLS delivery is preserved.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Delete Data Event Selector)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -982,7 +986,7 @@ Removes a data event selector from a trail, stopping collection of data-plane ev
 | Trail exists | `aliyun actiontrail DescribeTrails` | Trail in list | HALT; trail not found |
 | User confirmation | Ask user: "This will stop data-plane event collection for trail `{{user.trail_name}}`. Continue?" | Explicit "yes" | HALT |
 
-#### CLI Execution
+#### CLI Execution (Delete Data Event Selector)
 
 ```bash
 aliyun actiontrail DeleteDataEventSelector --TrailName {{user.trail_name}}
@@ -990,13 +994,13 @@ aliyun actiontrail DeleteDataEventSelector --TrailName {{user.trail_name}}
 
 **JIT Go SDK fallback:** 参见 [API & SDK Usage](references/api-sdk-usage.md)
 
-#### Validation
+#### Validation (Delete Data Event Selector)
 
 | Check | Method | Expected |
 |-------|--------|----------|
 | Selector removed | `aliyun actiontrail ListDataEventSelectors --TrailName {{user.trail_name}}` | Selector no longer in list |
 
-#### Recovery
+#### Recovery (Delete Data Event Selector)
 
 | Error | Pattern | Action |
 |-------|---------|--------|
@@ -1008,7 +1012,7 @@ aliyun actiontrail DeleteDataEventSelector --TrailName {{user.trail_name}}
 Creates a trail that meets compliance requirements: all regions, all event types,
 OSS delivery with encryption, and immediate logging activation.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Compliance Trail (Best Practice))
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -1016,7 +1020,7 @@ OSS delivery with encryption, and immediate logging activation.
 | OSS bucket | Verify bucket exists and supports SSE-KMS | Bucket accessible | HALT; create or configure OSS bucket first |
 | Trail name | Validate: 6-36 chars, lowercase start | Valid name | Ask user for valid name |
 
-#### CLI Execution
+#### CLI Execution (Create Compliance Trail (Best Practice))
 
 ```bash
 # Step 1: Create trail with all-region, all-event coverage
@@ -1036,6 +1040,7 @@ aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}
 ```
 
 **Compliance checklist:**
+
 - [ ] Trail covers **all regions** (`--TrailRegion All`)
 - [ ] Trail captures **all event types** (`--EventRW All`)
 - [ ] Logging is **enabled** (`StartLogging`)
@@ -1062,7 +1067,7 @@ startReq := &actiontrail.StartLoggingRequest{
 client.StartLogging(startReq)
 ```
 
-#### Validation
+#### Validation (Create Compliance Trail (Best Practice))
 
 | Check | Method | Expected |
 |-------|--------|----------|
@@ -1070,7 +1075,7 @@ client.StartLogging(startReq)
 | All events | `$.TrailList[0].EventRW` | `All` |
 | Logging enabled | `aliyun actiontrail GetTrailStatus --Name {{user.trail_name}}` | `IsLogging: true` |
 
-#### Recovery
+#### Recovery (Create Compliance Trail (Best Practice))
 
 | Error | Pattern | Action |
 |-------|---------|--------|

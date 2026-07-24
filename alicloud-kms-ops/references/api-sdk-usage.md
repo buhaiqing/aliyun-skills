@@ -5,8 +5,8 @@
 - **API Version**: `2016-01-20`
 - **Protocol**: RPC-style (HTTPS GET/POST)
 - **Base Endpoint**: `kms.aliyuncs.com` (or regional: `kms.{region}.aliyuncs.com`)
-- **API Explorer**: https://api.alibabacloud.com/api/Kms/2016-01-20
-- **Documentation**: https://help.aliyun.com/zh/kms/developer-reference/api-kms-2016-01-20-dir/
+- **API Explorer**: <https://api.alibabacloud.com/api/Kms/2016-01-20>
+- **Documentation**: <https://help.aliyun.com/zh/kms/developer-reference/api-kms-2016-01-20-dir/>
 
 ## Go SDK Package
 

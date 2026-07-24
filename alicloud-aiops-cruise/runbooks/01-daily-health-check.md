@@ -11,9 +11,11 @@ execution_time_estimate: "5-15 分钟（50 台资源以内）"
 ## 执行路径
 
 > **主执行路径（v1.1.0）**：
+>
 > ```bash
 > python3 runbooks/scripts/daily-health-check.py --resource-group-id $RG_ID --region cn-hangzhou
 > ```
+>
 > 该脚本已实现 Sprint 14+15 批量 CMS 采集（~92% API 节省）和 Phase 0.5 数据可用性预检。
 >
 > **Shell 命令示例**：仅作调试/单步验证参考，不作为主执行路径。Shell runbook 中的 Phase 0.5（数据可用性预检）未实现，如需完整预检请使用 Python 脚本。
@@ -37,6 +39,7 @@ execution_time_estimate: "5-15 分钟（50 台资源以内）"
 ### [NOTE] 提示知识力
 
 > **日常巡检 vs 故障排查的本质区别**：
+>
 > - 日常巡检是"基线对比"—— 和昨天/上周的自己比，发现趋势异常
 > - 故障排查是"异常定位"—— 从入口到后端逐层排查，定位根因
 >
@@ -76,7 +79,7 @@ aliyun vpc DescribeRegions --RegionId "$ALIBABA_CLOUD_REGION_ID" >/dev/null 2>&1
 CUSTOMER="{{user.customer_name}}"
 REGION="${ALIBABA_CLOUD_REGION_ID:-cn-hangzhou}"
 echo "[INFO] 客户: $CUSTOMER | 区域: $REGION"
-```
+```markdown
 
 ### Phase 1: 拓扑发现
 
@@ -137,7 +140,7 @@ echo "  扫描策略: 资源组优先 + 标签补充"
 echo "═══════════════════════════════════════"
 [ -n "$RG_ID" ] && echo "  [PKG] 资源组: $RG_ID" || echo "  [PKG] 资源组: (未提供)"
 [ -n "$TAG_KEY" ] && echo "  [TAG]️ 标签:   $TAG_KEY=$TAG_VALUE" || echo "  [TAG]️ 标签:   (未提供)"
-```
+```markdown
 
 #### Step 1.1: 双通道扫描 + 合并去重
 
@@ -225,7 +228,7 @@ REDIS_COUNT=$(echo "${REDIS_LIST_RG:-null}" | jq 'if . == null then 0 else lengt
 VPC_COUNT=$(echo "${VPC_LIST_RG:-null}" | jq 'if . == null then 0 else length end')
 
 echo "[RESULT] 合并后: ECS=$ECS_COUNT SLB=$SLB_COUNT RDS=$RDS_COUNT Redis=$REDIS_COUNT VPC=$VPC_COUNT"
-```
+```text
 
 [LEGACY-REMOVED v1.1.0] 旧单通道代码块已删除。
 资源列表统一由 Step 1.1 双通道合并结果提供，不再重复拉取。
@@ -252,7 +255,7 @@ done
 
 # EIP -> 关联资源映射
 aliyun vpc DescribeEipAddresses --RegionId "$REGION" | jq '.EipAddresses.EipAddress[] | {EipAddress, InstanceId, InstanceType}'
-```
+```markdown
 
 #### Step 1.4: 输出拓扑初判
 
@@ -268,12 +271,14 @@ aliyun vpc DescribeEipAddresses --RegionId "$REGION" | jq '.EipAddresses.EipAddr
 |---|---|---|---|---|---|---|
 
 ### 链路结构
-```
+```text
+
 EIP -> SLB -> ECS -> RDS/Redis
                     NAT
                    
 安全组: 防护所有资源
-```
+
+```markdown
 
 ### 资源统计
 | 类型 | 数量 |
@@ -283,7 +288,7 @@ EIP -> SLB -> ECS -> RDS/Redis
 | RDS | ${RDS_COUNT} |
 | Redis | ${REDIS_COUNT} |
 | NAT | ${NAT_COUNT} |
-```
+```markdown
 
 ### Phase 2: 深度采集
 
@@ -363,7 +368,7 @@ for INST_ID in $(echo "$ECS_LIST" | jq -r '.[].InstanceId'); do
   
   echo "[DIAG] ECS $INST_ID($INST_TYPE) CPU=$CPU_CUR% Mem=$MEM_CUR% IOPS=$DISK_IOPS IN=$NET_IN OUT=$NET_OUT baseline=$CPU_BASELINE%"
 done
-```
+```markdown
 
 #### Step 2.2: EIP 入口带宽监控
 
@@ -396,7 +401,7 @@ for EIP in $(aliyun vpc DescribeEipAddresses --RegionId "$REGION" --PageSize 50 
   
   echo "[DIAG] EIP $EIP (${BANDWIDTH}Mbps, $INSTANCE_REF): IN使用率=$IN_PCT% OUT使用率=$OUT_PCT%"
 done
-```
+```markdown
 
 #### Step 2.3: SLB 监控采集
 
@@ -431,7 +436,7 @@ for LB_ID in $(echo "$SLB_LIST" | jq -r '.LoadBalancerId'); do
   
   echo "[DIAG] SLB $LB_ID unhealthy=$UNHEALTHY activeConn=$ACTIVE_CONN newConn=$NEW_CONN"
 done
-```
+```markdown
 
 #### Step 2.4: RDS 监控采集
 
@@ -466,7 +471,7 @@ for DB_ID in $(echo "$RDS_LIST" | jq -r '.[].DBInstanceId'); do
   
   echo "[DIAG] RDS $DB_ID CPU=$RDS_CPU% Conn=$RDS_CONN% Disk=$RDS_DISK%"
 done
-```
+```markdown
 
 #### Step 2.5: Redis 监控采集
 
@@ -498,7 +503,7 @@ for REDIS_ID in $(echo "$REDIS_LIST" | jq -r '.[].InstanceId'); do
   
   echo "[DIAG] Redis $REDIS_ID Mem=$REDIS_MEM% Hit=$REDIS_HIT% Conn=$REDIS_CONN"
 done
-```
+```markdown
 
 #### Step 2.6: NAT 监控采集
 
@@ -533,7 +538,7 @@ for NAT_ID in $(aliyun vpc DescribeNatGateways --RegionId "$REGION" | jq -r '.Na
     echo "[DIAG] NAT $NAT_ID ($NAT_SPEC): SNAT=$NAT_SNAT 端口分配失败=$DROP_FAIL"
   fi
 done
-```
+```markdown
 
 #### Step 2.7: [新增] 主机 IO 健康检查
 
@@ -620,7 +625,7 @@ cat /sys/block/*/queue/scheduler 2>/dev/null
   
   echo "[DIAG] ECS $INST_ID IO 检查完成: status=$IO_STATUS util=$IO_UTIL% await=$IO_AWAITms swap=${SWAP_USED}KB dirty=${DIRTY}KB"
 done
-```
+```markdown
 
 #### Step 2.8: 安全组审计
 
@@ -636,7 +641,7 @@ for SG_ID in $(aliyun ecs DescribeSecurityGroups --RegionId "$REGION" | jq -r '.
     echo "[WARN] 安全组 $SG_ID 存在高危规则（0.0.0.0/0 开放管理/数据库端口）"
   fi
 done
-```
+```markdown
 
 #### Step 2.8: [可选] CloudAssistant 内检测
 
@@ -673,7 +678,7 @@ echo "=== DOCKER ==="; docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev
   echo "[DIAG] ECS $INST_ID 内检测结果:"
   echo "$DIAG_RESULT"
 done
-```
+```markdown
 
 #### Step 2.9: 动态基线异常评分
 
@@ -727,7 +732,7 @@ for DB_ID in $(echo "$RDS_LIST" | jq -r '.[].DBInstanceId'); do
     fi
   fi
 done
-```
+```markdown
 
 > **验证方式**: 在已有 7 天指标数据的 ECS 上运行巡检，检查 Step 2.9 是否输出 `[ANOMALY]` 标记。
 
@@ -745,7 +750,7 @@ evaluate() {
   elif [ "$(echo "$value >= $warn" | bc -l 2>/dev/null)" = "1" ]; then echo "WARNING WARNING"
   else echo "PASS OK"; fi
 }
-```
+```markdown
 
 #### Step 3.2: 链路关联推理
 
@@ -759,7 +764,7 @@ Agent 对照 `references/inference-rules.md` 检查现象组合：
 | SLB健康检查失败+ECS正常 | SLB-ECS-01 | 网络连通性问题 | 查安全组入方向规则 |
 | ECS CPU>70%+内存>80% | ECS-01 | 资源双重瓶颈 | CloudAssistant查进程TOP |
 | ... | ... | ... | ... |
-```
+```markdown
 
 #### Step 3.3: 容量预判（7 天趋势）
 
@@ -771,7 +776,7 @@ Agent 对照 `references/inference-rules.md` 检查现象组合：
 | i-xxx | 磁盘使用率 | UP 线性增长 | 2026-06-20 | 扩容磁盘或清理 |
 | rm-xxx | 磁盘使用率 | UP 线性增长 | 2026-07-01 | DAS查空间分析 |
 | r-xxx | 内存使用率 | -> 平稳 | 无风险 | — |
-```
+```markdown
 
 #### Step 3.4: 双格式报告输出
 
@@ -911,7 +916,7 @@ Agent 对照 `references/inference-rules.md` 检查现象组合：
 ═══════════════════════════════════════════════════════
   JSON: audit-results/cruise-$CUSTOMER-$(date +%Y%m%d).json
   耗时: $EXECUTION_DURATION | runbook: v1.0.0 | 模式: $MODE
-```
+```text
 
 **JSON（持久化到 `audit-results/`—— 每条发现含 instance_id + metric + value + threshold + level）：**
 
@@ -963,7 +968,7 @@ cat > "audit-results/cruise-${CUSTOMER}-$(date +%Y%m%d).json" << CRUISE_JSON
 }
 CRUISE_JSON
 echo "[RESULT] JSON报告已持久化到 audit-results/"
-```
+```markdown
 
 ---
 

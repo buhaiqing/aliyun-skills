@@ -94,6 +94,7 @@ aliyun ram GetPasswordPolicy
 ### Flow
 
 1. **List all identities:**
+
    ```bash
    aliyun ram ListUsers --MaxItems 1000
    aliyun ram ListRoles --MaxItems 1000
@@ -101,6 +102,7 @@ aliyun ram GetPasswordPolicy
    ```
 
 2. **For each identity, list attached policies:**
+
    ```bash
    aliyun ram ListPoliciesForUser --UserName "{{user.user_name}}"
    aliyun ram ListPoliciesForRole --RoleName "{{user.role_name}}"
@@ -108,6 +110,7 @@ aliyun ram GetPasswordPolicy
    ```
 
 3. **For each policy, get document:**
+
    ```bash
    aliyun ram GetPolicy \
      --PolicyName "{{user.policy_name}}" \
@@ -126,6 +129,7 @@ aliyun ram GetPasswordPolicy
    - Unused policies (attached but no recent usage)
 
 5. **List access keys and check last used:**
+
    ```bash
    aliyun ram ListAccessKeys --UserName "{{user.user_name}}"
    aliyun ram GetAccessKeyLastUsed --AccessKeyId "{{user.access_key_id}}"

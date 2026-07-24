@@ -39,6 +39,7 @@ NAS (Not directly supported by DAS, use CMS + custom analysis)
 ## 降级策略
 
 若 FlowLog 不可用：
+
 1. 检查 NAT Gateway 绑定的 EIP 状态
 2. 逐一检查 SNAT/DNAT 配置
 3. 从 VPC 内部使用 `curl`/`wget` 测试外部连通性

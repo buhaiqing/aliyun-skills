@@ -7,7 +7,8 @@
 ## 1. `UnknownProduct` — CLI does not recognize `advisor`
 
 **Symptom:**
-```
+
+```bash
 $ aliyun advisor DescribeAdvices
 ERROR: UnknownProduct: advisor
 ```
@@ -15,10 +16,11 @@ ERROR: UnknownProduct: advisor
 **Cause:** The `aliyun-cli-advisor` plugin is not installed.
 
 **Action:**
+
 ```bash
 aliyun plugin install --names aliyun-cli-advisor
 aliyun advisor version    # verify
-```
+```markdown
 
 **Halt vs retry:** HALT (configuration problem).
 
@@ -31,6 +33,7 @@ aliyun advisor version    # verify
 **Cause:** Plugin version doesn't match the CLI version.
 
 **Action:**
+
 ```bash
 # Update plugin to latest
 aliyun plugin install --names aliyun-cli-advisor
@@ -38,7 +41,7 @@ aliyun plugin install --names aliyun-cli-advisor
 # Or update CLI itself
 aliyun --version
 # If < 3.3.0, update CLI
-```
+```markdown
 
 **Halt vs retry:** HALT.
 
@@ -47,13 +50,15 @@ aliyun --version
 ## 3. `Forbidden.RAM` — Insufficient RAM permission
 
 **Symptom:**
-```
+
+```yaml
 ERROR: User not authorized to perform operation: advisor:DescribeAdvices
-```
+```markdown
 
 **Cause:** The RAM user/role lacks the required `advisor:*` permission.
 
 **Action:**
+
 1. Check current user's policies: `aliyun ram ListPoliciesForUser --UserName <name>`
 2. Attach the `AdvisorReadOnly` system policy (read) or
    `AdvisorFullAccess` (read + refresh).
@@ -66,26 +71,29 @@ ERROR: User not authorized to perform operation: advisor:DescribeAdvices
 ## 4. `Throttling.User` / `Throttling.Api` — Rate limit exceeded
 
 **Symptom:**
-```
+
+```yaml
 ERROR: Throttling.User: Request was denied due to user flow control
-```
+```text
 
 **Cause:** Too many calls in a short window. Default limits are
 generous for human use but tight for batch jobs.
 
 **Action:**
+
 1. Add delay between calls (1-2 seconds).
 2. For batch jobs, implement a sliding-window rate limiter.
 3. For long-running batch operations, contact Alibaba Cloud support
    to raise the quota.
 
 **Retry pattern (CLI):**
+
 ```bash
 for attempt in 1 2 3; do
   if aliyun advisor DescribeAdvices; then break; fi
   sleep $((2 ** attempt))   # 2s, 4s, 8s
 done
-```
+```markdown
 
 **Halt vs retry:** RETRY (3 attempts, exponential backoff).
 
@@ -96,11 +104,12 @@ done
 **Symptom:** `CheckId` doesn't exist or is misspelled.
 
 **Action:**
+
 ```bash
 # List valid check IDs
 aliyun advisor describe-advisor-checks --product Ecs \
   | jq -r '.Checks[].CheckId' | sort
-```
+```text
 
 Then re-issue with a valid ID.
 
@@ -113,12 +122,13 @@ Then re-issue with a valid ID.
 **Symptom:** Product or severity value not in the enum.
 
 **Action:**
+
 ```bash
 # List valid products
 aliyun advisor get-product-list | jq -r '.Products[].Code'
 
 # Valid severities: Critical, Warning, Info
-```
+```markdown
 
 **Halt vs retry:** HALT.
 
@@ -129,6 +139,7 @@ aliyun advisor get-product-list | jq -r '.Products[].Code'
 **Symptom:** `start-date > end-date` or range > 90 days.
 
 **Action:**
+
 ```bash
 # Validate before calling
 python3 -c "
@@ -141,7 +152,7 @@ assert diff <= 90, 'too wide'
 assert end >= start, 'reversed'
 print('OK')
 "
-```
+```markdown
 
 **Halt vs retry:** HALT.
 
@@ -152,6 +163,7 @@ print('OK')
 **Symptom:** `RefreshAdvisorCheck` returns quota error.
 
 **Action:**
+
 1. Wait until next day (quotas reset at 00:00 UTC).
 2. Or upgrade to a paid plan (higher quota).
 3. Or use `RefreshAdvisorResource` for single-resource refresh instead
@@ -164,14 +176,16 @@ print('OK')
 ## 9. `TaskNotFound` — Inspection task expired
 
 **Symptom:**
-```
+
+```yaml
 ERROR: TaskNotFound: Task 12345 not found
-```
+```text
 
 **Cause:** Inspection tasks have a short retention (1-2 hours). The
 caller's `TaskId` is too old.
 
 **Action:**
+
 1. Re-trigger inspection: `RefreshAdvisorCheck`
 2. Poll immediately and continuously (don't store the TaskId for
    long-running batch jobs).
@@ -189,6 +203,7 @@ caller's `TaskId` is too old.
 scan) or persistent (resource too large, internal error).
 
 **Action:**
+
 1. Retry once with same scope.
 2. If retry also fails, narrow scope (single product or single resource).
 3. If narrowed scope also fails, report to Alibaba Cloud support with
@@ -214,6 +229,7 @@ check [Alibaba Cloud status](https://status.aliyun.com).
 **Symptom:** CLI cannot reach the Advisor endpoint.
 
 **Action:**
+
 1. Test network: `curl -I https://advisor.aliyuncs.com`
 2. Check proxy / firewall / VPN.
 3. Verify DNS: `dig advisor.aliyuncs.com`
@@ -248,13 +264,14 @@ the old advice.
 **Cause:** Inspection has not re-run since the fix.
 
 **Action:**
+
 ```bash
 # Trigger a re-scan of that specific resource
 aliyun advisor refresh-advisor-resource \
   --product Ecs \
   --resource-id i-bp1xxxxxxxxxx
 # Then wait a minute, re-run DescribeAdvices
-```
+```text
 
 Alternatively, run a full `RefreshAdvisorCheck` (more expensive but
 thorough).
@@ -272,6 +289,7 @@ thorough).
 target account, or STS token is missing/expired.
 
 **Action:**
+
 1. Verify the STS role chain is valid: `aliyun sts GetCallerIdentity`
 2. Check the target account's trust policy allows assumption.
 3. Re-issue the STS credentials if they expired (default 1 hour).
@@ -309,7 +327,7 @@ dates.
 
 ## Quick Diagnostic Flowchart
 
-```
+```markdown
 [ Call failed ]
       |
       v
@@ -332,7 +350,7 @@ dates.
       | persistent failure
       v
 [ HALT — escalate to support with RequestId ]
-```
+```markdown
 
 ## Reporting Bugs
 

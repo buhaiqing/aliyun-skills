@@ -70,19 +70,22 @@ Every `SKILL.md` MUST include a **Quick Start** section immediately after the Ov
 ```bash
 # Check CLI and credentials
 aliyun {{product}} DescribeRegions
-```
+```bash
 
 ### Your First Command
+
 ```bash
 # Example: List resources
 aliyun {{product}} Describe{{Resources}} --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
-```
+```bash
 
 ### Next Steps
+
 - [Core Concepts](references/core-concepts.md) — Understand {{product}} architecture
 - [Common Operations](#execution-flows) — Create, manage, and delete resources
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
-```
+
+```markdown
 
 ### 2.2 Capability Overview
 
@@ -103,11 +106,13 @@ After Quick Start, provide a **Capability Overview** table:
 ### 2.3 Contextual Help
 
 Every operation section MUST include:
+
 - **When to use this operation** (2–3 bullet points)
 - **What you need** (prerequisites for this specific operation)
 - **What to expect** (outcome description)
 
 **Example:**
+
 ```markdown
 ### Operation: Create {{Resource}}
 
@@ -124,11 +129,12 @@ Every operation section MUST include:
 - A new {{resource}} will be created in the specified region
 - Creation typically takes [X] seconds/minutes
 - You will receive a {{resource}} ID for future operations
-```
+```markdown
 
 ### 2.4 Progressive Disclosure
 
 Information MUST be presented progressively:
+
 - **Level 1 (Summary):** One-line description + command example
 - **Level 2 (Details):** Parameter table + common options
 - **Level 3 (Advanced):** Full parameter reference + edge cases
@@ -142,6 +148,7 @@ Users should be able to complete common tasks at Level 1 or 2 without expanding 
 ### 3.1 Prompt Minimization
 
 **Rule:** Ask the user for information ONLY when it cannot be:
+
 1. Inferred from environment variables (`{{env.*}}`)
 2. Defaulted safely
 3. Derived from previous context
@@ -168,7 +175,8 @@ Every optional parameter SHOULD have a smart default:
 | PageSize | 50 | Reasonable batch size for list operations |
 
 **Default Presentation:**
-```
+
+```bash
 Region [cn-hangzhou]: _
 # Press Enter to accept default, or type a different region
 ```
@@ -188,7 +196,7 @@ You are about to DELETE the following resource:
 This action is **IRREVERSIBLE**. All data will be permanently lost.
 
 Type the resource name "{{user.resource_name}}" to confirm: _
-```
+```markdown
 
 **Non-destructive operations SHOULD NOT require confirmation** (to reduce friction).
 
@@ -196,7 +204,7 @@ Type the resource name "{{user.resource_name}}" to confirm: _
 
 For operations taking > 5 seconds, MUST show progress:
 
-```
+```text
 Step 1/4: Validating credentials... ✓
 Step 2/4: Checking region availability... ✓
 Step 3/4: Creating resource... ⏳ (elapsed: 12s, estimated: 30s)
@@ -204,10 +212,11 @@ Step 4/4: Validating creation... pending
 ```
 
 **Polling Progress:**
-```
+
+```text
 Waiting for resource to reach "Running" state...
 Current: Creating... (poll 3/60, elapsed: 15s)
-```
+```bash
 
 ### 3.5 Command Composition Assistance
 
@@ -220,7 +229,8 @@ aliyun {{product}} Create{{Resource}} \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --{{Resource}}Name "my-resource" \
   # Add other parameters as needed
-```
+```text
+
 ```
 
 ---
@@ -245,7 +255,7 @@ Time taken: {{elapsed_seconds}}s
 - [Describe this resource](link-to-describe)
 - [Create another](link-to-create)
 - [View all resources](link-to-list)
-```
+```markdown
 
 ### 4.2 Failure Feedback
 
@@ -285,11 +295,12 @@ Estimated remaining: {{estimated_remaining}}s
 
 Polling every {{poll_interval}}s...
 [====================>    ] 75%
-```
+```markdown
 
 ### 4.4 Implicit Feedback
 
 State changes SHOULD be observable:
+
 - After create: resource appears in list
 - After delete: resource disappears from list
 - After modify: describe shows updated values
@@ -311,7 +322,7 @@ State changes SHOULD be observable:
 
 All error messages MUST follow this format:
 
-```
+```json
 [ERROR] {error.code}: {human_readable_summary}
 
 What happened:
@@ -325,7 +336,8 @@ Next step:
 ```
 
 **Example:**
-```
+
+```json
 [ERROR] InvalidParameter.RegionId: The specified region is not valid or not supported.
 
 What happened:
@@ -339,7 +351,7 @@ How to fix:
 
 Next step:
 Run "aliyun {{product}} DescribeRegions" to see available regions.
-```
+```markdown
 
 ### 5.2 Error Categories and Handling
 
@@ -357,12 +369,14 @@ Run "aliyun {{product}} DescribeRegions" to see available regions.
 ### 5.3 Recovery Patterns
 
 **Pattern 1: Retry with Backoff**
+
 ```markdown
 ⚠️ Throttling detected. Retrying in {backoff_seconds}s...
 (Attempt {current}/{max})
 ```
 
 **Pattern 2: Suggest Alternative**
+
 ```markdown
 ❌ Resource creation failed: QuotaExceeded
 
@@ -372,9 +386,10 @@ Alternatives:
 1. Request quota increase: [link]
 2. Delete unused resources: aliyun {{product}} Delete{{Resource}} --{{Id}} "xxx"
 3. Use a different region with available quota
-```
+```yaml
 
 **Pattern 3: Partial Success**
+
 ```markdown
 ⚠️ Partial Success
 
@@ -408,7 +423,7 @@ This issue cannot be resolved automatically.
 **Support Channels:**
 - Alibaba Cloud Console Ticket: https://workorder.console.aliyun.com/
 - Include the Request ID for faster resolution
-```
+```markdown
 
 ---
 
@@ -419,24 +434,28 @@ This issue cannot be resolved automatically.
 Before any generated skill is marked complete, it MUST pass this UX review:
 
 #### Onboarding
+
 - [ ] Quick Start section exists and is ≤ 30 seconds to read
 - [ ] Prerequisites are clearly listed with verification commands
 - [ ] First command example is copy-paste ready
 - [ ] Capability Overview table is present
 
 #### Interaction
+
 - [ ] Common operations require ≤ 3 prompts
 - [ ] Smart defaults are documented for all optional parameters
 - [ ] Destructive operations have explicit confirmation
 - [ ] Progress is shown for operations > 5s
 
 #### Feedback
+
 - [ ] Success messages include resource ID and next steps
 - [ ] Failure messages include error code, explanation, and fix steps
 - [ ] Long-running operations show progress and ETA
 - [ ] All feedback is human-readable (not raw JSON)
 
 #### Error Handling
+
 - [ ] All error categories have user-friendly messages
 - [ ] Recovery steps are concrete and actionable
 - [ ] Escalation template includes all required fields
@@ -511,7 +530,7 @@ Confirm? [Y/n]
 
 Progress:
 [====>                ] 1/4 started
-```
+```markdown
 
 ### Pattern: Dry Run
 

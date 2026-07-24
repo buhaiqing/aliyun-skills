@@ -24,6 +24,7 @@ metadata:
 # CMS GCL Rubric (Phase 3-B — Phantom Alarm Integration)
 
 > **This skill serves two roles:**
+>
 > 1. **Standard destructive-op GCL** (`recommended`, `max_iter=3`):
 >    `DeleteMetricAlarm`, `DeleteMonitorGroup` — per Phase 5 rollout.
 > 2. **Phase 3-B Phantom Alarm Entry Point**: `PutMetricAlarm` rules that
@@ -89,6 +90,7 @@ aliyun cms PutMetricAlarm \
 ```
 
 **Mandatory pre-requisites before creating:**
+
 1. `DescribeContactGroupList` → verify `gcl-oncall` contact group exists.
 2. `DescribeMetricMetaList` → verify `gcl_phantom_pass` metric namespace is registered (or use `acs_custom`).
 3. `DescribeMetricAlarmList` → check existing alarm with same name; if exists, either skip or update.
@@ -107,6 +109,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).

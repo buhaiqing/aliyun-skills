@@ -6,12 +6,12 @@
 
 - **Product:** VPC (EIP operations are part of VPC API)
 - **API Version:** 2016-04-28
-- **OpenAPI Doc:** https://help.aliyun.com/zh/vpc/developer-reference/api-vpc-2016-04-28-overview
+- **OpenAPI Doc:** <https://help.aliyun.com/zh/vpc/developer-reference/api-vpc-2016-04-28-overview>
 - **Endpoint:** `vpc.aliyuncs.com`
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/vpc-20160428/v3/client
 ```
 

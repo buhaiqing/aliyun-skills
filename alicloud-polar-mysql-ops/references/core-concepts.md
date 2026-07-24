@@ -17,7 +17,7 @@ PolarDB MySQL is a cloud-native relational database with:
 
 ## Key Resource Relationships
 
-```
+```text
 PolarDB Cluster (DBCluster)
 ├── Primary Node (Writer)
 ├── Read-Only Nodes (Readers) [0..N]
@@ -26,7 +26,7 @@ PolarDB Cluster (DBCluster)
 ├── Accounts [0..N]
 ├── Backup Sets
 └── Storage (shared, auto-scaling)
-```
+```markdown
 
 ## Supported Engine Versions
 
@@ -76,7 +76,7 @@ PolarDB MySQL is available in most Alibaba Cloud regions. Use `DescribeRegions` 
 
 ## State Machine
 
-```
+```text
 Creating → Running ─┐
    ╲               │
    └── Failed ─────┘
@@ -86,7 +86,7 @@ Running ──→ Deleting ──→ Deleted
 Running ──→ Modifying ──→ Running
 Running ──→ Stopped ──→ Restarting ──→ Running
 Running ──→ Paused ──→ Resuming ──→ Running (Serverless)
-```
+```markdown
 
 ## Network
 

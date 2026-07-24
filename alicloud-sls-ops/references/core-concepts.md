@@ -13,7 +13,7 @@ analysis to archival — with pay-as-you-go pricing and millisecond-level query 
 
 ### Service Components
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Simple Log Service (SLS)                  │
 ├─────────────────────────────────────────────────────────────┤
@@ -39,7 +39,7 @@ analysis to archival — with pay-as-you-go pricing and millisecond-level query 
 │  │ Period  │  │         │  │          │  │         │  │
 │  └──────────┘  └──────────┘  └──────────┘  └──────────┘  │
 └─────────────────────────────────────────────────────────────┘
-```
+```markdown
 
 ### Data Flow
 
@@ -144,7 +144,7 @@ analysis to archival — with pay-as-you-go pricing and millisecond-level query 
     }
   }
 }
-```
+```markdown
 
 ## Quotas and Limits
 

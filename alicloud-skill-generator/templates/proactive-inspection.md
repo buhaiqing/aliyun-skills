@@ -4,7 +4,7 @@
 
 ## 1. 五步闭环模板结构
 
-```
+```text
 proactive-inspection/
 ├── config/
 │   ├── inspection.yaml       # 巡检配置
@@ -21,7 +21,7 @@ proactive-inspection/
 ├── reports/
 │   └── template.md           # 报告模板
 └── README.md
-```
+```bash
 
 ## 2. Discovery (发现)
 
@@ -489,7 +489,7 @@ collection:
       - UsedMemory
       - CpuUsage
 '''
-```
+```bash
 
 ## 4. Detection (检测)
 
@@ -1071,7 +1071,7 @@ class DiagnosisPipeline:
                 summary['high_confidence'] += 1
         
         return summary
-```
+```markdown
 
 ## 6. Report (报告)
 
@@ -1160,7 +1160,7 @@ class DiagnosisPipeline:
 
 ```yaml
 {{config_yaml}}
-```
+```bash
 
 ### B. 原始数据
 
@@ -1171,6 +1171,7 @@ class DiagnosisPipeline:
 ---
 
 *报告由主动巡检系统自动生成*
+
 ```
 
 ### 报告生成器
@@ -1323,7 +1324,7 @@ class InspectionReportGenerator:
         """保存报告"""
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(report)
-```
+```bash
 
 ## 7. CLI 执行示例
 
@@ -1522,7 +1523,7 @@ inspection:
           - ops@example.com
     conditions:
       - anomaly_count > 0
-```
+```markdown
 
 ## 使用指南
 

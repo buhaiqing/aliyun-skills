@@ -250,6 +250,7 @@
 ### 1. Baseline Establishment
 
 Collect metrics for 1-2 weeks to establish normal patterns:
+
 - Record typical QPS ranges by business hour
 - Document connection patterns (peak vs off-peak)
 - Measure average replication lag under normal load
@@ -258,6 +259,7 @@ Collect metrics for 1-2 weeks to establish normal patterns:
 ### 2. Multi-Dimensional Alerts
 
 Combine metrics for comprehensive coverage:
+
 - **Performance**: CPU + Connections + CacheHitRatio + LockWait
 - **Capacity**: DiskUsage + DiskGrowthRate + IOPS
 - **Replication**: ReplicationLag + OplogWindow + SecondaryHealth
@@ -266,6 +268,7 @@ Combine metrics for comprehensive coverage:
 ### 3. Replica Set Monitoring
 
 Critical for HA deployments:
+
 - Monitor election frequency (indicates instability)
 - Track replication lag on all secondaries
 - Ensure oplog window covers expected outage time
@@ -274,6 +277,7 @@ Critical for HA deployments:
 ### 4. Sharding Health Checks
 
 For sharded clusters:
+
 - Monitor chunk balance across shards
 - Track active migrations and failures
 - Ensure all shards are active and reachable
@@ -282,6 +286,7 @@ For sharded clusters:
 ### 5. WiredTiger Cache Optimization
 
 Key for performance:
+
 - Cache hit ratio < 95% indicates working set exceeds cache
 - High eviction rate signals memory pressure
 - Dirty pages buildup can delay checkpoints
@@ -290,6 +295,7 @@ Key for performance:
 ### 6. Capacity Planning
 
 Track resource growth:
+
 - Monitor disk usage trend monthly
 - Calculate data growth rate for projections
 - Plan for connection limit increases
@@ -298,6 +304,7 @@ Track resource growth:
 ### 7. Lock Contention Analysis
 
 Detect performance bottlenecks:
+
 - High queued readers indicate read contention
 - High queued writers indicate write contention
 - Global lock wait > 100ms requires investigation
@@ -306,6 +313,7 @@ Detect performance bottlenecks:
 ### 8. Correlation Analysis
 
 When multiple alerts fire:
+
 - CPU high + Cache miss: working set exceeded
 - Replication lag + Oplog short: high write volume
 - Lock wait + Slow ops: query optimization needed

@@ -60,20 +60,20 @@ The skill guides the Agent to generate Go/Python source files that call AgentRun
 
 ### Quick Start
 
-```
+```text
 不知道从哪里开始？→ 查看 [Prompt Examples](references/prompt-examples.md)，里面有 60+ 条自然语言提示词示例，
 覆盖模板管理、实例管理、数据面功能、签名实现、WebSocket TTY、可观测性和端到端开发场景，
 复制即用。
-```
+```markdown
 
 ### Architecture Context
 
 The Sidecar proxy pattern isolates credential management and API complexity from the business application:
 
-```
+```text
 Java Business Pod ──HTTP/gRPC──► Sidecar Proxy ──HTTPS (signed)──► AgentRun API
   (no AK/SK)                    (holds AK/SK)                     (control + data planes)
-```
+```markdown
 
 See [references/architecture-design.md](references/architecture-design.md) for complete architecture details.
 
@@ -209,9 +209,9 @@ Full API details: [references/api-reference.md](references/api-reference.md)
 
 ### State Machine
 
-```
+```text
 CREATING ──► READY ──(idle timeout / 6h hard limit / StopSandbox)──► TERMINATED
-```
+```markdown
 
 ## Safety Gates
 

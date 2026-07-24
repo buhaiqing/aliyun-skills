@@ -8,7 +8,7 @@
 
 ```bash
 bash scripts/preflight-check.sh
-```
+```markdown
 
 ### Common Environment Errors (NEW!)
 
@@ -25,16 +25,19 @@ bash scripts/preflight-check.sh
 #### Issue: Plugin Installation Permission Denied
 
 **Symptom:**
-```
+
+```text
 ERROR: mkdir ~/.aliyun/plugins/aliyun-cli-r-kvstore: operation not permitted
-```
+```markdown
 
 **Root Cause:**
+
 - macOS system permission restrictions
 - CI environment file system restrictions
 - Home directory read-only or limited write access
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: Check plugin directory permissions
 ls -la ~/.aliyun/plugins/
@@ -46,43 +49,49 @@ touch ~/.aliyun/plugins/test-write && rm ~/.aliyun/plugins/test-write
 if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
     echo "Running in CI environment - permission restrictions expected"
 fi
-```
+```text
 
 **Solutions:**
 
 **Option A: Use SDK Fallback (Recommended for CI)**
+
 ```bash
 cd scripts
 go run sdk-fallback.go
-```
+```text
 
 **Option B: Fix Permissions (Local Environment)**
+
 ```bash
 chmod 755 ~/.aliyun/plugins
 aliyun plugin install --names aliyun-cli-r-kvstore
-```
+```text
 
 **Option C: Use Temporary Directory**
+
 ```bash
 export ALIBABA_CLOUD_PLUGIN_DIR=/tmp/aliyun-plugins
 mkdir -p "$ALIBABA_CLOUD_PLUGIN_DIR"
 aliyun plugin install --names aliyun-cli-r-kvstore --plugin-dir "$ALIBABA_CLOUD_PLUGIN_DIR"
-```
+```text
 
 #### Issue: Plugin Installation Fails Silently
 
 **Symptom:**
-```
+
+```text
 Downloading aliyun-cli-r-kvstore 0.2.0...
 (no further output, command hangs or fails)
-```
+```markdown
 
 **Root Cause:**
+
 - Network connectivity issue
 - Plugin repository unavailable
 - Download timeout
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: Test network connectivity
 ping -c 3 aliyuncli.alicdn.com
@@ -92,9 +101,10 @@ aliyun version
 
 # Step 3: Try with verbose output
 aliyun plugin install --names aliyun-cli-r-kvstore --verbose
-```
+```text
 
 **Solutions:**
+
 ```bash
 # Use SDK fallback instead
 go run scripts/sdk-fallback.go
@@ -102,25 +112,28 @@ go run scripts/sdk-fallback.go
 # Or retry with different network settings
 export GOPROXY=https://goproxy.cn,direct
 aliyun plugin install --names aliyun-cli-r-kvstore
-```
+```markdown
 
 ### Credentials Loading Issues (NEW!)
 
 #### Issue: Environment Variables Not Set
 
 **Symptom:**
-```
+
+```text
 ERROR: ALIBABA_CLOUD_ACCESS_KEY_ID is NOT set
 ERROR: ALIBABA_CLOUD_ACCESS_KEY_SECRET is NOT set
 ERROR: ALIBABA_CLOUD_REGION_ID is NOT set
-```
+```markdown
 
 **Root Cause:**
+
 - .env file not found
 - Environment variables not exported
 - Shell configuration not loaded
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: Check if .env file exists
 ls -la .env
@@ -132,11 +145,12 @@ test -n "$ALIBABA_CLOUD_REGION_ID" && echo "REGION is set" || echo "NOT set"
 
 # Step 3: Check CLI config file
 ls -la ~/.aliyun/config.json
-```
+```text
 
 **Solutions:**
 
 **Option A: Create .env File (Recommended)**
+
 ```bash
 cat > .env <<EOF
 ALIBABA_CLOUD_ACCESS_KEY_ID=your_access_key_id
@@ -146,37 +160,42 @@ EOF
 
 # Pre-flight check will auto-load .env
 bash scripts/preflight-check.sh
-```
+```text
 
 **Option B: Set Environment Variables**
+
 ```bash
 export ALIBABA_CLOUD_ACCESS_KEY_ID="your_access_key_id"
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET="your_access_key_secret"
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
-```
+```text
 
 **Option C: Use CLI Config**
+
 ```bash
 aliyun configure
 # Follow prompts to enter credentials
-```
+```markdown
 
 ### Go SDK Compatibility Issues (NEW!)
 
 #### Issue: SDK Version Mismatch
 
 **Symptom:**
-```
+
+```text
 cannot use config (variable of type *"github.com/alibabacloud-go/darabonba-openapi/v2/client".Config) 
 as *"github.com/alibabacloud-go/darabonba-openapi/client".Config value
-```
+```markdown
 
 **Root Cause:**
+
 - Go version too old (< 1.21)
 - SDK import path version mismatch
 - Missing dependencies
 
 **Diagnostic Flow:**
+
 ```bash
 # Step 1: Check Go version
 go version
@@ -190,32 +209,35 @@ GO_MINOR=$(go version | sed -n 's/go[0-9]*\.\([0-9]*\).*/\1/p')
 cd scripts
 go mod download
 go list -m all | grep alibabacloud
-```
+```text
 
 **Solutions:**
 
 **Option A: Upgrade Go**
+
 ```bash
 # Install Go 1.24+
 curl -fsSL "https://go.dev/dl/go1.24.0.darwin-arm64.tar.gz" | tar -xz -C /tmp
 export PATH="/tmp/go/bin:$PATH"
-```
+```text
 
 **Option B: Use Correct Import Paths**
+
 ```go
 // Use v1 import path (not v2)
 import openapi "github.com/alibabacloud-go/darabonba-openapi/client"
 
 // Use v2 import path for r-kvstore
 import rkvstore "github.com/alibabacloud-go/r-kvstore-20150101/v2/client"
-```
+```text
 
 **Option C: Use Pre-built SDK Fallback Script**
+
 ```bash
 # Use the provided sdk-fallback.go script
 cd scripts
 go run sdk-fallback.go
-```
+```markdown
 
 ## Common API Error Codes
 
@@ -297,9 +319,10 @@ aliyun cms DescribeMetricList \
   --MetricName ConnectionUsage \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 **Decision Tree:**
+
 - InstanceStatus != `Normal` → Wait for instance to stabilize or investigate
 - Source IP not in whitelist → Add IP to whitelist
 - Account status != `Available` → Reset password or recreate account
@@ -336,9 +359,10 @@ aliyun r-kvstore describe-history-monitor-values \
   --MonitorKeys "Keys,ExpiredKeys" \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **Decision Tree:**
+
 - MemoryUsage > 90% + EvictedKeys > 0 → Memory full; keys being evicted
   - Check `maxmemory-policy`: should be `allkeys-lru` or `volatile-lru` for cache use cases
   - If `noeviction` → writes will fail; change policy immediately
@@ -382,9 +406,10 @@ aliyun r-kvstore describe-history-monitor-values \
   --MonitorKeys "IntranetInRatio,IntranetOutRatio" \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **Decision Tree:**
+
 - Slow logs contain complex commands (KEYS, SMEMBERS, LRANGE large range) → Optimize commands
 - CpuUsage > 80% + AvgRt high → Hot key suspected; delegate to DAS for hot key analysis
 - IntranetInRatio/OutRatio > 80% → Bandwidth limit reached; upgrade or optimize
@@ -421,9 +446,10 @@ aliyun r-kvstore describe-slow-logs \
   --InstanceId "{{user.instance_id}}" \
   --StartTime "$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```
+```markdown
 
 **Decision Tree:**
+
 - QPS normal + CPU high → Expensive commands (KEYS, SORT, etc.); check slow logs
 - QPS high + CPU high → Traffic surge; consider scaling or throttling
 - Specific command pattern in slow logs → Optimize application code
@@ -449,9 +475,10 @@ aliyun cms DescribeMetricList \
   --MetricName CpuUsage \
   --Dimensions '[{"instanceId":"{{user.instance_id}}"}]' \
   --Period 60
-```
+```markdown
 
 **Decision Tree:**
+
 - BackupStatus = `Failed` → Check instance load; retry during off-peak
 - Instance CPU > 80% during backup → Reschedule backup to off-peak window
 - Persistent failure → Contact Alibaba Cloud support with RequestId
@@ -461,6 +488,7 @@ aliyun cms DescribeMetricList \
 ## Resource-Level Diagnostic Order
 
 ### Instance Issues
+
 1. Verify instance exists: `aliyun r-kvstore describe-instances --InstanceId <id>`
 2. Check instance status: should be `Normal` for normal operation
 3. Verify region and zone configuration
@@ -468,6 +496,7 @@ aliyun cms DescribeMetricList \
 5. Verify network type (CLASSIC / VPC) and VPC configuration
 
 ### Connection Issues
+
 1. Check instance status is `Normal`
 2. Verify whitelist contains source IP
 3. Check account status is `Available`
@@ -476,6 +505,7 @@ aliyun cms DescribeMetricList \
 6. Verify network path (VPC routing / security group)
 
 ### Performance Issues
+
 1. Check CPU, memory, and connection usage metrics
 2. Review slow logs for expensive commands
 3. Check for large keys or hot keys (via DAS)
@@ -484,6 +514,7 @@ aliyun cms DescribeMetricList \
 6. Review instance class vs workload requirements
 
 ### Backup Issues
+
 1. Check backup status and history
 2. Verify instance load during backup window
 3. Check disk space (if applicable)
@@ -542,7 +573,7 @@ echo "=== Backup Status ==="
 aliyun r-kvstore describe-backups \
   --InstanceId "$INSTANCE_ID" \
   --PageSize 5
-```
+```markdown
 
 ### Script 2: Performance Deep Dive
 
@@ -598,7 +629,7 @@ aliyun r-kvstore describe-slow-logs \
   --StartTime "$START_TIME" \
   --EndTime "$END_TIME" \
   --PageSize 20
-```
+```markdown
 
 ---
 

@@ -17,7 +17,7 @@ status: mandatory
 
 ## 一、缓存架构
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │         runbooks/scripts/*.py            │
 │  daily / emergency / capacity / prelaunch│
@@ -37,6 +37,7 @@ status: mandatory
 ```
 
 **关键设计**：
+
 - **跨进程共享**：4 个 runbook 都读同一目录，第二次跑直接吃缓存
 - **稳定键**：`md5(sort_keys=True(stable_json(cmd)))`，参数顺序不影响命中
 - **响应校验**：写缓存前检查 `Code` 字段，非 200 不缓存（防止污染）
@@ -63,7 +64,7 @@ status: mandatory
 
 ## 三、缓存目录结构
 
-```
+```text
 audit-results/cache/
 ├── 3f4a5b6c7d8e9f01.json   # 例: 资源清单缓存
 │   ├── 第 1 行: {"key":"3f4a5b6c7d8e9f01","product":"ecs","api":"DescribeInstances","cached_at":"...","ttl":300}
@@ -73,6 +74,7 @@ audit-results/cache/
 ```
 
 **两行 JSONL 格式**：
+
 - 第 1 行是 metadata（缓存管理用：API 名、TTL、缓存时间）
 - 第 2 行是实际响应数据（紧凑存储）
 
@@ -89,27 +91,27 @@ from _shared import q_cached
 
 # 直接替换 q() 调用
 result = q_cached(["ecs", "DescribeInstances", "--RegionId", region])
-```
+```markdown
 
 ### 4.2 强制刷新
 
 ```python
 # 紧急情况下绕过缓存（如怀疑数据过期）
 result = q_cached(["ecs", "DescribeInstances", "--RegionId", region], no_cache=True)
-```
+```markdown
 
 ### 4.3 全局禁用（CI / 调试）
 
 ```bash
 # 一次性禁用本次运行所有缓存
 AIOPS_NO_CACHE=1 python3 runbooks/scripts/daily-health-check.py ...
-```
+```markdown
 
 ### 4.4 CLI 参数禁用（仅 daily-health-check）
 
 ```bash
 python3 runbooks/scripts/daily-health-check.py --no-cache --resource-group-id rg-xxx
-```
+```markdown
 
 ### 4.5 缓存统计
 
@@ -117,7 +119,7 @@ python3 runbooks/scripts/daily-health-check.py --no-cache --resource-group-id rg
 from _shared import cache_stats
 print(cache_stats())
 # {'hit': 42, 'miss': 8, 'bypass': 0, 'error': 0, 'total': 50, 'hit_rate': 0.84}
-```
+```markdown
 
 **自动输出**：`daily-health-check.py` 完成后自动打印 `cache_stats: {...}`
 
@@ -136,7 +138,7 @@ print(cache_stats())
 # _shared.py 末尾自动调用
 _cache_cleanup()
 # 清理 mtime > TTL 的所有文件
-```
+```markdown
 
 **日志输出**：`[DIAG] cache_cleanup removed=N dir=...`
 
@@ -148,14 +150,15 @@ rm -rf audit-results/cache/
 
 # 清理 1 小时前的（不推荐，建议用 TTL）
 find audit-results/cache/ -mmin +60 -delete
-```
+```markdown
 
 ### 5.4 gitignore
 
 `audit-results/cache/` 应在 `.gitignore` 中（已配置）：
+
 ```gitignore
 audit-results/cache/
-```
+```markdown
 
 ---
 

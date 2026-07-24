@@ -24,9 +24,9 @@ PolarDB MySQL 提供多种存储层级（PSLevel1-5），不同层级有不同�
 
 ### Storage Cost Formula
 
-```
+```text
 月度存储成本 = StorageUsed(GB) × PSLevel单价 × 区域系数
-```
+```markdown
 
 ### Storage Pack Savings Calculator
 
@@ -57,7 +57,7 @@ aliyun polardb DescribeDBClusterAttribute \
   --DBClusterId "{{user.db_cluster_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --output cols=StorageUsed,StorageSpace,StorageType,DBClusterClass rows=DBCluster
-```
+```markdown
 
 ### Step 2: Analyze Storage Utilization & Performance
 
@@ -81,7 +81,7 @@ aliyun cms GetMetricStatisticsData \
   --EndTime "{{user.end_time}}" \
   --Statistics Average \
   --Period 86400
-```
+```markdown
 
 ### Step 3: Analyze Hot/Cold Data Distribution
 
@@ -101,7 +101,7 @@ LIMIT 20;
 
 -- 冷数据识别：创建时间超过6个月且无近期修改的表
 -- 可通过 last_update_time 或业务元数据判断
-```
+```markdown
 
 ## Implementation
 
@@ -126,7 +126,7 @@ aliyun cms GetMetricStatisticsData \
 aliyun bss DescribeProducts \
   --ProductCode polardb \
   --ProductType storage_pack
-```
+```markdown
 
 ### JIT Go SDK (Fallback Path)
 
@@ -350,11 +350,11 @@ func main() {
         fmt.Printf("月度节省: ￥%.2f\n", packRecommend["savings_monthly"])
     }
 }
-```
+```markdown
 
 ## Output Format
 
-```
+```text
 PolarDB 存储层级成本分析:
 ├── 当前配置
 │   ├── 存储层级: PSLevel2 (高性能)
@@ -381,7 +381,7 @@ PolarDB 存储层级成本分析:
     ├── 月度执行: 购买1TB存储包
     ├── 季度执行: 冷数据归档至PSLevel5
     └── 预计总节省: ￥420/月 (49%)
-```
+```markdown
 
 ## Acceptance Criteria (验收标准)
 
@@ -402,7 +402,7 @@ aliyun polardb ModifyDBClusterStorageType \
   --DBClusterId "{{user.db_cluster_id}}" \
   --StorageType PSLevel3 \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### 升级存储层级 (提升性能)
 
@@ -412,7 +412,7 @@ aliyun polardb ModifyDBClusterStorageType \
   --DBClusterId "{{user.db_cluster_id}}" \
   --StorageType PSLevel1 \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### 存储包购买流程
 
@@ -430,7 +430,7 @@ aliyun bss CreateOrder \
   --Specification "{{pack_size}}" \
   --Period 12 \
   --PayType Prepaid
-```
+```markdown
 
 ## Data Archiving Strategy (数据归档策略)
 
@@ -464,7 +464,7 @@ aliyun polardb CreateDumpTask \
   --Database "{{cold_database}}" \
   --OssBucket "{{archive_bucket}}" \
   --OssPath "archive/{{date}}"
-```
+```markdown
 
 ## Failure Recovery
 

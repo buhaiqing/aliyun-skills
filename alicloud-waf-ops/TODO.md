@@ -1,6 +1,7 @@
 # TODO.md - Post-Update Self-Review Checklist
 
 ## Round 1: Structural Checks
+
 - [ ] C1: Clear Boundaries: SHOULD/SHOULD NOT triggers with delegation rules; trigger description optimized per agentskills.io guidelines (< 1024 chars)
 - [ ] C2: Structured I/O: `{{env.*}}` (never ask user), `{{user.*}}` (ask once reuse), `{{output.*}}` (parse from API responses)
 - [ ] C3: Explicit Steps: Pre-flight → Execute → Validate → Recover for each critical operation

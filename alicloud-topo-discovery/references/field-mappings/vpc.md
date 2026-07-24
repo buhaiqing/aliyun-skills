@@ -21,6 +21,7 @@
 ## Example
 
 Input JSON (DescribeVpcs):
+
 ```json
 {
   "VpcId": "vpc-bp1aevb8sfi8mh1qj5t8",
@@ -31,6 +32,7 @@ Input JSON (DescribeVpcs):
 ```
 
 Output HCL:
+
 ```hcl
 resource "alicloud_vpc" "prod_vpc_beijing" {
   vpc_name  = "prod-vpc-beijing"

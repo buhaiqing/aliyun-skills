@@ -132,7 +132,7 @@ status: mandatory
 
 **格式**：
 
-```
+```json
 {customer}:{resource_type}:{resource_id}:{rule_id}:{date_bucket}
 ```
 
@@ -145,11 +145,13 @@ status: mandatory
 | `date_bucket` | 日期桶，格式 `YYYY-MM-DD`（按客户时区） | `2026-06-06` |
 
 **示例**：
-```
+
+```text
 rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
 ```
 
 **特殊规则**：
+
 - 巡检模式为 `emergency` 时：`date_bucket` 改为小时桶 `YYYY-MM-DDTHH`，允许同一小时内升级
 - `INFO` 级别 Incident 不进 dedup 池
 
@@ -190,7 +192,7 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
     "report_path": "audit-results/json/cruise-rg-xxx-2026-06-06.json"
   }
 }
-```
+```markdown
 
 ---
 
@@ -305,7 +307,7 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
     "metadata":              { "type": "object" }
   }
 }
-```
+```markdown
 
 ---
 
@@ -373,7 +375,7 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
     "engine_version": "8.0"
   }
 }
-```
+```markdown
 
 ### 8.2 WARNING — 安全组端口暴漏
 
@@ -423,7 +425,7 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
   "tags": ["security", "sg"],
   "metadata": { "vpc_id": "vpc-bp1zzzzzzzzzzz" }
 }
-```
+```markdown
 
 ### 8.3 INFO — 全链路健康（无 finding 时的占位）
 
@@ -460,7 +462,7 @@ rg-acfmvyfsd4znnoi:RDS:rm-bp1xxxxxxxx:RDS-04:2026-06-06
   },
   "tags": ["fleet-summary"]
 }
-```
+```markdown
 
 ---
 

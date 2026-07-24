@@ -27,12 +27,12 @@ container (Bucket). There is **no directory hierarchy** — object keys
 containing `/` are not real directories, only lexical path separators that
 the console renders as folders.
 
-```
+```text
 oss://my-bucket/        ← Bucket
   ├── logs/2026-06-04/access.log      ← Object (key: "logs/2026-06-04/access.log")
   ├── images/hero.jpg                  ← Object
   └── archive/2025/db-backup.tar.gz   ← Object
-```
+```markdown
 
 > **Key encoding:** Object keys are UTF-8, max 1024 bytes after URL encoding.
 > Avoid `?`, `#`, `*` in raw key names — these may need URL encoding.
@@ -86,7 +86,7 @@ OSS offers five storage classes with different cost / access trade-offs.
 
 ## Resource Relationship
 
-```
+```text
 Account
   └── Bucket (globally unique name)
         ├── Object (key, size, storage class, metadata)
@@ -100,7 +100,7 @@ Account
         ├── Encryption Configuration (SSE-OSS / SSE-KMS)
         ├── Access Monitor
         └── Inventory Rule
-```
+```markdown
 
 ## Authentication & Authorization
 

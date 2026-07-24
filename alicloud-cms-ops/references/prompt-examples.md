@@ -8,21 +8,21 @@
 
 ### 1.1 查询单个指标最新值
 
-```
+```text
 查询 {{user.instance_id}} 的最新 {{user.metric_name}} 指标值，
 命名空间为 {{user.namespace}}，地域 {{user.region}}。
 ```
 
 ### 1.2 查询指标历史趋势
 
-```
+```text
 查询 {{user.instance_id}} 在过去 {{user.duration}} 内的 {{user.metric_name}} 趋势，
 命名空间 {{user.namespace}}，聚合周期 {{user.period}} 秒。
 ```
 
 ### 1.3 批量查询多指标
 
-```
+```text
 对 {{user.instance_id}} 执行多指标关联巡检，
 查询命名空间 {{user.namespace}} 下的所有关键指标（CPU、内存、磁盘、网络），
 识别是否存在复合异常模式。
@@ -30,7 +30,7 @@
 
 ### 1.4 对比多个实例指标
 
-```
+```text
 对比以下实例的 {{user.metric_name}} 指标：{{user.instance_ids}}，
 命名空间 {{user.namespace}}，找出指标异常的实例。
 ```
@@ -41,7 +41,7 @@
 
 ### 2.1 创建告警规则
 
-```
+```text
 为 {{user.instance_id}} 创建一条 {{user.metric_name}} 告警规则，
 规则名称 {{user.alarm_name}}，阈值 {{user.threshold}}，
 比较运算符 {{user.comparison_operator}}，统计周期 {{user.period}} 秒，
@@ -51,21 +51,21 @@
 
 ### 2.2 列出活跃告警
 
-```
+```text
 列出 {{user.region}} 当前所有状态为 ALARM 的告警规则，
 按命名空间 {{user.namespace}} 过滤。
 ```
 
 ### 2.3 检查告警规则配置
 
-```
+```text
 检查告警规则 {{user.alarm_name}} 的配置是否正确，
 包括阈值、统计方法、维度、通知方式等。
 ```
 
 ### 2.4 删除告警规则
 
-```
+```text
 删除告警规则 {{user.alarm_name}}，
 删除前确认该规则不再使用。
 ```
@@ -76,7 +76,7 @@
 
 ### 3.1 执行多指标异常巡检
 
-```
+```text
 对 {{user.instance_id}} 执行多指标关联异常巡检，
 命名空间 {{user.namespace}}，地域 {{user.region}}。
 检测以下异常模式：
@@ -90,7 +90,7 @@
 
 ### 3.2 分析指标关联性
 
-```
+```text
 分析 {{user.instance_id}} 在过去 1 小时内的多指标关联性，
 重点关注 CPUUtilization、MemoryUsage、LoadAverage、DiskUsage 的相关性，
 判断是否存在资源竞争或 IO 等待问题。
@@ -98,7 +98,7 @@
 
 ### 3.3 趋势异常检测
 
-```
+```text
 检测 {{user.instance_id}} 的 {{user.metric_name}} 指标趋势，
 判断是否存在单调上升/下降、周期性异常或突发波动。
 ```
@@ -109,7 +109,7 @@
 
 ### 4.1 告警触发后的根因诊断
 
-```
+```markdown
 CMS 告警 {{user.alarm_name}} 已触发，
 资源 {{user.instance_id}}，指标 {{user.metric_name}}，当前值 {{user.metric_value}}。
 
@@ -124,7 +124,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 4.2 跨 Skill 诊断编排
 
-```
+```markdown
 告警来源：{{user.namespace}} / {{user.metric_name}}
 资源 ID：{{user.instance_id}}
 
@@ -137,7 +137,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 4.3 级联故障诊断
 
-```
+```markdown
 检测到多个告警在短时间内触发：
 {{user.alarm_list}}
 
@@ -155,7 +155,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 5.1 执行定时巡检
 
-```
+```markdown
 对监控组 {{user.group_id}} 执行主动巡检：
 1. 列出组内所有资源
 2. 采集各资源的关键指标
@@ -166,7 +166,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 5.2 巡检报告生成
 
-```
+```text
 生成 {{user.group_id}} 监控组的巡检报告，包含：
 - 资源清单及健康状态
 - 异常资源及异常模式
@@ -177,7 +177,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 5.3 巡检异常处理
 
-```
+```markdown
 巡检发现以下异常：
 {{user.anomaly_list}}
 
@@ -195,7 +195,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 6.1 检测告警风暴
 
-```
+```markdown
 检测过去 5 分钟内是否存在告警风暴：
 1. 查询所有状态为 ALARM 的告警
 2. 统计告警数量
@@ -206,7 +206,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 6.2 告警聚合分析
 
-```
+```markdown
 对以下告警进行聚合分析：
 {{user.alarm_list}}
 
@@ -221,7 +221,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 6.3 风暴后复盘
 
-```
+```markdown
 告警风暴已平息，执行复盘：
 1. 汇总风暴期间的所有告警
 2. 分析根因
@@ -236,7 +236,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 7.1 数据库告警联动 DAS
 
-```
+```markdown
 数据库告警 {{user.alarm_name}} 触发，
 实例 {{user.instance_id}}，引擎 {{user.engine}}。
 
@@ -250,7 +250,7 @@ CMS 告警 {{user.alarm_name}} 已触发，
 
 ### 7.2 DAS 诊断结果解读
 
-```
+```markdown
 DAS 诊断报告已返回：
 {{user.das_report}}
 
@@ -268,7 +268,7 @@ DAS 诊断报告已返回：
 
 ### 8.1 匹配故障模式
 
-```
+```markdown
 当前告警：
 - 命名空间：{{user.namespace}}
 - 指标：{{user.metric_name}}
@@ -284,7 +284,7 @@ DAS 诊断报告已返回：
 
 ### 8.2 更新知识库
 
-```
+```text
 故障已处理，更新知识库：
 - 告警：{{user.alarm_name}}
 - 根因：{{user.root_cause}}
@@ -301,7 +301,7 @@ DAS 诊断报告已返回：
 
 ### 9.1 Metrics → Logs 联动
 
-```
+```markdown
 CMS 告警 {{user.alarm_name}} 触发，
 需要关联 SLS 日志进行根因分析。
 
@@ -316,7 +316,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 9.2 Metrics → Traces 联动
 
-```
+```markdown
 CMS 告警 {{user.alarm_name}} 触发，
 需要关联 ARMS 链路追踪进行性能分析。
 
@@ -331,7 +331,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 9.3 三位一体诊断
 
-```
+```markdown
 执行 Metrics + Logs + Traces 三位一体诊断：
 1. Metrics（CMS）：确认指标异常及趋势
 2. Logs（SLS）：检索异常日志，定位错误源
@@ -346,7 +346,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 10.1 统一诊断报告
 
-```
+```text
 生成统一诊断报告，包含以下字段：
 - report_id: 报告唯一标识
 - timestamp: 诊断时间
@@ -366,7 +366,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 10.2 巡检报告
 
-```
+```text
 生成巡检报告，包含：
 - 巡检时间范围
 - 巡检资源范围
@@ -380,7 +380,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 10.3 复盘报告
 
-```
+```text
 生成故障复盘报告，包含：
 - 故障时间线
 - 告警触发过程
@@ -398,18 +398,20 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 11.1 查看 SkillOpt 运营摘要
 
-```
+```text
 查看 SkillOpt 运营摘要，了解当前健康状态、调用统计和优化建议。
 ```
 
 **触发条件**：用户询问"运营摘要"、"SkillOpt 报告"、"健康状态"、"运行统计"等。
 
 **执行命令**：
+
 ```bash
 ./scripts/cms-skillopt-wrapper.sh report --skillopt-report
 ```
 
 **报告内容**：
+
 - 健康状态（Healthy/Warning/Critical）
 - 调用统计（总调用、失败、自修复成功率）
 - 动态优化状态（重试次数、退避策略）
@@ -417,11 +419,12 @@ CMS 告警 {{user.alarm_name}} 触发，
 
 ### 11.2 保存运营报告到文件
 
-```
+```text
 将 SkillOpt 运营报告保存到 /tmp/skillopt-report.md。
 ```
 
 **执行方式**：
+
 ```bash
 source scripts/skillopt-lib.sh
 skillopt_report "/tmp/skillopt-report.md"
@@ -429,16 +432,18 @@ skillopt_report "/tmp/skillopt-report.md"
 
 ### 11.3 检查 SkillOpt 健康状态
 
-```
+```text
 检查 SkillOpt 当前健康状态，如果错误率过高给出修复建议。
 ```
 
 **执行命令**：
+
 ```bash
 ./scripts/cms-skillopt-wrapper.sh report --skillopt-report | grep -A 10 "健康状态"
 ```
 
 **健康阈值**：
+
 - 🟢 Healthy: error_rate ≤ 5%
 - 🟡 Warning: 5% < error_rate ≤ 20%
 - 🔴 Critical: error_rate > 20%
@@ -449,7 +454,7 @@ skillopt_report "/tmp/skillopt-report.md"
 
 ### 12.1 监控大盘配置
 
-```
+```markdown
 为 {{user.group_id}} 监控组配置监控大盘：
 1. 列出组内所有资源
 2. 为每类资源配置关键指标图表
@@ -459,7 +464,7 @@ skillopt_report "/tmp/skillopt-report.md"
 
 ### 12.2 告警规则优化
 
-```
+```markdown
 优化 {{user.alarm_name}} 告警规则：
 1. 分析历史告警数据
 2. 评估当前阈值的合理性
@@ -470,7 +475,7 @@ skillopt_report "/tmp/skillopt-report.md"
 
 ### 12.3 容量规划建议
 
-```
+```markdown
 基于 {{user.instance_id}} 的历史指标数据，
 分析 {{user.metric_name}} 的趋势，
 给出容量规划建议：
@@ -487,6 +492,7 @@ skillopt_report "/tmp/skillopt-report.md"
 ### 13.1 变量替换
 
 所有 `{{user.xxx}}` 和 `{{env.xxx}}` 为占位符，实际使用时替换为具体值：
+
 - `{{user.instance_id}}` → `i-bp1xxxxxxxxxxxxxx`
 - `{{user.namespace}}` → `acs_ecs_dashboard`
 - `{{user.region}}` → `cn-hangzhou`
@@ -494,7 +500,8 @@ skillopt_report "/tmp/skillopt-report.md"
 ### 13.2 组合使用
 
 提示词可以组合使用，例如：
-```
+
+```markdown
 1. 先执行"查询单个指标最新值"确认告警
 2. 再执行"告警触发后的根因诊断"进行深度分析
 3. 最后执行"统一诊断报告"生成报告
@@ -503,6 +510,7 @@ skillopt_report "/tmp/skillopt-report.md"
 ### 13.3 条件分支
 
 根据执行结果选择不同提示词：
+
 - 如果指标正常 → 使用"检查告警规则配置"
 - 如果指标异常 → 使用"告警触发后的根因诊断"
 - 如果多个告警 → 使用"级联故障诊断"
@@ -510,7 +518,8 @@ skillopt_report "/tmp/skillopt-report.md"
 ### 13.4 输出格式
 
 要求 Agent 按指定格式输出：
-```
+
+```markdown
 请按以下格式输出诊断结果：
 
 ## 诊断摘要

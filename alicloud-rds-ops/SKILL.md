@@ -45,7 +45,7 @@ metadata:
 
 ## Common JSON Paths (Centralized)
 
-```
+```markdown
 # Create DB Instance:         $.DBInstanceId
 # Describe DB Instances:      $.Items.DBInstance[].{DBInstanceId,DBInstanceStatus,Engine,EngineVersion,RegionId,ZoneId}
 # Describe Accounts:          $.Accounts.DBInstanceAccount[].AccountName
@@ -55,7 +55,7 @@ metadata:
 # Create Backup:              $.BackupJobId
 # Create Database:            $.DBName
 # Create/Restore/Delete/etc:  $.RequestId
-```
+```markdown
 
 ## Overview
 
@@ -264,7 +264,7 @@ aliyun rds CreateDBInstance \
   --VSwitchId "{{user.vswitch_id}}" \
   --SecurityIPList "{{user.security_ip_list|10.0.0.0/8}}" \
   --PayType "{{user.pay_type|Postpaid}}"
-```
+```markdown
 
 > **Note:** Output is JSON by default. Parse `DBInstanceId` from response.
 
@@ -279,7 +279,7 @@ aliyun rds CreateDBInstance \
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 3. On success, report `{{output.db_instance_id}}`, connection string, and key fields.
 4. On terminal failure, go to **Failure Recovery**.
@@ -313,7 +313,7 @@ aliyun rds DescribeDBInstances \
 # Extract specific fields with JMESPath
 aliyun rds DescribeDBInstances --RegionId "{{user.region}}" \
   --output cols=DBInstanceId,DBInstanceStatus,Engine,DBInstanceClass rows=Items.DBInstance[].{DBInstanceId,DBInstanceStatus,Engine,DBInstanceClass}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -353,7 +353,7 @@ aliyun rds DescribeDBInstances --RegionId "{{user.region}}" \
 
 ```bash
 aliyun rds RestartDBInstance --DBInstanceId "{{user.db_instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -365,7 +365,7 @@ Poll until `DBInstanceStatus` returns to `Running`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -383,7 +383,7 @@ Poll until `DBInstanceStatus` returns to `Running`:
 
 ```bash
 aliyun rds DeleteDBInstance --DBInstanceId "{{user.db_instance_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -396,7 +396,7 @@ Poll **DescribeDBInstances** until instance is absent (returns empty list or
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -407,7 +407,7 @@ Poll **DescribeDBInstances** until instance is absent (returns empty list or
 ```bash
 aliyun rds DescribeAccounts \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -439,7 +439,7 @@ aliyun rds CreateAccount \
   --AccountName "{{user.account_name}}" \
   --AccountPassword "{{user.account_password}}" \
   --AccountType "{{user.account_type|Normal}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -451,7 +451,7 @@ Poll until account status is `Available`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -469,7 +469,7 @@ Poll until account status is `Available`:
 aliyun rds DeleteAccount \
   --DBInstanceId "{{user.db_instance_id}}" \
   --AccountName "{{user.account_name}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -481,7 +481,7 @@ Verify account no longer appears in DescribeAccounts:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 > Note: `TotalRecordCount` is at the root level of the response.
 
@@ -501,7 +501,7 @@ aliyun rds CreateDatabase \
   --DBInstanceId "{{user.db_instance_id}}" \
   --DBName "{{user.db_name}}" \
   --CharacterSetName "{{user.character_set_name|utf8mb4}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -513,7 +513,7 @@ Poll until database status is `Running`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -531,7 +531,7 @@ Poll until database status is `Running`:
 aliyun rds DeleteDatabase \
   --DBInstanceId "{{user.db_instance_id}}" \
   --DBName "{{user.db_name}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -543,7 +543,7 @@ Verify database no longer appears in DescribeDatabases:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 > Note: `TotalRecordCount` is at the root level of the response.
 
@@ -556,7 +556,7 @@ Verify database no longer appears in DescribeDatabases:
 ```bash
 aliyun rds DescribeDatabases \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -587,7 +587,7 @@ aliyun rds CreateBackup \
   --DBInstanceId "{{user.db_instance_id}}" \
   --BackupMethod "{{user.backup_method|Physical}}" \
   --BackupType "{{user.backup_type|FullBackup}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -599,7 +599,7 @@ Poll **DescribeBackups** until backup status is `Success`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -618,7 +618,7 @@ Poll **DescribeBackups** until backup status is `Success`:
 aliyun rds RestoreDBInstance \
   --DBInstanceId "{{user.db_instance_id}}" \
   --BackupId "{{user.backup_id}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -630,7 +630,7 @@ Poll until `DBInstanceStatus` returns to `Running`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -651,7 +651,7 @@ aliyun rds DescribeBackups \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}" \
   --output cols=BackupId,BackupStatus,BackupSize rows=Items.Backup[].{BackupId,BackupStatus,BackupSize}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -688,7 +688,7 @@ aliyun rds DescribeSlowLogs \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}" \
   --output cols=SQLText,MySQLTotalExecutionCounts,MySQLTotalExecutionTimes rows=Items.SQLSlowLog[].{SQLText,MySQLTotalExecutionCounts,MySQLTotalExecutionTimes}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -715,7 +715,7 @@ aliyun rds DescribeSlowLogs \
 ```bash
 aliyun rds DescribeResourceUsage \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -745,7 +745,7 @@ aliyun rds DescribeDBInstancePerformance \
 
 # Common metric keys: MySQL_Sessions, MySQL_ActiveSessions, MySQL_TPS,
 # MySQL_IOPS, MySQL_CPUUsage, MySQL_MemoryUsage
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -768,7 +768,7 @@ aliyun rds DescribeDBInstancePerformance \
 ```bash
 aliyun rds DescribeDBInstanceHAConfig \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -798,7 +798,7 @@ aliyun rds DescribeDBInstanceHAConfig \
 aliyun rds ModifySecurityIps \
   --DBInstanceId "{{user.db_instance_id}}" \
   --SecurityIps "{{user.security_ips}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -811,7 +811,7 @@ Verify via DescribeDBInstanceIPArrayList:
 ```bash
 aliyun rds DescribeDBInstanceIPArrayList \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 ---
 
@@ -827,7 +827,7 @@ aliyun rds DescribeParameters \
 aliyun rds DescribeParameters \
   --DBInstanceId "{{user.db_instance_id}}" \
   --output cols=ParameterName,ParameterValue,ParameterDescription rows=RunningParameters.DBInstanceParameter[].{ParameterName,ParameterValue,ParameterDescription}
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -860,7 +860,7 @@ aliyun rds DescribeParameters \
 aliyun rds ModifyParameter \
   --DBInstanceId "{{user.db_instance_id}}" \
   --Parameters "{\"{{user.parameter_name}}\":\"{{user.parameter_value}}\"}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -880,7 +880,7 @@ aliyun rds ModifyParameter \
 ```bash
 aliyun rds DescribeDBInstanceAttribute \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -918,7 +918,7 @@ aliyun rds DescribeDBInstanceAttribute \
 ```bash
 aliyun rds DescribeDBInstanceNetInfo \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -944,7 +944,7 @@ aliyun rds DescribeDBInstanceNetInfo \
 ```bash
 aliyun rds DescribeDBInstanceIPArrayList \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -969,7 +969,7 @@ aliyun rds DescribeBinlogFiles \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -996,7 +996,7 @@ aliyun rds DescribeErrorLogs \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -1020,7 +1020,7 @@ aliyun rds DescribeSQLLogRecords \
   --DBInstanceId "{{user.db_instance_id}}" \
   --StartTime "{{user.start_time}}" \
   --EndTime "{{user.end_time}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -1057,7 +1057,7 @@ aliyun rds ModifyDBInstanceSpec \
   --DBInstanceClass "{{user.db_instance_class}}" \
   --DBInstanceStorage "{{user.db_instance_storage}}" \
   --PayType "{{user.pay_type}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -1069,7 +1069,7 @@ Poll until `DBInstanceStatus` returns to `Running`:
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -1089,7 +1089,7 @@ Poll until `DBInstanceStatus` returns to `Running`:
 aliyun rds UpgradeDBInstanceEngineVersion \
   --DBInstanceId "{{user.db_instance_id}}" \
   --EngineVersion "{{user.engine_version}}"
-```
+```text
 
 #### Execution — JIT Go SDK
 
@@ -1101,7 +1101,7 @@ Poll until `DBInstanceStatus` returns to `Running` and `EngineVersion` matches t
 
 ```bash
 # 通用轮询，参数见 [references/polling-patterns.md](references/polling-patterns.md)
-```
+```markdown
 
 ---
 
@@ -1114,7 +1114,7 @@ aliyun rds DescribeAvailableZones \
   --RegionId "{{user.region}}" \
   --Engine "{{user.engine}}" \
   --EngineVersion "{{user.engine_version}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -1135,7 +1135,7 @@ aliyun rds DescribeAvailableZones \
 ```bash
 aliyun rds DescribeReadDBInstances \
   --DBInstanceId "{{user.db_instance_id}}"
-```
+```markdown
 
 #### Execution — JIT Go SDK
 
@@ -1250,7 +1250,7 @@ Evaluated per Alibaba Cloud [Well-Architected Framework](https://help.aliyun.com
 
 ```bash
 aliyun plugin install --names aliyun-cli-rds-data   # required for rds-data subcommands
-```
+```markdown
 
 ## Reference Directory
 
@@ -1367,7 +1367,7 @@ Unlike ECS (cli-first), RDS supports THREE execution paths:
     ...
   }
 }
-```
+```markdown
 
 Path selection rules (inherited from `prompt-templates.md` §1):
 

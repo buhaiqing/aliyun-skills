@@ -79,6 +79,7 @@ and the Go SDK fallback pattern.
 ### Project Operations
 
 **CreateProject:**
+
 ```json
 POST /
 {
@@ -86,9 +87,10 @@ POST /
   "description": "Log Service project",
   "region": "cn-hangzhou"
 }
-```
+```text
 
 **Response:**
+
 ```json
 {
   "project": {
@@ -105,6 +107,7 @@ POST /
 ### Logstore Operations
 
 **CreateLogStore:**
+
 ```json
 POST /logstores
 {
@@ -117,9 +120,10 @@ POST /logstores
   "maxSplitShard": 64,
   "preserve": false
 }
-```
+```text
 
 **GetLogStore Response:**
+
 ```json
 {
   "logstore": "my-logstore",
@@ -137,6 +141,7 @@ POST /logstores
 ### Index Operations
 
 **CreateIndex:**
+
 ```json
 POST /logstores/{logstore}/index
 {
@@ -160,16 +165,18 @@ POST /logstores/{logstore}/index
     }
   }
 }
-```
+```markdown
 
 ### Log Query Operations
 
 **GetLogs Request:**
-```
+
+```text
 GET /logstores/{logstore}/logs?from=1625140800&to=1625227200&query=level:ERROR&line=100&offset=0
 ```
 
 **GetLogs Response:**
+
 ```json
 {
   "count": 1500,
@@ -184,11 +191,12 @@ GET /logstores/{logstore}/logs?from=1625140800&to=1625227200&query=level:ERROR&l
     }
   ]
 }
-```
+```markdown
 
 ### Alert Operations
 
 **CreateAlert:**
+
 ```json
 POST /alerts
 {
@@ -223,6 +231,7 @@ POST /alerts
 ### Dashboard Operations
 
 **CreateDashboard:**
+
 ```json
 POST /dashboards
 {
@@ -244,7 +253,7 @@ POST /dashboards
     }
   ]
 }
-```
+```markdown
 
 ## Go SDK Fallback
 
@@ -281,11 +290,12 @@ func NewSLSClient(region string) (*sls.Client, error) {
 
     return cli, nil
 }
-```
+```markdown
 
 ### Example Operations
 
 **Create Project:**
+
 ```go
 func CreateProject(cli *sls.Client, projectName, description string) error {
     req := &sls.CreateProjectRequest{
@@ -299,6 +309,7 @@ func CreateProject(cli *sls.Client, projectName, description string) error {
 ```
 
 **Get Logs:**
+
 ```go
 func GetLogs(cli *sls.Client, logstore, query string, from, to int64) (*sls.GetLogsResponse, error) {
     req := &sls.GetLogsRequest{
@@ -312,7 +323,7 @@ func GetLogs(cli *sls.Client, logstore, query string, from, to int64) (*sls.GetL
 
     return cli.GetLogs(req)
 }
-```
+```markdown
 
 ## Authentication & Permissions
 

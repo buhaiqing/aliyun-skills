@@ -37,7 +37,7 @@ sudo cp aliyun /usr/local/bin/
 
 # 配置凭证
 aliyun configure
-```
+```markdown
 
 ### 2. 三种启动方式
 
@@ -51,7 +51,7 @@ aliyun configure
 
 # 方式 3: 自动化模式 (CI/CD)
 ./scripts/assess.sh --mock --output json > report.json
-```
+```markdown
 
 ### 3. 设置语言
 
@@ -61,7 +61,7 @@ export ARCH_ADVISOR_LANG=zh_CN
 
 # 英文
 export ARCH_ADVISOR_LANG=en_US
-```
+```markdown
 
 ---
 
@@ -72,6 +72,7 @@ export ARCH_ADVISOR_LANG=en_US
 **用途**: 分析现有云资源架构,生成架构图和文档
 
 **触发场景**:
+
 - "帮我看看我的系统架构"
 - "分析一下我的 ECS + RDS 架构"
 - "生成当前架构文档"
@@ -87,6 +88,7 @@ export ARCH_ADVISOR_LANG=en_US
 | `--output` | 输出格式 | ✗ | `markdown` / `json` |
 
 **输出**:
+
 - 拓扑图 (Mermaid 格式)
 - 架构模式识别 (single-node, 3-tier, microservice, serverless, multi-region)
 - 架构文档 (Markdown)
@@ -107,13 +109,14 @@ export ARCH_ADVISOR_LANG=en_US
   --reverse-eng true \
   --vpc-id vpc-2ze0jx9vjk6n2j4f7xxxx \
   --mock  # 无凭证时使用 Mock 数据
-```
+```markdown
 
 ### Mode B: WAF 成熟度评估 (Assessment)
 
 **用途**: 基于阿里云 Well-Architected Framework 的五支柱评估
 
 **五支柱**:
+
 1. **Security (安全)**: 安全组、访问控制、加密、审计
 2. **Reliability (可靠性)**: 高可用、备份、多 AZ 容错
 3. **Performance (性能)**: 实例规格、存储 IOPS、网络带宽
@@ -131,9 +134,10 @@ export ARCH_ADVISOR_LANG=en_US
 
 # 评估单个维度
 ./scripts/assess.sh --reverse-eng false --pillars cost
-```
+```markdown
 
 **输出**:
+
 - 五支柱评分卡 (0-100 分)
 - 风险清单 (Critical/High/Medium/Low)
 - 改进建议 (按优先级排序)
@@ -144,6 +148,7 @@ export ARCH_ADVISOR_LANG=en_US
 **用途**: 根据业务场景推荐最优架构方案
 
 **支持的业务场景**:
+
 - `ecommerce` - 电商平台
 - `saas` - SaaS 应用
 - `data-platform` - 数据平台
@@ -180,9 +185,10 @@ export ARCH_ADVISOR_LANG=en_US
   --dau 500000 \
   --ha single-az \
   --region cn-shanghai
-```
+```markdown
 
 **输出**:
+
 - 架构蓝图 (JSON + Mermaid)
 - 组件清单 (ECS/RDS/Redis/SLB 等)
 - 规格可用性验证 (自动降级)
@@ -216,7 +222,7 @@ export ARCH_ADVISOR_LANG=en_US
 
 其他:
   -h, --help             显示帮助
-```
+```markdown
 
 ### recommend.sh 参数
 
@@ -234,7 +240,7 @@ export ARCH_ADVISOR_LANG=en_US
   --region REGION        部署地域 (默认: cn-hangzhou)
   --output FORMAT        markdown | json
   --output-dir PATH      输出目录 (默认: ./output)
-```
+```markdown
 
 ### interactive-wizard.sh 参数
 
@@ -242,7 +248,7 @@ export ARCH_ADVISOR_LANG=en_US
 ./scripts/interactive-wizard.sh
 # 无参数,完全交互式
 # 按提示选择模式、输入参数、确认执行
-```
+```markdown
 
 ---
 
@@ -250,7 +256,7 @@ export ARCH_ADVISOR_LANG=en_US
 
 ### 使用流程
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │  阿里云架构顾问 - 交互式向导 (Wizard)    │
 └─────────────────────────────────────────┘
@@ -260,7 +266,7 @@ export ARCH_ADVISOR_LANG=en_US
   2. 做一次 WAF 成熟度评估 (Mode B)
   3. 设计新系统架构方案 (Mode C)
   0. 退出
-```
+```markdown
 
 ### 优势
 
@@ -289,7 +295,7 @@ export ARCH_ADVISOR_LANG=zh_CN   # Chinese (默认)
 # 方式 2: LANG 环境变量
 export LANG=en_US.UTF-8
 export LANG=zh_CN.UTF-8
-```
+```markdown
 
 ### 支持的字符串
 
@@ -311,7 +317,7 @@ declare -A I18N_JA_JP=(
     ["wizard_menu_title"]="サービスを選択してください:"
     # ... 更多翻译
 )
-```
+```markdown
 
 2. 更新 `detect_language()` 函数支持新语言代码
 
@@ -330,7 +336,7 @@ for i in {1..5}; do
     progress_update $i "Step $i"
 done
 progress_complete "Deployment done"
-```
+```markdown
 
 ### 嵌套进度条 (子任务)
 
@@ -347,7 +353,7 @@ progress_nested_complete "Image built"
 
 progress_update 2 "..."
 progress_complete "Main task done"
-```
+```markdown
 
 ### 持久化和恢复
 
@@ -360,7 +366,7 @@ progress_start 10 "Long task"
 # 恢复执行
 progress_resume "/tmp/my-task-state.json"
 progress_update 4  # 从中断处继续
-```
+```markdown
 
 ### 图形化进度条 (iTerm2/TrueColor)
 
@@ -370,7 +376,7 @@ for i in 0 20 40 60 80 100; do
     progress_graphic "$i" 100 "Loading ($i%)"
     sleep 0.2
 done
-```
+```markdown
 
 ### Spinner 动画
 
@@ -379,7 +385,7 @@ spinner_start "Processing..."
 # ... 长时间操作 ...
 spinner_stop
 log_success "Done"
-```
+```markdown
 
 ### 进度条 API 完整列表
 
@@ -439,7 +445,7 @@ safe_exec "Creating ECS instance" aliyun ecs CreateInstance \
 # 重试机制
 retry_operation 3 2 aliyun ecs DescribeInstances
 # 最多重试 3 次,初始延迟 2 秒,指数退避
-```
+```markdown
 
 ---
 
@@ -456,7 +462,7 @@ retry_operation 3 2 aliyun ecs DescribeInstances
 
 # 验证修复
 ./scripts/verify-fixes-simple.sh
-```
+```markdown
 
 ### 测试覆盖
 
@@ -482,7 +488,7 @@ result=$(my_function "input")
 assert_equals "expected" "$result"
 test_end
 test_summary
-```
+```markdown
 
 ---
 
@@ -494,7 +500,7 @@ test_summary
 # 使用 Mock 数据模式
 ./scripts/assess.sh --mock
 ./scripts/recommend.sh --scenario ecommerce --dau 1000
-```
+```markdown
 
 ### Q2: 如何加快大规模资源的扫描?
 
@@ -508,7 +514,7 @@ test_summary
 # 3. 分批处理 (按 VPC)
 ./scripts/assess.sh --vpc-id vpc-1
 ./scripts/assess.sh --vpc-id vpc-2
-```
+```markdown
 
 ### Q3: 推荐的架构是否一定可用?
 
@@ -531,7 +537,7 @@ set -e
 if jq -e '.pillars.security.score > 80' /tmp/arch-report.json; then
     echo "Security score OK"
 fi
-```
+```markdown
 
 ### Q5: 如何自定义场景模板?
 
@@ -545,7 +551,7 @@ components:
   - type: ecs
     count: 2
     instance_type: g6.xlarge
-```
+```markdown
 
 ### Q6: 进度条在非交互式终端 (如 CI) 中能用吗?
 

@@ -50,6 +50,7 @@ You are the Generator in a GCL for Alibaba Cloud AGENTRUN.
 - `ExecCommand`: block if command matches `rm -rf /`, `dd if=/dev/zero`,
   `mkfs`, `fdisk`, or `shutdown`. Record command in trace.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -89,4 +90,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | AgentRun GCL prompt templates (Phase 5, recommended).

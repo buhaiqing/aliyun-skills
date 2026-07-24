@@ -34,7 +34,7 @@
 
 ### Order of Investigation
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  Step 1: Describe Instance → Get current status            │
 │          client.DescribeInstance(instanceId)                │
@@ -110,12 +110,14 @@ reportResponse, err := client.DescribeDiagnoseReport(&elasticsearch.DescribeDiag
 **Symptoms:** Instance stuck in `Activating` for > 10 minutes
 
 **Investigation Steps:**
+
 1. Check DescribeInstance status
 2. Verify VPC/VSwitch connectivity
 3. Check quota limits
 4. Review CloudMonitor events
 
 **Resolution:**
+
 ```go
 // Check if still activating
 status := getStatus(instanceId)
@@ -131,6 +133,7 @@ if status == "Activating" && timeSinceCreation > 10*time.Minute {
 **Symptoms:** Restart stuck in `Activating`, instance unavailable
 
 **Investigation:**
+
 ```go
 // Poll restart status
 for i := 0; i < 30; i++ {
@@ -148,6 +151,7 @@ for i := 0; i < 30; i++ {
 ```
 
 **Resolution:**
+
 - Check diagnose reports for failure cause
 - Verify disk space, memory pressure
 - May need manual intervention via console
@@ -157,6 +161,7 @@ for i := 0; i < 30; i++ {
 **Symptoms:** Cannot connect to ES endpoint
 
 **Investigation:**
+
 1. Check instance status (`Normal`)
 2. Verify endpoint from DescribeInstance
 3. Check IP whitelist (`ModifyWhiteIps`)
@@ -164,6 +169,7 @@ for i := 0; i < 30; i++ {
 5. Check HTTPS enabled/disabled
 
 **Resolution:**
+
 ```go
 // Check whitelist
 response, err := client.DescribeInstance(instanceIdRequest)
@@ -184,12 +190,14 @@ whiteListResp, err := client.DescribeInstance(instanceIdRequest)
 **Symptoms:** CreateSnapshot returns error
 
 **Investigation:**
+
 1. Check instance status (must be `Normal`)
 2. Verify snapshot quota
 3. Check existing snapshots not in progress
 4. Verify disk space
 
 **Resolution:**
+
 ```go
 // List existing snapshots
 response, err := client.ListSnapshots(&elasticsearch.ListSnapshotsRequest{
@@ -209,12 +217,14 @@ for _, snap := range response.Body.Result.Snapshots {
 **Symptoms:** InstallUserPlugins returns error
 
 **Investigation:**
+
 1. Verify plugin compatibility with ES version
 2. Check disk space for plugin
 3. Verify plugin name is correct
 4. Check if plugin already installed
 
 **Resolution:**
+
 ```go
 // List installed plugins first
 response, err := client.ListPlugins(&elasticsearch.ListPluginsRequest{
@@ -230,11 +240,13 @@ for _, plugin := range response.Body.Result.Plugins {
 **Symptoms:** `Forbidden.RAM` error
 
 **Investigation:**
+
 1. Check RAM policy for user/role
 2. Verify action is allowed for Elasticsearch
 3. Check resource scope in policy
 
 **Resolution:**
+
 - Add RAM policy with `elasticsearch:*` actions
 - Or specific actions needed for operation
 - Verify resource scope matches instance
@@ -317,7 +329,7 @@ func diagnoseIssue(client *elasticsearch.Client, instanceId string) {
 
 When all diagnostic steps fail, use this escalation format:
 
-```
+```markdown
 [ESCALATE] Elasticsearch Instance Issue
 
 Instance ID: {instanceId}
@@ -349,7 +361,7 @@ Support Channel: https://workorder.console.aliyun.com/
 
 ### 6.1 Self-Reflection Workflow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Multi-Round Self-Reflection Process                                │
 │  Purpose: Iteratively refine diagnosis until satisfactory result     │

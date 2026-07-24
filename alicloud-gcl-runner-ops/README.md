@@ -103,6 +103,7 @@ Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返�
 
 1. **Every product skill** declares that any write/destructive operation should be delegated to `alicloud-gcl-runner-ops` via GCL
 2. **The delegating agent** calls:
+
    ```bash
    cd alicloud-gcl-runner-ops
    ./scripts/gcl-runner-skillopt-wrapper.sh \
@@ -110,6 +111,7 @@ Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返�
      --op DeleteInstance \
      --command "aliyun ecs DeleteInstance --InstanceId i-bp1..."
    ```
+
 3. **`alicloud-gcl-runner-ops`** runs the full GCL loop:
    - Pre-flight: validate credentials, product matching, secret sanitization, LLM endpoint if configured
    - Generate: execute the command via subprocess, capture stdout/stderr/exit-code
@@ -121,6 +123,7 @@ Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返�
 ## Quality Gates
 
 Every change to this shared framework:
+
 - **100+ unit tests** (pure Python stdlib, no external deps)
 - **`ruff` checked and fixed** for code quality
 - **all tests pass** before merge to `main`

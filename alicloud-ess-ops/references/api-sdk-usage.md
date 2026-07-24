@@ -6,7 +6,7 @@
 
 - **Service Endpoint:** `ess.aliyuncs.com`
 - **API Version:** 2014-08-28
-- **Official Documentation:** https://help.aliyun.com/zh/auto-scaling/developer-reference/api-ess-2014-08-28-overview
+- **Official Documentation:** <https://help.aliyun.com/zh/auto-scaling/developer-reference/api-ess-2014-08-28-overview>
 
 ## Go SDK
 

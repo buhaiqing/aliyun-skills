@@ -37,6 +37,7 @@ execution_time_estimate: "3-10 分钟"
 >    - 缩：`floor(当前实例数 × 当前负载 / 目标利用率)`，且缩后仍有 1.5x 缓冲
 >
 > **与 auto-scaling-orch 的关系：**
+>
 > - `auto-scaling-orch` 是**执行层**，直接调用 ess-ops/ack-ops 执行扩缩容
 > - 本 runbook 是**评估层**，做趋势分析 + 决策建议，输出 plan.json
 > - 用户审批 plan.json 后，手动/自动委托 `auto-scaling-orch` 执行

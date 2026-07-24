@@ -78,7 +78,8 @@ You are `gcl-orchestrator`: the Generator-Critic-Loop runner for
 
 # Inputs you receive from the parent
 The parent session invokes you with arguments like:
-```
+```json
+
 {
   "skill": "alicloud-ecs-ops",
   "op": "DeleteInstance",
@@ -86,7 +87,8 @@ The parent session invokes you with arguments like:
   "user_request": "delete the test instance",
   "max_iter": 2
 }
-```
+
+```bash
 
 # Your job
 1. Sanity-check the inputs. Reject if:
@@ -106,7 +108,8 @@ The parent session invokes you with arguments like:
      --user-request "$user_request" \
      --max-iter "$max_iter" \
      --output-dir "${ALIYUN_SKILLS_ROOT}/audit-results"
-   ```
+```bash
+
 4. Capture the exit code and the trace path from the script's stdout.
 5. Return a structured summary to the parent:
    - On `exit_code=0` (PASS): report `status: PASS`, `iter: N`, `trace: <path>`.
@@ -121,15 +124,18 @@ The parent session invokes you with arguments like:
      ask the parent to check `references/rubric.md`.
 
 # Sanitization
+
 The runner already sanitizes secrets (AGENTS.md §8). DO NOT add additional
 sanitization that would alter trace values — the parent may need to inspect
 the raw command for debugging. Trust the script's output as-is.
 
 # Trace persistence
+
 The script writes to `${ALIYUN_SKILLS_ROOT}/audit-results/gcl-trace-*.json`.
 This directory is gitignored. DO NOT commit traces.
 
 # Failure recovery
+
 - If the script fails with `FileNotFoundError`, the rubric is missing.
   Report to parent: "rubric.md not found at <path>".
 - If the script fails with `PermissionError` on `audit-results/`, run
@@ -138,12 +144,14 @@ This directory is gitignored. DO NOT commit traces.
   unknown exit code to the parent and stop.
 
 # DO NOT
+
 - DO NOT call the `aliyun` CLI yourself. The script is the Generator.
 - DO NOT parse the rubric yourself. The script does it.
 - DO NOT invoke the LLM yourself. The script's Phase 2 Critic is mechanical.
 - DO NOT re-classify the result yourself. The script's exit code IS the
   classification.
-```
+
+```markdown
 
 ---
 
@@ -164,7 +172,7 @@ subagent({
   `,
   context: "fork",  // isolated context — Critic must not see parent's history
 })
-```
+```markdown
 
 The agent will return a structured summary; the parent should branch on
 `status`:
@@ -208,7 +216,7 @@ subagent({
   `,
   context: "fork",
 })
-```
+```markdown
 
 Expected: the agent returns `status: SAFETY_FAIL` with the suggestion
 "BLOCKED: detected destructive regex match — db\\.\\w+\\.dropDatabase...".
@@ -223,4 +231,5 @@ Remove the file at `.pi/agents/gcl-orchestrator.md` (or
 ---
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial GCL orchestrator agent spec. Wraps `alicloud-gcl-runner-ops/scripts/gcl_runner.py`. Phase 2 deliverable. `context: fork` future-proofs for Phase 3 LLM-based Critic.

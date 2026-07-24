@@ -86,7 +86,7 @@
 See SKILL.md §API and Response Conventions
 for the complete table. Highlights:
 
-```
+```markdown
 # Control plane
 ListBuckets:            $.Buckets[].Name, $.Buckets[].Region, $.Buckets[].StorageClass
 GetBucketInfo:          $.Bucket.Name, $.Bucket.Region, $.Bucket.StorageClass
@@ -102,7 +102,7 @@ ListMultipartUploads:   $.Upload[].Key, $.Upload[].UploadId, $.Upload[].Initiate
 
 # Request tracking
 Any op:                 $.RequestId
-```
+```markdown
 
 ## Go SDK V2 — Multipart Upload Walkthrough
 
@@ -169,7 +169,7 @@ func main() {
 	fmt.Printf("Uploaded: size=%d, etag=%s, storage-class=%s\n",
 		head.ContentLength, head.Get("ETag"), head.Get("X-Oss-Storage-Class"))
 }
-```
+```text
 
 **Run:**
 
@@ -178,7 +178,7 @@ export BUCKET_NAME="my-bucket"
 export OBJECT_KEY="videos/2026/big-file.zip"
 export LOCAL_FILE="/tmp/big-file.zip"
 go run ./main.go
-```
+```markdown
 
 > **Resumability:** Pass `oss.Checkpoint(true, "/path")` to enable resumable
 > upload. Re-running the same command resumes from the last completed part.
@@ -212,7 +212,7 @@ func main() {
 	}
 	fmt.Println(signedURL)
 }
-```
+```markdown
 
 > **Sensitive:** Anyone with the URL can access the object. Use short
 > expiry (≤ 1 hour) and consider IP-conditional signatures for additional
@@ -236,7 +236,7 @@ for {
 	}
 	marker = result.NextContinuationToken
 }
-```
+```markdown
 
 ## Error Code Reference
 

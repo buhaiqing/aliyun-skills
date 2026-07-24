@@ -33,7 +33,7 @@ Alibaba Cloud EIP (Elastic IP Address) is a **public IP resource** that can be *
 
 ## Resource Lifecycle
 
-```
+```markdown
 Allocate → Available → Associate → InUse → Unassociate → Available → Release
    |                            |
    +-- Direct Release ❌        +-- Always Unbind first

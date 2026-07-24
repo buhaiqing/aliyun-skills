@@ -8,7 +8,7 @@ VPC is a logically isolated network in the cloud. Define your own IP range, subn
 
 ### Resource Hierarchy
 
-```
+```text
 VPC
 ├── vSwitch (subnet) — hosts ECS/RDS/etc
 ├── RouteTable — system + custom routes
@@ -19,7 +19,7 @@ VPC
 └── FlowLog (traffic capture)
 
 Region-level: EIP, VPN Gateway, Customer Gateway, HaVip, CommonBandwidthPackage
-```
+```markdown
 
 ### Resource Relationships
 

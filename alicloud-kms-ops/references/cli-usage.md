@@ -1,11 +1,13 @@
 # CLI — KMS (`aliyun`)
 
 ## Install and config
+
 - Install: see [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli)
 - **Credentials:** The `aliyun` CLI reads from env vars `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET` OR `~/.aliyun/config.json`.
 - KMS is a **regional service** — always pass `--RegionId` unless configured in profile.
 
 ## Conventions (agent execution)
+
 - Output is **JSON by default** — NO `--output json` needed for plain JSON
 - Use `--output cols=...,rows=...` for JMESPath tabular extraction
 - `--no-interactive` does NOT exist in `aliyun` CLI
@@ -76,6 +78,7 @@ All KMS OpenAPI operations are callable via CLI using RPC-style invocation. The 
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Use `--PageSize` to control result sets: `--PageSize 50`
 - Example:
+
 ```bash
 aliyun ecs DescribeInstances --PageSize 50 | jq '{total: .TotalCount, items: [.Items.Item[]? | {id: .Id, name: .Name}]}'
 ```

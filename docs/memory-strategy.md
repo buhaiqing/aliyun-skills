@@ -15,6 +15,7 @@ GCL 每次执行都会产生 trace，但 trace 本身是**单次、孤立、难�
 **递进关系**：Layer 1 回答「发生了什么」→ Layer 2 回答「什么模式在重复」→ Layer 3 回答「整体该怎么改」。下层是上层的数据源；上层不能替代下层（策略不能没有原始 trace 和模式统计）。
 
 **Agent 使用口诀**（Local-first — R2 经 `memory_preflight.py` / `gcl_runner.py` 注入 trace + Generator prompt）：
+
 - 执行前查 **Layer 1**：同 operation 最近是否 FAIL、迭代几次？→ `{{recent_executions}}`
 - 执行前读 **Layer 2**：有没有已知的同类坑？→ `{{known_traps}}`
 - 执行前看 **Layer 3 策略**：该 skill 是否处于高风险期？→ `{{strategy_hints}}`（读 committed `docs/strategy-baseline.json`）
@@ -106,7 +107,7 @@ make memory-maintain
 make memory-maintain-apply
 TRACE_KEEP_DAYS=14 make memory-maintain-apply
 python3 alicloud-aiops-cruise/scripts/lib/runtime_cleanup.py --traces-only --apply
-```
+```markdown
 
 Workflow 细节： `.github/workflows/doctor-weekly.yml` ·  setup：[`doctor-review-setup.md`](doctor-review-setup.md)
 
@@ -124,7 +125,7 @@ Workflow 细节： `.github/workflows/doctor-weekly.yml` ·  setup：[`doctor-re
 
 GCL（Generator-Critic-Loop）系统的记忆层分为三层，从原始执行记录到跨 session 趋势分析，逐层抽象：
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────┐
 │                    Layer 3: Strategy Memory                        │
 │  跨 skill 趋势聚合 · 参数优化建议 · 运维策略学习                    │
@@ -183,6 +184,7 @@ GCL（Generator-Critic-Loop）系统的记忆层分为三层，从原始执行�
 | `memory_root` | str \| Path \| None | `.runtime/memory/` | 覆盖存储根目录 |
 
 **返回结构**（最优先，空列表=无记录）：
+
 ```python
 [
   {
@@ -197,19 +199,21 @@ GCL（Generator-Critic-Loop）系统的记忆层分为三层，从原始执行�
     "failure_pattern": None,
   }
 ]
-```
+```text
 
 **消费方式**（R2 — 推荐统一入口）：
+
 ```bash
 python3 alicloud-gcl-runner-ops/scripts/memory_preflight.py \
   --skill alicloud-ecs-ops --operation DeleteInstance --format slots
 ```
 
 底层 API（平台内部）：
+
 ```python
 from gcl_memory import memory_retrieve
 recent = memory_retrieve("alicloud-ecs-ops", top_k=3)
-```
+```markdown
 
 **Schema 定义** 见 [`gcl-spec.md §16.3`](gcl-spec.md#163-entry-schema)。
 
@@ -265,7 +269,7 @@ Allowlist：`InvalidParameter` / `Forbidden` / `ResourceNotFound` / `QuotaExceed
 
 L1 `memory_store_lite` 写入 `error_code`（从 trace 或 API `Code` 解析），供 C 聚合。
 
-```
+```text
 Wrapper trace_end (failed, allowlisted)
        │
        └──► store-wrapper-lite → reflexion_store()     ← plan B
@@ -364,16 +368,16 @@ Layer 3 聚合 **Git 变更信号（Artifact evolution）** 与 **Layer 1/2 运�
 
 **Local-first（主路径 — 维护者本地，有 `.runtime/` 时）：**
 
-```
+```bash
 make memory-maintain-apply          ← Layer 1/2 TTL
 make doctor-weekly-apply            ← rollup + git_collect + weekly --apply + report
   → 审阅 docs/strategy-*.md/json、failure-patterns.md、runtime-rollup.json
   → 人工 commit / PR
-```
+```text
 
 **GHA（辅路径 — Git 信号 + 可选 PR，无 `.runtime/memory` 时为 git-only）：**
 
-```
+```text
 doctor-weekly.yml (cron / workflow_dispatch)
   → detect .runtime/memory (*.jsonl)
   → [if memory] maintain L1/L2 · reflexion report · rollup
@@ -403,7 +407,7 @@ doctor-weekly.yml (cron / workflow_dispatch)
 
 每次 GCL 执行完成后，三层数据流如下：
 
-```
+```bash
 gcl_runner.py main()                    skillopt_wrap() → trace_end
        │                                        │
        ├── memory_store() → L1 JSONL           ├── memory_store_lite() → L1 (+ error_code)
@@ -424,7 +428,7 @@ make memory-maintain-apply:
        └── gcl_strategy weekly   → baseline/report            ← make doctor-weekly-apply
        **首次本地 weekly 已完成** (2026-06-21): baseline + rollup + failure-patterns committed (`6415886`)
        GHA: git-only PR when checkout 无 .runtime/memory
-```
+```markdown
 
 ## 观测性日志架构
 

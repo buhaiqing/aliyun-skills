@@ -21,7 +21,7 @@
 ```bash
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/nas-20170626/v3/client
-```
+```markdown
 
 ### Client Factory
 
@@ -51,7 +51,7 @@ func printResponse(b interface{}) {
     out, _ := json.MarshalIndent(b, "", "  ")
     fmt.Println(string(out))
 }
-```
+```markdown
 
 ## Operation Map (Aliyun-Native Categories)
 
@@ -257,7 +257,7 @@ req := &nas.DescribeFileSystemsRequest{
     PageNumber: tea.Int32(1),
     PageSize:   tea.Int32(50),
 }
-```
+```markdown
 
 ### ClientToken (Idempotency)
 
@@ -269,15 +269,15 @@ req := &nas.CreateFileSystemRequest{
     // ... other params
     ClientToken: tea.String("my-create-fs-2026-06-04-001"),
 }
-```
+```markdown
 
 ### Mount Target Domain Format
 
 The `MountTargetDomain` follows the pattern:
 
-```
+```text
 <FileSystemId-without-prefix>.<region>.nas.aliyuncs.com
-```
+```text
 
 Example: `31a8e42551a44ad496adf****.cn-hangzhou.nas.aliyuncs.com`
 
@@ -292,7 +292,7 @@ mount -t nfs -o vers=4,minorversion=1,rsize=1048576,wsize=1048576 31a8e4****.cn-
 
 # SMB
 mount -t cifs //31a8e4****.cn-hangzhou.nas.aliyuncs.com/myshare /mnt/smb -o username=myuser,password=***
-```
+```markdown
 
 > **Security:** Never put NAS credentials in `ps` history. Use
 > `REDISCLI_AUTH`-style env vars or `~/.smbcredentials`.
@@ -309,7 +309,7 @@ All NAS responses follow the Alibaba Cloud OpenAPI standard envelope:
   "Message": "Successful",
   "<OperationSpecificData>": { ... }
 }
-```
+```text
 
 For list operations, `<OperationSpecificData>` is typically an object
 containing `TotalCount`, `PageSize`, `PageNumber`, and a list (e.g.,

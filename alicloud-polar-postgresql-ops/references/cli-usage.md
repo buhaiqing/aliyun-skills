@@ -13,6 +13,7 @@
 - Use `jq` for complex JSON transformations after `aliyun` commands
 - Use `[]?` to safely handle empty/null arrays: `.Items.Item[]?`
 - Example:
+
 ```bash
 aliyun adb DescribeDBClusters | jq '{clusters: [.Items.DBCluster[]? | {id: .DBClusterId, status: .Status}]}'
 ```

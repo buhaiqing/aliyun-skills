@@ -1,6 +1,7 @@
 复核# TODO — alicloud-aiops-cruise 行动追踪清单（主索引）
 
 > [WARN] **强制规则**：
+>
 > 1. 每次新增/修改功能后，必须同步更新对应的 Sprint 文件中的状态标记
 > 2. 每个 Sprint 的任务细节存放在 `TODO/sprint-{编号}-{名称}.md`，不在本文档展开
 > 3. 违反后果：Post-Update Self-Review 的 F8 检查不通过，不得提交
@@ -83,7 +84,7 @@
 
 ## 依赖关系总图
 
-```
+```text
 P0 (基座工程)
 ├── Sprint 1 (4个脚本) ──────-> Sprint 6 (预授权) ──-> Sprint 12 (双引擎)
 │                                                            UP
@@ -147,12 +148,14 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
 | **F-004** | P1 | `to_incident()` timestamp 格式错误(微秒精度),dedup_key 可能为 None | 改用 `timezone.utc`,添加必填字段校验 |
 
 **额外修复的 Linting 问题**:
+
 - F821: 修复 `UTC` 未定义 → 改用 `timezone.utc`
 - F841: 删除未使用变量 `vals`
 - F811: 删除重复定义的 `format_incidents_section_md` 函数
 - W293/E401: 清理空白行空格,拆分多行 import
 
 **验证结果**:
+
 ```bash
 ✅ Python 语法检查: py_compile 全部通过 (7个脚本)
 ✅ Ruff linting: 仅剩 6 个 C901 复杂度警告(非阻塞)
@@ -160,19 +163,22 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
 ✅ F-004 冒烟测试: timestamp/dedup_key 格式正确
 ✅ F-003 Semaphore: acquire(timeout=...) 机制验证通过
 ✅ F-001 subprocess: 100% timeout 覆盖率 (4/4)
-```
+```markdown
 
 **代码变更统计**:
+
 - 净减少 ~300 行 (删除重复函数 295 行 + 其他优化)
 - 修复 4 个 P0/P1 级问题
 - 修复 5 个 linting 问题
 
 **回归风险**: Low-Medium
+
 - F-001/F-004: 仅影响错误处理和格式,不改变核心逻辑
 - F-002: 删除重复代码已通过语法检查验证无引用
 - F-003: Semaphore 超时机制已在生产环境常用模式中验证
 
 **测试补充**:
+
 - 创建 `runbooks/scripts/test_shared_core.py` (13个单元测试)
 - 覆盖 F-001/F-003/F-004 修复点 + lib_idempotent 工具函数
 - 所有测试通过,无 deprecation warning
@@ -200,10 +206,12 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
 | **B3** | P2 | Shell runbook 展示串行 bash 示例，agent 不知道主路径是 Python Sprint 15 优化 | runbook 头部加 `## 执行路径` 说明，版本升至 v1.1.0 |
 
 **版本更新**:
+
 - `runbooks/01-daily-health-check.md`: v1.0.0 → v1.1.0
 - `runbooks/scripts/daily-health-check.py`: v2.3.0 → v2.3.1
 
 **验证结果**:
+
 ```bash
 ✅ Python 语法检查: ast.parse 通过
 ✅ A1-1: 11 处全部修完，grep 无残留 `// "NODATA"` / `// "无数据"`
@@ -213,7 +221,7 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
 ✅ A3-P2: 空数组输出 `[DIAG] 默认服务器组`
 ✅ B1: _preflight_check() 全部 11 个检查点存在
 ✅ B3: 执行路径说明已写入 runbook 头部
-```
+```markdown
 
 ---
 
@@ -241,8 +249,9 @@ P1 (独立推进)    Sprint 4 (拓扑)        Sprint 2 (并行) -> Sprint 8 (缓
   "drift_items": [],
   "note": "no drift detected"
 }
-```
+```markdown
 
 **回归风险**:
+
 - `__init__.sh` 仍存在类似路径 bug（`REPORTS_DIR="${SCRIPT_DIR}/../../../audit-results"` 多走一层）— **未在本次修复范围**，下次巡检时单独处理
 - `__init__.sh --mode configdrift` 调用入口已可正常工作（configdrift.sh 自身接受 `--output-file` 参数）

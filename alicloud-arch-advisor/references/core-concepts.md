@@ -36,7 +36,7 @@ alicloud-arch-advisor 识别四种主要架构模式，用于在 Mode A 中进�
 
 ### 2.1 单节点架构 (Single-Node)
 
-```
+```text
 [ ECS (单台) ]
       |
 [ RDS (单节点) ]
@@ -49,7 +49,7 @@ alicloud-arch-advisor 识别四种主要架构模式，用于在 Mode A 中进�
 
 ### 2.2 三层架构 (3-Tier)
 
-```
+```text
 [ SLB/ALB ] → [ ECS Cluster (多台) ] → [ RDS 高可用 / Redis ]
                                           [ OSS / NAS ]
 ```
@@ -61,7 +61,7 @@ alicloud-arch-advisor 识别四种主要架构模式，用于在 Mode A 中进�
 
 ### 2.3 微服务架构 (Microservice)
 
-```
+```text
 [ ALB/APIGateway ]
       |
 [ Service A (ACK Pod) ] ←→ [ Service B (ACK Pod) ]
@@ -78,7 +78,7 @@ alicloud-arch-advisor 识别四种主要架构模式，用于在 Mode A 中进�
 
 ### 2.4 Serverless 架构
 
-```
+```text
 [ API Gateway / ALB ]
       |
 [ Function Compute ]  →  [ Tablestore / OSS ]
@@ -103,6 +103,7 @@ alicloud-arch-advisor 采用三模式设计，确保对用户意图的精确覆�
 **输出**: 架构拓扑 + 组件清单 + 依赖关系 + 风险标识
 
 核心能力：
+
 1. 从用户自然语言描述中提取架构信息
 2. 通过 `topo-discovery` 验证实际资源状态
 3. 自动识别架构模式（单节点/三层/微服务/Serverless）
@@ -116,13 +117,15 @@ alicloud-arch-advisor 采用三模式设计，确保对用户意图的精确覆�
 **输出**: 五支柱评分 + 风险发现清单 + 改进建议
 
 核心能力：
+
 1. 基于实际资源状态（topo-discovery）和巡检结果（advisor-ops）进行客观评估
 2. 每个支柱分解为多个检查维度
 3. 每个发现项标注严重级别 P0-P3
 4. 提供可操作的改进建议，包括预估工作量和影响
 
 评估流程示例（Security 支柱）：
-```
+
+```markdown
 1. 安全检查项：
    - 安全组是否过度开放（`0.0.0.0/0` 端口映射）？
    - 是否有未关联安全组的 ECS 实例？
@@ -141,6 +144,7 @@ alicloud-arch-advisor 采用三模式设计，确保对用户意图的精确覆�
 **输出**: 推荐架构方案 + 多方案对比 + 实施路线
 
 核心能力：
+
 1. 根据业务特征匹配合适的架构模式
 2. 参考阿里云最佳实践场景模板
 3. 对比至少 2 个可行方案（成本、复杂度、WAF 覆盖度）

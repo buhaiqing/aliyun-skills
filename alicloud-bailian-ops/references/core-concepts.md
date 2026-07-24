@@ -3,12 +3,13 @@
 ## Architecture Overview
 
 Bailian (百炼) GenAI Service Platform provides a unified interface for:
+
 - **Foundation Models**: Qwen series, Llama, and third-party LLMs
 - **Agent Framework**: Autonomous AI with tool use and memory
 - **Knowledge Base**: Vector storage with semantic search (RAG)
 - **Prompt Management**: Template versioning and A/B testing
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    Bailian Platform                         │
 ├─────────────┬─────────────┬─────────────┬───────────────────┤
@@ -96,11 +97,13 @@ Bailian (百炼) GenAI Service Platform provides a unified interface for:
 ## Agent Architecture
 
 ### ReAct Pattern
-```
+
+```text
 User Query → Agent → Thought → Action (Tool) → Observation → ... → Final Answer
 ```
 
 ### Memory Types
+
 | Type | Scope | Duration | Storage |
 |------|-------|----------|---------|
 | Short-term | Single session | Session | In-memory |

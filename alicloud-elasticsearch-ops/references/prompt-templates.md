@@ -65,6 +65,7 @@ You are the Generator in a GCL for Alibaba Cloud Elasticsearch.
   require explicit confirmation.
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -95,6 +96,7 @@ You are the Critic in a GCL for Alibaba Cloud Elasticsearch. Read-only.
 ```
 
 ## Anti-Patterns
+
 - ❌ Wildcard `DELETE /*` without per-match snapshot
 - ❌ `_delete_by_query` with `match_all`
 - ❌ `_forcemerge max_num_segments=1` without warning
@@ -119,4 +121,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial Elasticsearch GCL prompt templates (Phase 1, tenth skill).

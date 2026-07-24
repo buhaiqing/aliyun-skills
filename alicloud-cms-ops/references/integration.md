@@ -5,6 +5,7 @@
 All installation flows MUST follow the **Enhanced Self-Healing Framework** defined in [alicloud-skill-generator/references/enhanced-self-healing-framework.md](../../alicloud-skill-generator/references/enhanced-self-healing-framework.md).
 
 **Key Self-Healing Capabilities:**
+
 - **Pre-flight Checks:** Network connectivity, disk space, permissions, system compatibility
 - **Intelligent Error Classification:** Network, permission, resource, configuration errors
 - **Multi-Path Self-Healing:** Multiple recovery strategies per error type
@@ -149,7 +150,7 @@ For custom metrics, use: `acs_custom` or your own namespace.
 
 ### Pattern 1: Metric Collection Pipeline
 
-```
+```text
 [Cloud Resources] → [CMS] → [DescribeMetricList] → [Time-Series DB] → [Grafana]
 ```
 
@@ -158,7 +159,7 @@ management.
 
 ### Pattern 2: Alarm-Driven Automation
 
-```
+```text
 [CMS Alarm] → [MNS Topic] → [Function Compute] → [Auto-Remediation]
 ```
 
@@ -167,7 +168,7 @@ automation.
 
 ### Pattern 3: Multi-Cloud Monitoring
 
-```
+```text
 [Alibaba Cloud CMS] → [DescribeMetricList] → [Data Export] → [Prometheus/Grafana]
 ```
 
@@ -227,7 +228,7 @@ visualization.
 
 ### Delegation Protocol
 
-```
+```text
 [Alarm Fires]
     │
     ├── 1. Identify namespace + metric from alarm rule
@@ -266,7 +267,7 @@ When multiple skills are invoked, correlate their findings:
 
 ### Correlation Example
 
-```
+```text
 Timeline:
   T1: ECS i-001 CPUUtilization spikes (acs_ecs_dashboard)
   T2: SLB lb-001 DropConnection increases (acs_slb_dashboard)
@@ -295,7 +296,7 @@ Action: Scale i-001 or optimize app
 
 ### Confidence-Based Delegation Protocol
 
-```
+```text
 [Alarm Fires + Confidence Score]
     │
     ├── 1. If confidence ≥ 0.9 → Immediate delegation to primary skill

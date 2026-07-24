@@ -198,19 +198,22 @@ Every operation: **Pre-flight → Execute → Validate → Recover**. Do not ski
 ### Operation: Allocate EIP
 
 **When to use:**
+
 - You need a public IP address that can be independently managed from compute lifecycle
 - You want to reassign IPs between ECS, NAT Gateway, SLB without recreating
 
 **What you need:**
+
 - Region ID
 - Bandwidth value (Mbps, depends on billing mode)
 - ISP type (optional, default: BGP)
 
 **What to expect:**
+
 - A new EIP is allocated within seconds
 - You receive an AllocationId and IpAddress for future operations
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Allocate EIP)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -258,19 +261,22 @@ aliyun vpc DescribeEipAddresses \
 ### Operation: AssociateEipAddress
 
 **When to use:**
+
 - Bind an existing EIP to an ECS instance for public internet access
 - Bind EIP to NAT Gateway for SNAT/DNAT source IP
 - Bind EIP to SLB for public-facing load balancer
 
 **What you need:**
+
 - EIP AllocationId (must be `Available` state)
 - Target InstanceId (must be in same region)
 - InstanceType
 
 **What to expect:**
+
 - EIP transitions from `Available` → `InUse` within seconds
 
-#### Pre-flight Checks
+#### Pre-flight Checks (AssociateEipAddress)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -310,11 +316,13 @@ aliyun vpc DescribeEipAddresses \
 ### Operation: UnassociateEipAddress
 
 **When to use:**
+
 - Remove EIP from current resource before binding to another
 - Migrate IP address between resources
 - Prepare EIP for release
 
 **What you need:**
+
 - EIP AllocationId (must be `InUse` state)
 - Current bound InstanceId and InstanceType
 
@@ -347,10 +355,12 @@ Verify `Status` = `Available` and fields `InstanceId` and `InstanceType` are emp
 ### Operation: Modify EIP (Bandwidth/Billing)
 
 **When to use:**
+
 - Scale up/down bandwidth based on traffic needs
 - Switch between PayByBandwidth (fixed monthly) and PayByTraffic (usage-based)
 
 **What you need:**
+
 - EIP AllocationId
 - New bandwidth value or new billing mode
 
@@ -540,6 +550,7 @@ in a GCL loop before the result is returned to the user.
 | `AssociateEipAddress` | Target region match; no existing EIP on target (or user justifies overwrite); production EIP rule |
 
 ### Changelog
+
 1.1.0 | 2026-06-04 | Sixth rollout: `## Quality Gate (GCL)` + `references/rubric.md` + `references/prompt-templates.md`. Per-op Safety sub-rules with production EIP detection, 2-step release pattern, traffic pre-check.
 
 ---

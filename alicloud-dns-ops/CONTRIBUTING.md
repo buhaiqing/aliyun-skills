@@ -30,11 +30,14 @@ Please follow our Code of Conduct in all interactions with the project.
 
 1. Fork the repository
 2. Clone your fork:
+
    ```bash
    git clone https://github.com/your-username/aliyun-skills.git
    cd aliyun-skills/alicloud-dns-ops
    ```
+
 3. Create a feature branch:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -72,7 +75,8 @@ Please follow our Code of Conduct in all interactions with the project.
 
 - Use clear, descriptive commit messages
 - Follow conventional commit format:
-  ```
+
+```yaml
   feat: add support for new record type
   fix: resolve TTL validation issue
   docs: update CLI usage examples
@@ -202,6 +206,7 @@ time ./scripts/dns-skillopt-wrapper.sh alidns DescribeDomains
 ### Bug Reports
 
 Include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior
@@ -211,6 +216,7 @@ Include:
 ### Feature Requests
 
 Include:
+
 - Clear description of the feature
 - Use case and benefits
 - Proposed implementation (if any)
@@ -219,7 +225,8 @@ Include:
 ### Security Issues
 
 Report security issues privately to:
-- Email: security@aliyun-skills.com
+
+- Email: <security@aliyun-skills.com>
 - Include "SECURITY" in subject line
 
 ## Development Guidelines

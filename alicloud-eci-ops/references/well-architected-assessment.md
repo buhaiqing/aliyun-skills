@@ -112,7 +112,7 @@ five pillars.
 
 #### DR Runbook
 
-```
+```text
 Phase 1: Verify
     - List current ECIs: aliyun eci DescribeContainerGroups
     - Identify failed/missing workloads
@@ -138,7 +138,7 @@ Phase 3: Validate
 
 ### Billing Model
 
-```
+```text
 Per-second cost = (Cpu × vCPU_price) +
                   (Memory_GB × mem_price) +
                   (Gpu × gpu_price) +
@@ -198,6 +198,7 @@ wait
 
 ECI doesn't have a built-in image cache pre-pull. For latency-sensitive
 workloads:
+
 - Use **smaller images** (multi-stage builds, distroless)
 - **Same-region ACR** to minimize image pull network cost
 - Consider **ASK with pre-pulled image** for repeated workloads
@@ -253,7 +254,7 @@ ECI doesn't have a built-in auto-scaler. For dynamic scaling:
 
 ## §附录 Quick Reference Card
 
-```
+```text
 ┌───────────────────────────────────────────────────────┐
 │  ECI 5-Pillar Summary                                 │
 ├───────────────────────────────────────────────────────┤

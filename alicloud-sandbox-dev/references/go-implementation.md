@@ -4,7 +4,7 @@
 
 ## 1. 项目结构
 
-```
+```text
 sandbox-sidecar/
 ├── cmd/
 │   └── sidecar/
@@ -30,7 +30,7 @@ sandbox-sidecar/
 ├── go.mod
 ├── go.sum
 └── config.yaml                  # 配置文件
-```
+```markdown
 
 ## 2. 初始化项目
 
@@ -43,9 +43,10 @@ go get go.uber.org/zap
 go get gopkg.in/yaml.v3
 go get github.com/prometheus/client_golang/prometheus
 go get github.com/prometheus/client_golang/prometheus/promhttp
-```
+```text
 
 **go.mod**:
+
 ```go
 module sandbox-sidecar
 
@@ -56,7 +57,7 @@ require (
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
 )
-```
+```markdown
 
 ## 3. 核心实现
 
@@ -140,7 +141,7 @@ func replace(template string, auth AuthConfig) string {
 	r = strings.ReplaceAll(r, "{account}", auth.AccountID)
 	return r
 }
-```
+```markdown
 
 ### 3.2 ACS3-HMAC-256 签名 (`internal/auth/signer.go`)
 
@@ -273,7 +274,7 @@ func hmacSHA256(key []byte, data string) []byte {
 	mac.Write([]byte(data))
 	return mac.Sum(nil)
 }
-```
+```markdown
 
 ### 3.3 凭据管理 (`internal/auth/credential.go`)
 
@@ -327,7 +328,7 @@ func (cm *CredentialManager) ShouldRotate() bool {
 	}
 	return time.Now().Add(5 * time.Minute).After(cm.expireAt)
 }
-```
+```markdown
 
 ### 3.4 HTTP 服务器与路由 (`internal/server/server.go`)
 
@@ -569,7 +570,7 @@ func (s *Server) Start() error {
 	s.logger.Info("sidecar server starting", zap.String("addr", addr))
 	return s.srv.ListenAndServe()
 }
-```
+```markdown
 
 ### 3.5 入口 (`cmd/sidecar/main.go`)
 
@@ -605,7 +606,7 @@ func main() {
 		os.Exit(1)
 	}
 }
-```
+```markdown
 
 ## 4. 构建与运行
 
@@ -620,7 +621,7 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 export ALIBABA_CLOUD_ACCOUNT_ID="your-account-id"
 
 ./sandbox-sidecar
-```
+```markdown
 
 ## 5. 关键实现要点
 

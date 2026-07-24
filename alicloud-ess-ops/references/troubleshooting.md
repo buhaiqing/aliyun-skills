@@ -35,8 +35,10 @@
 ## Diagnostic Process
 
 ### Step 1: Identify the Operation and Error
+
 - Check the API response `StatusCode` and `StatusMessage`.
 - For scaling activity failures, use `DescribeScalingActivityDetail`:
+
   ```bash
   aliyun ess DescribeScalingActivityDetail --ScalingActivityId "{{activity_id}}"
   ```
@@ -57,6 +59,7 @@
 For each error in the taxonomy table above, follow the `Agent Action` column. After recovery, retry the original operation.
 
 ### Step 4: Verify Resolution
+
 ```bash
 # Check scaling group status
 aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{scaling_group_id}}"
@@ -68,9 +71,11 @@ aliyun ess DescribeScalingActivities --ScalingGroupId "{{scaling_group_id}}" --P
 ## Common Failure Scenarios
 
 ### Scenario 1: Cannot Delete Scaling Group
+
 **Symptom:** `DeleteScalingGroup` fails with "group has instances" or "scaling activity in progress".
 
 **Diagnosis:**
+
 ```bash
 # Check instances in group
 aliyun ess DescribeScalingInstances --ScalingGroupId "{{group_id}}"
@@ -80,14 +85,17 @@ aliyun ess DescribeScalingActivities --ScalingGroupId "{{group_id}}" --StatusCod
 ```
 
 **Resolution:**
+
 1. If instances exist: either `RemoveInstances` first OR use `--ForceDelete true`
 2. If activity in progress: wait for completion, then retry
 3. If the group is Active: `DisableScalingGroup` first
 
 ### Scenario 2: Scale-out Fails
+
 **Symptom:** Instances fail to launch on scale-out events.
 
 **Diagnosis:**
+
 ```bash
 # Check scaling activity details
 aliyun ess DescribeScalingActivityDetail --ScalingActivityId "{{activity_id}}"
@@ -97,15 +105,18 @@ aliyun ess DescribeElasticStrength --RegionId "{{region}}" --InstanceTypes '["{{
 ```
 
 **Common causes:**
+
 - Insufficient instance type capacity in AZ → use multi-AZ or different instance type
 - VSwitch IP exhaustion → request larger VSwitch CIDR blocks
 - Security group quota exceeded → clean up security group rules
 - Image not found → verify image exists in region
 
 ### Scenario 3: Scale-in Removes Wrong Instances
+
 **Symptom:** ESS removed instances user wanted to keep.
 
 **Diagnosis:**
+
 ```bash
 # Check removal policy
 aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{group_id}}" \
@@ -113,14 +124,17 @@ aliyun ess DescribeScalingGroups --ScalingGroupId.1 "{{group_id}}" \
 ```
 
 **Resolution:**
+
 - Review `RemovalPolicies`: `OldestInstance`, `NewestInstance`, `OldestScalingConfiguration`
 - Use `SetInstancesProtection` to protect specific instances
 - Use `EnterStandby` to temporarily remove instances from scale-in consideration
 
 ### Scenario 4: Scaling Rule Not Triggering
+
 **Symptom:** Alarm-based scaling rule is not firing.
 
 **Diagnosis:**
+
 ```bash
 # Check alarm state
 aliyun ess DescribeAlarms --AlarmTaskId "{{alarm_id}}"
@@ -130,6 +144,7 @@ aliyun ess DescribeScalingRules --ScalingRuleId.1 "{{rule_id}}"
 ```
 
 **Common causes:**
+
 - Alarm is disabled → `EnableAlarm`
 - Metric threshold not breached → verify CloudMonitor data exists
 - Scaling group is disabled → `EnableScalingGroup`
@@ -138,6 +153,7 @@ aliyun ess DescribeScalingRules --ScalingRuleId.1 "{{rule_id}}"
 ## Logging & Debugging
 
 Use `DescribeScalingActivities` for history:
+
 ```bash
 # Recent activities (last 10)
 aliyun ess DescribeScalingActivities --ScalingGroupId "{{group_id}}" --PageNumber 1 --PageSize 10

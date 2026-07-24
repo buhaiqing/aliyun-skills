@@ -13,7 +13,7 @@ parent: alicloud-aiops-cruise
 
 固定阈值的问题：
 
-```
+```text
 固定阈值:  CPU > 70% = Warning
   ├─ 白天高峰期 CPU 65% -> 正常，但未被警告 -> 漏报
   ├─ 凌晨备份 CPU 30% -> 比基线 10% 飙升 200%，但不到阈值 -> 漏报
@@ -30,7 +30,7 @@ parent: alicloud-aiops-cruise
 
 **适用指标**: CPUUtilization, memory_usage, CpuUsage, DiskUsage
 
-```
+```text
 Z = (current_value - μ) / σ
 
 其中:
@@ -72,19 +72,19 @@ if [ "$(echo "$STD > 0" | bc -l)" = "1" ]; then
 else
   Z="0"
 fi
-```
+```markdown
 
 ### 方法 2: 分位数偏离（适用于突发特征指标）
 
 **适用指标**: DiskReadIOPS, DiskWriteIOPS, ActiveConnection, NewConnection, SlowQueryCount
 
-```
+```yaml
 判定:
   current > P99 -> Critical
   current > P95 -> Warning
   current > P75 -> Info
   current ≤ P75 -> Normal
-```
+```text
 
 **Agent 实现**：
 
@@ -97,7 +97,7 @@ CURRENT=$(echo "$HISTORY" | jq 'max // 0')
 if [ "$(echo "$CURRENT > $P99" | bc -l)" = "1" ]; then echo "CRITICAL CRITICAL"
 elif [ "$(echo "$CURRENT > $P95" | bc -l)" = "1" ]; then echo "WARNING WARNING"
 else echo "PASS OK"; fi
-```
+```markdown
 
 ### 方法 3: 时序分解（适用于强周期性指标）
 
@@ -115,7 +115,7 @@ else echo "PASS OK"; fi
 # μ[hour] = mean(bucket[hour])
 # σ[hour] = stddev(bucket[hour])
 # 当前小时 h 的异常分: Z = (current - μ[h]) / σ[h]
-```
+```markdown
 
 **局限**: jq 做分桶逻辑复杂，7×24=168 数据点尚可，30天就吃力了。
 
@@ -140,7 +140,7 @@ residual = result.resid
 # 异常分 = 当前残差 / 残差标准差
 threshold = 3.0 * np.std(residual)
 anomaly = np.abs(residual[-1]) > threshold
-```
+```markdown
 
 **优势**: 自动分离日周期和趋势，比纯 Z-Score 精准 30-50%。
 **依赖**: `pip install statsmodels pandas numpy`
@@ -179,7 +179,7 @@ if actual > upper or actual < lower:
     anomaly_level = 'CRITICAL'
 elif abs(actual - predicted) > 1.5 * (upper - lower) / 2:
     anomaly_level = 'WARNING'
-```
+```markdown
 
 **优势**: 处理节假日效应（春节/双11流量变化），支持多季节性。
 **依赖**: `pip install prophet scikit-learn pandas`
@@ -194,14 +194,14 @@ go build -o bin/baseline-scorer scripts/baseline-scorer.go
 
 # 输入 JSON -> 输出 anomaly score
 cat metrics.json | ./bin/baseline-scorer --method stl --period 24
-```
+```markdown
 
 **优势**: 无 Python 运行时依赖，适合容器化/CI/CD 场景，延迟 < 10ms。
 **依赖**: Go 1.21+（仅编译时需要，运行时不需要）
 
 #### 方法 3 选型决策树
 
-```
+```text
 环境有 Python + statsmodels?
 ├─ 是 -> 团队熟悉 ML？
 │   ├─ 是 -> 用 Prophet（Level 3），精度最高
@@ -209,7 +209,7 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
 └─ 否 -> 环境有 Go 编译器？
     ├─ 是 -> 编译 Go 版 scorer（Level 4）
     └─ 否 -> 用 jq 分桶（Level 1），精度有限
-```
+```markdown
 
 ## 指标 -> 方法映射表
 
@@ -247,13 +247,14 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
 | 含节假日 | 90 天 × 1h = 2160 点 | `date -u -v-90d` | 有季节性业务 |
 
 > Baseline **不**需要每次巡检都重新计算。可复用上一次巡检的计算结果（JSON 持久化到 `audit-results/`）。重新计算的触发条件：
+>
 > - 首次巡检（无缓存）
 > - 距离上次计算超过 6 小时
 > - 阈值配置文件更新
 
 ## 与固定阈值的关系
 
-```
+```text
 最终判定 = max(固定阈值等级, 动态基线等级)
 
 例 1: CPU 当前 25%, 固定阈值 -> PASS OK, Z-Score = 3.5 -> Critical
@@ -264,7 +265,7 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
 
 例 3: CPU 当前 90%, 固定阈值 -> Critical, Z-Score = 5.0 -> Critical
   最终 -> Critical（两者一致）
-```
+```markdown
 
 ## 报告输出格式
 
@@ -283,7 +284,7 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
   "window_days": 7,
   "bucket_strategy": "global"
 }
-```
+```markdown
 
 ## 实现层选型指南
 
@@ -295,6 +296,7 @@ cat metrics.json | ./bin/baseline-scorer --method stl --period 24
 | Level 4 | Go 编译二进制 | **** | Go 编译器(仅编译时需要) | 生产级/容器化 |
 
 > 本 skill 的代码仓库中：
+>
 > - `scripts/baseline-scorer.py` — Level 2/3 的 Python 实现
 > - `scripts/baseline-scorer.go` — Level 4 的 Go 实现（编译后无依赖）
 

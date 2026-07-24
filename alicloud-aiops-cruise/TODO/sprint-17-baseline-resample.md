@@ -8,6 +8,7 @@
 > **完成日期**: 2026-06-07
 > **需求来源**: 2026-06-07 19:44 用户决策 — "提供 baseline 重采样的能力, 允许指定日期生成采样数据"
 > **关联文件**:
+>
 > - `alicloud-topo-discovery/scripts/baseline-manager.py` (新增 --resample 模式)
 > - `alicloud-topo-discovery/scripts/lib/baseline_local.py` (新增 copy_baseline / list_gaps 工具)
 > - `alicloud-aiops-cruise/scripts/agents/perceive/infra/configdrift.sh` (--resample 透传)
@@ -19,6 +20,7 @@
 
 Sprint 16 实现了 `--compare-with <date>` 让 configdrift 能与任意历史 baseline 对比。
 但实际生产中, baseline 目录往往**不连续**:
+
 - 周末/节假日 cron 未跑, 缺失 5-7 天 baseline
 - 账号切换/权限问题导致 1-2 周空窗
 - 季度审计前需要 90 天完整数据
@@ -38,11 +40,12 @@ python3 baseline-manager.py \
     --resample \
     --from-baseline 2026-06-07 \
     --as-of 2026-05-15
-```
+```markdown
 
 **语义**: 把 `2026-06-07` 的 baseline 复制为 `2026-05-15`, 资源数据完全相同, 仅 `generated_at` 时间戳改为 `2026-05-15T00:00:00Z`。
 
 **适用场景**:
+
 - 故障复盘: 5/15 出了事故, 但当天没跑 baseline -> 用 5/20 (或更近的) 复制补建, 然后 `configdrift --compare-with 2026-05-15` 复现当时差异
 - 季度审计: 补全缺失日期, 让 `--compare-with` 任意日期都能跑
 
@@ -55,7 +58,7 @@ python3 baseline-manager.py \
     --resample \
     --as-of 2026-05-15 \
     --trigger-scan
-```
+```text
 
 **语义**: 真正调 `topo-scan.sh` 扫描一次云上资源, 但 `generated_at` 写 `2026-05-15T00:00:00Z`。
 
@@ -71,7 +74,7 @@ python3 baseline-manager.py \
     --resample \
     --from-baseline 2026-06-07 \
     --as-of-range 2026-05-01:2026-05-31
-```
+```markdown
 
 **语义**: 在 `2026-05-01` 到 `2026-05-31` 之间的**每一天**都生成一份复制 (源 = 2026-06-07)。
 
@@ -86,7 +89,7 @@ python3 baseline-manager.py \
     --from-baseline latest \
     --as-of-range 2026-05-01:2026-06-07 \
     --fill-gaps
-```
+```text
 
 **语义**: 在区间内**只为已存在目录外的缺失日期**生成, 不覆盖已有 baseline。
 
@@ -101,6 +104,7 @@ python3 baseline-manager.py \
 **目标**: 在 `LocalBackend` 类上增加 3 个工具方法。
 
 **接口设计**:
+
 ```python
 class LocalBackend:
     def copy_baseline(self, src_date: str, dst_date: str) -> Optional[Path]:
@@ -111,9 +115,10 @@ class LocalBackend:
 
     def fill_gaps(self, src_date: str, start: str, end: str) -> List[str]:
         """用 src_date 复制填充区间内所有缺失日期, 返回实际创建的日期列表."""
-```
+```markdown
 
 **实现要点**:
+
 - `copy_baseline`: `shutil.copytree(src, dst)`, 复制 manifest.json + inventory.json
 - 校验 `dst_date` 不与已有目录冲突 (除非加 `--force` 标志)
 - `list_gaps`: 在 `[start, end]` 区间枚举日期, 过滤 `self.list_baselines()`
@@ -124,6 +129,7 @@ class LocalBackend:
 **目标**: 在主 CLI 暴露 `--resample` 子命令。
 
 **接口设计**:
+
 ```bash
 # 模式 1: 复制
 python3 baseline-manager.py --output-dir <DIR> --resample \
@@ -136,9 +142,10 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 # 模式 4: 智能补全
 python3 baseline-manager.py --output-dir <DIR> --resample \
     --from-baseline latest --as-of-range 2026-05-01:2026-06-07 --fill-gaps
-```
+```markdown
 
 **实现要点**:
+
 - 互斥检查: `--resample` 与 `--diff` 互斥 (重采样和漂移检测是不同阶段)
 - 必填参数: `--resample` 模式下, `--from-baseline` + (`--as-of` 或 `--as-of-range`) 至少一组
 - 校验: `--from-baseline=latest` 时用 `backend.get_latest()` 解析
@@ -150,6 +157,7 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 **目标**: 让 ConfigDrift Agent 支持"重采样 + 对比"一键完成。
 
 **接口设计**:
+
 ```bash
 # 重采样到 5/15, 立即与 5/15 对比
 bash configdrift.sh --resample --from-baseline latest --as-of 2026-05-15 \
@@ -158,9 +166,10 @@ bash configdrift.sh --resample --from-baseline latest --as-of 2026-05-15 \
 # 实际场景: 不带 --compare-with 时, 重采样完成后不立即对比
 bash configdrift.sh --resample --from-baseline latest \
     --as-of-range 2026-05-01:2026-05-31 --fill-gaps
-```
+```markdown
 
 **实现要点**:
+
 - 新增 `--resample` / `--from-baseline` / `--as-of` / `--as-of-range` / `--fill-gaps` / `--force` 参数
 - 互斥: `--resample` 模式下, `--compare-with` 可选 (默认不对比)
 - JSON 报告 `mode` 字段: `"resample"` 或 `"diff"` (替代隐式推断)
@@ -172,6 +181,7 @@ bash configdrift.sh --resample --from-baseline latest \
 **测试文件**: `alicloud-topo-discovery/tests/test_sprint17_resample.py`
 
 **测试场景** (预计 8-10 个):
+
 | ID | 场景 | 验证 |
 |----|------|------|
 | T1 | `copy_baseline` 正常 | 源目录被完整复制, manifest.json 内容一致 |
@@ -186,6 +196,7 @@ bash configdrift.sh --resample --from-baseline latest \
 | T10 | CLI --resample 与 --diff 互斥 | exit=2, 明确错误信息 |
 
 **端到端验证**:
+
 ```bash
 # 1. 模式 1
 python3 baseline-manager.py --output-dir <DIR> --resample \
@@ -196,7 +207,7 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 bash configdrift.sh --resample --from-baseline latest \
     --as-of 2026-05-15 --compare-with 2026-05-15
 # 预期: drift_count=0 (重采样自对比)
-```
+```markdown
 
 ---
 
@@ -213,13 +224,14 @@ bash configdrift.sh --resample --from-baseline latest \
 
 ## 与 Sprint 16 的协同
 
-```
+```text
 Sprint 16: --compare-with <date>    <- 读: 历史 baseline
 Sprint 17: --resample --as-of <date> <- 写: 补建历史 baseline
 组合用法: 重采样补全 -> 对比验证
-```
+```text
 
 **典型工作流**:
+
 ```bash
 # 第 1 步: 智能补全 90 天区间
 python3 baseline-manager.py --output-dir <DIR> --resample \
@@ -228,7 +240,7 @@ python3 baseline-manager.py --output-dir <DIR> --resample \
 
 # 第 2 步: 对比 90 天前 vs 现在
 bash configdrift.sh --compare-with $(date -v-90d '+%Y-%m-%d')
-```
+```markdown
 
 ---
 
@@ -257,7 +269,7 @@ bash alicloud-aiops-cruise/scripts/agents/perceive/infra/configdrift.sh \
     --resample --from-baseline latest --as-of 2026-05-15 \
     --compare-with 2026-05-15
 # 预期: 补建 + 0 漂移 (与自身对比)
-```
+```markdown
 
 ---
 

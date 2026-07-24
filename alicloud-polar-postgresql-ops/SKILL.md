@@ -38,6 +38,7 @@ metadata:
 > 以下所有代码块中的 `aliyun polardb ...` 命令在执行时应替换为 `./scripts/polar-postgresql-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun polardb` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
+>
 ## Overview
 
 PolarDB for PostgreSQL is Alibaba Cloud's cloud-native relational database, PostgreSQL-compatible,
@@ -90,6 +91,7 @@ response validation, and failure recovery.
 - User mentions "AIOps", "智能运维", "预测分析" with PolarDB PostgreSQL context
 
 > **⚠️ 与 DAS skill 边界说明：**
+>
 > - **本 Skill 负责**：SQL 执行（ExecuteSQL/ExecuteSQLFile）、慢日志统计查询（DescribeSlowLogRecords）
 > - **DAS Skill 负责**：慢 SQL **诊断优化**、SQL 性能分析、锁分析、自动 SQL 限流
 > - 边界关键词："执行 SQL" → PolarDB；"优化 SQL"、"诊断慢 SQL" → DAS
@@ -186,10 +188,11 @@ response validation, and failure recovery.
 见 [执行环境配置](../alicloud-skill-generator/references/execution-environment.md)
 
 ### First Command
+
 ```bash
 # List all PolarDB PostgreSQL clusters in region
 aliyun polardb DescribeDBClusters --DBType PostgreSQL --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```
+```markdown
 
 ### Capabilities at a Glance
 
@@ -232,7 +235,7 @@ aliyun polardb CreateDBCluster \
   --VSwitchId "{{user.vswitch_id}}" \
   --PayType Postpaid \
   --ClientToken "$(uuidgen)"
-```
+```text
 
 **Execute (SDK Fallback)**
 
@@ -248,7 +251,7 @@ aliyun polardb DescribeDBClusters \
   --output cols=DBClusterId,DBClusterStatus rows=Items.DBCluster[]
 
 # Expected: DBClusterStatus = "Running"
-```
+```markdown
 
 **Recover**
 
@@ -322,7 +325,7 @@ See [AIOps Storage Prediction](references/advanced/aiops-storage-prediction.md) 
 | **100%满载** | 3 天 | 立即扩容/清理 |
 
 ## 预警级别: `critical`
-```
+```markdown
 
 ### Flow: AIOps Anomaly Detection
 
@@ -364,15 +367,17 @@ graph TD
     C --> D[Top慢SQL: SELECT * FROM orders WHERE...]
     D --> E[执行时间: 12.5s]
     E --> F[根因: 复杂查询导致CPU高]
-```
+```markdown
 
 ## 优化建议
 
 ### 立即执行 (P0)
+
 1. **SQL限流**: 对慢查询启用SQL限流
 2. **索引优化**: 为查询条件添加索引
 3. **连接释放**: 检查连接池配置
-```
+
+```markdown
 
 ## Error Taxonomy (Reference)
 

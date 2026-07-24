@@ -37,7 +37,7 @@ Each entry key is a Terraform resource type (`alicloud_*`).
 report = check_nl2hcl_coverage(intent, request)
 if report.must_halt:
     sys.exit(6)  # COVERAGE_GAP
-```
+```markdown
 
 Triggered from:
 
@@ -85,13 +85,13 @@ python3 module_coverage.py --check-request "创建 VPC 和 MongoDB 集群"
 
 ### Step 1 — Module template
 
-```
+```text
 modules/addon-mongodb/
 ├── main.tf
 ├── variables.tf
 ├── outputs.tf
 └── versions.tf
-```
+```markdown
 
 ### Step 2 — Manifest
 
@@ -113,7 +113,7 @@ modules/addon-mongodb/
 
 ```python
 r"mongodb|mongo|文档数据库": "alicloud_mongodb_instance",
-```
+```markdown
 
 ### Step 5 — Tests + verify
 

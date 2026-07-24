@@ -24,9 +24,10 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 ## Critical 问题（{{critical_count}} 项）— 需立即处理
 
 {% for issue in critical_issues %}
+
 ### #{{loop.index}} {{issue.title}}
 
-```
+```text
 ┌─ 诊断链 ─────────────────────────────────────────────────
 │ Phase1 拓扑发现 -> 扫描到 {{issue.scope}} 个资源
 │ Phase2 数据采集 -> {{issue.collected_metric}} = {{issue.value}}
@@ -66,9 +67,10 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 ---
 
 {% for issue in warning_issues %}
+
 ### #{{loop.index}} {{issue.title}}
 
-```
+```text
 ┌─ 诊断链 ─────────────────────────────────────────────────
 │ 实例:  {{issue.instance_id}} ({{issue.instance_name}})
 │ 指标:  {{issue.metric}} = {{issue.value}}（阈值: {{issue.threshold}}）
@@ -79,6 +81,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 │ {{issue.suggestion}}
 └───────────────────────────────────────────────────────────
 ```
+
 {% endfor %}
 
 ---
@@ -96,6 +99,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 ## [LINK] 链路关联推理
 
 {% for inference in chain_inferences %}
+
 ### {{inference.icon}} {{inference.pattern}}
 
 | 属性 | 内容 |
@@ -112,6 +116,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 {% for rec in top_recommendations %}
 {{loop.index}}. **{{"CRITICAL" if rec.level == "critical" else "WARNING" if rec.level == "warning" else "INFO"}} [{{rec.level|upper}}] {{rec.title}}**
+
    - 实例: `{{rec.instance_id}}`
    - 详情: {{rec.detail}}
    DOWN 修复路径:

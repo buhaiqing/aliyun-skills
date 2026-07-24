@@ -60,6 +60,7 @@ You are the Generator in a GCL for Alibaba Cloud NAT Gateway.
 - EIP operations delegate to `alicloud-eip-ops` GCL.
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -86,6 +87,7 @@ You are the Critic in a GCL for Alibaba Cloud NAT Gateway. Read-only.
 ```
 
 ## Anti-Patterns
+
 - ❌ `DeleteNatGateway` without 3-step cascade
 - ❌ CIDR overlap / port conflict on create
 - ❌ Production NAT deletion without maintenance window
@@ -109,4 +111,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial NAT GCL prompt templates (Phase 1, eighth skill).

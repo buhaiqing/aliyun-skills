@@ -12,7 +12,7 @@ AIOps（Artificial Intelligence for IT Operations）通过机器学习算法分�
 - **置信度评分**：量化诊断结果可靠性，辅助决策
 - **自动修复建议**：生成可执行的修复方案，缩短响应时间
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │ Historical Data │────▶│ ML Prediction   │────▶│ Anomaly Forecast│
 │ (CMS Metrics)   │     │ (Time Series)   │     │ (Confidence)    │
@@ -171,7 +171,7 @@ type PredictionResult struct {
 
 置信度评分综合考虑多维度因素，量化诊断结果的可靠性：
 
-```
+```yaml
 ConfidenceScore = 
     correlation_strength * 0.4      # 指标间相关性强度
   + historical_frequency * 0.3      # 历史异常频率
@@ -517,7 +517,7 @@ type AnomalyDetected struct {
 
 ### Pattern 1: Predictive Alert Workflow
 
-```
+```text
 [CMS Metric Collection]
     │
     ├── 1. Collect historical metrics (7 days)
@@ -532,7 +532,7 @@ type AnomalyDetected struct {
 
 ### Pattern 2: Confidence-Based Decision Tree
 
-```
+```text
 [Anomaly Detected]
     │
     ├── Confidence > 0.9 (Critical)?
@@ -550,7 +550,7 @@ type AnomalyDetected struct {
 
 ### Pattern 3: Multi-Metric Correlation
 
-```
+```text
 [Single Metric Anomaly]
     │
     ├── 1. Query related metrics (CPU + Memory + Disk)

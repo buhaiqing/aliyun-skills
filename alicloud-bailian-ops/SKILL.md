@@ -45,6 +45,7 @@ metadata:
 ## Overview
 
 Bailian (百炼) is Alibaba Cloud's GenAI Service Platform providing:
+
 - **Model Hub**: Access to Qwen, Llama, and third-party LLMs
 - **Agent Framework**: Build autonomous AI agents with tool use
 - **Knowledge Base**: RAG (Retrieval-Augmented Generation) with document indexing
@@ -162,7 +163,7 @@ aliyun bailian CreateChatCompletion --body '{
 
 Retrieve detailed model specifications including version, pricing, and context window.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Get Model Info)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -267,7 +268,7 @@ aliyun bailian ListModels --ModelType "TextGeneration"
 
 Invoke LLM for chat or completion tasks.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Chat Completion)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -327,7 +328,7 @@ response, err := client.CreateChatCompletion(request)
 
 Deploy an autonomous AI agent with tool capabilities.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Create Agent)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|
@@ -444,7 +445,7 @@ aliyun bailian CreateChatCompletion --body '{
 
 Train custom models on domain data.
 
-#### Pre-flight Checks
+#### Pre-flight Checks (Fine-tuning Job)
 
 | Check | Method | Expected | On Failure |
 |-------|--------|----------|------------|

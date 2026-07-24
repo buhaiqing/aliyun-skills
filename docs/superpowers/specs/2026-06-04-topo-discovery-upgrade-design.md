@@ -10,22 +10,26 @@
 ## 1. Context & Goals
 
 ### 1.1 Background
+
 `alicloud-topo-discovery` 当前是只读网络拓扑扫描器(33 个 product skill 之外的横向能力)。基于前 5 轮对话,本 skill 需升级为:
 
 > **"Cloud Resource Discovery + Declarative Archive" 双职能源 skill** —— 保留全部 read-only 安全门,新增按需 HCL 导出与周期 baseline 管理。
 
 ### 1.2 Why
+
 - **现状**:日常运维 80% 用 skill + CLI 即可(无需 TF);但 4 类场景(多资源编排、DR、合规审计、跨团队交接)需要"设计意图存档"——而该存档在云上不存在
 - **痛点**:TF 维护成本高(每个 skill 加 TF 模式会膨胀 3x);`terraform plan` 的 drift 检测需要 SSOT 假设
 - **机会**:`alicloud-topo-discovery` 已有 read-only 扫描器、跨产品聚合、JSON 输出——天然适合"按需生成 + 周期 baseline + 双快照 diff"的 Reverse-engineered IaC 模式
 
 ### 1.3 Goals
+
 1. 提供按需 HCL 导出能力,让"设计意图存档"成本接近 0
 2. 提供周期 baseline 存档 + 双快照 diff,实现"事后审计式"drift 检测
 3. 严格保持 read-only 红线,绝不调用 `terraform apply` 或任何写操作
 4. 不破坏现有 scan-topo 行为,向下兼容
 
 ### 1.4 Non-Goals
+
 - 不做"真 IaC"(`terraform apply` 由用户/Pulumi/CDK 接手)
 - 不做实时事件驱动 drift 检测(周期 baseline 足够)
 - 不做模块市场、TF Registry、内部 artifact 分发
@@ -62,6 +66,7 @@
 | **总计** | | **~12-14 周** |
 
 比原始 6-8 周估算**超出约 60-70%**。建议团队评估是否:
+
 - 砍 v1.0 资源到 Top-10(回到 6-8 周)
 - 或接受 12-14 周(完成度更高)
 
@@ -80,6 +85,7 @@
 ### 3.2 export-hcl(新)
 
 #### 3.2.1 CLI 接口
+
 ```bash
 aliyun-topo-discovery export-hcl \
   --scope {vpc-xxx | all} \
@@ -89,7 +95,7 @@ aliyun-topo-discovery export-hcl \
   [--include-types vpc,vswitch,slb,ecs,rds] \
   [--exclude-types ack,nat] \
   [--dry-run]
-```
+```markdown
 
 #### 3.2.2 资源类型覆盖(Top-18)
 
@@ -115,7 +121,8 @@ aliyun-topo-discovery export-hcl \
 | 18 | VPN / SAG | `vpc DescribeVpnConnections` + `smartag DescribeSmartAccessGateways` | `alicloud_vpn_connection` + `alicloud_sag` | 合并 |
 
 #### 3.2.3 输出文件结构
-```
+
+```json
 {output-dir}/
 ├── provider.tf           # Provider 锁版本
 ├── variables.tf          # 变量定义(region, name prefix, tags)
@@ -128,6 +135,7 @@ aliyun-topo-discovery export-hcl \
 ```
 
 #### 3.2.4 manifest.json Schema
+
 ```json
 {
   "schema_version": "1.0",
@@ -147,7 +155,7 @@ aliyun-topo-discovery export-hcl \
   "import_ids_stable": true,
   "execution_time_ms": 12345
 }
-```
+```markdown
 
 #### 3.2.5 敏感字段处理(必须)
 
@@ -163,12 +171,14 @@ aliyun-topo-discovery export-hcl \
 **实现位置**:`scripts/lib/sensitive-masker.py` + `scripts/field-mappings/*.md` 的 `sensitive_fields` 列表
 
 #### 3.2.6 Provider 版本策略
+
 - 默认:Lock 到执行时 Aliyun Provider 最新稳定版(从 Registry API 获取)
 - 覆盖:`--provider-version 1.220.0` 显式指定
 - 升级检测:CI 中跑 `export-hcl --dry-run` 时,如 provider > 30 天未更新,WARNING 提示
 - 升级流程:团队评审 changelog → 更新版本号 → 重跑 export-hcl → diff 检查 HCL 兼容性
 
 #### 3.2.7 ID 稳定性保证
+
 - resource block 名:`{type}_{slug(name)}` (e.g. `alicloud_vswitch_vswitch_prod_web_a`)
 - import ID:遵循 Aliyu Provider 官方格式(`vpc:REGION:VPC_ID` 等)
 - 同一资源二次导出 HCL diff 必须**仅**时间戳不同
@@ -188,6 +198,7 @@ def infer_dependencies(resources):
 ### 3.3 baseline(新)
 
 #### 3.3.1 CLI 接口
+
 ```bash
 # 单次运行
 aliyun-topo-discovery baseline \
@@ -198,10 +209,11 @@ aliyun-topo-discovery baseline \
 
 # CI/CD 调度(默认今天)
 aliyun-topo-discovery baseline --backend git
-```
+```markdown
 
 #### 3.3.2 输出结构
-```
+
+```json
 {output-dir}/{YYYY-MM-DD}/
 ├── {完整 export-hcl 输出}
 ├── manifest.json(同 §3.2.4)
@@ -218,12 +230,14 @@ aliyun-topo-discovery baseline --backend git
 | `oss` | 大账号/合规 | `--oss-bucket`, `--oss-prefix`(默认 `topo-baseline/`), `--oss-access-key`(可选,默认用主凭证) | multipart upload;失败 → 重试 3 次 → 报警;**⚠️ 不做 ServerSide 加密,仅依赖 bucket policy —— 用户必须自行配置** |
 
 #### 3.3.4 保留策略
+
 - 默认 90 天
 - `--retention-days N` 可配
 - 过期:标记 `.expired` 后缀(不删除,留给用户决定)
 - 提供 `baseline-prune` 子命令做手动清理
 
 #### 3.3.5 CI/CD 模板
+
 - `.github/workflows/topology-baseline.yml`(GitHub Actions)
 - `.gitlab-ci.yml` 片段(GitLab)
 - `Jenkinsfile` 片段(Jenkins)
@@ -232,12 +246,14 @@ aliyun-topo-discovery baseline --backend git
 ### 3.4 Cross-Account STS AssumeRole
 
 #### 3.4.1 触发场景
+
 - 资源中心账号(汇总所有业务账号拓扑)
 - 财务托管账号(读取所有账号账单相关资源)
 - 日志审计账号(读取所有账号配置)
 
 #### 3.4.2 工作流
-```
+
+```json
 1. 用户配置 `~/.aliyun/config.json`:
    {
      "role_arn": "arn:acs:ram::1234:role/TopologyReader",
@@ -254,14 +270,16 @@ aliyun-topo-discovery baseline --backend git
 3. 目标账号要求:
    - 角色需有 `AliyunReadOnlyAccess` 策略
    - 信任策略包含源账号的 `sub` 或 `roles`
-```
+```markdown
 
 #### 3.4.3 安全约束
+
 - 临时凭证永不入 manifest / 日志 / 输出文件
 - 凭证在脚本内存中用完即弃
 - 失败 HALT,绝不带主账号凭证"兜底"——多账号场景必须有 AssumeRole 角色
 
 #### 3.4.4 相关文件
+
 - `scripts/sts-helper.sh`(AssumeRole wrapper)
 - `references/cross-account-sts.md`(详细配置 + 故障排查)
 - `references/safety-gate.md` 增量:多账号凭证安全规则
@@ -273,6 +291,7 @@ aliyun-topo-discovery baseline --backend git
 ### 4.1 baseline-diff(新)
 
 #### CLI 接口
+
 ```bash
 aliyun-topo-discovery baseline-diff \
   --from 2026-06-04 \
@@ -284,6 +303,7 @@ aliyun-topo-discovery baseline-diff \
 ```
 
 #### 输出结构(Markdown)
+
 ```markdown
 # Drift Report: 2026-06-04 → 2026-06-11
 
@@ -314,9 +334,10 @@ aliyun-topo-discovery baseline-diff \
 ...
 ## 🟢 Low Risk Changes
 ...
-```
+```markdown
 
 #### 风险评级规则
+
 | 操作 | 评级 |
 |------|------|
 | 任何资源删除 | High |
@@ -327,6 +348,7 @@ aliyun-topo-discovery baseline-diff \
 | 资源描述/name 变更 | Low |
 
 #### CloudTrail 集成
+
 - 改动时间窗内自动查询 CloudTrail
 - 失败时输出 `CloudTrail query failed, please manually correlate`
 - 不强依赖,优雅降级
@@ -334,6 +356,7 @@ aliyun-topo-discovery baseline-diff \
 ### 4.2 export-blueprint(新)
 
 #### CLI 接口
+
 ```bash
 aliyun-topo-discovery export-blueprint \
   --source vpc-xxx \
@@ -343,6 +366,7 @@ aliyun-topo-discovery export-blueprint \
 ```
 
 #### vars.yaml 格式
+
 ```yaml
 name_prefix: "prod-dr"
 environment: "dr"
@@ -354,10 +378,11 @@ az_mapping:
 tags:
   Environment: dr
   ManagedBy: topo-discovery
-```
+```markdown
 
 #### 输出
-```
+
+```json
 {output-dir}/
 ├── main.tf(变量化,可移植)
 ├── variables.tf
@@ -366,6 +391,7 @@ tags:
 ```
 
 #### 起步模板
+
 | 模板 | 包含 | 适用 |
 |------|------|------|
 | `standard-3tier` | VPC + 3 VSwitch(public/app/db)+ ALB + 2 ECS + RDS | Web 应用 |
@@ -410,7 +436,7 @@ tags:
 
 ## 7. File Structure(预期)
 
-```
+```text
 alicloud-topo-discovery/
 ├── SKILL.md                                  # 更新:4 个子模式入口
 ├── references/
@@ -455,7 +481,7 @@ alicloud-topo-discovery/
         ├── standard-3tier/
         ├── web-stack/
         └── data-stack/
-```
+```markdown
 
 ---
 
@@ -527,6 +553,7 @@ alicloud-topo-discovery/
 ---
 
 **Spec 自检清单(自审)**:
+
 - [x] 无 TBD/TODO 占位
 - [x] 内部一致:v1.0/v1.1 边界清晰,out-of-scope 与 goals 一致
 - [x] 范围适中:可由单一实施计划承载
@@ -534,5 +561,6 @@ alicloud-topo-discovery/
 - [x] 风险诚实:不回避工期超出(6-8 → 12-14 周)
 
 **待用户审查后**:
+
 - 写入 git(单独 commit)
 - 启动 `writing-plans` skill 生成实施计划

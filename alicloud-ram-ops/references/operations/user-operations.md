@@ -81,9 +81,11 @@ func main() {
 
 1. Read `{{output.user_id}}` from `$.User.UserId`.
 2. Call `GetUser` to confirm existence:
+
    ```bash
    aliyun ram GetUser --UserName "{{user.user_name}}"
    ```
+
 3. Report `UserName`, `UserId`, and `CreateDate` to the user.
 
 ### Failure Recovery

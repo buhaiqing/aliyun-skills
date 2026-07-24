@@ -19,11 +19,13 @@ This document tracks all standardization changes made to `alicloud-*-ops` skills
 **Issue**: Shell parameter expansion `${_SKILLOPT_SKILL_ROOT}` was missing curly braces, causing `_SKILLOPT_SKILL_ROOT/.runtime` to fail with "bad substitution" error.
 
 **Before**:
+
 ```bash
 _SKILLOPT_RUNTIME_ROOT="${ALIBABA_CLOUD_RUNTIME_DIR:-$_SKILLOPT_SKILL_ROOT/.runtime}"
 ```
 
 **After**:
+
 ```bash
 _SKILLOPT_RUNTIME_ROOT="${ALIBABA_CLOUD_RUNTIME_DIR:-${_SKILLOPT_SKILL_ROOT}/.runtime}"
 ```
@@ -35,6 +37,7 @@ _SKILLOPT_RUNTIME_ROOT="${ALIBABA_CLOUD_RUNTIME_DIR:-${_SKILLOPT_SKILL_ROOT}/.ru
 **Issue**: Log prefix was hardcoded as `[ECS-SkillOpt]` in skills that weren't ECS, causing confusing logs.
 
 **Before**:
+
 ```bash
 skillopt_log() {
     local ts
@@ -44,6 +47,7 @@ skillopt_log() {
 ```
 
 **After** (example for ACK):
+
 ```bash
 skillopt_log() {
     local ts
@@ -59,6 +63,7 @@ skillopt_log() {
 **Issue**: All SKILL.md files needed standardized `Runtime Rules` table enforcing wrapper-first execution.
 
 **Added to each SKILL.md**:
+
 ```markdown
 ## Runtime Rules
 
@@ -73,11 +78,13 @@ skillopt_log() {
 **Issue**: Wrapper scripts crashed when `skillopt-lib.sh` was missing instead of falling back to direct CLI.
 
 **Before**:
+
 ```bash
 source "$SCRIPT_DIR/skillopt-lib.sh"
 ```
 
 **After**:
+
 ```bash
 SKILLOPT_LOADED=false
 if [ -f "$SCRIPT_DIR/skillopt-lib.sh" ]; then
@@ -93,6 +100,7 @@ fi
 **Issue**: SKILL.md execution sections needed mandatory wrapper-first note.
 
 **Added to each SKILL.md execution section**:
+
 ```markdown
 > **Note**: All CLI examples below should be executed via the SkillOpt wrapper script.
 > Fallback to native `aliyun <product>` only when the wrapper is unavailable.
@@ -101,6 +109,7 @@ fi
 ## Skills Affected
 
 ### P1 Skills (8)
+
 - alicloud-ecs-ops
 - alicloud-oss-ops
 - alicloud-vpc-ops
@@ -111,6 +120,7 @@ fi
 - alicloud-kms-ops
 
 ### P2 Skills (28)
+
 - alicloud-ack-ops
 - alicloud-ask-ops
 - alicloud-actiontrail-ops
@@ -141,6 +151,7 @@ fi
 - alicloud-waf-ops
 
 ### Exempt Skills (3)
+
 - alicloud-advisor-ops: No SkillOpt integration (lightweight skill)
 - alicloud-agentrun-ops: No SkillOpt integration (lightweight skill)
 - alicloud-gcl-runner-ops: Python-based GCL runner (different runtime mechanism)
@@ -148,6 +159,7 @@ fi
 ## Verification
 
 All 36 skills with `skillopt-lib.sh` pass sourcing test:
+
 ```bash
 for skill_dir in alicloud-*-ops; do
   lib=$(find "$skill_dir" -name "skillopt-lib.sh" -type f 2>/dev/null | head -1)

@@ -9,7 +9,7 @@ Alibaba Cloud KMS provides a regional, highly available cryptographic key manage
 
 ### Service Model
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │                  KMS Service                     │
 │                                                  │
@@ -32,7 +32,7 @@ Alibaba Cloud KMS provides a regional, highly available cryptographic key manage
   │ (Encrypt/    │              │  OSS,ACK)    │
   │  Decrypt)    │              │              │
   └──────────────┘              └──────────────┘
-```
+```markdown
 
 ## Resource Types
 
@@ -89,6 +89,7 @@ KMS Secrets provide secure management of credential-like data.
 | `RAMCredentials` | Short-lived RAM credentials |
 
 Key secret concepts:
+
 - **Versions**: Each secret has multiple versions; `ACSCurrent` marks the active version, `ACSPrevious` marks the prior version
 - **Rotation**: Automatic (via rotation policy) or manual (via `PutSecretValue` or `RotateSecret`)
 - **Deletion**: Enters 7–30 day scheduled deletion state; can be restored with `RestoreSecret`
@@ -96,6 +97,7 @@ Key secret concepts:
 ### 3. KMS Instances (Dedicated)
 
 Dedicated KMS instances provide:
+
 - VPC-bound networking
 - Application Access Points (AAP) for authentication
 - Network Rules for IP-based access control
@@ -128,7 +130,7 @@ KMS is a **regional service** (not global). Keys are created within a specific r
 
 ## Dependency Graph
 
-```
+```text
 KMS Key ──► ECS Disk Encryption
        ──► RDS TDE
        ──► OSS SSE-KMS
@@ -143,7 +145,7 @@ KMS Secret ──► RDS Automatic Password Rotation
 KMS Instance ──► AAP Authentication
             ──► Network Rule ACL
             ──► Client Key Auth
-```
+```markdown
 
 ## SPOF Analysis
 

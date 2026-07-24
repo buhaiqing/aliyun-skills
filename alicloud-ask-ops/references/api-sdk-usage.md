@@ -8,7 +8,7 @@
 
 - Spec: **CS-2015-12-15** (verified)
 - Base path: `https://cs.{region}.aliyuncs.com`
-- Documentation: https://www.alibabacloud.com/help/en/ack
+- Documentation: <https://www.alibabacloud.com/help/en/ack>
 - **ASK identifier:** `cluster_type=ManagedKubernetes` + `profile=Serverless`
   (NOT `cluster_type=Ask` — that's outdated)
 
@@ -32,7 +32,7 @@
 
 ## SDK Package
 
-```
+```text
 github.com/alibabacloud-go/cs-20151215/v4/client
 ```
 
@@ -81,7 +81,7 @@ github.com/alibabacloud-go/cs-20151215/v4/client
   "controlplane_log_components": ["apiserver", "kcm", "scheduler"],
   "kubernetes_version": "1.32.1-aliyun.1"
 }
-```
+```markdown
 
 ### Required (high confidence, verified)
 
@@ -146,7 +146,7 @@ github.com/alibabacloud-go/cs-20151215/v4/client
   { "name": "csi-provisioner", "config": "" },
   { "name": "nginx-ingress-controller", "config": "{\"IngressSlbNetworkType\":\"internet\"}" }
 ]
-```
+```markdown
 
 | Field | Required? | Description |
 |-------|-----------|-------------|
@@ -156,6 +156,7 @@ github.com/alibabacloud-go/cs-20151215/v4/client
 | `disabled` | (default) `false` | Set `true` to skip auto-install |
 
 **Common addons for ASK:**
+
 - **Network:** `terway-eniip` (default) or `flannel`
 - **Storage:** `csi-plugin`, `csi-provisioner`
 - **Logging:** `loongcollector` (with `sls_project_name` config)
@@ -280,7 +281,7 @@ func createASKCluster(c *cs.Client, name, vpcId string, vswitchIds []string) (st
     }
     return *resp.Body.ClusterId, nil
 }
-```
+```markdown
 
 > **Never log the SK or print the full config struct.**
 

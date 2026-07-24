@@ -62,6 +62,7 @@
 ### 2.2 当前状态评估 (L2)
 
 **优势:**
+
 - ✅ CLI-first 策略：`aliyun` CLI 为静态 Go 二进制，启动快（<100ms）
 - ✅ 状态轮询表：定义了 Poll Interval 和 Max Wait
 - ✅ 基础 retry 逻辑：exponential backoff 文档化
@@ -77,11 +78,13 @@
 | 编译时间 | ~15s | <3s | 12s |
 
 **根因:** 
+
 - Go 模块每次从 proxy 下载依赖
 - 无预编译缓存机制
 - 无增量构建支持
 
 **优化方案:**
+
 ```yaml
 方案 A: 预编译 SDK 二进制缓存
   - 按产品预编译常用 SDK 操作
@@ -96,7 +99,7 @@
 方案 C: 远程编译服务
   - 本地仅执行预编译二进制
   - 适合无 Go runtime 环境
-```
+```markdown
 
 #### Gap E-2: 批量操作效率低 ⚠️ HIGH
 
@@ -107,11 +110,13 @@
 | 跨产品巡检 | 逐个 Skill | 并行 Skill 执行 | 3x |
 
 **根因:**
+
 - 无批量并行执行模板
 - 无并发控制机制
 - Skill 间无并行协调
 
 **优化方案:**
+
 ```yaml
 方案: 批量并行操作模式
   模板位置: references/batch-operations.md
@@ -137,12 +142,13 @@
 | CLI waiter 支持 | 部分 API | 全覆盖 | 50% |
 
 **优化方案:**
+
 ```yaml
 方案: 智能轮询策略
   - 基于历史数据预测完成时间
   - 动态调整轮询间隔（初始快，后期慢）
   - 超时预警（预计超时前通知）
-```
+```markdown
 
 ### 2.3 效率优化路线图
 
@@ -172,6 +178,7 @@
 ### 3.2 当前状态评估 (L1)
 
 **优势:**
+
 - ✅ CLI-first 策略减少 SDK 资源开销
 - ✅ CMS 免费额度文档化（100万次/月）
 
@@ -186,6 +193,7 @@
 | 成本归因 | 无 | 按用户/任务 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: API 调用计数框架
   组件:
@@ -211,6 +219,7 @@
 | 超额处理 | 无 | 自动限流 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: CMS 免费额度监控
   触发条件:
@@ -221,7 +230,7 @@
   限流策略:
     - 超过 95万次 → Period 自动调整为 300s
     - 超过 100万次 → 暂停批量查询，仅单点查询
-```
+```markdown
 
 #### Gap C-3: 无成本预算追踪 ⚠️ MEDIUM
 
@@ -232,6 +241,7 @@
 | 成本归因 | 无 | 按项目/用户 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: 成本预算框架
   配置文件: assets/cost-budget.yaml
@@ -276,6 +286,7 @@
 ### 4.2 当前状态评估 (L2)
 
 **优势:**
+
 - ✅ monitoring.md 定义产品指标
 - ✅ 基础告警触发流程
 - ✅ AIOps 最佳实践规范已定义
@@ -292,6 +303,7 @@
 | SDK 关联函数 | 无 | 必需 | 缺失 |
 
 **示例差距（ECS Skill）:**
+
 ```yaml
 当前状态:
   - 仅单指标查询（CPUUtilization, MemoryUsage）
@@ -302,9 +314,10 @@ AIOps 要求:
   - 磁盘-IO 瓶颈模式
   - 突变检测模式
   - Load-CPU 不匹配模式
-```
+```yaml
 
 **优化方案:**
+
 ```yaml
 方案: 为每个 Skill 补充多指标关联巡检
   模板位置: SKILL.md → Operation: Multi-Metric Anomaly Inspection
@@ -325,6 +338,7 @@ AIOps 要求:
 | 三位一体查询 | 无 | 统一实现 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: 为每个 Skill 补充 observability.md
   内容结构:
@@ -333,7 +347,7 @@ AIOps 要求:
     3. SLS 查询示例（对应 CMS 异常）
     4. ARMS Trace 查询示例
     5. 降级策略（无 SLS/ARMS 时）
-```
+```markdown
 
 #### Gap O-3: 诊断报告生成不统一 ⚠️ MEDIUM
 
@@ -344,6 +358,7 @@ AIOps 要求:
 | 输出位置 | 无规范 | 统一目录 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: 强制统一诊断报告 Schema
   报告位置: ~/.cache/aliyun-skills/reports/
@@ -370,13 +385,14 @@ AIOps 要求:
 | Report 阶段 | 无 | 统一报告 | 缺失 |
 
 **优化方案:**
+
 ```yaml
 方案: 为核心 Skill 补充主动巡检流程
   模板位置: SKILL.md → Operation: Proactive Inspection
   
   五步闭环:
     Discovery → Collection → Detection → Diagnosis → Report
-```
+```markdown
 
 ### 4.3 可观测性优化路线图
 
@@ -394,7 +410,7 @@ AIOps 要求:
 
 ### 5.1 效率-成本协同
 
-```
+```text
 效率优化 → API 调用减少 → 成本降低
     │
     ├── 批量并行 → 减少重复查询 → CMS 调用减少 30%
@@ -404,17 +420,17 @@ AIOps 要求:
 
 ### 5.2 效率-可观测性协同
 
-```
+```text
 效率优化 → 诊断速度提升 → 可观测性增强
     │
     ├── 并行诊断 → MTTD 降低 → 主动巡检可行
     ├── 智能轮询 → 更快发现问题 → 预警提前
     └── 流水线执行 → 多 Skill 并行 → 跨资源关联效率
-```
+```markdown
 
 ### 5.3 成本-可观测性协同
 
-```
+```text
 成本追踪 → 调用可视化 → 可观测性增强
     │
     ├── API 调用计数 → 诊断审计 → 调用链追踪
@@ -437,11 +453,12 @@ AIOps 要求:
 | 可观测 | 缺乏复合异常模式 | 补充 CPU-Memory 双高、磁盘-IO 瓶颈模式 |
 
 **具体补充项:**
+
 ```markdown
 - Operation: Multi-Metric Anomaly Inspection (新增)
 - references/batch-operations.md (新增)
 - references/observability.md (新增)
-```
+```markdown
 
 #### RDS Skill
 
@@ -452,6 +469,7 @@ AIOps 要求:
 | 可观测 | 慢查询诊断不深入 | 补充 DAS CreateDiagnosticReport 集成 |
 
 **具体补充项:**
+
 ```markdown
 - Operation: Proactive Database Inspection (新增)
 - DAS 委托触发条件明确化
@@ -467,11 +485,12 @@ AIOps 要求:
 | 可观测 | 已有异常检测框架 | 完善 Metrics→Logs 联动规则 |
 
 **具体补充项:**
+
 ```markdown
 - Operation: Free Tier Budget Monitoring (新增)
 - references/batch-operations.md (补充批量查询)
 - references/observability.md (Metrics→SLS 联动)
-```
+```markdown
 
 #### DAS Skill
 
@@ -482,6 +501,7 @@ AIOps 要求:
 | 可观测 | 已有诊断流程 | 补充诊断置信度评分 |
 
 **具体补充项:**
+
 ```markdown
 - 预编译 das-20200116 SDK 二进制
 - references/cost-tracking.md (DAS Pro 说明)

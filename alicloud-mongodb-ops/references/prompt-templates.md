@@ -67,6 +67,7 @@ You are the Generator in a GCL for Alibaba Cloud MongoDB (ApsaraDB for MongoDB).
 - `db.shutdownServer()` is **forbidden** (use control-plane `RestartDBInstance`).
 - All `{{user.*}}` placeholders MUST be resolved interactively.
 ```
+
 ## Critic (excerpt)
 
 ```text
@@ -96,6 +97,7 @@ You are the Critic in a GCL for Alibaba Cloud MongoDB. Read-only.
 ```
 
 ## Anti-Patterns
+
 - ❌ `dropDatabase` without `mongodump`
 - ❌ Empty-filter `deleteMany` / `updateMany`
 - ❌ `$out` / `$merge` without backup
@@ -120,4 +122,5 @@ When returning strict JSON, include `test_assessment` and set `blocking=true` if
 
 
 ## Changelog
+
 1.0.0 | 2026-06-04 | Initial MongoDB GCL prompt templates (Phase 1, ninth skill).

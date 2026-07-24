@@ -15,22 +15,25 @@
 | Security Group | `_sg_to_hcl()` | ✅ 完成 |
 
 **修复 2 个现有资源：**
+
 - VPC: 添加 `prevent_destroy` lifecycle 规则
 - VSwitch: 添加 `prevent_destroy` lifecycle 规则
 
 **代码变更:**
+
 ```python
 # reverse_engineering.py
 # 新增: _rds_to_hcl(), _redis_to_hcl(), _slb_to_hcl(), 
 #       _eip_to_hcl(), _sg_to_hcl()
 # 修复: _vpc_to_hcl(), _vswitch_to_hcl() 添加 lifecycle
-```
+```markdown
 
 ---
 
 ### 2. 渐进式资源支持机制
 
 **设计目标:**
+
 - 云资源支持是渐进的，不可能一次性完整
 - 需要在 PreFlight 阶段预检，第一时间发现不支持类型
 - 提供优雅降级，避免崩溃或返回 TODO
@@ -39,7 +42,7 @@
 
 #### 2.1 Resource Registry (`resource_registry.py`)
 
-```
+```text
 SupportLevel 枚举:
 ├── FULL        - 完整支持
 ├── PARTIAL     - 部分支持（有已知限制）
@@ -49,6 +52,7 @@ SupportLevel 枚举:
 ```
 
 **核心功能:**
+
 - 资源类型注册 (`ResourceTypeInfo`)
 - 能力声明 (`ResourceCapability`: DISCOVER, HCL_GENERATE, IMPORT, ASSOCIATED_DISCOVER)
 - PreFlight 检查 (`preflight_check()`)
@@ -67,9 +71,10 @@ if not self.skip_preflight:
     
     if preflight_result.fallback_available:
         # 降级模式警告
-```
+```bash
 
 **命令行效果:**
+
 ```bash
 $ python3 reverse_engineering.py --type mongodb --id test --dry-run
 [PreFlight] 检查资源类型支持: mongodb
@@ -141,12 +146,15 @@ $ python3 reverse_engineering.py --type mongodb --id test --dry-run
 ### 短期 (可立即改进)
 
 1. **关联资源发现扩展**
+
    ```python
    # 当前 VPC 只发现 VSwitch 和 RouteTable
    # 可扩展: VPC → NAT Gateway, VPN Gateway
-   ```
+
+```text
 
 2. **HCL 生成的字段完善**
+
    ```python
    # 当前 RDS 只包含基本字段
    # 可扩展: 备份策略、监控、参数组等
@@ -155,12 +163,15 @@ $ python3 reverse_engineering.py --type mongodb --id test --dry-run
 ### 中期 (需要设计)
 
 1. **资源引用自动关联**
+
    ```python
    # 当前: vpc_id = "vpc-xxx"  # TODO: Reference
    # 目标: vpc_id = alicloud_vpc.main.id
-   ```
+
+```text
 
 2. **HCL 模板系统**
+
    ```python
    # 使用模板引擎替代字符串拼接
    # 支持用户自定义模板
@@ -169,12 +180,15 @@ $ python3 reverse_engineering.py --type mongodb --id test --dry-run
 ### 长期 (架构层面)
 
 1. **OpenAPI 驱动生成**
+
    ```python
    # 从阿里云 OpenAPI 元数据自动生成 HCL 映射
    # 减少手工维护工作量
-   ```
+
+```text
 
 2. **多厂商支持架构**
+
    ```python
    # 抽象 ResourceMapper 接口
    # 支持 AWS/GCP/Azure 等其他云厂商
@@ -208,21 +222,24 @@ def _new_resource_to_hcl(self, data: Dict) -> str:
 # 3. 在 to_hcl() 中添加分支
 elif resource_type == "new_resource":
     return self._new_resource_to_hcl(resource_data)
-```
+```markdown
 
 ### 对于用户
 
 **查看支持的资源:**
+
 ```bash
 python3 resource_registry.py
 ```
 
 **测试资源类型支持（不实际执行）:**
+
 ```bash
 python3 reverse_engineering.py --type mongodb --id test --dry-run
-```
+```text
 
 **跳过 PreFlight 检查（不推荐）:**
+
 ```bash
 python3 reverse_engineering.py --type vpc --id vpc-xxx --skip-preflight
 ```

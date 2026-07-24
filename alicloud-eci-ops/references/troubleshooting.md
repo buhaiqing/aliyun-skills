@@ -85,6 +85,7 @@ aliyun vpc DescribeVSwitches --VSwitchId $VSW_ID \
 ```
 
 **Decision Tree:**
+
 - Quota field in ListUsage response > 0.9 → Quota exhausted; raise in ECI console
 - VSwitch `AvailableIpAddress < 5` → Expand VSwitch CIDR or pick another
 - Quota OK, IP OK → May be ECI capacity issue; try another AZ/VSwitch
@@ -115,6 +116,7 @@ aliyun ram GetUser
 ```
 
 **Decision Tree:**
+
 - Events show `InvalidVSwitchId.IpNotEnough` → Expand VSwitch
 - Events show `QuotaExceeded` → Raise quota
 - Events show `ImagePullError` → Fix image name / `ImageRegistryCredential` (Server/UserName/Password)
@@ -151,6 +153,7 @@ aliyun eci ExecContainerCommand ... --Command '["ss","-tlnp"]' --Sync true
 ```
 
 **Decision Tree:**
+
 - `RestartCount` climbing rapidly → App crash; inspect logs
 - Container exits immediately → Check `Command` / `Arg` / image `ENTRYPOINT`
 - Container running but port not listening → App not started; inspect logs
@@ -187,6 +190,7 @@ aliyun vpc DescribeNatGateways --VpcId $VPC_ID \
 ```
 
 **Decision Tree:**
+
 - ECI has no `IntranetIp` → ENI not attached; investigate
 - SG has no ingress rule for source CIDR → Add rule
 - Route table doesn't have route to target → Add route
@@ -217,6 +221,7 @@ aliyun ecs DescribeDisks --RegionId $REGION \
 ```
 
 **Decision Tree:**
+
 - Volume attached → User must release; cannot delete ECI while volume bound
 - ECI in `Pending` / `Running` → Wait for terminal state, then delete
 - Other dependency → Resolve per API error message
@@ -245,6 +250,7 @@ aliyun eci DescribeContainerGroups --RegionId $REGION \
 ```
 
 **Decision Tree:**
+
 - `RestartPolicy=Always` + crash loop → **infinite billing**; change to `Never`
 - Over-provisioned `Cpu` / `Memory` → Right-size to actual usage
 - ECIs running but idle → Delete or set TTL

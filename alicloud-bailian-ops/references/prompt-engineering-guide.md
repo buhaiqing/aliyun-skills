@@ -3,6 +3,7 @@
 ## Overview
 
 Bailian Prompt Management enables:
+
 - **Template versioning**: Track prompt changes over time
 - **A/B testing**: Compare prompt performance
 - **Variable substitution**: Dynamic content injection
@@ -58,10 +59,12 @@ user_template: |
   Focus areas: {{focus_areas}}
 
 variables:
+
   - language
   - code
   - focus_areas
-```
+
+```markdown
 
 ### Few-Shot Template
 
@@ -89,7 +92,7 @@ content: |
 
 variables:
   - feedback
-```
+```markdown
 
 ## Variable Types
 
@@ -116,7 +119,7 @@ content: |
   {{/is_vip}}
   
   How can I help you today?
-```
+```markdown
 
 ### List Iteration
 
@@ -128,7 +131,7 @@ content: |
   {{/items}}
   
   Total: ¥{{total}}
-```
+```markdown
 
 ## Prompt Patterns
 
@@ -150,7 +153,7 @@ content: |
   5. Verify the answer
   
   Solution:
-```
+```markdown
 
 ### Pattern 2: Structured Output
 
@@ -175,7 +178,7 @@ content: |
     "amount": ...,
     "category": "..."
   }
-```
+```markdown
 
 ### Pattern 3: Role-Based
 
@@ -199,7 +202,7 @@ content: |
   4. Recommended next steps
   
   Disclaimer: This is general information, not legal advice.
-```
+```markdown
 
 ### Pattern 4: Multi-Lingual
 
@@ -218,7 +221,7 @@ content: |
   {{text}}
   
   Translation:
-```
+```markdown
 
 ## Versioning
 
@@ -245,7 +248,7 @@ content: |
 
 ### Fixed
 - Resolved ambiguity in output format
-```
+```markdown
 
 ## A/B Testing
 
@@ -265,7 +268,7 @@ aliyun bailian CreatePromptTemplate --body '{
   "Content": "Welcome! What brings you here today?",
   ...
 }'
-```
+```markdown
 
 ### Metrics
 
@@ -288,7 +291,7 @@ treatment = [4.6, 4.8, 4.4, ...]    # v2 ratings
 t_stat, p_value = stats.ttest_ind(treatment, control)
 if p_value < 0.05 and mean(treatment) > mean(control):
     print("v2 significantly better — promote to production")
-```
+```markdown
 
 ## Optimization Techniques
 
@@ -310,7 +313,7 @@ content: |
   Text: {{text}}
   
   Summary:
-```
+```markdown
 
 ### 2. Example Quality
 
@@ -330,7 +333,7 @@ examples: |
   
   Input: "It's a standard USB cable, works as expected."
   Output: "NEUTRAL"
-```
+```markdown
 
 ### 3. Output Formatting
 
@@ -353,7 +356,7 @@ response_format:
         items:
           type: string
     required: [sentiment, confidence]
-```
+```markdown
 
 ## CLI Commands
 
@@ -390,7 +393,7 @@ aliyun bailian CreateChatCompletion --body '{
     "name": "Alice"
   }
 }'
-```
+```markdown
 
 ## Best Practices
 

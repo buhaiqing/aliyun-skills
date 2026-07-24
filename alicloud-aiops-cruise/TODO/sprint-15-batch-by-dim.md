@@ -29,6 +29,7 @@ def q_cms_batch_by_dim(
 ```
 
 实现要点:
+
 - 内部按 batch_size 拆批 (默认 50, 环境变量 `AIOPS_CMS_DIM_BATCH_SIZE` 可覆盖)
 - 每批调 `q_cached` (复用缓存+退避+限速)
 - 返回的 Datapoints 按 dim_key 字段分组 (服务端约定)

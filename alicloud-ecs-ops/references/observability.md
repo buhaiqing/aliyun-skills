@@ -59,7 +59,7 @@ cat /proc/meminfo 2>/dev/null | grep -E "SwapTotal|SwapFree|Dirty|Writeback"
 
 **诊断决策树：**
 
-```
+```text
 IO 异常
 ├── %util > 80% → IOPS/吞吐达上限 → 升级云盘类型
 ├── %util 正常 + await 高 → IO 调度/文件系统层问题
@@ -93,6 +93,7 @@ aliyun log GetLogs \
 ## 降级策略
 
 若 ARMS/SLS 不可用：
+
 1. 直接 SSH 到 ECS 使用 `top`、`iotop`、`journalctl` 排查
 2. 使用 `dmesg` 查看内核日志 (OOM、panic)
 3. 检查 `/var/log/messages` 和 `/var/log/syslog`

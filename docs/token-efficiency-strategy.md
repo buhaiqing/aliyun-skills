@@ -19,7 +19,7 @@
 
 ### Decision Tree
 
-```
+```text
 Is this content needed in EVERY agent session?
 ├─ Yes → Keep in AGENTS.md (condensed form, rules only)
 │   ├─ Must-have: quality gates, security constraints, variable conventions
@@ -27,7 +27,7 @@ Is this content needed in EVERY agent session?
 └─ No → Extract to docs/ + keep link in AGENTS.md
     ├─ Standard/checklist/spec → docs/xxx-standard.md
     └─ Runtime data (skill classification table, etc.) → maintain in existing doc
-```
+```markdown
 
 ### File Layering
 
@@ -82,7 +82,7 @@ Full spec at [docs/diagnostic-logging-standard.md](docs/diagnostic-logging-stand
 Full 30+ skill table at [docs/gcl-spec.md §8](docs/gcl-spec.md#8-per-skill-defaults)
 | Level | max_iter | Count |
 | required | 2 | 17 |
-```
+```markdown
 
 | Metric | Value |
 |--------|-------|
@@ -184,7 +184,7 @@ done
 
 # Step 9: Check AGENTS.md references in SKILL.md
 grep -n 'AGENTS.md' alicloud-{product}-ops/SKILL.md
-```
+```markdown
 
 ---
 
@@ -227,7 +227,7 @@ In any session, say:
 
 The agent will execute the §4 Audit Methodology and produce a report:
 
-```
+```bash
 ## Token Efficiency Audit: alicloud-redis-ops
 ### P0 Items
 - [PASS] Cross-file duplication: GCL table already in gcl-spec.md

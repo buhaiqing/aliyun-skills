@@ -87,7 +87,7 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 ### Example 1: PASS — DeleteLoadBalancer with full safety
 
-```
+```markdown
 User request: Delete ALB instance lb-abc123 (prod-alb-01)
 
 G Generator trace:
@@ -110,7 +110,7 @@ PASS ✅
 
 ### Example 2: SAFETY_FAIL — DeleteLoadBalancer without disabling protection
 
-```
+```markdown
 User request: Delete ALB instance lb-xyz789
 
 G Generator trace:

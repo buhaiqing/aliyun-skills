@@ -16,7 +16,7 @@ status: draft
 
 首创 **"固化工作流 + 弹性 Agent" 双引擎**智能调度体系：
 
-```
+```text
 高频操作（重启/回滚/扩缩容）-> 固化工作流（低延迟、确定、幂等、可自动执行）
 复杂故障（未知根因/多数据源）-> 弹性 Agent（LLM 动态规划、多轮推理、人工确认）
 ```
@@ -27,7 +27,7 @@ status: draft
 
 ## 二、架构总览
 
-```
+```text
 外部触发 (告警/定时/人工)
          │
          ▼
@@ -119,7 +119,7 @@ safety:
   max_retries: 2
   rollback: "aliyun rds ModifyDBInstanceSpec --BinlogRetentionHours 168"
   human_confirm: false  # 预授权
-```
+```markdown
 
 ---
 
@@ -153,7 +153,7 @@ safety:
 
 ### 4.3 排查流程模式
 
-```
+```text
 Phase 1: 全景扫描 (并行)
   -> 查 topo: 当前链路拓扑
   -> 查 cloudmonitor: 最近 1h 所有指标
@@ -169,7 +169,7 @@ Phase 3: 根因确认 + 方案
   -> 汇总所有发现，输出根因概率排序
   -> 生成修复方案（含回滚步骤）
   -> 等待人工确认后执行
-```
+```markdown
 
 ---
 
@@ -187,7 +187,7 @@ Phase 3: 根因确认 + 方案
 
 ## 六、Phase 路线图
 
-```
+```text
 Phase 1 (v1.0)          Phase 2 (v1.5)           Phase 3 (v2.0)
 ─────────────────────  ──────────────────────  ──────────────────────
   Rule-based 巡检          Runbook 脚本化          固化工作流 DAG
@@ -198,7 +198,7 @@ Phase 1 (v1.0)          Phase 2 (v1.5)           Phase 3 (v2.0)
                           动态基线异常评分
 
   <- 我们现在在这里                                   目标 ->
-```
+```markdown
 
 ---
 

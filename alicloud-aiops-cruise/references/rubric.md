@@ -6,6 +6,7 @@
 ## [NOTE] 评分设计理念
 
 > 本 rubric 的权重设计反映了一个原则：**安全高于一切，追溯性高于速度**。
+>
 > - Safety 占 30% — 巡检是纯读操作，任何写尝试都是不可接受的
 > - Traceability 占 20% — 没有追溯链的巡检结论等于没做（无法复盘、无法审计）
 > - Correctness 占 25% — 结论要准，但允许少量误报（误报可调阈值，漏报才严重）
@@ -31,7 +32,7 @@
 
 ## 评分计算
 
-```
+```text
 综合评分 = Correctness×0.25 + Safety×0.30 + Idempotency×0.15 + Traceability×0.20 + SpecCompliance×0.10
 ```
 

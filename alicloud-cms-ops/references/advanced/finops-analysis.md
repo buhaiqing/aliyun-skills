@@ -63,6 +63,7 @@ idle_ecs_detection:
 ```
 
 **CLI Example**:
+
 ```bash
 # Query ECS idle rate (last 7 days)
 aliyun cms DescribeMetricList \
@@ -388,7 +389,7 @@ aliyun rds DescribeDBInstances \
 
 ### Idle Resource Cost Savings
 
-```
+```text
 Daily_Savings = Instance_Daily_Cost × Idle_Rate
 Monthly_Savings = Daily_Savings × 30
 Annual_Savings = Monthly_Savings × 12
@@ -398,7 +399,7 @@ Total_Idle_Savings = Σ(All_Idle_Resources × Monthly_Cost)
 
 ### Right-Sizing Savings
 
-```
+```text
 Savings_Per_Instance = (Current_Spec_Cost - Suggested_Spec_Cost)
 Confidence_Adjusted_Savings = Savings × Confidence_Score
 Total_RightSizing_Savings = Σ(All_RightSized_Instances × Confidence_Adjusted_Savings)
@@ -406,7 +407,7 @@ Total_RightSizing_Savings = Σ(All_RightSized_Instances × Confidence_Adjusted_S
 
 ### Reserved Instance Break-Even Analysis
 
-```
+```text
 Break_Even_Months = RI_Commitment_Cost / (Monthly_PayG_Cost - Monthly_RI_Cost)
 ROI = (Total_PayG_Cost - Total_RI_Cost) / RI_Commitment_Cost × 100%
 ```
@@ -455,7 +456,7 @@ delegation_protocol:
 
 ### Cross-Skill Correlation
 
-```
+```text
 [CMS Alarm] → [Confidence Score] → [Skill Delegation]
      │              │                    │
      │              │                    ├── ECS: DetectIdleResources

@@ -39,7 +39,7 @@ API 调用计数框架:
   - 统计存储: JSON 文件 + SQLite 双模式
   - 报表生成: 每日/每周/每月汇总
   - 成本预算联动: 超阈值预警与限流
-```
+```markdown
 
 ---
 
@@ -47,7 +47,7 @@ API 调用计数框架:
 
 ### 2.1 总体架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      Skill 调用层                           │
 │   ┌───────────┐  ┌───────────┐  ┌───────────┐              │
@@ -72,11 +72,11 @@ API 调用计数框架:
     │ 内存缓冲    │ │ 统计文件    │ │ SQLite DB   │
     │ (RingBuffer)│ │ (JSON)      │ │ (可选)      │
     └─────────────┘ └─────────────┘ └─────────────┘
-```
+```markdown
 
 ### 2.2 数据流
 
-```
+```text
 调用发起
     │
     ▼
@@ -103,7 +103,7 @@ API 调用计数框架:
     ├───> 统计文件 (批量 flush)
     │
     └───> SQLite (可选, 复杂查询)
-```
+```markdown
 
 ---
 
@@ -200,7 +200,7 @@ record_result() {
 record_result "$EXIT_CODE" "$DURATION"
 
 exit $EXIT_CODE
-```
+```markdown
 
 ### 3.2 SDK Hook 方案 (Go)
 
@@ -447,7 +447,7 @@ func RecordCall(product, operation, region string) *CallRecord {
         Timestamp: time.Now(),
     }
 }
-```
+```markdown
 
 ---
 
@@ -500,7 +500,7 @@ func RecordCall(product, operation, region string) *CallRecord {
     }
   }
 }
-```
+```markdown
 
 ### 4.2 SQLite Schema (可选)
 
@@ -566,7 +566,7 @@ CREATE INDEX IF NOT EXISTS idx_call_records_timestamp ON call_records(timestamp)
 CREATE INDEX IF NOT EXISTS idx_call_records_product ON call_records(product_id);
 CREATE INDEX IF NOT EXISTS idx_call_records_operation ON call_records(operation_id);
 CREATE INDEX IF NOT EXISTS idx_call_records_region ON call_records(region);
-```
+```markdown
 
 ---
 
@@ -643,7 +643,7 @@ CREATE INDEX IF NOT EXISTS idx_call_records_region ON call_records(region);
 ---
 
 *本报表由 Aliyun Skill API Call Counter 自动生成*
-```
+```markdown
 
 ### 5.2 报表生成脚本
 
@@ -734,7 +734,7 @@ case "$1" in
         exit 1
         ;;
 esac
-```
+```markdown
 
 ---
 
@@ -852,7 +852,7 @@ func (bc *BudgetChecker) ShouldThrottle(product string) bool {
     }
     return result.Status == "critical" || result.Status == "exceeded"
 }
-```
+```markdown
 
 ---
 
@@ -888,7 +888,7 @@ func (s *ECSSkill) DescribeInstances(ctx context.Context, req *DescribeInstances
     
     return resp, err
 }
-```
+```markdown
 
 ---
 
@@ -914,7 +914,7 @@ ls -la ~/.cache/aliyun-skills/reports/
 # 测试 3: 预算检查
 echo "=== 测试预算检查 ==="
 skill-budget-check ecs
-```
+```markdown
 
 ### 8.2 监控指标
 
@@ -927,7 +927,7 @@ skill-budget-check ecs
   - api_call_error_rate      # 错误率
   - api_budget_usage         # 预算使用率
   - api_throttle_count       # 限流次数
-```
+```markdown
 
 ---
 

@@ -11,7 +11,7 @@ Static Go binary, no runtime dependencies. Install once per host:
 
 # Optional: install the dedicated NAS plugin for ACL/AD/SMB protocol
 aliyun plugin install --names aliyun-cli-nas
-```
+```markdown
 
 ### Fallback Path: JIT Go SDK
 
@@ -38,7 +38,7 @@ if ! command -v go &> /dev/null; then
 fi
 
 go version
-```
+```markdown
 
 > **Version strategy:** JIT downloads Go 1.24+; scripts target Go 1.21+
 > compatibility (use `slices`, `maps` from `golang.org/x/exp` if you need
@@ -52,7 +52,7 @@ cd /tmp/aliyun-sdk-workspace
 go mod init sdk-script 2>/dev/null || true
 go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/nas-20170626/v3/client
-```
+```text
 
 #### Shared Client Factory
 
@@ -82,7 +82,7 @@ func printResponse(b interface{}) {
     out, _ := json.MarshalIndent(b, "", "  ")
     fmt.Println(string(out))
 }
-```
+```text
 
 Execute:
 
@@ -90,7 +90,7 @@ Execute:
 export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 cd /tmp/aliyun-sdk-workspace
 go run ./main.go
-```
+```markdown
 
 ## Environment Variables
 
@@ -109,7 +109,7 @@ go run ./main.go
 ALIBABA_CLOUD_ACCESS_KEY_ID=LTAI5t***************
 ALIBABA_CLOUD_ACCESS_KEY_SECRET=********************************
 ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 > **Security:** `.env` MUST be in `.gitignore` — never commit credentials.
 
@@ -170,7 +170,7 @@ The following minimal RAM policy covers the core control-plane operations:
     }
   ]
 }
-```
+```markdown
 
 > **For resource-scoped (least-privilege) policies**, replace `"Resource": "*"`
 > with explicit ARNs:
@@ -195,7 +195,7 @@ The following minimal RAM policy covers the core control-plane operations:
 The most common NAS workflow is **create FS → create MT → mount from ECS**.
 Cross-skill coordination:
 
-```
+```text
 1. alicloud-nas-ops:      OpenNASService (one-time)
 2. alicloud-nas-ops:      CreateFileSystem
 3. alicloud-vpc-ops:      DescribeVSwitches (verify vSwitch exists)
@@ -203,7 +203,7 @@ Cross-skill coordination:
 5. alicloud-nas-ops:      CreateMountTarget (binds FS + VPC + vSwitch + group)
 6. alicloud-ecs-ops:      AuthorizeSecurityGroup (allow TCP/2049 or 445)
 7. (Operator)             mount on ECS, verify with df -h
-```
+```markdown
 
 For ACK clusters, the workflow uses the
 [alicloud-storage-alicloudnas-csi](https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/use-alibaba-cloud-nas-volumes)
@@ -222,16 +222,18 @@ For VPC access, set the SDK `Endpoint` to the VPC endpoint:
 
 ```go
 config.Endpoint = tea.String("nas-vpc.cn-hangzhou.aliyuncs.com")
-```
+```markdown
 
 ## Connection Pooling and Timeouts
 
 For high-throughput mounts (e.g., AI training on CPFS):
 
 - **NFS:** increase `rsize` and `wsize` to 1 MB:
+
   ```bash
   mount -t nfs -o rsize=1048576,wsize=1048576,vers=4.1 ...
   ```
+
 - **SMB:** enable SMB Multichannel and large MTU on the client.
 - **CPFS:** use the parallel data access pattern; consult Alibaba Cloud HPC
   best practices.

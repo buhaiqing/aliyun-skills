@@ -519,7 +519,7 @@ Operations:
 
 ### Pre-flight Checklist
 
-```
+```text
 □ All instances identified and documented
 □ Current health status verified (all Normal/green)
 □ Change window confirmed
@@ -531,7 +531,7 @@ Operations:
 
 ### Execution Checklist
 
-```
+```text
 □ Pre-flight completed successfully
 □ Batch operation started with progress reporting
 □ Stagger delays applied correctly
@@ -542,7 +542,7 @@ Operations:
 
 ### Post-execution Checklist
 
-```
+```text
 □ All instances verified (status Normal)
 □ Cluster health verified (green)
 □ Services tested from application

@@ -11,6 +11,7 @@ parent: alicloud-aiops-cruise
 ## MR-1: TODO.md 同步（MANDATORY）
 
 每次新增功能、修改能力、修复缺陷后，**必须同步更新 `TODO.md`** 中的对应状态：
+
 - 已完成项: `[ ]` -> `[x]`
 - 新增项: 追加到对应 Sprint 章节
 - 已变更项: 更新描述和验证标准
@@ -45,6 +46,7 @@ parent: alicloud-aiops-cruise
 > 每个 Sprint 独立文件存储于 `TODO/` 目录，`TODO.md` 仅作索引。
 
 当新增 Sprint 时，**必须**：
+
 1. 在 `TODO/` 目录下创建 `sprint-{编号}-{名称}.md`
 2. 包含：业务价值、交付物、前置条件、任务清单、质量门
 3. 在 `TODO.md` 索引表中添加一行引用
@@ -54,6 +56,7 @@ parent: alicloud-aiops-cruise
 ## MR-6: 代码审查规范（MANDATORY）
 
 > 以下文件类型在新增或修改后，**必须**触发 `code-reviewer` 技能自动评审：
+>
 > - `*.sh`（Shell 脚本）
 > - `*.py`（Python 脚本）
 > - `*.go`（Go 脚本/source）
@@ -80,6 +83,7 @@ parent: alicloud-aiops-cruise
 | **错误处理** | 所有异常必须处理, 不可见错误必记日志 | 静默失败 | `err("E020")` |
 
 **评审标准**（源自 `code-reviewer` skill 的 P0/P1/P2 定义）：
+
 - P0: Shell injection (`shell=True`), 硬编码凭证, bare `except:`, 裸 `subprocess.run(shell=True)`, `os.system()`, `eval()`
 - P1: 重复逻辑块、魔术数字、不统一退出码、参数不一致、未使用的死代码
 - P2: **串行阻塞 I/O 未并行化**（API 调用是 I/O 密集型，必须用 `ThreadPoolExecutor` 或 `asyncio` 并行）、缺失参数处理、路径硬编码、文档缺失
@@ -102,6 +106,7 @@ parent: alicloud-aiops-cruise
 | Markdown | **markdownlint-cli2** | `npx markdownlint-cli2 "alicloud-*/runbooks/*.md"` | P3 |
 
 已配置于 `pyproject.toml`：
+
 ```toml
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]

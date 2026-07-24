@@ -67,6 +67,7 @@ aliyun bssopenapi QueryAccountBalance
 ### Step 4: Check Rate Limits
 
 If receiving Throttling.User errors, implement:
+
 - Exponential backoff: 2s, 4s, 8s
 - Max 3 retries
 - For batch operations, add 200ms delay between calls
@@ -123,7 +124,7 @@ fi
 
 All user-facing error messages follow the format:
 
-```
+```text
 [ERROR] {error.code}: {summary}
 
 What happened:
@@ -138,7 +139,7 @@ Next step:
 
 **Example:**
 
-```
+```markdown
 [ERROR] NotAuthorized: This account does not have permission to query billing data.
 
 What happened:

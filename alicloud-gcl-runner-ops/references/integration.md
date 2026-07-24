@@ -53,7 +53,7 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck_test.py -v
 
 ## File Layout
 
-```
+```text
 alicloud-gcl-runner-ops/
 ├── SKILL.md                    # This file
 ├── scripts/

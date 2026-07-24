@@ -5,6 +5,7 @@
 ## Go Bootstrap
 
 ### Prerequisites
+
 - Go 1.21+ (1.24+ for JIT mode)
 - `ALIBABA_CLOUD_ACCESS_KEY_ID`, `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`
 
@@ -64,6 +65,7 @@ func NewESSClient() (*ess.Client, error) {
 ### JIT Go SDK Usage
 
 For one-off operations, create a `.go` file in a temp directory and run:
+
 ```bash
 cd /tmp/ess-jit-$$
 cat > main.go << 'GOEOF'
@@ -99,6 +101,7 @@ go mod init ess-jit && go mod tidy && go run .
 - **DO NOT** log, echo, or print `AccessKeySecret`
 - **DO** use environment variables exclusively
 - **DO** verify credential existence without displaying values:
+
   ```bash
   # ✅ Safe
   test -n "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" || echo "❌ Secret not set"

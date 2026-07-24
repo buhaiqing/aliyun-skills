@@ -3,6 +3,7 @@
 ## Resource Manager Architecture
 
 ### Resource Directory (资源目录)
+
 A hierarchical multi-account management structure. One enterprise management account (enterprise master) creates a root folder, under which member accounts are organized in a tree of folders (max 5 levels deep).
 
 | Concept | Description |
@@ -21,20 +22,26 @@ A hierarchical multi-account management structure. One enterprise management acc
 | **ResourceAccount** | Programmatically created account within directory | Settled via master account (consolidated billing) | No independent login by default; needs RAM user provisioning |
 
 ### Resource Groups (资源组)
+
 Logical containers that group cloud resources across products. Used for:
+
 - **Access Control:** Grant RAM permissions based on resource group membership
 - **Billing:** Attribute costs to resource groups for cost center tracking
 - **Management:** Organize resources by project, environment, or business unit
 
 ### Control Policies (管控策略)
+
 Service Control Policies (SCP) that restrict permissions of member accounts:
+
 - **System Policies:** Built-in policies (e.g., `FullAliyunAccess` deny)
 - **Custom Policies:** User-defined JSON policy documents
 - **Attachment points:** Can be attached to folders (inherited by sub-folders and accounts) or directly to accounts
 - **Inheritance:** Child folders inherit parent policies; account = union of all ancestor policies
 
 ### Handshake (握手)
+
 The mechanism for inviting external accounts:
+
 - Initiating account sends invitation with optional note
 - Target account receives a handshake (valid for 7 days)
 - Target account accepts or rejects the handshake
@@ -61,13 +68,17 @@ The mechanism for inviting external accounts:
 | **Propagated Tags** | Tags inherited from resource group or parent resource | Governance consistency |
 
 ### Tag Policies (标签策略)
+
 Enforce tag compliance across multiple accounts:
+
 - Define required tag keys and allowed values
 - Validate tag presence during resource creation
 - Detect non-compliant resources via compliance reports
 
 ### Cost Allocation Tags
+
 Tags that appear in billing reports for cost splitting:
+
 - Must be enabled in Billing Center before they appear in bills
 - Only tags with values are eligible for cost allocation
 - Retroactive: enabling a tag key shows costs from that point forward, not historical
@@ -106,7 +117,7 @@ Both products use **region-independent** endpoints:
 
 ## Dependency Graph
 
-```
+```text
 Resource Directory (prerequisite)
 ├── Folders (organized under root)
 │   ├── Accounts (members of folders)
@@ -116,4 +127,4 @@ Resource Directory (prerequisite)
 │   └── Control Policies (attached to folders or accounts)
 ├── Handshakes (for external account invitations)
 └── Tag Policies (cross-account tag governance)
-```
+```text

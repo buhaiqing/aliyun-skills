@@ -130,4 +130,5 @@ func main() {
 | Historical Similar Cases | 0.3 | Matched historical cases / Total historical cases |
 
 **Levels:** 0.9-1.0 auto-fix, 0.7-0.89 human review, 0.5-0.69 more evidence needed, 0.3-0.49 investigate further, 0.0-0.29 insufficient info.
-```
+
+```text

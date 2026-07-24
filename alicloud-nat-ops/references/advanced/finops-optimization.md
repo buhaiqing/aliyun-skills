@@ -36,7 +36,7 @@
 
 ### 2.1 PayBySpec vs PayByActualUsage
 
-```
+```text
 Is NAT traffic predictable and steady (> 60% CU utilization)?
 ├── YES → PayBySpec (fixed hourly rate, cost-predictable)
 │   └── Choose spec based on peak CU demand
@@ -44,7 +44,7 @@ Is NAT traffic predictable and steady (> 60% CU utilization)?
     ├── Low average (< 30% CU), occasional bursts → PayByActualUsage (pay per CU)
     ├── Moderate (30-60% CU), steady → PayBySpec (more predictable)
     └── Very low traffic, dev/test only → PayByActualUsage + Small spec
-```
+```markdown
 
 ### 2.2 Decision Matrix
 
@@ -64,7 +64,7 @@ aliyun vpc ModifyNatGatewaySpec \
   --NatGatewayId "{{user.nat_gateway_id}}" \
   --BillingMethod "PayByActualUsage" \
   --AutoPay true
-```
+```markdown
 
 > **Warning:** Billing mode switch takes effect in the next billing cycle. No service interruption.
 
@@ -87,7 +87,7 @@ for nat_id in $(aliyun vpc DescribeNatGateways --RegionId $REGION --PageSize 100
     echo "IDLE: $nat_id (SNAT=0, DNAT=0)"
   fi
 done
-```
+```markdown
 
 ### 3.2 Underutilized NAT Gateway Detection
 
@@ -102,7 +102,7 @@ aliyun cms QueryMetricList \
   --EndTime "$(date -u +%Y-%m-%d\ %H:%M:%S)" \
   --Dimensions "[{\"instanceId\":\"{{user.nat_gateway_id}}\"}]" \
   --output cols=Maximum,Timestamp rows=Datapoints[]
-```
+```markdown
 
 ### 3.3 Orphaned EIP Detection
 
@@ -114,7 +114,7 @@ aliyun vpc DescribeEipAddresses \
   --Status Available \
   --PageSize 100 \
   --output cols=AllocationId,IpAddress,Name rows=EipAddresses.EipAddress[].{AllocationId:AllocationId,IpAddress:IpAddress,Name:Name}
-```
+```markdown
 
 > **Action:** Orphaned EIPs (Status=Available, not bound) incur instance fees. Release via `alicloud-eip-ops`.
 
@@ -144,7 +144,7 @@ aliyun vpc DescribeEipAddresses \
 
 ### 4.2 Right-Sizing Decision Flow
 
-```
+```bash
 1. Query current CU utilization (7-day average)
    aliyun cms QueryMetricList --Namespace acs_nat --MetricName MaxConnection
 
@@ -159,7 +159,7 @@ aliyun vpc DescribeEipAddresses \
 
 4. Execute right-sizing:
    aliyun vpc ModifyNatGatewaySpec --NatSpec "<new_spec>"
-```
+```markdown
 
 ### 4.3 Downgrade Safety Check
 
@@ -178,7 +178,7 @@ aliyun vpc ModifyNatGatewaySpec \
   --NatGatewayId "{{user.nat_gateway_id}}" \
   --NatSpec "Small" \
   --AutoPay true
-```
+```markdown
 
 ---
 
@@ -240,7 +240,7 @@ aliyun vpc DescribeEipAddresses \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --AssociatedInstanceType Nat \
   --AssociatedInstanceId "{{user.nat_gateway_id}}"
-```
+```markdown
 
 ### 6.2 Monthly Cost Optimization Report
 
@@ -280,7 +280,7 @@ estimate_new_nat:
     bandwidth: "2 × 10Mbps PayByBandwidth ≈ ¥146/month"
 
   total_estimate: "¥1,095 + ¥29 + ¥146 ≈ ¥1,270/month"
-```
+```markdown
 
 ### 7.2 Migration Cost Comparison
 
@@ -320,6 +320,7 @@ estimate_new_nat:
 ### 9.2 L0/L1 Cost Optimization Constraints
 
 **L0 (核心生产) cost optimization MUST:**
+
 1. Never delete NAT without CAB approval — even idle NATs may be DR standby
 2. Never downgrade spec without 30-day CU trend analysis + rollback plan
 3. Never release EIPs without verifying they are not part of DR architecture
@@ -327,6 +328,7 @@ estimate_new_nat:
 5. Always capture configuration snapshot before cost optimization changes
 
 **L1 (生产) cost optimization MUST:**
+
 1. Verify idle NAT is not a failover/DR NAT before deletion
 2. Capture snapshot before spec changes
 3. Perform right-sizing during change window
@@ -351,7 +353,7 @@ aliyun vpc DescribeNatGateways \
   --output cols=Tags rows=Tags.Tag[].{Key:Key,Value:Value}
 
 # If Tag contains Role=DR or Role=BlueGreen → DO NOT DELETE
-```
+```markdown
 
 ---
 

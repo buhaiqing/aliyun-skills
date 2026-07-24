@@ -59,11 +59,12 @@ Namespace: `acs_elasticsearch`
 
 ### Cluster Health API
 
-```
+```text
 GET _cluster/health
 ```
 
 Response fields:
+
 ```json
 {
   "status": "green",  // green/yellow/red
@@ -85,11 +86,12 @@ Response fields:
 
 ### Node Stats API
 
-```
+```text
 GET _nodes/stats
 ```
 
 Key metrics:
+
 | Field | Description | Alert Threshold |
 |-------|-------------|-----------------|
 | `jvm.mem.heap_used_percent` | JVM heap usage | > 85% |
@@ -99,11 +101,12 @@ Key metrics:
 
 ### Index Stats API
 
-```
+```text
 GET _stats
 ```
 
 Key metrics:
+
 | Field | Description | Alert Threshold |
 |-------|-------------|-----------------|
 | `indexing.index_current` | Active indexing ops | High → bottleneck |

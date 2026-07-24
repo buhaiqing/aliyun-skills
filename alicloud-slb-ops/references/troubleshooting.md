@@ -109,6 +109,7 @@ aliyun slb DescribeLoadBalancerListeners \
 ```
 
 **Decision Tree:**
+
 - SLB status != `active` → Start SLB or investigate why stopped
 - AddressType = `intranet` but user accesses from internet → Explain intranet limitation
 - Listener status != `running` → Start listener
@@ -146,6 +147,7 @@ aliyun cms DescribeMetricList \
 ```
 
 **Decision Tree:**
+
 - All backends `abnormal` with 502 → Backend service crashed or port not listening
 - HealthCheck=off with 502 → Backend may be intermittently failing; enable health check
 - HealthCheckTimeout too low with 504 → Increase timeout; backend is slow
@@ -182,6 +184,7 @@ aliyun slb DescribeLoadBalancerHTTPSListenerAttribute \
 ```
 
 **Decision Tree:**
+
 - ExpireTime < now() → Certificate expired; upload new certificate
 - CommonName != user domain → Certificate domain mismatch; upload correct cert
 - ServerCertificateId on listener != expected → Wrong certificate bound
@@ -221,6 +224,7 @@ aliyun cms DescribeMetricList \
 ```
 
 **Decision Tree:**
+
 - Weight=0 for some backends → Set weight > 0
 - StickySession=on with few clients → Expected behavior; sticky sessions cause uneven distribution
 - Some backends `abnormal` → Fix backend health; unhealthy backends receive no traffic
@@ -260,6 +264,7 @@ aliyun cms DescribeMetricList \
 ```
 
 **Decision Tree:**
+
 - Instance spec = slb.s1.small + high traffic → Upgrade spec
 - Bandwidth < actual traffic → Increase bandwidth or switch to pay-by-traffic
 - InstanceMaxConnection near spec limit → Upgrade spec or add more SLB instances
@@ -298,6 +303,7 @@ aliyun slb DescribeLoadBalancerHTTPListenerAttribute \
 ```
 
 **Decision Tree:**
+
 - Rule URL pattern doesn't match request → Correct URL pattern
 - Rule Domain doesn't match Host header → Correct domain or use wildcard
 - Rules evaluated in order; later rules shadowed → Reorder rules

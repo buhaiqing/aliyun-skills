@@ -6,7 +6,7 @@
 
 PTS orchestrates distributed load generators (agents) that execute HTTP/API or JMeter scripts against target endpoints.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    PTS Control Plane                         │
 │  ┌──────────────┐  ┌─────────────┐  ┌──────────────────┐   │
@@ -22,7 +22,7 @@ PTS orchestrates distributed load generators (agents) that execute HTTP/API or J
                     ┌──────┴──────┐
                     │ Target SUT  │  (ECS, SLB, API Gateway, FC, …)
                     └─────────────┘
-```
+```markdown
 
 ### Resource Types
 
@@ -36,13 +36,13 @@ PTS orchestrates distributed load generators (agents) that execute HTTP/API or J
 
 ## Scene State Machine
 
-```
+```text
 Draft → WaitStart → Debugging → WaitStart
                 ↓
             Running → Finished
                 ↓
             (stop) → WaitStart
-```
+```markdown
 
 | Status | Meaning | Agent Action |
 |--------|---------|--------------|
@@ -85,7 +85,7 @@ Query quotas via [PTS quota center](https://quotas.console.aliyun.com/products/p
 
 ```bash
 aliyun pts get-all-regions --region cn-hangzhou
-```
+```markdown
 
 PTS is region-scoped; use the same region as the target system when possible.
 

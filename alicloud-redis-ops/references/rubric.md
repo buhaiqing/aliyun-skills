@@ -246,6 +246,7 @@ strips self-repair, Langfuse tracing, and circuit-breaker protection.
 | **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
+
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
   AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).

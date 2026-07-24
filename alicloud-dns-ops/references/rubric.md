@@ -138,21 +138,25 @@ for GCL (GCL Runner) adversarial review.
 ### Pre-flight Validation
 
 1. **Domain Check**
+
    ```bash
    aliyun alidns DescribeDomainInfo --DomainName "example.com"
    ```
 
 2. **NS Check**
+
    ```bash
    dig NS example.com @a.gtld-servers.net
    ```
 
 3. **Permission Check**
+
    ```bash
    aliyun ram ListPoliciesForUser --UserName "dns_admin"
    ```
 
 4. **Conflict Check**
+
    ```bash
    aliyun alidns DescribeDomainRecords --DomainName "example.com" --RRKeyWord "www"
    ```
@@ -160,21 +164,25 @@ for GCL (GCL Runner) adversarial review.
 ### Post-change Validation
 
 1. **Record Status**
+
    ```bash
    aliyun alidns DescribeDomainRecords --DomainName "example.com" --RRKeyWord "www"
    ```
 
 2. **DNS Resolution**
+
    ```bash
    dig A www.example.com @ns1.alidns.com
    ```
 
 3. **Propagation Check**
+
    ```bash
    dig A www.example.com @8.8.8.8
    ```
 
 4. **Health Check**
+
    ```bash
    curl -I http://www.example.com/health
    ```

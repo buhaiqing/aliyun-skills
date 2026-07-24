@@ -47,7 +47,7 @@
 
 ### 1.2 自愈决策树原则
 
-```
+```text
 [异常发生]
     │
     ├── Step 1: 错误分类
@@ -623,7 +623,7 @@ download_sdk_dependencies_enhanced() {
 
 ### 4.1 降级路径决策树
 
-```
+```text
 [CLI安装失败]
     │
     ├── 尝试自愈(最多5次)
@@ -684,19 +684,22 @@ sudo chmod +x /usr/local/bin/aliyun
 
 # Step 4: Verify
 aliyun version
-```
+```markdown
 
 #### Option 2: Use JIT Go SDK Mode
+
 ```bash
 # The Agent will automatically use Go SDK fallback
 # Ensure Go runtime is available or will be JIT downloaded
-```
+```markdown
 
 #### Option 3: Use Alibaba Cloud Console
-- Console URL: https://ecs.console.aliyun.com/
+
+- Console URL: <https://ecs.console.aliyun.com/>
 - Manual operation guide: {{console_guide_url}}
 
 ### Diagnostic Information
+
 - **OS:** {{os}}
 - **Architecture:** {{arch}}
 - **Network:** {{network_status}}
@@ -705,10 +708,13 @@ aliyun version
 - **Request ID:** {{request_id}} (for support escalation)
 
 ### Support Escalation
+
 If the issue persists after following recommended actions:
+
 1. Collect diagnostic information above
-2. Create a support ticket: https://workorder.console.aliyun.com/
+2. Create a support ticket: <https://workorder.console.aliyun.com/>
 3. Include Request ID: {{request_id}}
+
 ```
 
 ---

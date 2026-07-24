@@ -10,9 +10,9 @@
 
 ## Go SDK Package
 
-```
+```text
 github.com/alibabacloud-go/polardb-io-20211126/v3/client
-```
+```markdown
 
 ## JIT Go SDK Workflow
 
@@ -24,7 +24,7 @@ go get github.com/alibabacloud-go/darabonba-openapi/v2/client
 go get github.com/alibabacloud-go/tea
 go get github.com/alibabacloud-go/polardb-io-20211126/v3/client
 go run ./main.go
-```
+```markdown
 
 ## Credential Configuration
 
@@ -32,6 +32,6 @@ go run ./main.go
 export ALIBABA_CLOUD_ACCESS_KEY_ID=***
 export ALIBABA_CLOUD_ACCESS_KEY_SECRET=***
 export ALIBABA_CLOUD_REGION_ID=cn-hangzhou
-```
+```markdown
 
 > **SECURITY:** Never echo secret values. Verify existence only.
