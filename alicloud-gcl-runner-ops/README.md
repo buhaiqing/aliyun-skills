@@ -69,6 +69,36 @@ GCL_CRITIC_LLM_MODEL=gpt-4o-mini       # 模型名（留空使用端点默认）
 GCL_CRITIC_LLM_TIMEOUT=30             # HTTP 请求超时（秒）
 ```
 
+### LLM Usage 与 Cache Tokens
+
+GCL Runner 自动从 LLM API 响应中提取 usage 信息，包括 token 消耗和 Prompt Cache 命中情况：
+
+```json
+{
+  "llm_usage": {
+    "model": "qwen-plus",
+    "provider": "alibaba",
+    "prompt_tokens": 1500,
+    "completion_tokens": 300,
+    "total_tokens": 1800,
+    "cache_tokens": 800,
+    "cache_hit_ratio": 0.533
+  }
+}
+```
+
+**支持的厂商与字段映射**：
+
+| 厂商 | provider 值 | cache_tokens 字段 |
+|------|-------------|-------------------|
+| 阿里云百炼 | `alibaba` | `usage.prompt_tokens_details.cached_tokens` |
+| MiniMax | `minimax` | `usage.prompt_tokens_details.cached_tokens` (OpenAI) / `usage.cache_read_input_tokens` (Anthropic) |
+| 智谱 AI | `zhipu` | `usage.prompt_tokens_details.cached_tokens` |
+| DeepSeek | `deepseek` | `usage.prompt_cache_hit_tokens` |
+| 豆包/火山方舟 | `volcengine` | `usage.prompt_tokens_details.cached_tokens` |
+
+Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返回 `cache_tokens: null`。
+
 ### How It Works
 
 1. **Every product skill** declares that any write/destructive operation should be delegated to `alicloud-gcl-runner-ops` via GCL

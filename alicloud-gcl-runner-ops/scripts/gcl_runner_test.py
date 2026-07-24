@@ -2104,6 +2104,118 @@ class CritiqueLlmUsageTests(unittest.TestCase):
         self.assertEqual(usage["total_tokens"], 15)
         self.assertEqual(usage["model"], "m1")
 
+    def test_parse_openai_llm_usage_cache_tokens_alibaba(self):
+        """Alibaba (DashScope) uses prompt_tokens_details.cached_tokens."""
+        usage = gcl_runner.parse_openai_llm_usage(
+            {
+                "usage": {
+                    "prompt_tokens": 1500,
+                    "completion_tokens": 300,
+                    "total_tokens": 1800,
+                    "prompt_tokens_details": {"cached_tokens": 800},
+                },
+                "model": "qwen-plus",
+            },
+            "fallback",
+            provider="alibaba",
+        )
+        self.assertIsNotNone(usage)
+        assert usage is not None
+        self.assertEqual(usage["cache_tokens"], 800)
+        self.assertAlmostEqual(usage["cache_hit_ratio"], 0.533, places=3)
+
+    def test_parse_openai_llm_usage_cache_tokens_deepseek(self):
+        """DeepSeek uses prompt_cache_hit_tokens (unique field name)."""
+        usage = gcl_runner.parse_openai_llm_usage(
+            {
+                "usage": {
+                    "prompt_tokens": 1500,
+                    "completion_tokens": 300,
+                    "total_tokens": 1800,
+                    "prompt_cache_hit_tokens": 800,
+                },
+                "model": "deepseek-v4-flash",
+            },
+            "fallback",
+            provider="deepseek",
+        )
+        self.assertIsNotNone(usage)
+        assert usage is not None
+        self.assertEqual(usage["cache_tokens"], 800)
+        self.assertAlmostEqual(usage["cache_hit_ratio"], 0.533, places=3)
+
+    def test_parse_openai_llm_usage_cache_tokens_minimax_anthropic(self):
+        """MiniMax Anthropic format uses cache_read_input_tokens."""
+        usage = gcl_runner.parse_openai_llm_usage(
+            {
+                "usage": {
+                    "prompt_tokens": 1500,
+                    "completion_tokens": 300,
+                    "total_tokens": 1800,
+                    "cache_read_input_tokens": 800,
+                },
+                "model": "MiniMax-Text-01",
+            },
+            "fallback",
+            provider="minimax",
+        )
+        self.assertIsNotNone(usage)
+        assert usage is not None
+        self.assertEqual(usage["cache_tokens"], 800)
+        self.assertAlmostEqual(usage["cache_hit_ratio"], 0.533, places=3)
+
+    def test_parse_openai_llm_usage_cache_tokens_unsupported(self):
+        """Unsupported provider returns None for cache fields."""
+        usage = gcl_runner.parse_openai_llm_usage(
+            {
+                "usage": {
+                    "prompt_tokens": 1500,
+                    "completion_tokens": 300,
+                    "total_tokens": 1800,
+                    "prompt_tokens_details": {"cached_tokens": 800},
+                },
+                "model": "unknown-model",
+            },
+            "fallback",
+            provider="unsupported_vendor",
+        )
+        self.assertIsNotNone(usage)
+        assert usage is not None
+        self.assertIsNone(usage["cache_tokens"])
+        self.assertIsNone(usage["cache_hit_ratio"])
+
+    def test_parse_openai_llm_usage_cache_tokens_zero_prompt(self):
+        """Zero prompt_tokens avoids division by zero."""
+        usage = gcl_runner.parse_openai_llm_usage(
+            {
+                "usage": {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 100,
+                    "total_tokens": 100,
+                    "prompt_tokens_details": {"cached_tokens": 0},
+                },
+                "model": "qwen-plus",
+            },
+            "fallback",
+            provider="alibaba",
+        )
+        self.assertIsNotNone(usage)
+        assert usage is not None
+        self.assertEqual(usage["cache_tokens"], 0)
+        self.assertIsNone(usage["cache_hit_ratio"])
+
+    def test_detect_llm_provider(self):
+        tests = [
+            ("https://api.deepseek.com/v1/chat/completions", "deepseek"),
+            ("https://api.minimax.chat/v1/chat/completions", "minimax"),
+            ("https://open.bigmodel.cn/api/paas/v4/chat/completions", "zhipu"),
+            ("https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions", "volcengine"),
+            ("https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/text-generation", "alibaba"),
+            ("https://api.openai.com/v1/chat/completions", None),
+        ]
+        for endpoint, expected in tests:
+            self.assertEqual(gcl_runner.detect_llm_provider(endpoint), expected)
+
     def test_build_critic_meta_required_fields(self):
         meta = gcl_runner.build_critic_meta(mode="mechanical", llm_model=None)
         self.assertEqual(meta["coding_agent"], "harness_cli")

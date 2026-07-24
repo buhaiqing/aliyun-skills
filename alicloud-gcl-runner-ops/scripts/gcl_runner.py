@@ -1592,11 +1592,34 @@ def resolve_gcl_coding_agent() -> str:
     return HARNESS_CLI_CODING_AGENT
 
 
+def detect_llm_provider(endpoint: str) -> str | None:
+    """Detect LLM provider from endpoint URL."""
+    if not endpoint:
+        return None
+    ep = endpoint.lower()
+    if "deepseek" in ep:
+        return "deepseek"
+    if "minimax" in ep:
+        return "minimax"
+    if "zhipu" in ep or "bigmodel" in ep:
+        return "zhipu"
+    if " volcengine" in ep or "ark.cn-beijing" in ep or "ark.cn-shanghai" in ep:
+        return "volcengine"
+    if "dashscope" in ep or "model-studio" in ep:
+        return "alibaba"
+    return None
+
+
 def parse_openai_llm_usage(
     resp_json: dict[str, Any],
     fallback_model: str,
+    provider: str | None = None,
 ) -> dict[str, Any] | None:
-    """Extract OpenAI-compatible usage block; None when absent or empty."""
+    """Extract OpenAI-compatible usage block; None when absent or empty.
+
+    Supports cache_tokens for: alibaba, minimax, zhipu, volcengine (OpenAI format),
+    and deepseek (prompt_cache_hit_tokens), minimax (Anthropic cache_read_input_tokens).
+    """
     usage = resp_json.get("usage")
     if not isinstance(usage, dict):
         return None
@@ -1608,11 +1631,30 @@ def parse_openai_llm_usage(
     if total is None and prompt is not None and completion is not None:
         total = int(prompt) + int(completion)
     model = resp_json.get("model") or fallback_model or "unknown"
+
+    # Parse cache_tokens based on provider
+    cache_tokens: int | None = None
+    if provider == "deepseek":
+        cache_tokens = usage.get("prompt_cache_hit_tokens")
+    elif provider == "minimax" and "cache_read_input_tokens" in usage:
+        cache_tokens = usage.get("cache_read_input_tokens")
+    elif provider in ("alibaba", "minimax", "zhipu", "volcengine"):
+        prompt_details = usage.get("prompt_tokens_details", {})
+        cache_tokens = prompt_details.get("cached_tokens")
+
+    # Compute cache_hit_ratio
+    cache_hit_ratio: float | None = None
+    if cache_tokens is not None and prompt is not None and int(prompt) > 0:
+        cache_hit_ratio = round(int(cache_tokens) / int(prompt), 3)
+
     return {
         "model": str(model),
+        "provider": provider,
         "prompt_tokens": int(prompt or 0),
         "completion_tokens": int(completion or 0),
         "total_tokens": int(total or 0),
+        "cache_tokens": cache_tokens,
+        "cache_hit_ratio": cache_hit_ratio,
     }
 
 
@@ -1781,7 +1823,8 @@ def critique_llm(
         else:
             scores[k] = 1.0
 
-    llm_usage = parse_openai_llm_usage(resp_json, fallback_model)
+    provider = detect_llm_provider(endpoint)
+    llm_usage = parse_openai_llm_usage(resp_json, fallback_model, provider)
 
     return {
         "scores": scores,
