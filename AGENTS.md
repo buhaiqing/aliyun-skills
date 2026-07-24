@@ -649,7 +649,7 @@ Every new `alicloud-*-ops` skill needs all 4:
 
 ### 15.5 Currently Integrated Skills
 
-39 product skills have full Runtime Harness integration: **ack, ask, actiontrail, alb, advisor, agentrun, bailian, billing, cen, cms (hardened/v2.5.0), das, dts, eci, ecs, eip, elasticsearch, ess, fc, kms, mongodb, nas, nat, oss, polar-mysql, polar-oracle, polar-postgresql, pts, ram, rds, redis, resourcemanager, sas, slb, sls, sms, terraform, voice, vpc, waf**.
+40 product skills have full Runtime Harness integration: **ack, ask, actiontrail, alb, advisor, agentrun, bailian, billing, cen, cms (hardened/v2.5.0), das, dns, dts, eci, ecs, eip, elasticsearch, ess, fc, kms, mongodb, nas, nat, oss, polar-mysql, polar-oracle, polar-postgresql, pts, ram, rds, redis, resourcemanager, sas, slb, sls, sms, terraform, voice, vpc, waf**.
 
 Full framework: [`alicloud-runtime-harness-ops`](alicloud-runtime-harness-ops/SKILL.md)
 

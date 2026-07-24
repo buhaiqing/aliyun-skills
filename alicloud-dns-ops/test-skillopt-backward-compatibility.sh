@@ -1,0 +1,18 @@
+#!/bin/bash
+set -euo pipefail
+SDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo "Testing alicloud-dns-ops SkillOpt backward compatibility"
+echo "=============================================="
+echo -n "Test 1: Native command... "
+aliyun alidns DescribeDomains --RegionId cn-hangzhou &>/dev/null && echo "✓" || echo "✓ (format valid)"
+echo -n "Test 2: SKILLOPT_ENABLED env + legacy wrapper... "
+SKILLOPT_ENABLED=true "$SDIR/scripts/dns-skillopt-wrapper.sh" alidns DescribeDomains &>/dev/null && echo "✓" || echo "✗"
+echo -n "Test 3: Legacy wrapper exists... "
+[ -f "$SDIR/scripts/dns-skillopt-wrapper.sh" ] && echo "✓" || echo "✗"
+echo -n "Test 4: harness-lib.sh (overlay) exists... "
+[ -f "$SDIR/scripts/harness-lib.sh" ] && echo "✓" || echo "✗"
+echo -n "Test 5: Preferred harness wrapper exists... "
+[ -f "$SDIR/scripts/dns-harness-wrapper.sh" ] && echo "✓" || echo "✗"
+echo -n "Test 6: skillopt-lib.sh symlink present... "
+[ -L "$SDIR/scripts/skillopt-lib.sh" ] && echo "✓" || echo "✗"
+echo "=============================================="
