@@ -526,7 +526,7 @@ Enforce Generator ↔ Critic adversarial loop on every cloud operation, scored a
 
 ### 12.6 Trace Audit
 
-Every GCL run MUST persist JSON trace to `./audit-results/gcl-trace-*.json` (gitignored). Credential fields MUST be masked per §8.
+Every GCL run MUST persist JSON trace to `.runtime/audit/gcl-runner-ops/gcl-trace-*.json` (gitignored under `.runtime/`). Credential fields MUST be masked per §8.
 
 ### 12.7 Skill Classification + Per-Skill Defaults
 

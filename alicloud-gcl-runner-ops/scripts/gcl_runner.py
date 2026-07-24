@@ -12,7 +12,7 @@ re-evaluable quality gate that:
   [2] Critique        — re-classify output using the rubric's regex hot-spots
   [3] Decide          — apply termination rules from `AGENTS.md` §12.5
 
-  Persistent trace → ./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json
+  Persistent trace → .runtime/audit/gcl-runner-ops/gcl-trace-YYYYMMDD-HHMMSS.json
   Trace schema is the one defined in `AGENTS.md` §12.6.
 
 The default Critic (Phase 2) is a **mechanical re-classifier** (pure Python regex),
@@ -2933,7 +2933,7 @@ def resolve_skill_version(skill: str, skills_root: Path | None = None) -> tuple[
 
 
 def persist_trace(trace: dict[str, Any], output_dir: Path) -> Path:
-    """Write the trace to `./audit-results/gcl-trace-YYYYMMDD-HHMMSS.json`."""
+    """Write the trace to `.runtime/audit/gcl-runner-ops/gcl-trace-YYYYMMDD-HHMMSS.json`."""
     output_dir.mkdir(parents=True, exist_ok=True)
     ts = _dt.datetime.now(tz=_dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
     suffix = uuid.uuid4().hex[:6]  # avoid collisions within the same second
