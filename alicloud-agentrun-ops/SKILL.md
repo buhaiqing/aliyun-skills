@@ -254,7 +254,7 @@ curl -X POST "https://agentrun.${ALIBABA_CLOUD_REGION_ID}.aliyuncs.com/2025-09-1
   -H "Authorization: ${AUTH}" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -d '{"templateName":"my-template","cpu":2,"memory":4096}'
-```markdown
+```
 
 ### Next Steps
 
@@ -313,7 +313,7 @@ curl -fsSL https://raw.githubusercontent.com/Serverless-Devs/agentrun-cli/main/s
 
 # 验证安装
 ar --version
-```markdown
+```
 
 ### 配置
 
@@ -329,7 +329,7 @@ export AGENTRUN_ACCESS_KEY_ID=$ALIBABA_CLOUD_ACCESS_KEY_ID
 export AGENTRUN_ACCESS_KEY_SECRET=$ALIBABA_CLOUD_ACCESS_KEY_SECRET
 export AGENTRUN_ACCOUNT_ID=$ALIBABA_CLOUD_ACCOUNT_ID
 export AGENTRUN_REGION=$ALIBABA_CLOUD_REGION_ID
-```markdown
+```
 
 ### CLI vs HTTP API 选择指南
 
@@ -368,7 +368,7 @@ chmod +x assets/code-snippets/cli_template_management.sh
 ./assets/code-snippets/cli_template_management.sh create my-template 2 4096
 ./assets/code-snippets/cli_template_management.sh list
 ./assets/code-snippets/cli_template_management.sh delete my-template
-```markdown
+```
 
 ### Sandbox 管理 (CLI)
 
@@ -409,7 +409,7 @@ SANDBOX_ID=$(./assets/code-snippets/cli_sandbox_management.sh create my-template
 
 # 清理
 ./assets/code-snippets/cli_sandbox_management.sh delete $SANDBOX_ID
-```markdown
+```
 
 ### 代码执行 (CLI)
 
@@ -438,7 +438,7 @@ ar sandbox tty $SANDBOX_ID
 
 # 交互式终端
 ./assets/code-snippets/cli_execute_code.sh tty $SANDBOX_ID
-```markdown
+```
 
 ### CLI 退出码
 
@@ -470,7 +470,7 @@ source assets/code-snippets/execute_code.sh $SANDBOX_ID "import pandas as pd"
 # Step 3: 使用 CLI 清理
 ar sandbox delete $SANDBOX_ID --yes
 ar template delete $TEMPLATE_NAME
-```markdown
+```
 
 ## Execution Flows (Agent-Readable)
 
@@ -528,7 +528,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -H "X-Acs-Content-Sha256: $(echo -n "$BODY" | sha256sum | cut -d' ' -f1)" \
   -d "$BODY"
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -567,7 +567,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -H "X-Acs-Content-Sha256: $(echo -n "$BODY" | sha256sum | cut -d' ' -f1)" \
   -d "$BODY"
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -598,7 +598,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "X-Acs-Parent-Id: {{env.ALIBABA_CLOUD_ACCOUNT_ID}}" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 #### Response Parsing
 
@@ -628,7 +628,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
 # Then delete
 curl -X DELETE "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-09-10/sandboxes/{{user.sandbox_id}}" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -665,7 +665,7 @@ for file in $FILES; do
     -H "Authorization: $SIGNATURE" \
     -o "./backup/$file"
 done
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -717,7 +717,7 @@ curl -X PUT "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -H "X-Acs-Content-Sha256: $(echo -n "$BODY" | sha256sum | cut -d' ' -f1)" \
   -d "$BODY"
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -755,7 +755,7 @@ curl -X GET "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-
 # Step 3: Delete template (only if no dependents)
 curl -X DELETE "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-09-10/templates/{{user.template_name}}" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -794,7 +794,7 @@ curl -X PATCH "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/202
   -H "Authorization: $SIGNATURE" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -d "$BODY"
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -831,7 +831,7 @@ curl -X PATCH "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/202
 ```bash
 curl -X PATCH "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-09-10/templates/{{user.template_name}}/mcp/stop" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -853,7 +853,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "X-Acs-Parent-Id: {{env.ALIBABA_CLOUD_ACCOUNT_ID}}" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 **Response**: Parse `{{output.context_id}}` from response `.id`
 
@@ -862,14 +862,14 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
 ```bash
 curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/contexts" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 #### Delete Context
 
 ```bash
 curl -X DELETE "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/contexts/{{user.context_id}}" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 **When to use**: Clean up stale contexts to free resources; switch between isolated execution environments.
 
@@ -880,7 +880,7 @@ curl -X DELETE "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALI
 ```bash
 curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/files?path={{user.file_path}}" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 **Pre-flight**: Validate path — no `..` traversal, no hidden files (`.` prefix)
 
@@ -897,7 +897,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "Content-Type: application/json" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 **Constraints**: No hidden files, auto-creates parent dirs, default permission 0644
 
@@ -908,7 +908,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "Authorization: $SIGNATURE" \
   -F "file=@{{user.local_file_path}}" \
   -F "path={{user.target_path}}"
-```markdown
+```
 
 **Constraint**: Max 100MB per file
 
@@ -918,7 +918,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
 curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/filesystem/download?path={{user.file_path}}" \
   -H "Authorization: $SIGNATURE" \
   -o "{{user.local_save_path}}"
-```markdown
+```
 
 #### Create Directory
 
@@ -928,7 +928,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "Content-Type: application/json" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 #### Move / Rename File
 
@@ -938,7 +938,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "Content-Type: application/json" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 #### Remove File / Directory
 
@@ -948,7 +948,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "Content-Type: application/json" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 **Pre-flight (Safety Gate)**: Verify path is not `/` or critical system path
 
@@ -973,7 +973,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
   -H "X-Acs-Parent-Id: {{env.ALIBABA_CLOUD_ACCOUNT_ID}}" \
   -H "Authorization: $SIGNATURE" \
   -d "$BODY"
-```markdown
+```
 
 **Hard Timeout**: 30 seconds (data plane gateway enforced)
 
@@ -1002,7 +1002,7 @@ curl -X POST "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBA
 ```bash
 curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/processes" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 #### Kill Process (Safety Gate)
 
@@ -1012,7 +1012,7 @@ curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBAB
 ```bash
 curl -X DELETE "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/processes/{{user.pid}}" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 ### Operation: Health Check
 
@@ -1025,7 +1025,7 @@ curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBAB
 
 ```json
 {"status": "ok", "service": "sandbox-code-interpreter", "version": "v1"}
-```markdown
+```
 
 **When to use**: Before ExecuteCode, before file operations, periodic monitoring
 
@@ -1041,7 +1041,7 @@ curl -X GET "https://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBAB
 
 ```yaml
 wss://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/sandboxes/{{user.sandbox_id}}/processes/tty?protocol=json&tenantId={{env.ALIBABA_CLOUD_ACCOUNT_ID}}
-```markdown
+```
 
 **Authentication**: ACS3-HMAC-SHA256 signing via query parameters or initial HTTP upgrade headers
 
@@ -1061,7 +1061,7 @@ wss://{{env.ALIBABA_CLOUD_ACCOUNT_ID}}.agentrun-data.{{env.ALIBABA_CLOUD_REGION_
 ```bash
 curl -X GET "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-09-10/templates?pageSize=20&pageNumber=1&status=READY" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 **Pagination**: Use `pageNumber` + `pageSize`; iterate until `items` is empty
 
@@ -1070,7 +1070,7 @@ curl -X GET "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-
 ```bash
 curl -X GET "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025-09-10/sandboxes?maxResults=100&nextToken=&status=READY" \
   -H "Authorization: $SIGNATURE" ...
-```markdown
+```
 
 **Pagination**: Use `nextToken` cursor; continue while `nextToken` is non-empty
 
@@ -1090,7 +1090,7 @@ def list_all_sandboxes(status=None):
         if not next_token:
             break
     return all_items
-```markdown
+```
 
 ### Operation: Deep Hibernation (Pause/Resume Session)
 
@@ -1119,7 +1119,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
   -H "Authorization: $SIGNATURE" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -d '{}'
-```markdown
+```
 
 **Post-pause**: Sandbox status changes to `HIBERNATED`. File system is preserved; compute resources released.
 
@@ -1133,7 +1133,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
   -H "Authorization: $SIGNATURE" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -d '{}'
-```markdown
+```
 
 **Post-resume**: Poll GetSandbox until status = `READY` (interval 5s, max 120s). File system and execution environment fully restored.
 
@@ -1147,7 +1147,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
   -H "Authorization: $SIGNATURE" \
   -H "X-Acs-Date: $(date -u +%Y%m%dT%H%M%SZ)" \
   -d '{"fileSystemOnly": true}'
-```markdown
+```
 
 **When to use**: When execution context is not needed, only file data. Faster resume, lower cost.
 
@@ -1157,7 +1157,7 @@ curl -X POST "https://agentrun.{{env.ALIBABA_CLOUD_REGION_ID}}.aliyuncs.com/2025
 CREATING ──► READY ──(pause)──► HIBERNATED ──(resume)──► READY
                 │                                         │
                 └──(idle timeout / 6h hard limit / stop)──► TERMINATED
-```markdown
+```
 
 #### Failure Recovery
 
@@ -1192,7 +1192,7 @@ for file in $BACKUP_FILES; do
     -F "file=@./backup/$file" \
     -F "path=/workspace/$file"
 done
-```markdown
+```
 
 #### Post-execution Validation
 
@@ -1216,7 +1216,7 @@ done
 CREATING ──► READY ──(pause)──► HIBERNATED ──(resume)──► READY
                 │                                         │
                 └──(idle timeout / 6h hard limit / stop)──► TERMINATED
-```markdown
+```
 
 ## Safety Gates
 

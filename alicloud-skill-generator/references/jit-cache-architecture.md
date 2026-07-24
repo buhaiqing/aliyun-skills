@@ -37,7 +37,7 @@
   - 缓存位置: ~/.cache/aliyun-skills/
   - Go build -buildmode=archive 复用
   - 增量构建支持
-```markdown
+```
 
 ---
 
@@ -87,7 +87,7 @@ JIT SDK 冷启动流程:
     │ 预编译二进制  │ │ 源码缓存     │ │ 依赖镜像     │
     │ .bin/        │ │ .src/        │ │ .pkg/        │
     └──────────────┘ └──────────────┘ └──────────────┘
-```markdown
+```
 
 ### 3.2 缓存目录结构
 
@@ -135,7 +135,7 @@ CacheKey = "{product}-{api_version}-{operation}"
 // 示例
 cacheKey := "ecs-20200430-DescribeInstances"
 cacheKey := "rds-20140815-DescribeDBInstances"
-```markdown
+```
 
 ### 3.4 版本管理
 
@@ -188,7 +188,7 @@ cacheKey := "rds-20140815-DescribeDBInstances"
   P0: 核心产品核心操作 (ECS DescribeInstances, RDS DescribeDBInstances)
   P1: 常用诊断操作 (CMS DescribeMetricList, DAS CreateDiagnosticReport)
   P2: 低频操作 (按需编译)
-```markdown
+```
 
 ### 4.2 缓存生命周期
 
@@ -219,7 +219,7 @@ cacheKey := "rds-20140815-DescribeDBInstances"
   │ DescribeSlowLogs       │ 100+        │ 按需编译   │
   │ RestartInstance        │ 50+         │ 按需编译   │
   └────────────────────────┴─────────────┴──────────────┘
-```markdown
+```
 
 ---
 
@@ -263,7 +263,7 @@ go build -buildmode=archive -o ~/.cache/aliyun-skills/pkg/archive/common-client.
 # 产品特定 archive
 go build -buildmode=archive -o ~/.cache/aliyun-skills/pkg/archive/ecs-20200430.a \
   github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
-```markdown
+```
 
 ### 5.2 增量编译流程
 
@@ -340,7 +340,7 @@ clean:
 init:
 	go env -w GOPROXY=https://goproxy.cn,direct
 	go env -w GOMODCACHE=$(CACHE_DIR)/pkg/go-mod-cache
-```markdown
+```
 
 ---
 
@@ -413,7 +413,7 @@ du -sh ~/.cache/aliyun-skills/
   - sdk_compile_duration       # 编译耗时
   - sdk_cache_size_bytes       # 缓存大小
   - sdk_precompile_queue_size  # 预编译队列大小
-```markdown
+```
 
 ---
 

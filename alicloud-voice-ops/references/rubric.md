@@ -36,9 +36,9 @@ metadata:
 
 | Regex | Risk | Examples |
 |---|---|---|
-| `BatchCallByVoice\b|BatchSendVoice\b` | WRITE-MANY | bulk voice dial |
+| `BatchCallByVoice\b|BatchSendVoice\b` | WRITE-MANY  (bulk voice dial)|
 | `StartRobotTask\b` | WRITE-MANY | smart outbound campaign |
-| `DeleteVoiceSign\b|DeleteVoiceTemplate\b` | DESTRUCTIVE-LIMITED | remove voice assets |
+| `DeleteVoiceSign\b|DeleteVoiceTemplate\b` | DESTRUCTIVE-LIMITED  (remove voice assets)|
 | `IvrCall\b` | WRITE-KEY | interactive outbound |
 | `CalledNumber.*1[3-9]\d{9}` | PII-LEAK | full mobile in trace (must mask) |
 

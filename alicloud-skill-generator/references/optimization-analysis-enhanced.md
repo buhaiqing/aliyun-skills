@@ -99,7 +99,7 @@
 方案 C: 远程编译服务
   - 本地仅执行预编译二进制
   - 适合无 Go runtime 环境
-```markdown
+```
 
 #### Gap E-2: 批量操作效率低 ⚠️ HIGH
 
@@ -148,7 +148,7 @@
   - 基于历史数据预测完成时间
   - 动态调整轮询间隔（初始快，后期慢）
   - 超时预警（预计超时前通知）
-```markdown
+```
 
 ### 2.3 效率优化路线图
 
@@ -230,7 +230,7 @@
   限流策略:
     - 超过 95万次 → Period 自动调整为 300s
     - 超过 100万次 → 暂停批量查询，仅单点查询
-```markdown
+```
 
 #### Gap C-3: 无成本预算追踪 ⚠️ MEDIUM
 
@@ -347,7 +347,7 @@ AIOps 要求:
     3. SLS 查询示例（对应 CMS 异常）
     4. ARMS Trace 查询示例
     5. 降级策略（无 SLS/ARMS 时）
-```markdown
+```
 
 #### Gap O-3: 诊断报告生成不统一 ⚠️ MEDIUM
 
@@ -392,7 +392,7 @@ AIOps 要求:
   
   五步闭环:
     Discovery → Collection → Detection → Diagnosis → Report
-```markdown
+```
 
 ### 4.3 可观测性优化路线图
 
@@ -426,7 +426,7 @@ AIOps 要求:
     ├── 并行诊断 → MTTD 降低 → 主动巡检可行
     ├── 智能轮询 → 更快发现问题 → 预警提前
     └── 流水线执行 → 多 Skill 并行 → 跨资源关联效率
-```markdown
+```
 
 ### 5.3 成本-可观测性协同
 
@@ -454,11 +454,11 @@ AIOps 要求:
 
 **具体补充项:**
 
-```markdown
+```
 - Operation: Multi-Metric Anomaly Inspection (新增)
 - references/batch-operations.md (新增)
 - references/observability.md (新增)
-```markdown
+```
 
 #### RDS Skill
 
@@ -470,7 +470,7 @@ AIOps 要求:
 
 **具体补充项:**
 
-```markdown
+```
 - Operation: Proactive Database Inspection (新增)
 - DAS 委托触发条件明确化
 - references/cost-tracking.md (新增)
@@ -486,11 +486,11 @@ AIOps 要求:
 
 **具体补充项:**
 
-```markdown
+```
 - Operation: Free Tier Budget Monitoring (新增)
 - references/batch-operations.md (补充批量查询)
 - references/observability.md (Metrics→SLS 联动)
-```markdown
+```
 
 #### DAS Skill
 
@@ -502,7 +502,7 @@ AIOps 要求:
 
 **具体补充项:**
 
-```markdown
+```
 - 预编译 das-20200116 SDK 二进制
 - references/cost-tracking.md (DAS Pro 说明)
 - 诊断报告增加 confidence_score 字段

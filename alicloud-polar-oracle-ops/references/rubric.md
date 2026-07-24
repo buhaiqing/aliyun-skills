@@ -49,7 +49,7 @@ metadata:
 | `^drop\s+user\s+\S+\s+cascade` | DESTRUCTIVE-MASS | `DROP USER legacy_app CASCADE;` |
 | `^alter\s+system\s+set\b.*scope\s*=\s*spfile` | CONFIG-MUTATION (durable) | `ALTER SYSTEM SET processes=500 SCOPE=SPFILE;` |
 | `^alter\s+system\s+kill\s+session` | LOCK-RISK (kills a session) | `ALTER SYSTEM KILL SESSION '123,4567';` |
-| `^alter\s+database\s+(datafile|tempfile)\s+resize` | FATAL (storage change) | `ALTER DATABASE DATAFILE '...' RESIZE 10G;` |
+| `^alter\s+database\s+(datafile|tempfile)\s+resize` | FATAL (storage change)  (`ALTER DATABASE DATAFILE '...' RESIZE 10G;`)|
 | `^alter\s+system\s+switch\s+logfile` | CONFIG-MUTATION | Forces a log switch |
 | `^drop\s+tablespace\b` | DESTRUCTIVE-MASS | `DROP TABLESPACE legacy INCLUDING CONTENTS;` |
 | `^revoke\s+dba` | PRIVILEGE-LOSS | `REVOKE DBA FROM app_user;` |

@@ -120,7 +120,7 @@ accidental-destruction patterns:
 | `^update\s+\S+\s+set\s+.*\s+where\s+1\s*=\s*1\b` | DESTRUCTIVE-MASS | `UPDATE users SET active=0 WHERE 1=1` |
 | `^update\s+\S+\s+set\s+[^;]*$` (no WHERE) | DESTRUCTIVE-MASS | `UPDATE users SET active=0` |
 | `^shutdown\b` | FATAL | `SHUTDOWN` |
-| `^set\s+global\s+(innodb_flush_log|sync_binlog|max_connections)\b` | CONFIG-MUTATION / FATAL | `SET GLOBAL max_connections=10000` |
+| `^set\s+global\s+(innodb_flush_log|sync_binlog|max_connections)\b`  (CONFIG-MUTATION / FATAL `SET GLOBAL max_connections=10000`)|
 | `^flush\s+tables\s+with\s+read\s+lock\b` | FATAL | `FLUSH TABLES WITH READ LOCK` |
 | `^grant\s+all\b.*\bto\b` | DESTRUCTIVE-MASS (privilege) | `GRANT ALL ON *.* TO 'app'@'%'` |
 | `^revoke\s+all\b.*\bfrom\b` | DESTRUCTIVE-MASS (privilege) | `REVOKE ALL ON *.* FROM 'app'@'%'` |

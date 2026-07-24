@@ -68,7 +68,7 @@ aliyun-skills/
 ├── alicloud-cms-ops/                      # [产品 Skill] 云监控 CMS
 └── alicloud-das-ops/                      # [产品 Skill] 数据库自治服务 DAS
 └── alicloud-topo-discovery/              # [发现类 Skill] 网络拓扑与资源清单
-```markdown
+```
 
 ### 1.4 每个 Skill 的标准目录结构
 
@@ -131,7 +131,7 @@ alicloud-<product>-ops/
 ┌─────────────────────────────────────────────────────────────┐
 │                  Alibaba Cloud OpenAPI                       │
 └─────────────────────────────────────────────────────────────┘
-```markdown
+```
 
 ### 2.2 执行路径策略
 
@@ -187,7 +187,7 @@ alicloud-<product>-ops/
 │  - 状态轮询           │
 │  - 响应校验           │
 └─────────────────────┘
-```markdown
+```
 
 ---
 
@@ -751,7 +751,7 @@ Step 4: 生成 reference 文档（CLI、API、核心概念、集成、监控、�
 Step 5: 生成 assets/ 示例配置
 Step 6: 治理审查与对抗性评审
 Step 7: 提交 PR
-```markdown
+```
 
 ### 4.4 引用文档
 
@@ -837,7 +837,7 @@ metadata:
     - ALIBABA_CLOUD_ACCESS_KEY_SECRET
     - ALIBABA_CLOUD_REGION_ID
 ---
-```markdown
+```
 
 ### 6.2 占位符规范
 
@@ -898,7 +898,7 @@ metadata:
 
 ```text
 Pre-flight → Execute → Validate → Recover
-```markdown
+```
 
 | 阶段 | 说明 |
 |------|------|
@@ -957,7 +957,7 @@ pip install markdownlint-cli2
 
 # 指定产品、操作和凭据文件
 ./alicloud-jit-setup.sh rds DescribeDBInstances .env
-```markdown
+```
 
 ### 7.4 新增产品 Skill 流程
 
@@ -1010,7 +1010,7 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 - 每次变更必须在 SKILL.md 末尾的 Changelog 表中记录
 - Changelog 格式：
 
-```markdown
+```
   | Version | Date | Changes |
   |---------|------|---------|
   | x.y.z   | YYYY-MM-DD | 变更描述 |

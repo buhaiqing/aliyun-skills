@@ -13,8 +13,8 @@
 2. [Onboarding & Guidance](#2-onboarding--guidance)
 3. [Interaction Design](#3-interaction-design)
 4. [Feedback Mechanisms](#4-feedback-mechanisms)
-5. [Error Handling & Recovery](#5-error-handling--recovery)
-6. [UX Review & Validation](#6-ux-review--validation)
+5. [Error Handling & Recovery](#5-error-handling-recovery)
+6. [UX Review & Validation](#6-ux-review-validation)
 7. [Appendix: UX Patterns Library](#7-appendix-ux-patterns-library)
 
 ---
@@ -55,7 +55,7 @@ Every `SKILL.md` MUST include a **Quick Start** section immediately after the Ov
 
 **Required Structure:**
 
-```markdown
+```
 ## Quick Start
 
 ### What This Skill Does
@@ -85,13 +85,13 @@ aliyun {{product}} Describe{{Resources}} --RegionId {{env.ALIBABA_CLOUD_REGION_I
 - [Common Operations](#execution-flows) — Create, manage, and delete resources
 - [Troubleshooting](references/troubleshooting.md) — Fix common issues
 
-```markdown
+```
 
 ### 2.2 Capability Overview
 
 After Quick Start, provide a **Capability Overview** table:
 
-```markdown
+```
 ## Capabilities at a Glance
 
 | Operation | Description | Complexity | Risk Level |
@@ -113,7 +113,7 @@ Every operation section MUST include:
 
 **Example:**
 
-```markdown
+```
 ### Operation: Create {{Resource}}
 
 **When to use:**
@@ -129,7 +129,7 @@ Every operation section MUST include:
 - A new {{resource}} will be created in the specified region
 - Creation typically takes [X] seconds/minutes
 - You will receive a {{resource}} ID for future operations
-```markdown
+```
 
 ### 2.4 Progressive Disclosure
 
@@ -185,7 +185,7 @@ Region [cn-hangzhou]: _
 
 **Destructive Operations MUST use explicit confirmation:**
 
-```markdown
+```
 ⚠️ **Destructive Action Confirmation**
 
 You are about to DELETE the following resource:
@@ -196,7 +196,7 @@ You are about to DELETE the following resource:
 This action is **IRREVERSIBLE**. All data will be permanently lost.
 
 Type the resource name "{{user.resource_name}}" to confirm: _
-```markdown
+```
 
 **Non-destructive operations SHOULD NOT require confirmation** (to reduce friction).
 
@@ -222,7 +222,7 @@ Current: Creating... (poll 3/60, elapsed: 15s)
 
 Provide copy-paste ready command blocks:
 
-```markdown
+```
 **Ready-to-use command:**
 ```bash
 aliyun {{product}} Create{{Resource}} \
@@ -241,7 +241,7 @@ aliyun {{product}} Create{{Resource}} \
 
 Every successful operation MUST provide:
 
-```markdown
+```
 ✅ **Success**
 
 Operation: Create {{Resource}}
@@ -255,13 +255,13 @@ Time taken: {{elapsed_seconds}}s
 - [Describe this resource](link-to-describe)
 - [Create another](link-to-create)
 - [View all resources](link-to-list)
-```markdown
+```
 
 ### 4.2 Failure Feedback
 
 Every failed operation MUST provide:
 
-```markdown
+```
 ❌ **Operation Failed**
 
 Error: {{error.code}}
@@ -284,7 +284,7 @@ Request ID: {{error.request_id}}
 
 For long-running operations:
 
-```markdown
+```
 ⏳ **Operation in Progress**
 
 Operation: Create {{Resource}}
@@ -295,7 +295,7 @@ Estimated remaining: {{estimated_remaining}}s
 
 Polling every {{poll_interval}}s...
 [====================>    ] 75%
-```markdown
+```
 
 ### 4.4 Implicit Feedback
 
@@ -351,7 +351,7 @@ How to fix:
 
 Next step:
 Run "aliyun {{product}} DescribeRegions" to see available regions.
-```markdown
+```
 
 ### 5.2 Error Categories and Handling
 
@@ -370,14 +370,14 @@ Run "aliyun {{product}} DescribeRegions" to see available regions.
 
 **Pattern 1: Retry with Backoff**
 
-```markdown
+```
 ⚠️ Throttling detected. Retrying in {backoff_seconds}s...
 (Attempt {current}/{max})
 ```
 
 **Pattern 2: Suggest Alternative**
 
-```markdown
+```
 ❌ Resource creation failed: QuotaExceeded
 
 You have reached your quota limit ({{current}}/{{limit}}).
@@ -390,7 +390,7 @@ Alternatives:
 
 **Pattern 3: Partial Success**
 
-```markdown
+```
 ⚠️ Partial Success
 
 Completed: 3/5 resources created
@@ -408,7 +408,7 @@ Options:
 
 When HALT is necessary, provide this standardized escalation block:
 
-```markdown
+```
 🛑 **Escalation Required**
 
 This issue cannot be resolved automatically.
@@ -423,7 +423,7 @@ This issue cannot be resolved automatically.
 **Support Channels:**
 - Alibaba Cloud Console Ticket: https://workorder.console.aliyun.com/
 - Include the Request ID for faster resolution
-```markdown
+```
 
 ---
 
@@ -486,7 +486,7 @@ Before any generated skill is marked complete, it MUST pass this UX review:
 
 For complex multi-step operations:
 
-```markdown
+```
 ## Wizard: Create Complex Resource
 
 This wizard will guide you through creating a {{resource}} with all required configurations.
@@ -515,7 +515,7 @@ Confirm? [Y/n]
 
 For operating on multiple resources:
 
-```markdown
+```
 ## Batch Operation: Start Multiple Instances
 
 Resources selected: 5 instances
@@ -530,13 +530,13 @@ Confirm? [Y/n]
 
 Progress:
 [====>                ] 1/4 started
-```markdown
+```
 
 ### Pattern: Dry Run
 
 For validating operations without executing:
 
-```markdown
+```
 ## Dry Run: Delete Resource
 
 This shows what WOULD happen without actually doing it:

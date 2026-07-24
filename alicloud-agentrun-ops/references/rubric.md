@@ -39,7 +39,7 @@ metadata:
 |---|---|---|
 | `DeleteSandbox\b` | DESTRUCTIVE-MASS | sandbox delete |
 | `DeleteTemplate\b` | DESTRUCTIVE-MASS | template delete |
-| `ExecCommand.*(rm\s+-rf|dd\s+if|mkfs|fdisk|shutdown)` | FATAL | destructive exec |
+| `ExecCommand.*(rm\s+-rf|dd\s+if|mkfs (fdisk shutdown)` FATAL destructive exec)|
 
 
 ### Wrapper Compliance (per `AGENTS.md` §15.8 + GCL §3, §14.2.4)

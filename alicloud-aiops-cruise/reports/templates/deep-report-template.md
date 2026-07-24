@@ -60,9 +60,9 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 | 实例 | 类型 | 指标 | 当前值 | 基线μ | Z-Score | 方法 | 等级 |
 |---|---|---|---|---|---|---|---|
-{% for score in anomaly_scores %}
+{% for score in anomaly_scores %} | | | | | | |
 | {{score.instance_id[:20]}} | {{score.resource_type}} | {{score.metric}} | {{score.current_value}} | {{score.baseline_mean}} | {{score.z_score}} | {{score.method}} | {% if score.level == 'CRITICAL' %}CRITICAL CRITICAL{% elif score.level == 'WARNING' %}WARNING WARNING{% else %}INFO INFO{% endif %} |
-{% endfor %}
+{% endfor %} | | | | | | |
 
 ---
 
@@ -90,9 +90,9 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 
 | 类型 | 总量 | 正常 | 异常 |
 |---|---|---|---|
-{% for summary in resource_summary %}
+{% for summary in resource_summary %} | | |
 | {{summary.type}} | {{summary.total}} | PASS {{summary.healthy}} | {{summary.unhealthy}} |
-{% endfor %}
+{% endfor %} | | |
 
 ---
 
@@ -108,7 +108,7 @@ phase: "Phase 2+3: 深度巡检 + 推理报告"
 | **现象组合** | {{inference.symptoms \| join("; ")}} |
 | **推理结论** | {{inference.reasoning}} |
 | **修复指引** | 见 `references/inference-rules.md#{{inference.rule_id.lower()}}` 的修复步骤 |
-{% endfor %}
+{% endfor %} |
 
 ---
 

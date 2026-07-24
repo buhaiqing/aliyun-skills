@@ -14,7 +14,7 @@
 
 | Goal | API operationId | Notes |
 |------|-----------------|-------|
-| **ALB Instance** |
+| **ALB Instance** | | |
 | Create | `CreateLoadBalancer` | Async-polls via ListAsynJobs |
 | List | `ListLoadBalancers` | Pagination: MaxResults + NextToken |
 | Get | `GetLoadBalancerAttribute` | Full details including zones |
@@ -25,36 +25,36 @@
 | Address type | `UpdateLoadBalancerAddressTypeConfig` | Intranet ↔ Internet |
 | Deletion protection | `EnableDeletionProtection` / `DisableDeletionProtection` | |
 | Access log | `EnableLoadBalancerAccessLog` / `DisableLoadBalancerAccessLog` | |
-| **Listener** |
+| **Listener** | | |
 | Create | `CreateListener` | HTTP/HTTPS/QUIC |
 | Get / List | `GetListenerAttribute` / `ListListeners` | |
 | Update | `UpdateListenerAttribute` | Actions, certs, security policy |
 | Log config | `UpdateListenerLogConfig` | |
 | Start / Stop | `StartListener` / `StopListener` | |
 | Delete | `DeleteListener` | **Destructive** |
-| **Server Group** |
+| **Server Group** | | |
 | Create / Get / List | `CreateServerGroup` / `GetServerGroupAttribute` / `ListServerGroups` | |
 | Update | `UpdateServerGroupAttribute` | Scheduler, health check, persistence |
 | Add / Remove / Replace servers | `AddServersToServerGroup` / `RemoveServersFromServerGroup` / `ReplaceServersInServerGroup` | Add is async |
 | List servers | `ListServerGroupServers` | |
 | Delete | `DeleteServerGroup` | **Destructive** — must not be referenced |
-| **Forwarding Rule** |
+| **Forwarding Rule** | | |
 | Create | `CreateRule` / `CreateRules` (batch) | |
 | List / Update | `ListRules` / `UpdateRuleAttribute` / `UpdateRulesAttribute` | |
 | Delete | `DeleteRule` / `DeleteRules` | **Destructive** |
-| **ACL** |
+| **ACL** | | |
 | Create / Get / List | `CreateAcl` / `UpdateAclAttribute` / `ListAcls` / `ListAclEntries` | |
 | Add / Remove entries | `AddEntriesToAcl` / `RemoveEntriesFromAcl` | |
 | Associate / Dissociate | `AssociateAclsWithListener` / `DissociateAclsFromListener` | |
 | Delete | `DeleteAcl` | **Destructive** |
-| **Security Policy** |
+| **Security Policy** | | |
 | Create / List / Update / Delete | `CreateSecurityPolicy` / `ListSecurityPolicies` / `UpdateSecurityPolicyAttribute` / `DeleteSecurityPolicy` | |
 | List system | `ListSystemSecurityPolicies` | |
-| **Health Check Template** |
+| **Health Check Template** | | |
 | Create / Get / List / Update | `CreateHealthCheckTemplate` / `GetHealthCheckTemplateAttribute` / `ListHealthCheckTemplates` / `UpdateHealthCheckTemplateAttribute` | |
 | Apply | `ApplyHealthCheckTemplateToServerGroup` | |
 | Delete | `DeleteHealthCheckTemplates` | |
-| **Other** |
+| **Other** | | |
 | Certificate | `ListListenerCertificates` / `AssociateAdditionalCertificatesWithListener` / `DissociateAdditionalCertificatesFromListener` | |
 | AScript | `CreateAScripts` / `ListAScripts` / `UpdateAScripts` / `DeleteAScripts` | |
 | Security Group | `LoadBalancerJoinSecurityGroup` / `LoadBalancerLeaveSecurityGroup` | |

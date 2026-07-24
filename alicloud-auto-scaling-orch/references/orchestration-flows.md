@@ -39,7 +39,7 @@ aliyun cms DescribeMetricList \
   --Dimensions "[{\"instanceId\":\"i-xxx\"}]" \
   --Period 300 \
   --Length 12
-```markdown
+```
 
 #### Step 2: 决策 — 计算目标容量
 
@@ -49,7 +49,7 @@ aliyun cms DescribeMetricList \
 期望容量 = ceil(当前实例数 × 当前CPU / 目标利用率)
          = ceil(3 × 0.75 / 0.60) = ceil(3.75) = 4
 → 扩容 1 台
-```markdown
+```
 
 #### Step 3: 编排 — 创建伸缩规则
 
@@ -86,7 +86,7 @@ aliyun ess CreateAlarm \
   --Threshold {{user.cpu_threshold_low|30}} \
   --ComparisonOperator "<=" \
   --EvaluationCount 2
-```markdown
+```
 
 #### Step 4: 验证
 
@@ -102,7 +102,7 @@ aliyun ess DescribeScalingActivities \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --ScalingGroupId "{{user.scaling_group_id}}" \
   --PageNumber 1 --PageSize 5
-```markdown
+```
 
 ---
 
@@ -117,7 +117,7 @@ aliyun ess DescribeScalingActivities \
 aliyun ess DescribeScalingGroups \
   --ScalingGroupId.1 "{{user.scaling_group_id}}" \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```markdown
+```
 
 #### Step 2: 决策 — 确认定时参数
 
@@ -126,7 +126,7 @@ aliyun ess DescribeScalingGroups \
 目标时间段:
   09:00 → DesiredCapacity=5 (扩容+3)
   18:00 → DesiredCapacity=2 (缩容-3)
-```markdown
+```
 
 #### Step 3: 编排 — 创建定时任务
 
@@ -154,7 +154,7 @@ aliyun ess CreateScheduledTask \
   --RecurrenceValue "{{user.schedule_cron_in}}" \
   --LaunchTime "{{user.schedule_end_time}}" \
   --TimeZone "{{user.schedule_timezone|Asia/Shanghai}}"
-```markdown
+```
 
 #### Step 4: 验证
 
@@ -164,7 +164,7 @@ aliyun ess DescribeScheduledTasks \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --ScheduledTaskName.1 "orch-scaleup-{{user.policy_name}}" \
   --ScheduledTaskName.2 "orch-scaledown-{{user.policy_name}}"
-```markdown
+```
 
 ---
 
@@ -182,7 +182,7 @@ aliyun cms DescribeMetricList \
   --Period 3600 \
   --StartTime "$(date -d '14 days ago' -u +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```markdown
+```
 
 #### Step 2: 决策 — 检查周期性
 
@@ -193,7 +193,7 @@ aliyun cms DescribeMetricList \
   无明显周期 → 降级到 S1 (TargetTracking)
 
 决策: 创建 PredictiveScalingRule
-```markdown
+```
 
 #### Step 3: 编排 — 创建预测规则
 
@@ -211,7 +211,7 @@ aliyun ess CreateScalingRule \
   --PredictiveTaskBufferTime 300 \
   --EstimatedInstanceWarmup 180 \
   --TargetValue {{user.predictive_target|60}}
-```markdown
+```
 
 > `PredictiveScalingMode` 参数：
 >
@@ -232,7 +232,7 @@ aliyun ess DescribeScalingRules \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}" \
   --ScalingGroupId "{{user.scaling_group_id}}" \
   --ScalingRuleType "PredictiveScalingRule"
-```markdown
+```
 
 ---
 
@@ -251,7 +251,7 @@ aliyun cms DescribeMetricLast \
   --Namespace "acs_ecs_dashboard" \
   --MetricName "memory_usedutilization" &
 wait
-```markdown
+```
 
 #### Step 2: 决策 — 双指标矩阵判定
 
@@ -264,7 +264,7 @@ wait
   CPU=95%, Mem=60%
   → "危险区": CPU > 90% OR Mem > 90%
   → 扩容 5 台 (StepScalingRule 高档)
-```markdown
+```
 
 #### Step 3: 编排 — 创建 Step 规则
 
@@ -294,7 +294,7 @@ aliyun cms PutResourceMetricRule \
   --Statistics "Average" \
   --Period 300 \
   --EvaluationCount 2
-```markdown
+```
 
 > **注意**: StepScalingRule 只能关联一个告警。复合判断（CPU AND 内存）推荐在 CMS 级别做多个告警联动，或使用编排脚本做前置判断后再触发 ESS 规则。
 
@@ -304,7 +304,7 @@ aliyun cms PutResourceMetricRule \
 # 委托 ess-ops + cms-ops 双验证
 aliyun ess DescribeScalingRules --ScalingGroupId "{{user.scaling_group_id}}"
 aliyun cms DescribeMetricRuleList --RuleName "orch-composite-alert-{{user.policy_name}}"
-```markdown
+```
 
 ---
 
@@ -322,7 +322,7 @@ aliyun cms DescribeMetricList \
   --Period 3600 \
   --StartTime "$(date -d '30 days ago' -u +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```markdown
+```
 
 #### Step 2: 决策 — 计算大促容量
 
@@ -335,7 +335,7 @@ aliyun cms DescribeMetricList \
             = ceil(5 × 0.85 × 1.5 / 0.60) = ceil(10.625) = 11
 
 → 预扩容至 12 台（比计算多 1 台作为 buffer）
-```markdown
+```
 
 #### Step 3: 编排 — 部署大促策略
 
@@ -372,7 +372,7 @@ aliyun ess ModifyScalingGroup \
   --ScalingGroupId "{{user.scaling_group_id}}" \
   --MaxSize {{user.max_capacity|10}} \
   --RegionId "{{env.ALIBABA_CLOUD_REGION_ID}}"
-```markdown
+```
 
 #### Step 4: 验证
 
@@ -385,7 +385,7 @@ aliyun ess DescribeScheduledTasks \
 # 验证伸缩组 MaxSize 已恢复
 aliyun ess DescribeScalingGroups \
   --ScalingGroupId.1 "{{user.scaling_group_id}}"
-```markdown
+```
 
 ---
 
@@ -404,7 +404,7 @@ aliyun cms DescribeMetricList \
   --Period 3600 \
   --StartTime "$(date -d "${DAYS} days ago" -u +%Y-%m-%dT%H:%M:%SZ)" \
   --EndTime "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-```markdown
+```
 
 #### Step 2: 决策 — 判定闲置状态
 
@@ -418,7 +418,7 @@ CPU_P99 = 3.2%（过去 7 天）
   缩容至: 1 台 (MinSize)
   日节省: 2 × ¥0.55 × 24 = ¥26.4/天
   月节省: ~¥792
-```markdown
+```
 
 #### Step 3: 编排 — 执行回收
 
@@ -446,7 +446,7 @@ aliyun ess CreateAlarm \
   --Threshold 50 \
   --ComparisonOperator ">=" \
   --EvaluationCount 2
-```markdown
+```
 
 #### Step 4: 验证
 
@@ -461,7 +461,7 @@ aliyun ess DescribeScalingInstances \
 aliyun cms DescribeMetricLast \
   --Namespace "acs_ecs_dashboard" \
   --MetricName "CpuUtilization"
-```markdown
+```
 
 ---
 

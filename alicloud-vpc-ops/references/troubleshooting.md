@@ -37,8 +37,8 @@ aliyun vpc DescribeRegions
 | `InternalError` (500) | Retry 3x; escalate with RequestId |
 | `InvalidEipStatus` (400) | Check current EIP status |
 | `OperationDenied` (400) | Check resource lock or deletion protection |
-| `VrouterEntryConflictError` | 400 | Route entry conflicts — remove conflicting route before adding |
-| `RouteTableNotSupport` | 400 | Route table doesn't support operation — check type and associations |
+| `VrouterEntryConflictError` | 400  (Route entry conflicts — remove conflicting route before adding)|
+| `RouteTableNotSupport` | 400  (Route table doesn't support operation — check type and associations)|
 
 ## Dependency Violations
 

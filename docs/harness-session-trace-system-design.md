@@ -1105,7 +1105,7 @@ ${SKILLS_DIR}/.runtime/
 | `SKILLOPT_LANGFUSE_ENABLED=false`（默认） | 写本地 trace；不远端上报 |
 | `SKILLOPT_LANGFUSE_ENABLED=true` 且 Langfuse 配置完整 | 写本地 trace + 远端 Langfuse 镜像 |
 | `SKILLOPT_JUDGE_ENABLED=false` | 跳过 judge metadata；**仍**写本地 trace |
-| 有 Langfuse 配置但 curl 失败 | 静默失败（`2>&1 || true`），不影响主流程 |
+| 有 Langfuse 配置但 curl 失败 | 静默失败（`2>&1  ( true`），不影响主流程)|
 | `SKILLOPT_JUDGE_MODE=llm` 但 `SKILLOPT_JUDGE_ENDPOINT` 为空 | 降级到 rule_engine，写入 `judge_fallback=true` |
 | LLM Judge 超时、不可用或返回非法 JSON | 降级到 rule_engine，CLI 主流程不受影响 |
 | `.runtime/traces/` 目录不存在 | 自动创建 |

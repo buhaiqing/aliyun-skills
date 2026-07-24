@@ -171,7 +171,7 @@ response, and any error are captured in `./audit-results/gcl-trace-*.json`.
 | `iterations[].generator.production_eip` | ALL ops on a single EIP | Boolean; computed by §1.2.1 detection |
 | `iterations[].generator.maintenance_window_confirmed` | Production EIP ops only | Boolean; user confirmation that the op is in a maintenance window |
 | `iterations[].generator.dns_dependency_audit` | `ReleaseEipAddress` only | Free-text or structured: "user confirmed no external DNS / firewall / 3rd-party API key depends on this IP, OR migration complete" |
-| `iterations[].generator.traffic_pre_check` | `ModifyEipAddress` bandwidth decrease only | `{ "avg_mbps_last_1h": <float>, "new_bandwidth_mbps": <int>, "fits": true|false }` |
+| `iterations[].generator.traffic_pre_check` | `ModifyEipAddress` bandwidth decrease only | `{ "avg_mbps_last_1h": <float>, "new_bandwidth_mbps": <int>, "fits": true (false }`)|
 | `iterations[].generator.unbind_then_release_trace` | `ReleaseEipAddress` only | The 2-step unbind + release sequence with each step's command + result |
 | `iterations[].critic.scores` | ALL | The 5+3 dimension map |
 | `iterations[].critic.suggestions` | ALL retries | ≤ 3 actionable items |
@@ -222,7 +222,7 @@ log line, command argument, or persisted trace.
 | `ALIBABA_CLOUD_ACCESS_KEY_SECRET` | Env var / CLI flag / SDK config | `(ALIBABA_CLOUD_ACCESS_KEY_SECRET=)[^ ]+` → `<masked>` |
 | `ALIBABA_CLOUD_ACCESS_KEY_ID` | Env var / CLI flag / SDK config | `(ALIBABA_CLOUD_ACCESS_KEY_ID=)[A-Z0-9]+` → `<masked-id>` |
 | DNS provider API token (e.g. `ALIYUN_DNS_ACCESS_KEY`) | Env var / curl argument | `(ALIYUN_DNS_)[A-Z_]+(=)[^ ]+` → `$1$2<masked>` |
-| Third-party firewall API key (Cloudflare, AWS WAF, etc.) | Env var / curl argument | `(CF_API_KEY|AWS_SECRET_ACCESS_KEY)=[^ ]+` → `<masked>` |
+| Third-party firewall API key (Cloudflare, AWS WAF, etc.) | Env var / curl argument | `(CF_API_KEY (AWS_SECRET_ACCESS_KEY)=[^ ]+` → `<masked>`)|
 | `InstanceId` (NOT a secret, but PII / inventory) | CLI flag | Not masked (public identifier) |
 | `IpAddress` (NOT a secret, but PII) | CLI flag / response | Not masked (public identifier) |
 

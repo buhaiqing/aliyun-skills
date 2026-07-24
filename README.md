@@ -98,7 +98,7 @@ aliyun-skills/
 ├── alicloud-voice-ops/                # Voice / Intelligent Speech Interaction
 ├── alicloud-vpc-ops/                  # Virtual Private Cloud (VPC)
 └── alicloud-waf-ops/                  # Web Application Firewall (WAF)
-```markdown
+```
 
 > A standard product Skill (`alicloud-<product>-ops/`) contains: `SKILL.md`, `references/` (`core-concepts.md`, `cli-usage.md`, `api-sdk-usage.md`, `troubleshooting.md`, `rubric.md`, `prompt-templates.md`, `monitoring.md`, etc.), `assets/` (`example-config.yaml`, `eval_queries.json`), and per-skill `scripts/` + `test-*.sh` where applicable.
 
@@ -121,7 +121,7 @@ export ALIBABA_CLOUD_REGION_ID="cn-hangzhou"
 
 # Method 2: Interactive configuration
 aliyun configure
-```markdown
+```
 
 ### 3. Generate a New Skill
 
@@ -163,7 +163,7 @@ aliyun ecs DescribeInstances --output cols=InstanceId,Status rows=Instances.Inst
 # Polling with waiter
 aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
   --waiter expr='Instances.Instance[0].Status' to=Running timeout=300
-```markdown
+```
 
 ## Installing aliyun CLI
 
@@ -185,7 +185,7 @@ aliyun ecs DescribeInstances --InstanceIds '["i-xxx"]' \
 ```bash
 # macOS Homebrew
 brew install aliyun-cli
-```markdown
+```
 
 ## Credential Configuration
 
@@ -255,7 +255,7 @@ aliyun configure
 ```bash
 # Check Markdown formatting
 npx markdownlint-cli2 "alicloud-*/SKILL.md"
-```markdown
+```
 
 Verify: CLI commands are executable, links are valid, examples are correct.
 

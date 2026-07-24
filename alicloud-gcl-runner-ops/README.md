@@ -38,7 +38,7 @@
 |-------|--------|-------------|
 | Phase 1 | ✅ | 规范 + 核心角色定义 |
 | Phase 2 | ✅ | 机械正则评审（无需 LLM，完全确定性） |
-| Phase 3-A | ✅ **基于 LLM 的评审**（支持 mechanical/llm/hybrid 三种模式） |
+| Phase 3-A | ✅ **基于 LLM 的评审**（支持 mechanical/llm/hybrid 三种模式） | |
 | Phase 3-B | ✅ | CMS  phantom 告警创建（GCL 结果 → 自定义 CMS 指标） |
 | Phase 3-C | ✅ | 操作审计交叉验证（根据云审计日志重新验证 GCL 结果） |
 | Phase 4 | ✅ | CMS 通过率告警（安全失败率、正确性下降） |

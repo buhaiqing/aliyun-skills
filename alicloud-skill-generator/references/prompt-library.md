@@ -42,7 +42,7 @@ Before generating, you MUST:
 
 Follow the generation process in SKILL.md Step 0–6 exactly.
 Output: structured directory tree with populated SKILL.md and references/.
-```markdown
+```
 
 **Parameters:**
 
@@ -167,7 +167,7 @@ Replace placeholders with verified data:
 - CLI commands → verified via `aliyun help {{product.slug}}`
 
 CRITICAL: Do NOT invent fields, flags, or response paths. Every item MUST be traceable to OpenAPI or verified CLI output.
-```markdown
+```
 
 **Parameters:**
 
@@ -252,7 +252,7 @@ Output: coverage gap table with columns:
 Set `cli_applicability` accordingly:
 - `dual-path` if CLI covers core operations
 - `sdk-only` if CLI does not expose this product
-```markdown
+```
 
 **Parameters:**
 
@@ -340,7 +340,7 @@ For each scenario:
 - Result: PASS / FAIL
 - Evidence: quote from skill content
 - Fix: specific instruction if FAILED
-```markdown
+```
 
 **Parameters:**
 
@@ -431,7 +431,7 @@ Anti-patterns to avoid:
 - Do not ask for credentials (use {{env.*}})
 - Do not present raw JSON as primary output
 - Do not chain more than 3 prompts without showing progress
-```markdown
+```
 
 **Parameters:**
 
@@ -487,7 +487,7 @@ Rules:
 - Never expose secret values
 - Always suggest a concrete next action
 - Include request ID when available for support escalation
-```markdown
+```
 
 **Parameters:**
 

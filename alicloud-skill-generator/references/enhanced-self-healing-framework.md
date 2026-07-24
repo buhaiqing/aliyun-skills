@@ -67,7 +67,7 @@
     │
     └── Step 6: 用户指导
         提供明确的错误信息和修复建议
-```markdown
+```
 
 ---
 
@@ -410,7 +410,7 @@ else
     rm -f "$INSTALL_PATH/aliyun"
     proceed_to_cli_install_retry
 fi
-```markdown
+```
 
 ### 3.2 Go Runtime JIT下载增强自愈流程
 
@@ -615,7 +615,7 @@ download_sdk_dependencies_enhanced() {
     ERROR_CODE="DEP_NET_TIMEOUT"
     return 1
 }
-```markdown
+```
 
 ---
 
@@ -649,11 +649,11 @@ download_sdk_dependencies_enhanced() {
     │       │
     │       └── 降级路径3: 用户手动修复
     │           提供详细的错误信息和修复建议
-```markdown
+```
 
 ### 4.2 用户指导模板
 
-```markdown
+```
 ## ❌ Installation Failed — Self-Healing Exhausted
 
 ### Error Summary
@@ -691,7 +691,7 @@ aliyun version
 ```bash
 # The Agent will automatically use Go SDK fallback
 # Ensure Go runtime is available or will be JIT downloaded
-```markdown
+```
 
 #### Option 3: Use Alibaba Cloud Console
 
@@ -715,7 +715,7 @@ If the issue persists after following recommended actions:
 2. Create a support ticket: <https://workorder.console.aliyun.com/>
 3. Include Request ID: {{request_id}}
 
-```markdown
+```
 
 ---
 
@@ -786,7 +786,7 @@ health_check_aliyun_cli() {
         return 1
     fi
 }
-```markdown
+```
 
 ### 5.2 Go Runtime健康检查
 
@@ -847,7 +847,7 @@ health_check_go_runtime() {
         return 1
     fi
 }
-```markdown
+```
 
 ---
 
@@ -883,7 +883,7 @@ log_self_healing_event() {
 log_self_healing_event "CLI_INSTALL" "NET_TIMEOUT" "MIRROR_SWITCH" "SUCCESS" "15s"
 log_self_healing_event "GO_DOWNLOAD" "GO_DOWNLOAD_FAIL" "VERSION_FALLBACK" "SUCCESS" "45s"
 log_self_healing_event "DEP_DOWNLOAD" "DEP_NET_TIMEOUT" "PROXY_SWITCH" "FAIL" "120s"
-```markdown
+```
 
 ---
 
