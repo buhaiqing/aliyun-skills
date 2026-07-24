@@ -715,8 +715,6 @@ If the issue persists after following recommended actions:
 2. Create a support ticket: <https://workorder.console.aliyun.com/>
 3. Include Request ID: {{request_id}}
 
-```
-
 ---
 
 ## 5. 健康检查和状态验证
