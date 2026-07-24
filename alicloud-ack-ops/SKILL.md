@@ -109,6 +109,7 @@ fallback), response validation, and failure recovery.
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| 内部服务发现 / CoreDNS 解析异常 / 域名解析 | `alicloud-dns-ops` | 集群内服务发现、PrivateZone 内网解析、解析记录排障时委托 |
 
 ## Variable Convention (Agent-Readable)
 

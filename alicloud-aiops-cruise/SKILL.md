@@ -61,6 +61,7 @@ metadata:
 | ECS 计算/存储诊断 | `alicloud-ecs-analysis-aliyun` | 引用分析框架思路 |
 | SLB 详细诊断 | `alicloud-slb-ops` | 引用 Describe* 命令模式 |
 | ACK 集群深度巡检 | `alicloud-ack-ops` | 拓扑发现 K8S 集群后，由 ackcruise Agent 自动调用 Intelligent Inspection（5维评分+组件健康）|
+| DNS 健康检查 / 解析异常巡检 | `alicloud-dns-ops` | 巡检项涉及域名解析、CNAME、PrivateZone、GTM 健康时引导至此 |
 
 ## Perceive Layer — 感知 Agent
 本 Skill 内置了 **8 个感知 Agent**，统一放在 `scripts/agents/perceive/` 下，按领域分层组织：

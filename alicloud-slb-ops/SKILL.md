@@ -117,6 +117,7 @@ only when CLI lacks support for a specific edge-case operation.
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| CNAME 配置 / 域名接入 / 解析记录 | `alicloud-dns-ops` | SLB 绑定域名、CNAME 指向、解析记录配置时委托 |
 
 ## Variable Convention (Agent-Readable)
 

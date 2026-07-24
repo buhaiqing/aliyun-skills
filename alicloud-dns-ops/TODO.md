@@ -20,9 +20,8 @@
 
 ### In Progress
 
-- 🔄 **Testing**: Need to create backward compatibility tests
-- 🔄 **Integration Testing**: Need to test with GCL Runner and Runtime Harness
-- 🔄 **Documentation**: Need to update cross-skill references in other skills
+- ✅ **Runtime Harness 4/4 Integration** (2026-07-24): added `scripts/harness-lib.sh` (DNS overlay), `scripts/skillopt-lib.sh` → symlink to `harness-lib.sh`, `scripts/dns-harness-wrapper.sh` (preferred entry), `test-skillopt-backward-compatibility.sh`; backward-compat test 6/6 PASS; live `alidns DescribeDomains` verified
+- ✅ **Cross-skill references**: ack/ecs/vpc/slb/alb/waf + aiops-cruise/topo-discovery/arch-advisor delegation rows added (see Integration Checklist)
 
 ### Planned
 
@@ -35,19 +34,19 @@
 
 ### Required Integration
 
-- [ ] Update `alicloud-ack-ops` to reference DNS for internal service discovery
-- [ ] Update `alicloud-ecs-ops` to reference DNS for public IP resolution
-- [ ] Update `alicloud-vpc-ops` to reference PrivateZone for internal DNS
-- [ ] Update `alicloud-slb-ops` to reference DNS for CNAME configuration
-- [ ] Update `alicloud-alb-ops` to reference DNS for CNAME configuration
-- [ ] Update `alicloud-cdn-ops` to reference DNS for CNAME configuration
-- [ ] Update `alicloud-waf-ops` to reference DNS for CNAME configuration
+- [x] Update `alicloud-ack-ops` to reference DNS for internal service discovery
+- [x] Update `alicloud-ecs-ops` to reference DNS for public IP resolution
+- [x] Update `alicloud-vpc-ops` to reference PrivateZone for internal DNS
+- [x] Update `alicloud-slb-ops` to reference DNS for CNAME configuration
+- [x] Update `alicloud-alb-ops` to reference DNS for CNAME configuration
+- [ ] Update `alicloud-cdn-ops` to reference DNS for CNAME configuration (skipped — `alicloud-cdn-ops` does not exist in repo)
+- [x] Update `alicloud-waf-ops` to reference DNS for CNAME configuration
 
 ### Optional Integration
 
-- [ ] Update `alicloud-aiops-cruise` to include DNS health checks in patrol
-- [ ] Update `alicloud-topo-discovery` to include DNS records in topology
-- [ ] Update `alicloud-arch-advisor` to include DNS in architecture assessment
+- [x] Update `alicloud-aiops-cruise` to include DNS health checks in patrol
+- [x] Update `alicloud-topo-discovery` to include DNS records in topology
+- [x] Update `alicloud-arch-advisor` to include DNS in architecture assessment
 
 ## Testing Requirements
 

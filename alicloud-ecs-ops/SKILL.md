@@ -240,6 +240,7 @@ Use this when the user's phrasing does not map cleanly to a CRUD verb
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| 绑定域名 / 公网 IP 解析 / 解析记录 | `alicloud-dns-ops` | ECS 绑定域名、公网 IP 对应解析记录配置时委托 |
 
 ### Multi-Skill Intent Patterns
 

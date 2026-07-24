@@ -131,6 +131,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| 更新 DNS A/CNAME 指向 WAF / 域名接入 | `alicloud-dns-ops` | 域名接入 WAF 后需更新 DNS 解析记录（CNAME/A）时委托 |
 
 ## Variable Convention (Agent-Readable)
 

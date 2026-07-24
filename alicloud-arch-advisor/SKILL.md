@@ -117,6 +117,7 @@ alicloud-arch-advisor 支持三种操作模式，由 Agent 根据用户意图自
 | Advisor 巡检结果 | `alicloud-advisor-ops` | Mode B 获取 Advisor 层面的风险检查和成本优化建议 |
 | 监控指标采集 | `alicloud-cms-ops` | Mode B Performance 支柱评估时获取利用率指标 |
 | 成本分析 | `alicloud-billing-ops` | Mode B Cost 支柱评估时获取账单和成本数据 |
+| DNS 架构评估（解析/容灾/GTM/DNSSEC） | `alicloud-dns-ops` | 架构评估涉及域名解析、容灾切换、PrivateZone 时引导至此 |
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 本 Skill GCL classification 为 `optional`，仅在特定场景触发 |
 
 ---

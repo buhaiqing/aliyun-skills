@@ -105,6 +105,7 @@ topology diagrams and resource inventory reports.
 | Capability | Delegate To | Notes |
 |------------|-------------|-------|
 | GCL quality gate | N/A | Read-only operations; GCL quality gate not triggered |
+| 拓扑中的 DNS / PrivateZone 记录 | `alicloud-dns-ops` | 拓扑采集涉及域名解析、PrivateZone、内网 DNS 关系时引导至此 |
 
 ## Quality Gate (GCL)
 
