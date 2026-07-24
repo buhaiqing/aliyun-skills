@@ -207,6 +207,7 @@ aliyun kms ListKeys --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 | **CLI Path** | **MANDATORY** | Always use the SkillOpt wrapper script `scripts/kms-skillopt-wrapper.sh` for all CLI operations. Fallback to native `aliyun kms` only when the wrapper script is confirmed missing or cannot be sourced. |
 | **SkillOpt Enabled** | DEFAULT | `SKILLOPT_ENABLED=true` by default. Disable only for debugging or offline environments. |
 | **Langfuse Tracing** | OPTIONAL | Enable with `--skillopt-langfuse-enable` flag for observability. Requires valid Langfuse environment variables. |
+| **SkillOpt Integration** | DOC | [skillopt-integration.md](references/skillopt-integration.md) |
 
 ## Capabilities at a Glance
 
