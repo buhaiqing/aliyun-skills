@@ -2,7 +2,7 @@
 # This file serves as a template for Elasticsearch instance configuration.
 
 # UX Configuration
-# All UX settings follow references/user-experience-spec.md
+# All UX settings follow ../../alicloud-skill-generator/references/user-experience-spec.md
 ux:
   # Onboarding settings
   onboarding:
@@ -133,7 +133,7 @@ timeout:
   poll_interval_seconds: 10
 
 # Optimization settings
-# Follow references/optimization-analysis.md
+# Follow ../../alicloud-skill-generator/references/optimization-analysis.md
 optimization:
   # Fault diagnosis settings
   fault_diagnosis:

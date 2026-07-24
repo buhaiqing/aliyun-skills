@@ -2,7 +2,7 @@
 # This file serves as a template for credential and resource configuration.
 
 # UX Configuration
-# All UX settings follow references/user-experience-spec.md
+# All UX settings follow ../references/user-experience-spec.md
 ux:
   # Onboarding settings
   onboarding:
@@ -65,7 +65,7 @@ defaults:
   retry_count: 3
 
 # Optimization settings
-# Follow references/optimization-analysis.md for three-dimensional optimization
+# Follow ../references/optimization-analysis.md for three-dimensional optimization
 optimization:
   # Fault diagnosis settings
   fault_diagnosis:
