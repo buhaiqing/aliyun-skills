@@ -23,7 +23,12 @@ SKILLOPT_LOG_LABEL="[CAS-SkillOpt]"
 SKILLOPT_SKILL_TAG="alicloud-cert-ops"
 
 # Shared SkillOpt core
-_SKILLOPT_SHARED_ROOT="${ALIYUN_SKILLS_ROOT:-${_SKILLOPT_SKILLS_ROOT:-$(git -C "$_SKILLOPT_SKILL_ROOT" rev-parse --show-toplevel 2>/dev/null || dirname "$_SKILLOPT_SKILL_ROOT")/alicloud-skillopt-ops}"
+_SKILLOPT_SKILLS_ROOT="${ALIYUN_SKILLS_ROOT:-$(git -C "$_SKILLOPT_SKILL_ROOT" rev-parse --show-toplevel 2>/dev/null || dirname "$_SKILLOPT_SKILL_ROOT")}"
+_SKILLOPT_SHARED_ROOT="${SKILLOPT_SHARED_ROOT:-${_SKILLOPT_SKILLS_ROOT}/alicloud-skillopt-ops}"
+if [[ -f "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-paths.sh" ]]; then
+    # shellcheck source=/dev/null
+    source "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-paths.sh"
+fi
 if [[ -f "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-core-lib.sh" ]]; then
     # shellcheck source=/dev/null
     source "${_SKILLOPT_SHARED_ROOT}/scripts/skillopt-core-lib.sh"
@@ -160,6 +165,11 @@ cert_mask_params() {
 
 # Wrap aliyun cas command with auto-repair
 skillopt_wrap() {
+    # Signature matches canonical core-lib: (product, action, ...params).
+    # cert is always the "cas" product, so the incoming product arg is
+    # accepted for contract-compat but the hardcode below stays correct.
+    local product="${1:-}"
+    shift
     local action="${1:-}"
     shift
     local params=("$@")
