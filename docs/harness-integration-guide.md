@@ -635,7 +635,7 @@ For a skill to be considered "SkillOpt integrated":
 
 ## 10. Environment Variables & Enable Flags
 
-Copy [`.env.example`](../.env.example) to `.env` (gitignored). Minimum for Langfuse multi-skill testing:
+Copy `.env.example` to `.env` (gitignored). Minimum for Langfuse multi-skill testing:
 
 ```bash
 HARNESS_ENABLED=true

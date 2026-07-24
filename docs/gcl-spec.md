@@ -60,7 +60,7 @@ O treats inaccurate tests or missing required regression evidence like any other
 
 **Mechanical Critic (`gcl_runner.py`)**: When `test_assessment` is present on the generator trace or via CLI `--test-assessment`, `evaluate_test_assessment()` enforces the same rules; failures yield `RETRY` / `MAX_ITER` (not `SAFETY_FAIL`). See `alicloud-gcl-runner-ops/scripts/README.md`.
 
-**Executing Agent gate (`scripts/skill-change-critic-gate.sh`)**: Before marking any change done, Agents MUST run classify → template (fill `tests_accurate` + `accuracy_rationale`) → `verify --run`. See [AGENTS.md §11.1 Skill Change Critic Gate](../AGENTS.md#skill-change-critic-gate-mandatory--closes-the-loop).
+**Executing Agent gate (`scripts/skill-change-critic-gate.sh`)**: Before marking any change done, Agents MUST run classify → template (fill `tests_accurate` + `accuracy_rationale`) → `verify --run`. See AGENTS.md §11.1 Skill Change Critic Gate.
 
 ## 3. Rubric (mandatory per skill)
 
