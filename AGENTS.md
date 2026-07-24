@@ -444,11 +444,14 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 
 1. **Track 1 必须全绿**——dry-run / 单测 / 路径分支全部覆盖。
 2. **在交付物 / PR 描述 / trace 注释中显式标注**：
-   ```
+
+   ```text
    [BLOCKED:no-credentials] Track 2 skipped — see env check output.
    Track 1 status: PASS (5/5 dry-run traces, all stores verified)
    ```
+
 3. **列出 Track 2 待办**（让接手人知道怎么补）：
+
    ```bash
    # 恢复 Track 2 的最小复现步骤：
    export ALIBABA_CLOUD_ACCESS_KEY_ID=<valid_ak>
@@ -460,6 +463,7 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
      --command "aliyun ecs DescribeInstances --RegionId cn-hangzhou" \
      --output-dir .runtime/audit/gcl-runner-ops
    ```
+
 4. **禁止掩盖**：不得在凭证缺失时编造"已集成验证"或伪造 trace。
 
 **回退**：一旦凭证恢复，立即补 Track 2，并把 `[BLOCKED:no-credentials]` 标记替换为 `[INTEGRATED:verified <date>]`。
@@ -815,7 +819,8 @@ Extracts structured failure patterns from GCL traces into a deduped JSON store. 
 以下模板已在实际设计过程中验证，可直接复用：
 
 **SPEC 文档结构**（参考 `docs/specs/phase-1-core-engine.md`）：
-```
+
+```markdown
 1. 目标与成功标准（可验证的 S1-S8）
 2. 核心引擎设计（数据流图 + 每个组件的输入/输出/策略）
 3. 接口规格（REST API 端点 + MCP tools）
@@ -824,7 +829,8 @@ Extracts structured failure patterns from GCL traces into a deduped JSON store. 
 ```
 
 **PLAN 文档结构**（参考 `docs/plans/phase-1-plan.md`）：
-```
+
+```markdown
 1. 任务总览（清单 + 工时 + 依赖 + 优先级）
 2. 任务详细分解（每个任务的子任务 + 验证标准 + 涉及文件）
 3. 依赖关系图（ASCII art 或 Mermaid）
