@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.0",
+  "skill": "alicloud-cert-ops",
+  "description": "Trigger accuracy evaluation queries for alicloud-cert-ops skill",
+  "queries": [
+    {
+      "id": "E1",
+      "query": "证书快过期了帮我更新一下",
+      "should_trigger": true,
+      "notes": "证书续费场景"
+    },
+    {
+      "id": "E2",
+      "query": "我需要替换域名的SSL证书",
+      "should_trigger": true,
+      "notes": "证书替换场景"
+    },
+    {
+      "id": "E3",
+      "query": "部署证书到ALB",
+      "should_trigger": true,
+      "notes": "证书部署场景"
+    },
+    {
+      "id": "E4",
+      "query": "上传证书到阿里云",
+      "should_trigger": true,
+      "notes": "上传证书场景"
+    },
+    {
+      "id": "E5",
+      "query": "查询证书列表",
+      "should_trigger": true,
+      "notes": "查询证书场景"
+    },
+    {
+      "id": "E6",
+      "query": "SLB的HTTPS证书怎么配置",
+      "should_trigger": true,
+      "notes": "SLB证书场景"
+    },
+    {
+      "id": "E7",
+      "query": "CDN域名需要启用HTTPS",
+      "should_trigger": true,
+      "notes": "CDN证书部署场景"
+    },
+    {
+      "id": "E8",
+      "query": "证书过期了有什么影响",
+      "should_trigger": true,
+      "notes": "证书过期查询场景"
+    },
+    {
+      "id": "E9",
+      "query": "上传了证书怎么部署到SLB",
+      "should_trigger": true,
+      "notes": "上传+部署完整流程"
+    },
+    {
+      "id": "E10",
+      "query": "如何吊销一个证书",
+      "should_trigger": true,
+      "notes": "证书吊销场景"
+    },
+    {
+      "id": "N1",
+      "query": "帮我创建一个新的ECS实例",
+      "should_trigger": false,
+      "notes": "ECS操作，错误触发"
+    },
+    {
+      "id": "N2",
+      "query": "KMS加密密钥怎么创建",
+      "should_trigger": false,
+      "notes": "KMS操作，错误触发"
+    },
+    {
+      "id": "N3",
+      "query": "RDS数据库怎么备份",
+      "should_trigger": false,
+      "notes": "RDS操作，错误触发"
+    },
+    {
+      "id": "N4",
+      "query": "负载均衡怎么配置",
+      "should_trigger": false,
+      "notes": "通用SLB配置，不涉及证书"
+    },
+    {
+      "id": "N5",
+      "query": "阿里云账单怎么查看",
+      "should_trigger": false,
+      "notes": "账单查询，错误触发"
+    },
+    {
+      "id": "N6",
+      "query": "OSS存储桶怎么创建",
+      "should_trigger": false,
+      "notes": "OSS操作，错误触发"
+    },
+    {
+      "id": "N7",
+      "query": "RAM用户权限怎么配置",
+      "should_trigger": false,
+      "notes": "RAM操作，错误触发"
+    },
+    {
+      "id": "N8",
+      "query": "帮我查一下这个月的费用",
+      "should_trigger": false,
+      "notes": "费用查询，错误触发"
+    },
+    {
+      "id": "N9",
+      "query": "CDN缓存怎么刷新",
+      "should_trigger": false,
+      "notes": "CDN缓存操作，不涉及证书"
+    },
+    {
+      "id": "N10",
+      "query": "WAF防护规则怎么配置",
+      "should_trigger": false,
+      "notes": "WAF配置操作，不涉及证书"
+    }
+  ]
+}

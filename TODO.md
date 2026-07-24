@@ -5,6 +5,7 @@
 - ✅ Add Alibaba Cloud Cloud Enterprise Network (CEN/云企业网) operations skill: `alicloud-cen-ops`
 - ✅ Add Alibaba Cloud Performance Testing Service (PTS/性能测试) operations skill: `alicloud-pts-ops` v1.0.0 (dual-path CLI plugin + SDK, SkillOpt, GCL recommended)
 - ✅ Add Alibaba Cloud DNS (云解析DNS) operations skill: `alicloud-dns-ops` v1.0.0 (dual-path CLI + SDK, SkillOpt, GCL recommended)
+- ✅ Add Alibaba Cloud SSL Certificate (SSL证书) operations skill: `alicloud-cert-ops` v1.0.0
 
 ## SkillOpt Integration (Self-Repair Framework)
 
