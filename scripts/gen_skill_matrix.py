@@ -49,7 +49,7 @@ META_SKILLS = {
 
 
 def _load_frontmatter(path: Path) -> dict:
-    """Parse YAML frontmatter; fall back to name-only if pyyaml missing."""
+    """Parse YAML frontmatter; fall back to naive parse if pyyaml missing."""
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
         return {}
@@ -63,22 +63,32 @@ def _load_frontmatter(path: Path) -> dict:
         m = re.search(r"^name:\s*(.+)$", fm, re.M)
         if m:
             data["name"] = m.group(1).strip()
-        m = re.search(r"^description:\s*(.+)$", fm, re.M)
+        m = re.search(r"^description:\s*([>|][-+]\s*)?(.+)$", fm, re.M)
         if m:
-            data["description"] = m.group(1).strip()
+            # Strip YAML block-scalar markers like ">-" / "|" from the value.
+            data["description"] = m.group(2).strip()
     return data or {}
 
 
 def _product_name(skill_dir: Path, fm: dict) -> str:
-    """Infer a human product label from the description's first sentence."""
+    """Infer a human product label from the description's first sentence.
+
+    Prefers the parenthetical that follows an "Alibaba Cloud X" phrase, e.g.
+    "... Alibaba Cloud ECS instances (Elastic Compute Service) — ..." →
+    "Elastic Compute Service". Falls back to the first parenthetical, then to
+    the directory stem uppercased.
+    """
     desc = str(fm.get("description", "")).replace("\n", " ").strip()
-    # Common pattern: "... Alibaba Cloud X instances (Product Family) — ..."
-    m = re.search(r"\(([^()]+)\)", desc)
-    if m and len(m.group(1)) <= 40:
-        return m.group(1).strip()
-    m = re.search(r"Alibaba Cloud ([A-Za-z0-9 ]+?)(?: instances| resources| —| -| \()", desc)
+    # Prefer the parenthetical attached to an "Alibaba Cloud <Product>" phrase.
+    m = re.search(r"Alibaba Cloud\s+[A-Za-z0-9 ]+?\s*\(([^()]{1,40})\)", desc)
     if m:
         return m.group(1).strip()
+    # Otherwise take the first parenthetical, ignoring YAML block markers.
+    m = re.search(r"\(([^()]{1,40})\)", desc)
+    if m:
+        cand = m.group(1).strip()
+        if cand not in (">-", "|", ">-", "|-"):
+            return cand
     return skill_dir.name.replace("alicloud-", "").replace("-ops", "").upper()
 
 

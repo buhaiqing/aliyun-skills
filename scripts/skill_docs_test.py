@@ -86,17 +86,18 @@ def test_placeholder_integrity():
     assert not violations, f"unclosed placeholder(s) found:\n" + "\n".join(violations)
 
 
-def test_optional_reference_coverage_not_regressing():
-    """Soft report: warn if an optional reference file count drops below baseline.
+def test_optional_reference_coverage_report():
+    """Informational only — prints optional-reference coverage, never fails.
 
-    This never fails — it prints a coverage summary so reviewers notice
-    tech-debt accumulation without blocking merges.
+    NOTE: this is a visibility aid, NOT a regression gate. The baseline is
+    computed from the current run, so it cannot detect drift on its own;
+    `test_required_reference_files_present` is the actual hard gate.
     """
-    baseline = {ref: 0 for ref in OPTIONAL_REFERENCES}
+    coverage = {ref: 0 for ref in OPTIONAL_REFERENCES}
     for skill in _skill_dirs():
         for ref in OPTIONAL_REFERENCES:
             if (skill / "references" / ref).is_file():
-                baseline[ref] += 1
+                coverage[ref] += 1
     total = len(_skill_dirs())
-    summary = ", ".join(f"{ref}={baseline[ref]}/{total}" for ref in OPTIONAL_REFERENCES)
+    summary = ", ".join(f"{ref}={coverage[ref]}/{total}" for ref in OPTIONAL_REFERENCES)
     print(f"\n[skill-docs] optional reference coverage: {summary}")
