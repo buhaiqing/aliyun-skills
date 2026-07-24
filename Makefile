@@ -87,6 +87,9 @@ test:
 	@echo ""
 	@echo "==> Running topo-discovery tests (if pytest available)..."
 	@cd alicloud-topo-discovery && python -m pytest tests/ -v --tb=short 2>/dev/null || echo "pytest not available, skipping"
+	@echo ""
+	@echo "==> Running shared product-skill doc/contract tests..."
+	@python -m pytest scripts/skill_docs_test.py -v --tb=short
 
 test-coverage:
 	@echo "==> Running tests with coverage..."

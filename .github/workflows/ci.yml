@@ -78,7 +78,7 @@ jobs:
         run: python3 scripts/validate_all_skills.py
 
   test:
-    name: Test (gcl-runner + topo-discovery)
+    name: Test (gcl-runner + topo-discovery + product skills)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -91,11 +91,17 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Install pytest
+        run: python3 -m pip install -q "pytest>=8.0"
+
       - name: GCL runner tests
         run: cd alicloud-gcl-runner-ops/scripts && python -m unittest gcl_runner_test -v
 
       - name: topo-discovery tests
         run: cd alicloud-topo-discovery && python -m pytest tests/ -v --tb=short
+
+      - name: Product-skill doc/contract tests (43 skills)
+        run: python3 -m pytest scripts/skill_docs_test.py -v --tb=short
 
   docker-build:
     name: Docker build (non-blocking signal)
