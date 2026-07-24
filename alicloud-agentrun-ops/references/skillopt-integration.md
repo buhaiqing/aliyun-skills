@@ -1,7 +1,7 @@
 # Runtime Harness Integration for alicloud-agentrun-ops
 
 Shared overlay: `scripts/harness-lib.sh` →
-[`alicloud-runtime-harness-ops`](../alicloud-runtime-harness-ops/SKILL.md).
+[`alicloud-runtime-harness-ops`](../../alicloud-runtime-harness-ops/SKILL.md).
 
 > **sdk-only skill:** No official `aliyun agentrun` CLI. Primary execution is
 > **HTTP API + ACS3 signing** (see `assets/code-snippets/`). The harness wrapper

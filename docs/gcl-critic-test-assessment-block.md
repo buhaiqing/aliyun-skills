@@ -1,7 +1,7 @@
 # GCL Critic — Test & Regression Assessment Block
 
 > Canonical text for all `references/prompt-templates.md` Critic templates.
-> Source: [`AGENTS.md` §12](../AGENTS.md#critic-test--regression-assessment-mandatory) / [`gcl-spec.md` §2.1](gcl-spec.md#21-critic-test--regression-assessment-mandatory).
+> Source: [`gcl-spec.md` §2.1](../docs/gcl-spec.md#21-critic-test--regression-assessment-mandatory) (AGENTS.md has no such anchor).
 
 **Core principle — accuracy over coverage**: Do **not** optimize for coverage metrics or test count. Optimize for whether tests **accurately** validate changed behavior and would **reliably catch** real regressions.
 
@@ -51,11 +51,11 @@ On each critique, the Critic MUST also evaluate:
 | Assessment | On failure |
 |------------|------------|
 | **Test accuracy** — would existing tests fail if this change broke? | `blocking=true`; concrete test fixes in `suggestions`; **RETRY** |
-| **Regression gate** — is targeted regression ([§11.1](../../AGENTS.md#111-regression-testing-mandatory)) required? | Name smallest accurate suite(s) + require green-run evidence; or document zero-behavioral-delta skip rationale |
+| **Regression gate** — is targeted regression ([§11.1](../AGENTS.md#111-regression-testing-mandatory)) required? | Name smallest accurate suite(s) + require green-run evidence; or document zero-behavioral-delta skip rationale |
 
 **Banned**: padding test count, chasing coverage %, PASSing because suites are green but no test asserts the changed behavior.
 
-When returning strict JSON, include `test_assessment` per [gcl-critic-test-assessment-block.md](../../docs/gcl-critic-test-assessment-block.md).
+When returning strict JSON, include `test_assessment` per [gcl-critic-test-assessment-block.md](./gcl-critic-test-assessment-block.md).
 ```
 
 ---

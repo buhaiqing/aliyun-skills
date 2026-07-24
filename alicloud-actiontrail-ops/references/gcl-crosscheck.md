@@ -1,7 +1,7 @@
 # Quality Gate (GCL) — ActionTrail Cross-Checker
 
 This skill participates in the Generator-Critic-Loop (GCL) defined in
-[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
+[`AGENTS.md` §12](../../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate)
 in a **non-destructive cross-checker role**. Per `AGENTS.md` §12.8, this
 skill is classified as `optional` (read-only audit). Product GCL artifacts
 (`references/rubric.md`, `references/prompt-templates.md`) were added in
@@ -11,8 +11,8 @@ Phase 2 (2026-06-21) for destructive trail ops and structure validation.
 |---|---|
 | Required? | **No** for cross-checker role (Phase 3-C); **Yes** for product GCL artifacts (`rubric.md` + `prompt-templates.md` added PR Phase 2, 2026-06-21) |
 | GCL role | **Cross-checker** — verifies GCL traces against cloud-side ActionTrail events; product ops use optional GCL for destructive trail changes |
-| Companion script | [`alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`](../../alicloud-gcl-runner-ops/alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py) |
-| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
+| Companion script | [`alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py`](../../alicloud-gcl-runner-ops/scripts/gcl_actiontrail_crosscheck.py) |
+| Companion reference | [`alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md`](../../alicloud-skill-generator/references/gcl-actiontrail-crosscheck-spec.md) |
 
 ## What the Cross-Check Catches
 

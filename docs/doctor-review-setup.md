@@ -2,7 +2,7 @@
 
 > **Local-first**：Layer 1/2 与 runtime rollup 的主路径是本地 `make doctor-weekly-apply`（见 [`memory-strategy.md`](memory-strategy.md)）。GHA 在无 `.runtime/memory` 时只跑 **Git 信号 + git review PR**，不假装完成 runtime 扫描。
 
-Weekly offline review runs via [`.github/workflows/doctor-weekly.yml`](../.github/workflows/doctor-weekly.yml).
+Weekly offline review runs via `.github/workflows/doctor-weekly.yml`.
 
 ### Baseline 写权限（Local-first）
 

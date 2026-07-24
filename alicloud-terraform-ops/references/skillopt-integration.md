@@ -1,7 +1,7 @@
 # Runtime Harness Integration for alicloud-terraform-ops
 
 Shared overlay: `scripts/harness-lib.sh` →
-[`alicloud-runtime-harness-ops`](../alicloud-runtime-harness-ops/SKILL.md).
+[`alicloud-runtime-harness-ops`](../../alicloud-runtime-harness-ops/SKILL.md).
 
 > **IaC skill:** Control plane uses **Python scripts** (`nl2hcl_generator.py`,
 > `terraform_executor.py`, HITL modes) and the **`terraform` CLI binary** — not

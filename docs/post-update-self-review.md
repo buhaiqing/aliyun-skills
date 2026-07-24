@@ -289,7 +289,7 @@ Multi-skill changes (e.g. `skillopt-core-lib.sh`): run **shared integration test
 
 ### Skill Change Critic Gate (RT-6)
 
-Same workflow as [AGENTS.md §11.1 Skill Change Critic Gate](../AGENTS.md#skill-change-critic-gate-mandatory--closes-the-loop):
+Same workflow as AGENTS.md §11.1 Skill Change Critic Gate:
 
 ```bash
 bash scripts/skill-change-critic-gate.sh classify

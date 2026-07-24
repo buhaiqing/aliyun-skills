@@ -108,7 +108,7 @@ TRACE_KEEP_DAYS=14 make memory-maintain-apply
 python3 alicloud-aiops-cruise/scripts/lib/runtime_cleanup.py --traces-only --apply
 ```
 
-Workflow 细节： [`.github/workflows/doctor-weekly.yml`](../.github/workflows/doctor-weekly.yml) ·  setup：[`doctor-review-setup.md`](doctor-review-setup.md)
+Workflow 细节： `.github/workflows/doctor-weekly.yml` ·  setup：[`doctor-review-setup.md`](doctor-review-setup.md)
 
 ### P0 消费闭环（Local 路径）
 
@@ -329,7 +329,7 @@ GCL trace (SAFETY_FAIL | MAX_ITER | PASS near-miss)
 | **状态** | ✅ 已实现（MVP + R2 检索 + runtime rollup） |
 | **代码** | `gcl_strategy.py`, `git_collect.py`, `strategy_github_notify.py`, `strategy_notify.py`, `strategy_synthesize.py` |
 | **测试** | `gcl_strategy_test.py` + `strategy_github_integration_test.py` |
-| **调度** | 本地 `make doctor-weekly-apply`（主）· GHA [`.github/workflows/doctor-weekly.yml`](../.github/workflows/doctor-weekly.yml)（Git 信号 + 可选 PR，**非 runtime 主路径**） |
+| **调度** | 本地 `make doctor-weekly-apply`（主）· GHA `.github/workflows/doctor-weekly.yml`（Git 信号 + 可选 PR，**非 runtime 主路径**） |
 | **存储** | `docs/strategy-baseline.json`（committed 基线）+ `docs/strategy-report.md`（周报） |
 | **中间文件** | `.runtime/doctor/work/`（gitignored） |
 

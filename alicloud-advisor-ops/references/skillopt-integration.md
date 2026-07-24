@@ -2,7 +2,7 @@
 
 Advisor uses the **shared overlay pattern**: `scripts/harness-lib.sh` (canonical;
 legacy `skillopt-lib.sh` symlink) sources
-[`alicloud-runtime-harness-ops`](../alicloud-runtime-harness-ops/SKILL.md).
+[`alicloud-runtime-harness-ops`](../../alicloud-runtime-harness-ops/SKILL.md).
 
 ## Self-Repair Capabilities
 
