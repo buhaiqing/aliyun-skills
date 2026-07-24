@@ -431,7 +431,7 @@
 5. 给出根因分析和修复建议
 ```
 
-> **Related Operation:** [Diagnose Service Unreachable](../SKILL.md#operation-diagnose-service-unreachable)
+> **Related Operation:** Diagnose Service Unreachable
 
 ### 7.2 "502 Bad Gateway，请排查"
 
@@ -444,7 +444,7 @@ SLB 实例 {{load_balancer_id}} 返回 502 Bad Gateway，
 4. 给出根因和修复建议
 ```
 
-> **Related Operation:** [Diagnose 502/504 Errors](../SKILL.md#operation-diagnose-502504-errors)
+> **Related Operation:** Diagnose 502/504 Errors
 
 ### 7.3 "HTTPS 访问报证书错误"
 
@@ -457,7 +457,7 @@ SLB 实例 {{load_balancer_id}} 返回 502 Bad Gateway，
 4. 给出根因和修复建议
 ```
 
-> **Related Operation:** [Diagnose HTTPS/SSL Issues](../SKILL.md#operation-diagnose-httpsssl-issues)
+> **Related Operation:** Diagnose HTTPS/SSL Issues
 
 ### 7.4 "流量分布不均匀"
 
@@ -471,7 +471,7 @@ SLB 实例 {{load_balancer_id}} 的后端服务器流量分布不均，
 4. 给出优化建议
 ```
 
-> **Related Operation:** [Diagnose Traffic Imbalance](../SKILL.md#operation-diagnose-traffic-imbalance)
+> **Related Operation:** Diagnose Traffic Imbalance
 
 ### 7.5 "新加的转发规则不生效"
 
@@ -498,7 +498,7 @@ SLB 实例 {{load_balancer_id}} 的后端服务器流量分布不均，
 6. 生成一份健康检查报告
 ```
 
-> **Related Operation:** [Run Full Health Audit](../SKILL.md#operation-run-full-health-audit)
+> **Related Operation:** Run Full Health Audit
 
 ---
 
@@ -548,7 +548,7 @@ SLB 实例 {{load_balancer_id}} 的后端服务器流量分布不均，
 8. 所有服务器更新完成后，执行一次全量健康检查
 ```
 
-> **Related Operations:** [Describe Health Status](../SKILL.md#operation-describe-health-status), [Set Backend Server Weights (Default Group)](../SKILL.md#operation-set-backend-server-weights-default-group), [Run Full Health Audit](../SKILL.md#operation-run-full-health-audit)
+> **Related Operations:** [Describe Health Status](../SKILL.md#operation-describe-health-status), [Set Backend Server Weights (Default Group)](../SKILL.md#operation-set-backend-server-weights-default-group), Run Full Health Audit
 
 ### 8.4 "跨区域容灾搭建"
 
@@ -594,7 +594,7 @@ SLB 实例 {{load_balancer_id}} 的后端服务器流量分布不均，
 - 证书即将过期提醒（30天内）
 ```
 
-> **Related Operations:** [Describe Load Balancers](../SKILL.md#operation-describe-load-balancers), [Run Full Health Audit](../SKILL.md#operation-run-full-health-audit)
+> **Related Operations:** [Describe Load Balancers](../SKILL.md#operation-describe-load-balancers), Run Full Health Audit
 
 ### 9.2 "审计所有 SLB 实例的安全配置"
 

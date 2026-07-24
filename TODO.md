@@ -21,7 +21,7 @@ SkillOpt provides automated self-repair and dynamic parameter optimization for e
 | **M2 (B)** | `benchmark/alicloud_ops/` — dataloader + rollout + scorer + `run_milestone_b.sh` | ✅ |
 | **M3 (C)** | SkillOpt-Sleep nightly queue + L3 priority + draft PR (human merge) | 📋 |
 
-Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see [README](scripts/skill_evolution/README.md#three-milestones--what-each-one-delivers)).
+Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see README).
 
 ### M3 (C) — Sleep / nightly queue (planned)
 
@@ -42,7 +42,7 @@ ack, ask, **actiontrail**, alb, **advisor**, **agentrun**, **bailian**, **billin
 
 ### Integration Method
 
-**Preferred (2026-06+)**: Copy `alicloud-ecs-ops/scripts/skillopt-lib.sh` overlay stub — it sources shared core from [`alicloud-skillopt-ops`](../alicloud-skillopt-ops/SKILL.md). Or use the generator:
+**Preferred (2026-06+)**: Copy `alicloud-ecs-ops/scripts/skillopt-lib.sh` overlay stub — it sources shared core from `alicloud-skillopt-ops`. Or use the generator:
 
 ```bash
 # .scripts/gen-skillopt.sh <skill-dir> <log-tag> <cli-product> <product-name> <ram-action> <json-params> <resource-api> <smoke-action> <error-codes> <quota-error>

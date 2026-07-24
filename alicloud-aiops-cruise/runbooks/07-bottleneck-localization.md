@@ -8,7 +8,7 @@ risk_level: "高"
 execution_time_estimate: "5-12 分钟"
 ---
 
-> **脚本**: [`runbooks/scripts/bottleneck-localization.py`](scripts/bottleneck-localization.py) — 全自动执行本 runbook
+> **脚本**: `runbooks/scripts/bottleneck-localization.py` — 全自动执行本 runbook
 
 # 全链路性能瓶颈定位
 

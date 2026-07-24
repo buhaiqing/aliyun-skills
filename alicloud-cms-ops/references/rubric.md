@@ -172,4 +172,4 @@ records one of `wrapper` | `direct_aliyun` | `sdk_jit` | `data_plane` | `other`.
 
 
 > **Phase 3-H HITL Decision Framework** (confidence scoring, trigger conditions, workflow):
-> see [prompt-templates.md § Auto-Processing vs HITL](prompt-templates.md#auto-processing-vs-hitl-human-in-the-loop-decision-matrix).
+> see prompt-templates.md § Auto-Processing vs HITL.

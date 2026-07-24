@@ -8,7 +8,7 @@ risk_level: "中"
 execution_time_estimate: "3-8 分钟"
 ---
 
-> **脚本**: [`runbooks/scripts/redis-performance-diagnosis.py`](scripts/redis-performance-diagnosis.py) — 全自动执行本 runbook
+> **脚本**: `runbooks/scripts/redis-performance-diagnosis.py` — 全自动执行本 runbook
 
 # Redis/Tair 缓存性能诊断
 

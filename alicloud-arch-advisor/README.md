@@ -89,8 +89,8 @@ export ARCH_ADVISOR_LANG=zh_CN   # Chinese (default)
 |------|------|
 | [USAGE.md](USAGE.md) | 📖 详细使用手册 (命令行、API、示例) |
 | [CHANGELOG.md](CHANGELOG.md) | 📋 版本变更日志 |
-| [OPTIMIZATION_REVIEW.md](OPTIMIZATION_REVIEW.md) | 🔍 优化复盘 (三轮反思分析) |
-| [CODE_REVIEW_FIXES.md](CODE_REVIEW_FIXES.md) | 🛠️ 代码审查问题修复 |
+| OPTIMIZATION_REVIEW.md | 🔍 优化复盘 (三轮反思分析) |
+| CODE_REVIEW_FIXES.md | 🛠️ 代码审查问题修复 |
 
 ---
 

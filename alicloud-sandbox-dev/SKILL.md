@@ -94,7 +94,7 @@ See [references/architecture-design.md](references/architecture-design.md) for c
 
 ### SHOULD NOT Use This Skill When
 
-- Task is direct Java SDK integration → reference Section 3 of [.sandbox-analysis/01-overview-comparison.md](../.sandbox-analysis/01-overview-comparison.md) for CommonRequest patterns
+- Task is direct Java SDK integration → reference Section 3 of .sandbox-analysis/01-overview-comparison.md for CommonRequest patterns
 - Task is ECS/RDS/other cloud product operations → use respective `alicloud-*-ops` skills
 - Task is Kubernetes infrastructure management → delegate to: `alicloud-ack-ops`
 - Task is RAM permission management → delegate to: `alicloud-ram-ops`

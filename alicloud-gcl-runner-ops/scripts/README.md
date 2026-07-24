@@ -2,7 +2,7 @@
 
 This directory contains the **Phase 2 deliverables** of the
 Generator-Critic-Loop (GCL) adversarial quality gate, defined in
-[`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate).
+[`AGENTS.md` §12](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 
 ## Files
 
@@ -324,8 +324,8 @@ python3 gcl_reflexion.py maintain --apply
 
 ## Related
 
-- [`AGENTS.md` §12](../AGENTS.md#12-generator-critic-loop-gcl--adversarial-quality-gate) — canonical GCL spec
-- [`alicloud-skill-generator/references/gcl-rollout-spec.md`](../alicloud-skill-generator/references/gcl-rollout-spec.md) — how to generate GCL files for a new skill
-- [`alicloud-skill-generator/references/gcl-orchestrator-agent.md`](../alicloud-skill-generator/references/gcl-orchestrator-agent.md) — pi-subagents agent definition that wraps this script
+- [`AGENTS.md` §12](../../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec) — canonical GCL spec
+- [`alicloud-skill-generator/references/gcl-rollout-spec.md`](../../alicloud-skill-generator/references/gcl-rollout-spec.md) — how to generate GCL files for a new skill
+- [`alicloud-skill-generator/references/gcl-orchestrator-agent.md`](../../alicloud-skill-generator/references/gcl-orchestrator-agent.md) — pi-subagents agent definition that wraps this script
 - [`README-Smart-Alert.md`](./README-Smart-Alert.md) — Phase 7 Smart Alert Loop usage guide
 - `audit-results/` — gitignored; ephemeral trace storage

@@ -569,8 +569,8 @@ components:
 
 - [CHANGELOG.md](CHANGELOG.md) - 版本变更日志
 - [README.md](README.md) - 项目概览
-- [OPTIMIZATION_REVIEW.md](OPTIMIZATION_REVIEW.md) - 优化复盘
-- [CODE_REVIEW_FIXES.md](CODE_REVIEW_FIXES.md) - 代码审查修复
+- OPTIMIZATION_REVIEW.md - 优化复盘
+- CODE_REVIEW_FIXES.md - 代码审查修复
 
 ---
 

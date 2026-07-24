@@ -94,7 +94,7 @@ per §2 Content Separation Rule). Minimum 5 dimensions, identical to JD Cloud GC
 | **1** | Command routed through `scripts/*-skillopt-wrapper.sh` (or a non-aliyun path: SDK / data-plane tool / no-wrapper skill) |
 | **0** | Command is a direct `aliyun <product>` call while the skill's wrapper script exists — **WRAPPER_BYPASS**, same severity as `Safety=0` |
 
-See [§14.2.4 Wrapper Compliance (H)](#1424-wrapper-compliance-h-recommended-for-all-skills-with-wrappers) for detection rules and [§9 Anti-Patterns](#9-anti-patterns-banned) for the corresponding banned pattern.
+See [§14.2.4 Wrapper Compliance (H)](#1424-wrapper-compliance-h--recommended-for-all-skills-with-wrappers) for detection rules and [§9 Anti-Patterns](#9-anti-patterns-banned) for the corresponding banned pattern.
 
 ## 4. Loop Flow
 
@@ -206,7 +206,7 @@ Every GCL run MUST persist a JSON trace under `.runtime/audit/gcl-runner-ops/gcl
 }
 ```
 
-Reusable patterns (reusable=true) are candidates for [failure-patterns.md](failure-patterns.md) — the centralized Reflexion memory. See [§15 Reflexion Integration](#15-reflexion-integration-layer-2--failure-pattern-memory) for details.
+Reusable patterns (reusable=true) are candidates for [../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md](../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md) — the centralized Reflexion memory. See [§15 Reflexion Integration](#15-reflexion-integration-layer-2--failure-pattern-memory) for details.
 
 **Sanitization rule (mandatory):** the `request` field MUST NOT contain `ALIBABA_CLOUD_ACCESS_KEY_SECRET`,
 Redis/RDS passwords, KMS plaintext key material, RAM user passwords, or any other secret enumerated in
@@ -640,7 +640,7 @@ This template follows the same isolation principle as the Critic prompt (§7):
 
 ## 15. Reflexion Integration (Layer 2 — Failure Pattern Memory)
 
-> **Implementation**: [`alicloud-gcl-runner-ops/scripts/gcl_reflexion.py`](alicloud-gcl-runner-ops/scripts/gcl_reflexion.py)
+> **Implementation**: [`../alicloud-gcl-runner-ops/scripts/gcl_reflexion.py`](../alicloud-gcl-runner-ops/scripts/gcl_reflexion.py)
 > **Automation**: Patterns are extracted from (1) **GCL** traces in `gcl_runner.py main()` — **SAFETY_FAIL**, **MAX_ITER**, near-miss **PASS**; (2) **wrapper** allowlisted failures via `store-wrapper-lite` (plan **B**); (3) offline **L1 → L2 promote** via `promote-from-memory` (plan **C**, `make memory-maintain-apply`). See [`memory-strategy.md`](memory-strategy.md).
 > **Report**: `docs/failure-patterns.md` is regenerated from the JSON store via `gcl_reflexion.py report`.
 > **Three-layer architecture**: See [`docs/memory-strategy.md`](memory-strategy.md).
@@ -649,7 +649,7 @@ This template follows the same isolation principle as the Critic prompt (§7):
 
 | Gap | Current State | Reflexion Solution |
 |-----|---------------|-------------------|
-| CLI parameter errors repeat across sessions | §14 documents known patterns, but new patterns aren't auto-captured | Extract from GCL traces → persist in [failure-patterns.md](failure-patterns.md) |
+| CLI parameter errors repeat across sessions | §14 documents known patterns, but new patterns aren't auto-captured | Extract from GCL traces → persist in [../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md](../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md) |
 | Skill generation repeats structural issues | Self-Review catches them per-session, but doesn't remember | Record in failure-patterns.md §2 →预防 next generation |
 | Cross-skill composition failures | Documented in SKILL.md, but not centralized | Centralize in failure-patterns.md §3 |
 
@@ -732,7 +732,7 @@ Allowlist (representative): `InvalidParameter`, `Forbidden`, `ResourceNotFound`,
 
 | Item | Detail |
 |------|--------|
-| **Design** | [`alicloud-gcl-runner-ops/references/success-patterns.md`](alicloud-gcl-runner-ops/references/success-patterns.md) |
+| **Design** | [`../alicloud-gcl-runner-ops/references/success-patterns.md`](../alicloud-gcl-runner-ops/references/success-patterns.md) |
 | **Store** | `.runtime/reflexion/success_patterns.json` (separate from `reflexion.json`) |
 | **API** | `success_store()`, `success_retrieve()`, `success_report()`; `extract_success_pattern()` in `gcl_runner.py` on PASS |
 | **Slot** | `{{success_patterns}}` via `memory_preflight.py` |
@@ -743,7 +743,7 @@ Only **hard-won PASS** (multi-iter, trap-informed, score recovery, etc.) is stor
 
 | Item | Detail |
 |------|--------|
-| **Design** | [`cross-skill-patterns.md`](alicloud-gcl-runner-ops/references/cross-skill-patterns.md) |
+| **Design** | [`cross-skill-patterns.md`](../alicloud-gcl-runner-ops/references/cross-skill-patterns.md) |
 | **Normalize** | `normalize_error_pattern()` enriches `cli_parameter` rows with `normalized_key` |
 | **Aggregate** | `reflexion_aggregate_generalized()` → `generalized_cli[]`; CLI `aggregate-generalized`; hooked from `make memory-maintain-apply` |
 | **Retrieve** | `reflexion_retrieve()` tier 0 → 1 (`generalized_cli`) → 2 |
@@ -754,7 +754,7 @@ Distinct from orchestration `cross_skill` category (source→target chain failur
 
 | Item | Detail |
 |------|--------|
-| **Design** | [`remediation-tracking.md`](alicloud-gcl-runner-ops/references/remediation-tracking.md) |
+| **Design** | [`remediation-tracking.md`](../alicloud-gcl-runner-ops/references/remediation-tracking.md) |
 | **Schema** | `remediated`, `remediated_at`, `total_opportunities`, `recent_failures`, `consecutive_successes` on tracked categories |
 | **Confirm** | Dynamic K (2–5) consecutive PASS after preflight traps → `remediated=True` |
 | **Relapse** | `reflexion_store` dedup hit resets streak and clears `remediated` |

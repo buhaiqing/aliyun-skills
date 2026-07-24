@@ -1,7 +1,7 @@
 # alicloud-terraform-ops — Agent Guide
 
 > **Read this file** when modifying `modules/`, `scripts/`, `assets/`, or adding NL2HCL / Import support.
-> Repo-wide rules remain in [`../../AGENTS.md`](../../AGENTS.md). Execution flows live in [`SKILL.md`](SKILL.md).
+> Repo-wide rules remain in [`../AGENTS.md`](../AGENTS.md). Execution flows live in [`SKILL.md`](SKILL.md).
 
 ---
 
@@ -146,4 +146,4 @@ python3 -m unittest discover -p 'test_*.py' -q
 | [references/module-coverage.md](references/module-coverage.md) | Coverage manifest spec |
 | [modules/README.md](modules/README.md) | Module inventory |
 | [TODO.md](TODO.md) | Feature tracking |
-| [../../AGENTS.md](../../AGENTS.md) §13 | Runtime artifacts policy |
+| [../AGENTS.md](../AGENTS.md) §13 | Runtime artifacts policy |

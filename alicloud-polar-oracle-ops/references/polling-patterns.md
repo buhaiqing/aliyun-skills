@@ -27,7 +27,7 @@ done
 
 ### CLI native waiter (preferred when supported)
 
-See [cli-usage.md § Polling with `--waiter`](cli-usage.md#polling-with---waiter):
+See [cli-usage.md § Polling with `--waiter`](cli-usage.md#polling):
 
 ```bash
 aliyun polardb-io DescribeDBClusterAttribute \

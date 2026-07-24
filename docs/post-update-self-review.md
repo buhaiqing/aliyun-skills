@@ -61,7 +61,7 @@ C6 is a **MUST PASS** gate, not a suggestion. Verify each rule:
 
 ## Round 3: Lessons Learned (Recommended — Reflexion Memory)
 
-> **Purpose**: Extract reusable failure patterns from this session to populate [failure-patterns.md](failure-patterns.md),
+> **Purpose**: Extract reusable failure patterns from this session to populate [../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md](../alicloud-gcl-runner-ops/scripts/docs/failure-patterns.md),
 > enabling cross-session learning (Lightweight Reflexion). See [GCL §15 Reflexion Integration](gcl-spec.md#15-reflexion-integration-layer-2--failure-pattern-memory).
 
 | # | Check | Content |
