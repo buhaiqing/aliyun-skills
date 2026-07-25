@@ -15,7 +15,7 @@ compatibility: >-
   CAS endpoints.
 metadata:
   author: alicloud
-  version: "1.0.2"
+  version: "1.0.3"
   last_updated: "2026-07-24"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
@@ -202,7 +202,7 @@ aliyun plugin install --names aliyun-cli-cas
 aliyun cas ListUserCertificateOrder --ShowSize 10
 
 # 3. Configure credentials (if not already)
-# Uses env vars ALIYUN_ACCESS_KEY_ID / ALIYUN_ACCESS_KEY_SECRET or ~/.aliyun/config.json
+# Uses env vars ALIBABA_CLOUD_ACCESS_KEY_ID / ALIBABA_CLOUD_ACCESS_KEY_SECRET or ~/.aliyun/config.json
 ```
 
 ### Your First Command — List All Certificates
@@ -399,7 +399,7 @@ aliyun cas ListCloudResources \
 | Deploy to OSS | `OSS` | 对象存储 |
 | Deploy to WAF | `WAF` | Web应用防火墙 |
 | Deploy to APIGateway | `APIGateway` | API网关 |
-| Deploy to multiple product types | `Mutiple` | 混合部署 |
+| Deploy to multiple product types | `Multiple` | 混合部署 |
 | Deploy to FC/SAE/MSE/GA | `FC`/`SAE`/`MSE`/`GA` | 各产品对应类型 |
 
 #### Step 3.4: Create deployment job (Pre-flight Safety Gate)
@@ -531,11 +531,11 @@ aliyun cas DeleteUserCertificate \
 
 ## Quality Gate (GCL)
 
-**Recommended** rollout per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
+**Required** per [`AGENTS.md` §12](../docs/gcl-spec.md#generator-critic-loop-gcl--implementation-spec).
 
 | Aspect | Setting |
 |--------|---------|
-| Required? | **Recommended** (Phase 1, first rollout) |
+| Required? | **Required** (destructive ops require GCL) |
 | `max_iter` | 3 |
 | Most-scrutinized | `UploadUserCertificate`, `CreateDeploymentJob`, `RevokeCertificate`, `DeleteUserCertificate` |
 | Hard rule | Private key / PEM cert content MUST NOT appear in any trace value |
@@ -544,10 +544,10 @@ aliyun cas DeleteUserCertificate \
 
 | Operation | Risk Level | GCL? | Hard Gate |
 |-----------|-----------|-------|-----------|
-| `UploadUserCertificate` | Medium | Recommended | User confirms name uniqueness; no inline secret |
-| `CreateDeploymentJob` | High | Recommended | User confirms target resources; JobType matches product |
-| `RevokeCertificate` | High | Recommended | **Safety Gate**: explicit user confirmation — irreversible |
-| `DeleteUserCertificate` | High | Recommended | **Safety Gate**: explicit user confirmation — irreversible |
+| `UploadUserCertificate` | Medium | Required | User confirms name uniqueness; no inline secret |
+| `CreateDeploymentJob` | High | Required | User confirms target resources; JobType matches product |
+| `RevokeCertificate` | High | Required | **Safety Gate**: explicit user confirmation — irreversible |
+| `DeleteUserCertificate` | High | Required | **Safety Gate**: explicit user confirmation — irreversible |
 | `Describe/List/Get` | Low | Skip | Single-shot pre-flight sufficient |
 
 ### Credential Hygiene (Critical for CAS)
@@ -577,10 +577,6 @@ CAS operations pass PEM certificate content and private keys. **These MUST NOT a
 | SLB HTTPS binding | `alicloud-slb-ops` | Certificate binding to SLB listener |
 | CDN HTTPS config | `aliyun cdn` | CDN HTTPS certificate configuration |
 | OSS HTTPS config | `alicloud-oss-ops` | OSS bucket HTTPS configuration |
-
-### Changelog
-
-1.0.0 | 2026-06-25 | Initial GCL recommended section.
 
 ---
 
@@ -679,9 +675,9 @@ aliyun plugin install --names aliyun-cli-cas
 aliyun cas ListUserCertificateOrder --ShowSize 5
 
 # 3. Credentials (env vars — preferred for agent)
-export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIYUN_ACCESS_KEY_ID}}"
-export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIYUN_ACCESS_KEY_SECRET}}"
-export ALIYUN_DEFAULT_REGION="{{env.ALIYUN_DEFAULT_REGION:-cn-hangzhou}}"
+export ALIBABA_CLOUD_ACCESS_KEY_ID="{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+export ALIBABA_CLOUD_ACCESS_KEY_SECRET="{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+export ALIYUN_DEFAULT_REGION="{{env.ALIBABA_CLOUD_DEFAULT_REGION:-cn-hangzhou}}"
 ```
 
 ---
@@ -717,3 +713,6 @@ export ALIYUN_DEFAULT_REGION="{{env.ALIYUN_DEFAULT_REGION:-cn-hangzhou}}"
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-25 | Initial CAS ops skill — complete SSL cert replacement workflow, 5 phases, 15 operations |
+| 1.0.1 | 2026-07-24 | Fix credential env var consistency with repo convention |
+| 1.0.2 | 2026-07-24 | Fix "Mutiple" typo; remove duplicate Changelog section |
+| 1.0.3 | 2026-07-24 | Fix GCL Required (not Recommended) for destructive ops; fix harness TYPE=UNKNOWN format; remove dead cert_parse_params(); fix CreateDeploymentJob params to comma-sep (aliyun CLI spec) |

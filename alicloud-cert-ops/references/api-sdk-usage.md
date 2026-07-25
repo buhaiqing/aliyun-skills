@@ -7,8 +7,8 @@ license: MIT
 metadata:
   type: reference
   skill: alicloud-cert-ops
-  version: "1.0.0"
-  last_updated: "2026-06-25"
+  version: "1.0.1"
+  last_updated: "2026-07-24"
 ---
 
 # API & SDK Usage — CAS
@@ -72,11 +72,11 @@ metadata:
 ```json
 // Request
 {
-  "CertIds": "[\"123\"]",   // JSON array string
-  "ContactIds": "[\"456\"]", // JSON array string
-  "JobType": "CLB",         // CLB/CDN/OSS/WAF/FC/SAE/GA/MSE/Multiple
+  "CertIds": "123,456",     // comma-separated CertificateIds (max 10)
+  "ContactIds": "789",        // comma-separated ContactIds
+  "JobType": "CLB",           // CLB/CDN/OSS/WAF/FC/SAE/GA/MSE/Multiple
   "Name": "string",
-  "ResourceIds": "[\"res1\"]" // JSON array string, max 50
+  "ResourceIds": "res1,res2"  // comma-separated ResourceIds (max 50)
 }
 // Response
 {

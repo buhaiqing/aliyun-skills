@@ -72,23 +72,6 @@ cert_skillopt_log() {
         "$*"
 }
 
-# Parse JSON params from command line
-cert_parse_params() {
-    local cmd=("$@")
-    local in_json=false
-    local json_params=""
-
-    for param in "${CAS_JSON_PARAMS[@]}"; do
-        local found=false
-        for i in "${!cmd[@]}"; do
-            if [[ "${cmd[$i]}" == "--$param" ]]; then
-                found=true
-                break
-            fi
-        done
-    done
-}
-
 # Auto-repair error patterns for CAS — per diagnostic-logging-standard.md
 cert_repair_error() {
     local error_code="${1:-}"
@@ -126,7 +109,7 @@ cert_repair_error() {
             return 1
             ;;
         *)
-            cert_skillopt_log "ERROR" "TYPE=UNKNOWN_FIX=Check DescribeDeploymentJob or DescribeCertificateState for details"
+            cert_skillopt_log "ERROR" "TYPE=UNKNOWN FIX=Check DescribeDeploymentJob or DescribeCertificateState for details"
             return 1
             ;;
     esac
