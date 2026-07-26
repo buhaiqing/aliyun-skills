@@ -398,73 +398,14 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 
 ### 11.2 Dual-Track Testing (MANDATORY)
 
-> **原则**：每个涉及云操作 / GCL / Reflexion / Memory 的功能点交付前，**必须**完成双轨测试，缺一不可。
+完整规范已下沉到 [`docs/dual-track-testing.md`](docs/dual-track-testing.md)。包含：
 
-| 轨道 | 目标 | 工具 | 通过条件 |
-|------|------|------|----------|
-| **Track 1: dry-run / 机制层** | 用最小代价跑通整个功能逻辑（路径、分支、store、注入） | `--dry-run` / unit test / 单元 fixture | 链路全绿，无路径分支跳过 |
-| **Track 2: 真实环境 / 集成层** | 在真实凭证 + 真实 `aliyun` CLI 调用下，跑一次端到端集成 | 真实云账号 + `aliyun <product> <action>` + GCL runner | trace 落盘、memory_store / reflexion_store 真实触发 |
+- 双轨定义（Track 1 dry-run / 机制层 + Track 2 真实环境 / 集成层）
+- 典型场景举例（GCL pre-flight / Reflexion / memory_preflight）
+- 单轨例外（静态文档改动 / 仅 stub 改动）
+- `[BLOCKED:no-credentials]` 凭证不可用处理流程（含判定标准 + 待办模板）
 
-**禁止**：
-
-- ❌ 只跑 dry-run 就宣称交付（机制 ≠ 集成）
-- ❌ 只跑真实环境就宣称交付（路径覆盖 ≠ 真实数据）
-- ❌ 跳过任一轨道（违反双轨原则，回归风险翻倍）
-
-**优先级**：真实环境出现破坏性风险时，**先 Track 1 跑通，再 Track 2 用只读操作集成**（如 `Describe*` / `List*` / `Get*`），避免误删资源。
-
-**典型场景举例**：
-
-| 功能 | Track 1 | Track 2 |
-|------|---------|---------|
-| GCL pre-flight 注入 | `gcl_runner.py --dry-run --user-request "..."` 验链路 | 任意产品 skill 跑一次非 dry-run GCL，trace 中 `generator_prompt_with_memory` 含真实替换文本 |
-| Reflexion memory 落盘 | `--dry-run` 验 `memory_store result=success` | 非 dry-run 跑失败命令（如 MAX_ITER）验 `reflexion_store result=success` |
-| memory_preflight retrieval | `memory_preflight_test.py` 单测 | 跑一次 GCL，trace 含真实 `slots.known_traps` 内容 |
-
-**例外**（仅以下情况可单轨）：
-
-- 纯静态文档改动（不涉及代码）→ 只跑 lint
-- 仅 stub / fixture 改动 → Track 1 即可
-
-#### 11.2.1 凭证不可用时的处理（`[BLOCKED:no-credentials]`）
-
-> **场景**：真实环境集成（Track 2）需要 `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET`，但当前会话拿不到有效凭证（例如离线开发、CI 无 secret、临时租户切换等）。
-
-**判定凭证不可用的标准**（任一满足即触发）：
-
-| # | 检查 | 命令 | 失败信号 |
-|---|------|------|----------|
-| 1 | 环境变量缺失 | `env \| grep -E '^ALIBABA_CLOUD_ACCESS_KEY_(ID\|SECRET)='` | 空输出 |
-| 2 | CLI 未配置 profile | `aliyun configure list` | Profile 列表为空 / 标记 `Invalid` |
-| 3 | CLI 探测调用失败 | `aliyun ecs DescribeRegions --RegionId cn-hangzhou` | exit code 非 0 / `InvalidAccessKeyId.NotFound` 等鉴权错误 |
-
-**处理流程**：
-
-1. **Track 1 必须全绿**——dry-run / 单测 / 路径分支全部覆盖。
-2. **在交付物 / PR 描述 / trace 注释中显式标注**：
-
-   ```text
-   [BLOCKED:no-credentials] Track 2 skipped — see env check output.
-   Track 1 status: PASS (5/5 dry-run traces, all stores verified)
-   ```
-
-3. **列出 Track 2 待办**（让接手人知道怎么补）：
-
-   ```bash
-   # 恢复 Track 2 的最小复现步骤：
-   export ALIBABA_CLOUD_ACCESS_KEY_ID=<valid_ak>
-   export ALIBABA_CLOUD_ACCESS_KEY_SECRET=<valid_sk>
-   aliyun configure set --profile default --region cn-hangzhou
-   # 重跑任意一个 GCL dry-run 改为非 dry-run
-   python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py \
-     --skill alicloud-ecs-ops --op DescribeInstances \
-     --command "aliyun ecs DescribeInstances --RegionId cn-hangzhou" \
-     --output-dir .runtime/audit/gcl-runner-ops
-   ```
-
-4. **禁止掩盖**：不得在凭证缺失时编造"已集成验证"或伪造 trace。
-
-**回退**：一旦凭证恢复，立即补 Track 2，并把 `[BLOCKED:no-credentials]` 标记替换为 `[INTEGRATED:verified <date>]`。
+**速查入口**：[`docs/dual-track-testing.md`](docs/dual-track-testing.md)
 
 ---
 
@@ -486,72 +427,20 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 
 ## 12. Generator-Critic-Loop (GCL)
 
-Enforce Generator ↔ Critic adversarial loop on every cloud operation, scored against a quantified rubric.
+完整规范已下沉到 [`docs/generator-critic-loop.md`](docs/generator-critic-loop.md)。包含：
 
-**Full spec**: [`docs/gcl-spec.md`](docs/gcl-spec.md)
+- **Roles**：G / H / C / O 四角色
+- **Critic Test & Regression Assessment**（MANDATORY）
+- **Rubric Dimensions**：≥5 维度（Correctness / Safety / Idempotency / Traceability / Spec Compliance）
+- **Loop Flow**：H pre-check → G execute → C critique → O decide
+- **Termination**：PASS / MAX_ITER / SAFETY_FAIL / HALLUCINATION_ABORT
+- **Trace Audit**：每 run 必落盘 JSON，含脱敏
+- **Skill Classification**：30+ skill 表，按 risk 分 required/recommended/optional
+- **Anti-Patterns**：禁用模式清单
 
-### 12.1 Roles
+**完整规范**：[`docs/gcl-spec.md`](docs/gcl-spec.md)（含 trace schema、per-skill rubric 配置）
 
-| Role | Responsibility | Banned |
-|------|---------------|--------|
-| **Generator (G)** | Execute the cloud operation | Modify rubric, self-score |
-| **Hallucination Detector (H)** | Pre-execution structural validity check (v1.5.0) | Execute API calls, mutate G's output |
-| **Critic (C)** | Independently audit G's output; assess test accuracy + regression need (§12.2) | Call `aliyun`/SDK, mutate resources |
-| **Orchestrator (O)** | Loop control, termination decision | Execute or score |
-
-### 12.2 Critic Test & Regression Assessment (MANDATORY)
-
-| Assessment | Critic action | On failure |
-|------------|---------------|------------|
-| **Test accuracy** | Judge whether tests correctly exercise changed behavior. Ask: *if this broke, would tests fail?* | Set `blocking=true`, trigger **RETRY** |
-| **Regression verification** | Decide smallest accurate suite for the change; require green runs | Skip only with zero-behavioral-delta rationale |
-
-**Banned**: padding test count, chasing coverage %, or PASSing because a suite ran green while no test asserts the changed behavior.
-
-### 12.3 Rubric Dimensions (≥5)
-
-| Dimension | Meaning | Safety=0 |
-|-----------|---------|----------|
-| **Correctness** | Resource ID/state/config matches request | — |
-| **Safety** | Destructive operations confirmed or protected | **Immediate ABORT** |
-| **Idempotency** | Repeating the call has no side effects | — |
-| **Traceability** | Output is auditable | — |
-| **Spec Compliance** | Complies with core-concepts.md constraints | — |
-
-### 12.4 Loop Flow
-
-**H pre-check** (when enabled) → **G execute** → **C critique** → **O decide**
-
-### 12.5 Termination Conditions (first match wins)
-
-| Condition | Action |
-|-----------|--------|
-| **PASS** | All dimensions pass → return G's result |
-| **MAX_ITER** | Reached max_iter → return best-so-far |
-| **SAFETY_FAIL** | Safety=0 → **ABORT** |
-| **HALLUCINATION_ABORT** | H detected unresolved → **ABORT** (v1.5.0) |
-
-### 12.6 Trace Audit
-
-Every GCL run MUST persist JSON trace to `.runtime/audit/gcl-runner-ops/gcl-trace-*.json` (gitignored under `.runtime/`). Credential fields MUST be masked per §8.
-
-### 12.7 Skill Classification + Per-Skill Defaults
-
-Full 30+ skill table: [docs/gcl-spec.md §8](docs/gcl-spec.md#8-per-skill-defaults)
-
-| Level | max_iter | Key Risk |
-|-------|:--------:|----------|
-| **required** | 2 | Data destruction / instance deletion / irreversible |
-| **recommended** | 3 | Resource deletion / config changes; batch messaging; bucket/FS delete |
-| **optional** | 5 | Read-only audit / diagnostic |
-
-### 12.8 Anti-Patterns (banned)
-
-Shared context G+C, subjective scoring, unbounded loop, **Critic seeing user request**, silently downgrading on Safety fail, trace not persisted, Critic mutating resources, trace leaking secrets. Full list: [`docs/gcl-spec.md` §9](docs/gcl-spec.md#9-anti-patterns-banned).
-
-### 12.9 Shared Runner & Rollout
-
-Cross-skill: delegate via product `SKILL.md` **Delegation Rules** to [`alicloud-gcl-runner-ops`](alicloud-gcl-runner-ops/SKILL.md). New-skill GCL artifacts: [`alicloud-skill-generator/references/gcl-rollout-spec.md`](alicloud-skill-generator/references/gcl-rollout-spec.md).
+**速查入口**：[`docs/generator-critic-loop.md`](docs/generator-critic-loop.md)
 
 ---
 
