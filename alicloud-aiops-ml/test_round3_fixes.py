@@ -104,14 +104,16 @@ def test_fetch_tags_batch_uses_per_resource_type() -> None:
 def test_extract_aliyun_action_rejects_flag_as_action() -> None:
     """If tokens[i+2] is --flag, action extraction must skip it, not treat as action."""
     cmd = "aliyun ecs --some-flag DescribeInstances --RegionId cn-hangzhou"
-    action = _extract_aliyun_action(cmd)
+    product, action = _extract_aliyun_action(cmd)
+    assert product == "ecs"
     assert action == "DescribeInstances", f"Got {action}"
 
 
 def test_extract_aliyun_action_validates_uppercase() -> None:
     """If position is a flag, action must be looked up at next position."""
     cmd = "aliyun ecs --debug DescribeInstances"
-    action = _extract_aliyun_action(cmd)
+    product, action = _extract_aliyun_action(cmd)
+    assert product == "ecs"
     assert action == "DescribeInstances"
 
 

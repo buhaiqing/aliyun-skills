@@ -64,20 +64,51 @@ Canonical skill: `karpathy-guidelines`.
 - 有没有废弃文档该删没删？
 - 下次有人做类似的事，能否通过 ARCHITECTURE.md 快速找到所有上下文？
 
-### 0.4 CodeGraph Integration (MANDATORY)
+### 0.4 CodeGraph MCP — Code Understanding Priority (MANDATORY)
 
-> CodeGraph (<https://github.com/colbymchenry/codegraph>) is the repository's symbol knowledge graph,
-> indexing all symbols, edges, and file relationships in SQLite.
+> **CodeGraph MCP 是代码理解的第一入口**。它提供结构化的符号索引、调用链分析和影响半径计算，
+> 比传统的 grep/Glob/Read 组合更精确、更高效。**始终优先使用 CodeGraph MCP，grep 仅作 fallback。**
+
+**可用工具**：
+
+| 工具 | 用途 | 典型场景 |
+|------|------|---------|
+| `mcp__codegraph__sync` | 同步知识图谱到最新状态 | **每次代码修改后执行**，确保索引与磁盘一致 |
+| `mcp__codegraph__search_code` | 按符号名/内容搜索 | "这个函数在哪里定义的？" |
+| `mcp__codegraph__get_symbol_details` | 获取符号详情（定义、引用、调用链） | "谁调用了这个函数？影响范围多大？" |
+| `mcp__codegraph__query_code` | 结构化查询代码关系 | "这个模块依赖哪些其他模块？" |
+
+**使用规范**：
 
 | # | Rule | Detail |
 |---|------|-------|
-| **CG1** | **CodeGraph first for code understanding** | Prefer `codegraph_explore` over grep/Read — one call returns symbol source + call chain + impact radius |
-| **CG2** | **Sync after every change** | Run `codegraph sync` after any code add/modify/delete to keep the knowledge graph current |
-| **CG3** | **Pass `projectPath` for sub-projects** | When querying a sub-project with its own `.codegraph/` (e.g. monorepo services), pass `projectPath` explicitly |
+| **CG1** | **CodeGraph MCP 优先** | 任何代码理解任务（查找定义、追踪引用、分析调用链、评估影响范围）**必须先尝试 CodeGraph MCP**，只有 CodeGraph 无法满足时才 fallback 到 grep/Glob/Read |
+| **CG2** | **Sync before use** | 在查询 CodeGraph 之前，**必须先执行 `mcp__codegraph__sync`** 同步索引，确保查询结果反映最新代码状态 |
+| **CG3** | **Grep 作为 fallback** | 以下情况使用 grep/Glob/Read：CodeGraph MCP 不可用/超时、搜索结果为空（可能索引未覆盖）、需要文本正则匹配（非结构化搜索）、需要读取文件完整内容进行编辑 |
+| **CG4** | **Change → Sync → Verify** | 每次代码修改后必须：1) `mcp__codegraph__sync` 更新索引 → 2) 用 CodeGraph 验证修改的一致性（引用未断裂、符号未丢失） |
 
-```bash
-codegraph sync
+**决策流程**：
+
 ```
+代码理解任务
+  │
+  ├─ Step 1: mcp__codegraph__sync         ← 同步索引
+  │
+  ├─ Step 2: CodeGraph MCP 查询           ← 优先尝试
+  │     ├─ 成功且有结果 → 使用结果，结束
+  │     └─ 失败/无结果/超时 → Step 3
+  │
+  └─ Step 3: Grep/Glob/Read fallback      ← 仅在 CodeGraph 不可用时
+        ├─ grep -n "pattern" -- "*.py"     （精确文本搜索）
+        ├─ Glob "**/*.py"                   （文件模式匹配）
+        └─ Read file_path                   （读取完整内容）
+```
+
+**禁止项（Anti-patterns）**：
+- ❌ 跳过 CodeGraph Sync，直接用 grep 搜索代码
+- ❌ CodeGraph 返回空结果后不 fallback 到 grep，直接声称"符号不存在"
+- ❌ 修改代码后不执行 Sync，导致后续 CodeGraph 查询返回过期数据
+- ❌ 把 CodeGraph 用于文本正则匹配（它不是搜索引擎，是结构化知识图谱）
 
 ### 0.5 Product Skill Mission
 
