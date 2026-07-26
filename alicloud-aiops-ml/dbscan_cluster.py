@@ -1,19 +1,26 @@
 """DBSCAN-style clustering for resource grouping."""
 from __future__ import annotations
 
+from collections import deque
+
 import numpy as np
 from resource_model import Resource
 
 
-def cluster_resources(resources: list[Resource], features: list[dict[str, float]], eps: float = 50.0) -> list[dict]:
-    """Cluster resources using simple distance-based grouping."""
+def cluster_resources(resources: list[Resource], features: list[dict[str, float]], eps: float = 0.5) -> list[dict]:
+    """Cluster resources using simple distance-based grouping.
+
+    Args:
+        eps: Maximum distance between samples in NORMALIZED feature space (0-1).
+             Default 0.5 works well for z-score-normalized [cpu, mem, cost] features.
+    """
     if not features:
         return []
 
     X = np.array([[f["cpu_cores"], f["memory_gb"], f["monthly_cost"]] for f in features])
     X_norm = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
 
-    labels = _simple_dbscan(X_norm, eps=eps / 100)
+    labels = _simple_dbscan(X_norm, eps=eps)
 
     results = []
     for res, label in zip(resources, labels):
@@ -40,9 +47,9 @@ def _simple_dbscan(X: np.ndarray, eps: float = 0.5, min_samples: int = 1) -> lis
             continue
 
         labels[i] = cluster_id
-        queue = list(neighbors)
+        queue = deque(neighbors)
         while queue:
-            j = queue.pop(0)
+            j = queue.popleft()
             if labels[j] == -1:
                 labels[j] = cluster_id
                 new_neighbors = [k for k in range(n) if np.linalg.norm(X[j] - X[k]) <= eps]

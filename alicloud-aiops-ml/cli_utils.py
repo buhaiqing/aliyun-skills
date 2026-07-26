@@ -49,7 +49,8 @@ def cli_call(cmd: str, timeout: int = 30, parse_json: bool = True) -> dict[str, 
         return json.loads(stdout)
 
     except subprocess.TimeoutExpired:
-        raise RuntimeError(f"CLI timeout after {timeout}s: {cmd}")
+        safe_cmd = cmd.split("--")[0].strip()
+        raise RuntimeError(f"CLI timeout after {timeout}s: {safe_cmd} ...")
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Invalid JSON response: {e}")
 

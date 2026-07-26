@@ -22,7 +22,7 @@ def predict_cost(resources: list[Resource], features: list[dict[str, float]]) ->
     results = []
     for res, feat in zip(resources, features):
         x = np.array([1, feat["cpu_cores"], feat["memory_gb"]])
-        predicted = float(x @ theta)
+        predicted = max(0.0, float(x @ theta))
         diff = predicted - feat["monthly_cost"]
         results.append({
             "resource_id": res.resource_id,

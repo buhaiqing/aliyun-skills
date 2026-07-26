@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,5 @@ def _resource_to_dict(r: Resource) -> dict[str, Any]:
 
 
 def _dict_to_resource(d: dict[str, Any]) -> Resource:
-    from dataclasses import fields
     known = {f.name for f in fields(Resource)}
     return Resource(**{k: v for k, v in d.items() if k in known})
