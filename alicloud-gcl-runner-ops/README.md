@@ -124,7 +124,7 @@ Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返�
 
 Every change to this shared framework:
 
-- **100+ unit tests** (Python stdlib + `pyyaml` for SKILL.md frontmatter parsing — see `requirements.txt`)
+- **100+ unit tests** (Python stdlib + external deps: `pyyaml`, `jsonschema` — see `requirements.txt`)
 - **`ruff` checked and fixed** for code quality
 - **all tests pass** before merge to `main`
 
@@ -133,8 +133,9 @@ Every change to this shared framework:
 Python runtime dependencies are pinned in [`requirements.txt`](./requirements.txt):
 
 ```text
-pyyaml>=6.0,<7.0    # SKILL.md frontmatter parsing (introduced in commit 1672dfc for skill_version)
-pytest>=8.0.0      # test framework
+pyyaml>=6.0,<7.0      # SKILL.md frontmatter parsing (gcl_runner.py, gen_skill_matrix.py)
+pytest>=8.0.0         # test framework
+jsonschema>=4.21,<5.0 # manifest validation (topo-discovery manifest_validator.py)
 ```
 
 Install with:
