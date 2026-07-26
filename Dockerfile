@@ -48,13 +48,8 @@ RUN cd /tmp && \
 RUN /usr/local/bin/python3.10 -m ensurepip --upgrade && \
     /usr/local/bin/python3.10 -m pip install --upgrade pip virtualenv
 
-# Install aliyun CLI (official Go binary, no runtime dependencies)
-RUN OS=$(uname -s | tr '[:upper:]' '[:lower:]') && \
-    ARCH=$(uname -m) && \
-    [ "$ARCH" = "x86_64" ] && ARCH="amd64" && \
-    [ "$ARCH" = "aarch64" ] && ARCH="arm64" && \
-    curl -fsSL "https://aliyuncli.alicdn.com/aliyun-cli-linux-latest-${ARCH}.tgz" | tar -xz -C /usr/local/bin && \
-    chmod +x /usr/local/bin/aliyun
+# Install aliyun CLI (official install script, handles OS/arch detection)
+RUN /bin/bash -c "$(curl -fsSL https://aliyuncli.alicdn.com/install.sh)"
 
 # Verify aliyun CLI installation
 RUN aliyun version
