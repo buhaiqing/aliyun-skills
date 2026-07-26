@@ -12,8 +12,20 @@ def detect_anomalies(resources: list[Resource], features: list[dict[str, float]]
     if not costs:
         return results
 
+    if len(costs) == 1:
+        for res, feat in zip(resources, features):
+            results.append({
+                "resource_id": res.resource_id,
+                "resource_type": res.resource_type,
+                "monthly_cost": feat["monthly_cost"],
+                "threshold": 0.0,
+                "anomaly_score": 0.0,
+                "is_anomaly": False,
+            })
+        return results
+
     mean_cost = np.mean(costs)
-    std_cost = np.std(costs) if len(costs) > 1 else mean_cost * 0.1
+    std_cost = np.std(costs)
     threshold = mean_cost + 2 * max(std_cost, 1)
 
     for res, feat in zip(resources, features):
