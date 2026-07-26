@@ -372,40 +372,12 @@ After every skill update, auto-run 2 rounds of self-review and fix all issues.
 | **F8** | TODO.md 同步 | 每次更新必须同步更新 TODO.md |
 | **F9** | 回归测试 | 行为/脚本变更后跑对应用例且通过；重构须先补测试再改代码 |
 
-Full spec + check tables: [docs/post-update-self-review.md](docs/post-update-self-review.md)
+**详细规范**：
 
-### 11.0 Skill Capability Matrix Sync (MANDATORY)
-
-`SKILL-MATRIX.md` (repo root) is the single source of truth for "what each skill can do, by capability dimension". On **any** of the following, the matrix MUST be updated in the same commit:
-
-- Add / remove / rename an `alicloud-*` skill directory
-- A skill gains or loses a major capability dimension (lifecycle / monitoring / diagnosis / security / governance)
-
-The matrix is the first thing a user reads to pick a skill — staleness there is a user-facing defect, not a doc nit.
-
-### 11.1 Regression Testing (MANDATORY)
-
-**Accuracy over coverage**: A test that would not fail when the change breaks is worse than no test.
-
-| Change touches | Run (minimum) |
-|----------------|---------------|
-| Any SkillOpt skill | `bash alicloud-<product>-ops/test-skillopt-backward-compatibility.sh` |
-| `alicloud-runtime-harness-ops/` | `export ALIYUN_SKILLS_ROOT="$PWD" && bash alicloud-runtime-harness-ops/test-harness-integration.sh` |
-| `gcl_runner.py` | `cd alicloud-gcl-runner-ops/scripts && python3 -m unittest gcl_runner_test` |
-| `SKILL.md` only (substantive) | `npx markdownlint-cli2 "alicloud-<product>-ops/SKILL.md"` |
-
-Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.md §11.1](docs/post-update-self-review.md#regression-testing-mandatory)
-
-### 11.2 Dual-Track Testing (MANDATORY)
-
-完整规范已下沉到 [`docs/dual-track-testing.md`](docs/dual-track-testing.md)。包含：
-
-- 双轨定义（Track 1 dry-run / 机制层 + Track 2 真实环境 / 集成层）
-- 典型场景举例（GCL pre-flight / Reflexion / memory_preflight）
-- 单轨例外（静态文档改动 / 仅 stub 改动）
-- `[BLOCKED:no-credentials]` 凭证不可用处理流程（含判定标准 + 待办模板）
-
-**速查入口**：[`docs/dual-track-testing.md`](docs/dual-track-testing.md)
+- 完整 check tables + Self-Review Record 模板：[`docs/post-update-self-review.md`](docs/post-update-self-review.md)
+  - §11.0 Skill Capability Matrix Sync（MANDATORY） — `SKILL-MATRIX.md` 是单一事实源
+  - §11.1 Regression Testing（MANDATORY） — RT-1–RT-6 agent checklist + Skill Change Critic Gate
+- 双轨测试 + 凭证不可用处理：[`docs/dual-track-testing.md`](docs/dual-track-testing.md)
 
 ---
 
@@ -418,6 +390,8 @@ Full suite table + agent checklist (RT-1–RT-6): [docs/post-update-self-review.
 | `alicloud-skill-generator/references/alicloud-skill-template.md` | Canonical SKILL.md template |
 | [`docs/gcl-spec.md`](docs/gcl-spec.md) | **GCL full spec** — roles, rubric, loop flow, trace schema, anti-patterns, §8 Per-Skill Defaults |
 | [`docs/post-update-self-review.md`](docs/post-update-self-review.md) | Self-review spec — check tables, verification scripts, dedup procedures |
+| [`docs/dual-track-testing.md`](docs/dual-track-testing.md) | Dual-track testing (Track 1 dry-run / Track 2 真实环境) + `[BLOCKED:no-credentials]` 处理 |
+| [`docs/generator-critic-loop.md`](docs/generator-critic-loop.md) | GCL 速查清单 — roles / rubric / loop flow / termination |
 | [`docs/harness-integration-guide.md`](docs/harness-integration-guide.md) | Runtime Harness integration — self-repair, Langfuse, §15.6 hardening rules, §15.7 Langfuse lessons |
 | [`docs/token-efficiency-strategy.md`](docs/token-efficiency-strategy.md) | Always-loaded vs lazy-loaded methodology, audit checklist |
 
