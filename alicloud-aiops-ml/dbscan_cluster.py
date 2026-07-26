@@ -33,18 +33,27 @@ def cluster_resources(resources: list[Resource], features: list[dict[str, float]
 
 
 def _pairwise_distances(X: np.ndarray) -> np.ndarray:
-    """Vectorized pairwise Euclidean distance matrix. O(n²d) memory, but fully C-level."""
-    diffs = X[:, None, :] - X[None, :, :]
-    return np.sqrt(np.einsum("ijk,ijk->ij", diffs, diffs))
+    """Vectorized pairwise Euclidean distance matrix.
+
+    Uses the ||a-b||^2 = ||a||^2 + ||b||^2 - 2*a.b identity to avoid
+    materializing an O(n^2d) intermediate. Memory: O(n^2) (just the result).
+    """
+    sq_norm = (X * X).sum(axis=1)
+    dot_product = X @ X.T
+    sq_distances = sq_norm[:, None] + sq_norm[None, :] - 2.0 * dot_product
+    sq_distances -= np.diag(sq_distances)
+    np.maximum(sq_distances, 0.0, out=sq_distances)
+    np.fill_diagonal(sq_distances, 0.0)
+    return np.sqrt(sq_distances)
 
 
 def _vectorized_dbscan(X: np.ndarray, eps: float = 0.5, min_samples: int = 1) -> list[int]:
     """DBSCAN with vectorized neighbor lookup.
 
     Complexity:
-    - Distance matrix: O(n²d) C-level (numpy)
+    - Distance matrix: O(n²d) compute via numpy (no n²d intermediate)
     - BFS expansion: O(n) Python loop with precomputed neighbors
-    - Total: O(n²) memory, O(n²) compute dominated by numpy
+    - Memory: O(n²) for dist_matrix + is_neighbor
     """
     n = len(X)
     if n == 0:
@@ -76,31 +85,3 @@ def _vectorized_dbscan(X: np.ndarray, eps: float = 0.5, min_samples: int = 1) ->
         cluster_id += 1
 
     return labels.tolist()
-
-
-def _simple_dbscan(X: np.ndarray, eps: float = 0.5, min_samples: int = 1) -> list[int]:
-    """Legacy scalar DBSCAN. Kept for benchmarks and fallback."""
-    n = len(X)
-    labels = [-1] * n
-    cluster_id = 0
-
-    for i in range(n):
-        if labels[i] != -1:
-            continue
-
-        neighbors = [j for j in range(n) if np.linalg.norm(X[i] - X[j]) <= eps]
-        if len(neighbors) < min_samples:
-            continue
-
-        labels[i] = cluster_id
-        queue = deque(neighbors)
-        while queue:
-            j = queue.popleft()
-            if labels[j] == -1:
-                labels[j] = cluster_id
-                new_neighbors = [k for k in range(n) if np.linalg.norm(X[j] - X[k]) <= eps]
-                if len(new_neighbors) >= min_samples:
-                    queue.extend(new_neighbors)
-        cluster_id += 1
-
-    return labels

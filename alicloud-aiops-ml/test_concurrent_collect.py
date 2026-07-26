@@ -124,3 +124,93 @@ def test_collect_all_default_max_workers() -> None:
     """Default max_workers must be sensible (>= 4, <= 10)."""
     from pipeline import DEFAULT_MAX_WORKERS
     assert 4 <= DEFAULT_MAX_WORKERS <= 10
+
+
+# ─── M1: failed collectors must LOG, not silently swallow ───────────────
+
+def test_collect_all_logs_failed_collectors(caplog) -> None:
+    """Failed collectors must emit a warning log, not silently return []."""
+    import logging
+    collectors = _stub_collectors()
+
+    def failing_collect(region: str) -> list[Resource]:
+        raise RuntimeError("simulated API error: network timeout")
+
+    with caplog.at_level(logging.WARNING, logger="pipeline"), patch.multiple(
+        "pipeline",
+        collect_ecs_resources=collectors["ecs"],
+        collect_rds_resources=failing_collect,
+        collect_redis_resources=collectors["redis"],
+        collect_slb_resources=collectors["slb"],
+        collect_oss_buckets=collectors["oss"],
+        collect_k8s_nodes=collectors["k8s"],
+    ):
+        collect_all("cn-hangzhou", max_workers=6)
+
+    assert any("rds" in record.message for record in caplog.records), \
+        f"Expected warning log for 'rds' failure; got {[r.message for r in caplog.records]}"
+
+
+def test_collect_all_does_not_swallow_keyboard_interrupt() -> None:
+    """KeyboardInterrupt and SystemExit must NOT be swallowed."""
+    collectors = _stub_collectors()
+
+    def interrupt_collect(region: str) -> list[Resource]:
+        raise KeyboardInterrupt()
+
+    with patch.multiple(
+        "pipeline",
+        collect_ecs_resources=collectors["ecs"],
+        collect_rds_resources=interrupt_collect,
+        collect_redis_resources=collectors["redis"],
+        collect_slb_resources=collectors["slb"],
+        collect_oss_buckets=collectors["oss"],
+        collect_k8s_nodes=collectors["k8s"],
+    ):
+        with pytest.raises(KeyboardInterrupt):
+            collect_all("cn-hangzhou", max_workers=6)
+
+
+# ─── M2: if ALL collectors fail, raise aggregate error ───────────────────
+
+def test_collect_all_raises_if_all_collectors_fail() -> None:
+    """If every collector raises, surface a single aggregate RuntimeError."""
+    collectors = _stub_collectors()
+
+    def all_fail(region: str) -> list[Resource]:
+        raise RuntimeError(f"fail for {region}")
+
+    with patch.multiple(
+        "pipeline",
+        collect_ecs_resources=all_fail,
+        collect_rds_resources=all_fail,
+        collect_redis_resources=all_fail,
+        collect_slb_resources=all_fail,
+        collect_oss_buckets=all_fail,
+        collect_k8s_nodes=all_fail,
+    ):
+        with pytest.raises(RuntimeError, match="[Aa]ll.*collectors failed|0/6"):
+            collect_all("cn-hangzhou", max_workers=6)
+
+
+def test_collect_all_returns_partial_results_when_some_succeed() -> None:
+    """If SOME collectors fail, return partial dict (no raise)."""
+    collectors = _stub_collectors()
+
+    def fail(region: str) -> list[Resource]:
+        raise RuntimeError("fail")
+
+    with patch.multiple(
+        "pipeline",
+        collect_ecs_resources=collectors["ecs"],
+        collect_rds_resources=fail,
+        collect_redis_resources=collectors["redis"],
+        collect_slb_resources=fail,
+        collect_oss_buckets=collectors["oss"],
+        collect_k8s_nodes=fail,
+    ):
+        result = collect_all("cn-hangzhou", max_workers=6)
+
+    assert len(result["ecs"]) == 3
+    assert result["rds"] == []
+    assert len(result["redis"]) == 2

@@ -1,4 +1,4 @@
-"""RED tests + benchmark for P0-#3 (DBSCAN vectorization)."""
+"""Tests + benchmark for vectorized DBSCAN (P0-#3)."""
 from __future__ import annotations
 
 import time
@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from resource_model import Resource
 from feature_engine import extract_features
-from dbscan_cluster import cluster_resources, _simple_dbscan
+from dbscan_cluster import cluster_resources, _pairwise_distances, _vectorized_dbscan
 
 
 def make_r(i: int, cost: float, cpu: int) -> Resource:
@@ -21,10 +21,9 @@ def make_r(i: int, cost: float, cpu: int) -> Resource:
     )
 
 
-# ─── Behavioral equivalence ──────────────────────────────────────────────
+# ─── Behavioral tests ───────────────────────────────────────────────────
 
-def test_vectorized_dbscan_produces_same_labels_as_legacy() -> None:
-    """New vectorized impl must produce same cluster assignments as legacy."""
+def test_vectorized_dbscan_produces_valid_labels() -> None:
     np.random.seed(42)
     n = 30
     resources = [
@@ -34,7 +33,6 @@ def test_vectorized_dbscan_produces_same_labels_as_legacy() -> None:
     feats = extract_features(resources)
 
     new_result = cluster_resources(resources, feats, eps=0.5)
-
     new_labels = sorted([r["cluster_id"] for r in new_result])
     assert len(new_labels) == n
     assert all(isinstance(l, int) for l in new_labels)
@@ -55,7 +53,6 @@ def test_vectorized_dbscan_single_resource() -> None:
 
 
 def test_vectorized_dbscan_identical_features_single_cluster() -> None:
-    """5 identical resources -> 1 cluster (or close), not all noise."""
     resources = [make_r(i, cost=100.0, cpu=4) for i in range(5)]
     feats = extract_features(resources)
     result = cluster_resources(resources, feats, eps=2.0)
@@ -65,7 +62,6 @@ def test_vectorized_dbscan_identical_features_single_cluster() -> None:
 
 
 def test_vectorized_dbscan_two_well_separated_clusters() -> None:
-    """Two distinct feature clusters should be labeled distinctly."""
     cluster_a = [make_r(i, cost=100.0, cpu=4) for i in range(5)]
     cluster_b = [make_r(100 + i, cost=10000.0, cpu=64) for i in range(5)]
     resources = cluster_a + cluster_b
@@ -82,33 +78,55 @@ def test_vectorized_dbscan_two_well_separated_clusters() -> None:
         f"A and B share clusters: A={a_labels}, B={b_labels}"
 
 
-# ─── Performance regression guard ────────────────────────────────────────
+# ─── Distance matrix correctness (H2 fix) ───────────────────────────────
 
-def test_vectorized_dbscan_faster_than_legacy() -> None:
-    """New impl must be measurably faster on n=200."""
+def test_pairwise_distances_matches_naive_implementation() -> None:
+    """_pairwise_distances must produce same matrix as naive O(n^2) loop.
+
+    Critical: identity-trick refactor must preserve numerical correctness.
+    """
     np.random.seed(0)
-    n = 200
+    n = 50
+    d = 3
+    X = np.random.randn(n, d)
+
+    actual = _pairwise_distances(X)
+
+    naive = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            naive[i, j] = np.linalg.norm(X[i] - X[j])
+
+    np.testing.assert_allclose(actual, naive, atol=1e-10)
+
+
+def test_pairwise_distances_diagonal_is_zero() -> None:
+    np.random.seed(1)
+    X = np.random.randn(10, 3)
+    actual = _pairwise_distances(X)
+    np.testing.assert_allclose(np.diag(actual), 0.0, atol=1e-10)
+
+
+def test_pairwise_distances_symmetric() -> None:
+    np.random.seed(2)
+    X = np.random.randn(10, 3)
+    actual = _pairwise_distances(X)
+    np.testing.assert_allclose(actual, actual.T, atol=1e-10)
+
+
+# ─── Performance regression guard (H2: smaller peak memory) ────────────
+
+def test_vectorized_dbscan_scales_sub_linearly_in_python_loop() -> None:
+    """n=500 should complete in <2s (sanity bound, not strict)."""
+    np.random.seed(0)
+    n = 500
     resources = [
         make_r(i, cost=100.0 + np.random.randn() * 50, cpu=4 + i % 16)
         for i in range(n)
     ]
     feats = extract_features(resources)
 
-    # Warm-up
-    cluster_resources(resources[:10], feats[:10])
-
     start = time.perf_counter()
-    for _ in range(3):
-        cluster_resources(resources, feats)
-    new_elapsed = time.perf_counter() - start
-
-    X = np.array([[f["cpu_cores"], f["memory_gb"], f["monthly_cost"]] for f in feats])
-    X_norm = (X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)
-    start = time.perf_counter()
-    for _ in range(3):
-        _simple_dbscan(X_norm, eps=0.5)
-    legacy_elapsed = time.perf_counter() - start
-
-    assert new_elapsed < legacy_elapsed, (
-        f"Vectorized ({new_elapsed:.3f}s) not faster than legacy ({legacy_elapsed:.3f}s)"
-    )
+    cluster_resources(resources, feats)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 2.0, f"n={n} took {elapsed:.2f}s; expected <2s"

@@ -5,6 +5,7 @@ a region, parallelized via ThreadPoolExecutor (subprocess-bound I/O).
 """
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable
 
@@ -13,6 +14,8 @@ from db_collector import collect_rds_resources, collect_redis_resources
 from net_collector import collect_slb_resources, collect_oss_buckets, collect_k8s_nodes
 from resource_model import Resource
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_WORKERS = 6
 
@@ -24,7 +27,9 @@ def collect_all(
     """Collect resources from all products in `region` concurrently.
 
     Returns dict keyed by product: {"ecs": [...], "rds": [...], ...}.
-    Failed collectors are omitted from the result (caller should check keys).
+    Per-product failures are logged at WARNING and result in an empty list for
+    that product; the rest of the pipeline continues.
+    Raises RuntimeError if ALL collectors fail (caller likely misconfigured).
 
     Threading (not multiprocessing) is used because the bottleneck is
     subprocess.wait() I/O, not CPU. ThreadPoolExecutor releases the GIL
@@ -40,6 +45,8 @@ def collect_all(
     }
 
     results: dict[str, list[Resource]] = {}
+    failures: dict[str, BaseException] = {}
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_name = {
             executor.submit(fn, region): name
@@ -49,8 +56,19 @@ def collect_all(
             name = future_to_name[future]
             try:
                 results[name] = future.result()
-            except Exception:
+            except Exception as e:
+                logger.warning(
+                    "Collector %s failed for region=%s: %s",
+                    name, region, e,
+                )
                 results[name] = []
+                failures[name] = e
+
+    if failures and len(failures) == len(collectors):
+        names = sorted(failures.keys())
+        raise RuntimeError(
+            f"All {len(collectors)} collectors failed for region={region}: {names}"
+        )
 
     return results
 
