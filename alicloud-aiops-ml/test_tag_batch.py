@@ -28,7 +28,7 @@ def test_enrich_tags_uses_batch_fetch(tmp_path=None) -> None:
             f"r-{i}": {"product": "app", "env": "prod", "owner": "team"}
             for i in range(10)
         }
-        enrich_tags(resources, "cn-hangzhou")
+        enrich_tags(resources, "cn-hangzhou", "123456")
 
         assert mock_single.call_count == 0, (
             f"Per-resource _fetch_tags called {mock_single.call_count} times; "
@@ -49,5 +49,5 @@ def test_fetch_tags_batch_returns_per_resource_dict() -> None:
                 ]
             }
         }
-        result = _fetch_tags_batch(resources, "cn-hangzhou")
+        result = _fetch_tags_batch(resources, "cn-hangzhou", "123456")
         assert isinstance(result, dict)

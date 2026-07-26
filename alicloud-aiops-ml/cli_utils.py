@@ -26,14 +26,21 @@ def _extract_aliyun_action(cmd: str) -> str | None:
 
     Handles arbitrary leading tokens (env vars, comments, redirections) by
     scanning for the literal 'aliyun' instead of assuming a fixed positional layout.
+    Skips --flag tokens to find the actual action (Aliyun API convention:
+    actions start with an uppercase letter and do not begin with '-').
     """
     try:
         tokens = shlex.split(cmd)
     except ValueError:
         return None
     for i, tok in enumerate(tokens):
-        if tok == "aliyun" and i + 2 < len(tokens):
-            return tokens[i + 2]
+        if tok != "aliyun":
+            continue
+        for j in range(i + 2, len(tokens)):
+            candidate = tokens[j]
+            if not candidate.startswith("-"):
+                return candidate
+        return None
     return None
 
 
@@ -101,8 +108,8 @@ def cli_call(cmd: str, timeout: int = 30, parse_json: bool = True) -> dict[str, 
     except subprocess.TimeoutExpired:
         safe_cmd = _mask_credentials(cmd.split("--", 1)[0].strip())
         raise RuntimeError(f"CLI timeout after {timeout}s: {safe_cmd} ...")
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"Invalid JSON response: {e}")
+    except json.JSONDecodeError:
+        raise RuntimeError("Invalid JSON response from aliyun CLI (output masked)")
 
 
 def _mask_credentials(text: str) -> str:
