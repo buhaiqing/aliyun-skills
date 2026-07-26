@@ -15,7 +15,7 @@ metadata:
 
 ## Prerequisites
 
-- Python 3.10+ (stdlib only — no external dependencies)
+- Python 3.10+ (stdlib + `pyyaml` — see `requirements.txt`)
 - `aliyun` CLI installed and configured
 - `ALIBABA_CLOUD_ACCESS_KEY_ID` and `ALIBABA_CLOUD_ACCESS_KEY_SECRET` environment variables set
 

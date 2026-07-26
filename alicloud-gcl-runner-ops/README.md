@@ -124,9 +124,24 @@ Provider 从 `GCL_CRITIC_LLM_ENDPOINT` URL 自动检测，不支持的厂商返�
 
 Every change to this shared framework:
 
-- **100+ unit tests** (pure Python stdlib, no external deps)
+- **100+ unit tests** (Python stdlib + `pyyaml` for SKILL.md frontmatter parsing — see `requirements.txt`)
 - **`ruff` checked and fixed** for code quality
 - **all tests pass** before merge to `main`
+
+### Dependencies
+
+Python runtime dependencies are pinned in [`requirements.txt`](./requirements.txt):
+
+```text
+pyyaml>=6.0,<7.0    # SKILL.md frontmatter parsing (introduced in commit 1672dfc for skill_version)
+pytest>=8.0.0      # test framework
+```
+
+Install with:
+
+```bash
+pip install -r alicloud-gcl-runner-ops/requirements.txt
+```
 
 ## References
 

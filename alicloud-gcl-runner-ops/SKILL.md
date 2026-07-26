@@ -85,6 +85,7 @@ to other skills.
 |-------|--------|----------|------------|
 | `aliyun`CLI installed |`command -v aliyun`| Binary found | HALT — install`aliyun`CLI per`alicloud-skill-generator/references/execution-environment.md` |
 | Python 3.10+ available | `python3 --version` | Version ≥ 3.10 | HALT — install Python 3.10+ |
+| Python deps installed | `python3 -c "import yaml"` | Import OK | HALT — `pip install -r alicloud-gcl-runner-ops/requirements.txt` (pyyaml 6.x + pytest 8.x) |
 | `gcl_runner.py`exists |`ls {{env.ALIYUN_SKILLS_ROOT}}/alicloud-gcl-runner-ops/scripts/gcl_runner.py` | File found | HALT — re-clone or check repo integrity |
 | Target skill rubric exists | `ls {{env.ALIYUN_SKILLS_ROOT}}/{{user.skill}}/references/rubric.md` | File found | HALT — rubric missing, check skill structure |
 | Credentials configured | `echo ${ALIBABA_CLOUD_ACCESS_KEY_ID:?}` | Non-empty | HALT — configure credentials per README_CN.md |

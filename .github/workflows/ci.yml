@@ -70,6 +70,9 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Install dependencies
+        run: python3 -m pip install -q -r alicloud-gcl-runner-ops/requirements.txt
+
       - name: Python 3.10 compatibility [HARD GATE]
         run: python3 scripts/check_py310_compat.py
 
@@ -94,8 +97,8 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install pytest
-        run: python3 -m pip install -q "pytest>=8.0"
+      - name: Install dependencies
+        run: python3 -m pip install -q -r alicloud-gcl-runner-ops/requirements.txt
 
       - name: GCL runner tests
         run: cd alicloud-gcl-runner-ops/scripts && python -m unittest gcl_runner_test -v

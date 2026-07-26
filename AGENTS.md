@@ -322,6 +322,7 @@ docker compose --profile runtime up -d    # Minimal runtime
 
 # Python 3.10 baseline
 python3 scripts/check_py310_compat.py
+pip install -r alicloud-gcl-runner-ops/requirements.txt   # pyyaml + pytest
 cd alicloud-gcl-runner-ops/scripts && python3 -m unittest gcl_runner_test -v
 ```
 
