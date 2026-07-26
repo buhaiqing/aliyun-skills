@@ -869,3 +869,103 @@ Markdown 标题转 GitHub 锚点的规则：`lower` → 删除所有**非** `[�
 
 **R4 — 路径深度基线**
 相对路径基准目录 = 链接所在文件的目录。位于 `alicloud-X-ops/assets/`（比 skill 根深一层）的引用，到仓库根的 `alicloud-Y-ops/references/...` 需要 `../../`；位于 `alicloud-X-ops/SKILL.md`（skill 根）则只需 `../`。深度算错是常见的"看似修复实则仍 broken"来源。
+
+### 18.7 FinOps/ML 模块开发复盘（`alicloud-aiops-ml` 试点沉淀）
+
+> 6 轮迭代（a35b0af → 1c007be）的实战经验。本项目未来添加 Python 工具模块（尤其是涉及数值计算 / subprocess / 并发）时必读。
+
+**R1 — 数值算法的 RED 测试必须包含 4 项不变性**
+
+向量化的距离/归一化/矩阵运算，RED 测试必须有：
+- ✅ **对称性**：`A == A.T`（距离矩阵、协方差矩阵）
+- ✅ **对角线**：`diag(A) == 0`（自距离为零）
+- ✅ **vs 朴素 O(n²) 参考实现**：`np.testing.assert_allclose(..., atol=1e-10)` —— 朴素循环慢但正确，是数值正确性的 ground truth
+- ✅ **边界**：empty / single element / identical / well-separated
+
+**反模式**：用 `atol=1e-7` 觉得"够严"。浮点恒等式（如 `‖a-b‖² = ‖a‖² + ‖b‖² - 2a·b`）会产生 ~1e-16 负零误差，`np.sqrt(1e-16)` 给出 `1e-8` —— 会被 `atol=1e-7` 放过但破坏对角线对称性。
+
+**R2 — 接口破坏要么显式文档要么给默认值**
+
+新增必填参数（如 `enrich_tags(..., account_id)`）的两种合规做法：
+
+```python
+# 选项 A：默认值 + DeprecationWarning（推荐，向后兼容）
+def enrich_tags(resources, region, account_id=None):
+    if account_id is None:
+        warnings.warn("account_id required in next release", DeprecationWarning, stacklevel=2)
+        account_id = os.environ.get("ALIBABA_CLOUD_ACCOUNT_ID", "")
+
+# 选项 B：commit message 显式写 BREAKING CHANGE（破坏 OK，但必须声明）
+# Commit message 必须含 "BREAKING CHANGE: ..." 段，便于 grep
+```
+
+**反模式**：静默把必填参数加到中间位置，无 commit 标记，无测试更新——调用方必崩但发现得很晚。
+
+**R3 — 性能测试用绝对上界，不用相对比较**
+
+```python
+# ✅ 绝对上界（CI 抖动不影响）
+def test_vectorized_dbscan_completes_quickly():
+    elapsed = measure_time(lambda: cluster_resources(resources, features))
+    assert elapsed < 2.0, f"n=500 took {elapsed:.2f}s; expected <2s"
+
+# ❌ 相对比较（CI 抖动会假阳性 / 假阴性）
+def test_vectorized_dbscan_faster_than_legacy():
+    assert new_elapsed < legacy_elapsed  # 新实现有 import overhead，n 小时反慢
+```
+
+**R4 — `except Exception` 必须配套 logging + 文档意图**
+
+```python
+# ✅ 标准格式
+try:
+    results[name] = future.result()
+except Exception as e:                    # 只捕 Exception，不吞 BaseException
+    logger.warning("Collector %s failed for region=%s: %s", name, region, e)
+    results[name] = []
+    failures[name] = e                    # 记录失败供后续分析
+
+if failures and len(failures) == len(collectors):
+    raise RuntimeError(f"All collectors failed: {sorted(failures)}")  # 全失败时显式抛
+```
+
+**反模式**：裸 `except Exception: pass` —— 调试时找不到失败原因，`Ctrl+C` 也被吞（生产环境大坑）。**KeyboardInterrupt / SystemExit 自动传播**（它们是 BaseException 子类），无需额外处理。
+
+**R5 — 向量化性能优化的 4 步协议**
+
+```
+1. 基线测量：time.perf_counter() 实测原版耗时（必须有数，不是"感觉慢"）
+2. RED 测试断言"绝对上界"：elapsed < 2.0（不用相对比较）
+3. 实现：prefer O(n²) 算法 → numpy einsum/cdist/identity trick
+4. 量化对比：新耗时 / 旧耗时 + 峰值内存
+```
+
+**实测案例**（`alicloud-aiops-ml/dbscan_cluster.py`）：
+- DBSCAN n=1000: 5.92s → 0.11s (**52x**)
+- 距离矩阵内存: 30.5MB → 23.0MB (**-25%**)
+
+**R6 — 优化后必须删除 dead code**
+
+性能对比保留下来的旧函数（如 `_simple_dbscan`）如果不删：
+- 维护负担：以后 bugfix 只改新版，旧版漂移
+- 调用歧义：新人不知道该用哪个
+
+**判断标准**：在主代码路径上 grep，确认只有测试文件 import。纯测试用 → 删除。
+
+**R7 — 4 轮 review 的共同规律**
+
+`alicloud-aiops-ml` 经过 6 轮 review（3 轮 bug fix + 1 轮 perf + 2 轮 perf review），发现一个反直觉的模式：
+
+> **每一轮 review 都只能找到「前面 round 引入的新 bug」**。Round 3 修复的 ARN 硬编码其实是 Round 1 重构时引入的；Round 4 的 H2 浮点噪声是 Round 4 自家向量化引入的。
+
+**结论**：**N+1 轮 review 的价值递减但不为零**——至少还能捕获 self-introduced bug。建议任何 Python 工具模块至少做 2 轮 review（功能正确性 + 安全性/性能），超过 3 轮 ROI 递减。
+
+**R8 — `code-reviewer` agent 不可用时的 fallback 协议**
+
+OpenCode 当前 session 没有 `code-reviewer` subagent_type。Fallback 流程：
+1. 仍按 skill 协议调用一次（验证不可用）
+2. 失败后**自己 review**，但保持输出格式统一：CRITICAL/HIGH/MEDIUM/LOW + file:line 引用 + fix 建议
+3. 不要"为了通过"放过真问题
+4. **触发第二轮**（自审）捕获第一轮漏掉的，特别是 self-introduced bug
+
+**反模式**：跳过 review 直接 ship。
