@@ -14,7 +14,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-SKILLS_DIR = Path("/Users/bohaiqing/opensource/git/aliyun-skills")
+# Derive repo root from this file's location:
+#   alicloud-topo-discovery/tests/test_sprint19_cleanup.py -> repo root
+SKILLS_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 # ── T1: cleanup dry-run ──
