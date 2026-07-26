@@ -47,8 +47,6 @@ def _fetch_cms_metric(
         f" --StartTime {start}"
         f" --EndTime {end}"
         f" --Period 86400"
-        f" --api-version 2019-05-01"
-        f" --output json"
     )
     try:
         result = subprocess.run(
@@ -62,23 +60,35 @@ def _fetch_cms_metric(
             logger.debug("CMS %s for %s returned non-zero: %s", metric_name, instance_id, result.stderr)
             return 0.0
         data = json.loads(result.stdout)
-        dps = data.get("Datapoints", {})
-        values = []
-        for v in str(dps).replace("'", '"'):
+        dps = data.get("Datapoints", "")
+        if not dps:
+            return 0.0
+
+        # Datapoints can be a JSON string or already-parsed list
+        if isinstance(dps, str):
             try:
-                values.append(float(v))
-            except (ValueError, TypeError):
-                pass
-        # Re-parse properly if JSON
-        if isinstance(dps, str) and dps:
-            try:
-                parsed = json.loads(dps)
-                if isinstance(parsed, dict):
-                    values = [float(v) for v in parsed.values() if v is not None]
-                elif isinstance(parsed, list):
-                    values = [float(v) for v in parsed if v is not None]
-            except (json.JSONDecodeError, ValueError, TypeError):
-                pass
+                dps = json.loads(dps)
+            except (json.JSONDecodeError, TypeError):
+                return 0.0
+
+        # Extract values from list of datapoint objects
+        values: list[float] = []
+        if isinstance(dps, list):
+            for dp in dps:
+                if isinstance(dp, dict):
+                    avg = dp.get("Average")
+                    if avg is not None:
+                        try:
+                            values.append(float(avg))
+                        except (ValueError, TypeError):
+                            pass
+        elif isinstance(dps, dict):
+            for v in dps.values():
+                try:
+                    values.append(float(v))
+                except (ValueError, TypeError):
+                    pass
+
         if not values:
             return 0.0
         return sum(values) / len(values)
