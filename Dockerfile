@@ -85,6 +85,9 @@ FROM base AS runtime
 # Copy skills content
 COPY . /skills/
 
+# Install Python dependencies (pyyaml for GCL runner frontmatter parsing, etc.)
+RUN pip install -r /skills/alicloud-gcl-runner-ops/requirements.txt
+
 # Create non-root user for security
 RUN useradd -m -u 1000 skillsrunner && \
     chown -R skillsrunner:skillsrunner /skills /go /tmp
