@@ -65,23 +65,37 @@ def _section_anomalies(anomalies: list[dict]) -> str:
 
 
 def _section_predictions(predictions: list[dict]) -> str:
-    if not predictions:
+    # Filter out predictions with empty resource_id (anomaly failures)
+    valid = [p for p in predictions if p.get("resource_id")]
+    if not valid:
         return "无预测数据。"
     lines = ["| 资源ID | 实际成本 | 预测成本 | 偏差 |", "|--------|----------|----------|------|"]
-    for p in predictions[:10]:
+    # Sort by absolute diff descending to show biggest predictions first
+    valid_sorted = sorted(valid, key=lambda p: abs(p.get("diff", 0)), reverse=True)
+    shown = valid_sorted[:10]
+    hidden = len(valid) - len(shown)
+    for p in shown:
         lines.append(f"| {p['resource_id']} | ¥{p['actual_cost']:.2f} | ¥{p['predicted_cost']:.2f} | ¥{p['diff']:.2f} |")
+    if hidden > 0:
+        lines.append(f"\n> *另有 {hidden} 条预测未显示（按偏差排序，仅展示前 10 条）*")
     return "\n".join(lines)
 
 
 def _section_clusters(clusters: list[dict]) -> str:
-    if not clusters:
+    # Filter out entries with empty resource_id
+    valid = [c for c in clusters if c.get("resource_id")]
+    if not valid:
         return "无聚类数据。"
     by_cluster: dict[int, list[str]] = {}
-    for c in clusters:
+    for c in valid:
         cid = c["cluster_id"]
         by_cluster.setdefault(cid, []).append(c["resource_id"])
     lines = ["| 聚类ID | 资源数量 | 示例资源 |", "|--------|----------|----------|"]
     for cid, rids in sorted(by_cluster.items()):
         example = rids[0] if rids else "-"
         lines.append(f"| {cid} | {len(rids)} | {example} |")
+    # Add noise cluster callout
+    if -1 in by_cluster:
+        noise_count = len(by_cluster[-1])
+        lines.append(f"\n> *聚类 ID `-1` 表示噪声点（同业务但规格差异大），共 {noise_count} 个资源*")
     return "\n".join(lines)

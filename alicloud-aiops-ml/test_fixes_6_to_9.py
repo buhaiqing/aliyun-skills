@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from resource_model import Resource
 from dbscan_cluster import cluster_resources
-from iforest_detector import detect_anomalies
+from zscore_detector import detect_anomalies
 from feature_engine import extract_features
 from report_generator import generate_report
 from data_pipeline import aggregate_to_json, load_resources

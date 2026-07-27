@@ -1,11 +1,11 @@
-"""Tests for ML model modules — feature_engine, iforest_detector, xgboost_predictor, report_generator."""
+"""Tests for ML model modules — feature_engine, zscore_detector, xgboost_predictor, report_generator."""
 from __future__ import annotations
 
 import pytest
 
 from resource_model import Resource
 from feature_engine import extract_features
-from iforest_detector import detect_anomalies
+from zscore_detector import detect_anomalies
 from xgboost_predictor import predict_cost
 from report_generator import generate_report
 
@@ -103,7 +103,7 @@ class TestExtractFeatures:
 # ------------------------------------------------------------------
 
 class TestDetectAnomalies:
-    """Tests for iforest_detector.detect_anomalies."""
+    """Tests for zscore_detector.detect_anomalies."""
 
     def test_empty(self) -> None:
         assert detect_anomalies([], []) == []
@@ -258,3 +258,54 @@ class TestGenerateReport:
         content = generate_report([], [], [], clusters, str(output_path))
         # cluster_id=-1 should appear as "离群点" or "-1"
         assert "-1" in content
+
+    def test_empty_resource_ids_filtered_out(self, tmp_path) -> None:
+        """Predictions/clusters with empty resource_id should not appear in tables."""
+        predictions = [
+            {"resource_id": "", "predicted_cost": 100, "actual_cost": 50, "diff": -50},
+            {"resource_id": "r-valid", "predicted_cost": 200, "actual_cost": 100, "diff": -100},
+        ]
+        clusters = [
+            {"resource_id": "", "resource_type": "ecs", "cluster_id": 0},
+            {"resource_id": "r1", "resource_type": "ecs", "cluster_id": 0},
+        ]
+        output_path = tmp_path / "report.md"
+        content = generate_report([], [], predictions, clusters, str(output_path))
+        # Empty IDs should not appear as separate rows
+        assert "|  | ¥" not in content
+        # Valid resource should appear
+        assert "r-valid" in content
+        assert "r1" in content
+
+    def test_predictions_sorted_by_diff_desc(self, tmp_path) -> None:
+        predictions = [
+            {"resource_id": "r-low", "predicted_cost": 100, "actual_cost": 100, "diff": 5},
+            {"resource_id": "r-high", "predicted_cost": 200, "actual_cost": 100, "diff": 100},
+            {"resource_id": "r-mid", "predicted_cost": 150, "actual_cost": 100, "diff": 50},
+        ]
+        output_path = tmp_path / "report.md"
+        content = generate_report([], [], predictions, [], str(output_path))
+        # Highest diff should appear first
+        high_pos = content.index("r-high")
+        mid_pos = content.index("r-mid")
+        low_pos = content.index("r-low")
+        assert high_pos < mid_pos < low_pos
+
+    def test_hidden_predictions_notice(self, tmp_path) -> None:
+        predictions = [
+            {"resource_id": f"r{i}", "predicted_cost": 100, "actual_cost": 50, "diff": 50}
+            for i in range(15)
+        ]
+        output_path = tmp_path / "report.md"
+        content = generate_report([], [], predictions, [], str(output_path))
+        assert "另有" in content
+        assert "未显示" in content
+
+    def test_noise_cluster_callout(self, tmp_path) -> None:
+        clusters = [
+            {"resource_id": f"r{i}", "resource_type": "ecs", "cluster_id": -1}
+            for i in range(5)
+        ]
+        output_path = tmp_path / "report.md"
+        content = generate_report([], [], [], clusters, str(output_path))
+        assert "噪声点" in content

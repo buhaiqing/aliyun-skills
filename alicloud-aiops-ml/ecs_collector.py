@@ -1,14 +1,13 @@
 """ECS resource collector."""
 from __future__ import annotations
 
-import json
 import logging
-import subprocess
 from typing import Any
 
 from resource_model import Resource
 from cli_utils import cli_call
 from cost_model import estimate_monthly_cost, compute_days_until_expire
+from cms_client import fetch_cms_metric, fetch_metrics_parallel
 
 logger = logging.getLogger(__name__)
 
@@ -23,95 +22,22 @@ _CMS_METRICS = {
 }
 
 
-def _fetch_cms_metric(
-    metric_name: str,
-    namespace: str,
-    instance_id: str,
-    days: int = 7,
-) -> float:
-    """Fetch a single CMS metric average over `days` days.
-
-    Returns the average value, or 0.0 if CMS is unavailable or no data.
-    """
-    start = (
-        f"$(date -u -d '{days} days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null "
-        f"|| date -u -v-{days}d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
-    )
-    end = "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
-    dimensions = f'[{{"instanceId":"{instance_id}"}}]'
-    cmd = (
-        f"aliyun cms DescribeMetricList"
-        f" --MetricName {metric_name}"
-        f" --Namespace {namespace}"
-        f" --Dimensions '{dimensions}'"
-        f" --StartTime {start}"
-        f" --EndTime {end}"
-        f" --Period 86400"
-    )
-    try:
-        result = subprocess.run(
-            cmd.replace(" --output json", ""),  # aliyun CLI v3 compat
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-        )
-        if result.returncode != 0:
-            logger.debug("CMS %s for %s returned non-zero: %s", metric_name, instance_id, result.stderr)
-            return 0.0
-        data = json.loads(result.stdout)
-        return _parse_cms_datapoints(data)
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception) as e:
-        logger.debug("CMS fetch for %s/%s failed: %s", namespace, metric_name, e)
-        return 0.0
-
-
-def _parse_cms_datapoints(data: dict[str, Any]) -> float:
-    """Parse CMS DescribeMetricList response and return average value.
-
-    Extracted as a pure function for testability. Returns 0.0 if no valid data.
-    """
-    dps = data.get("Datapoints", "")
-    if not dps:
-        return 0.0
-
-    # Datapoints can be a JSON string or already-parsed list
-    if isinstance(dps, str):
-        try:
-            dps = json.loads(dps)
-        except (json.JSONDecodeError, TypeError):
-            return 0.0
-
-    # Extract values from list of datapoint objects
-    values: list[float] = []
-    if isinstance(dps, list):
-        for dp in dps:
-            if isinstance(dp, dict):
-                avg = dp.get("Average")
-                if avg is not None:
-                    try:
-                        values.append(float(avg))
-                    except (ValueError, TypeError):
-                        pass
-    elif isinstance(dps, dict):
-        for v in dps.values():
-            try:
-                values.append(float(v))
-            except (ValueError, TypeError):
-                pass
-
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
 def _fetch_ecs_metrics(instance_id: str, region: str, days: int = 7) -> dict[str, float]:
-    """Fetch all CMS metrics for an ECS instance. Graceful degradation on failure."""
+    """Fetch all CMS metrics for an ECS instance in parallel.
+
+    Uses ThreadPoolExecutor to issue concurrent CMS calls (one per metric).
+    """
     namespace = "acs_ecs_dashboard"
-    metrics: dict[str, float] = {}
-    for field, metric_name in _CMS_METRICS.items():
-        metrics[field] = _fetch_cms_metric(metric_name, namespace, instance_id, days)
-    return metrics
+    tasks = [
+        (metric_name, namespace, instance_id, days, "instanceId")
+        for metric_name in _CMS_METRICS.values()
+    ]
+    results = fetch_metrics_parallel(tasks, max_workers=len(tasks))
+    # Map results back to resource field names
+    return {
+        field: results.get((metric_name, namespace), 0.0)
+        for field, metric_name in _CMS_METRICS.items()
+    }
 
 
 def collect_ecs_resources(region: str) -> list[Resource]:

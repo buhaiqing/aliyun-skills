@@ -9,7 +9,7 @@ import pytest
 from resource_model import Resource
 from data_pipeline import aggregate_to_json, load_resources
 from feature_engine import extract_features
-from iforest_detector import detect_anomalies
+from zscore_detector import detect_anomalies
 from xgboost_predictor import predict_cost
 from dbscan_cluster import cluster_resources
 from report_generator import generate_report

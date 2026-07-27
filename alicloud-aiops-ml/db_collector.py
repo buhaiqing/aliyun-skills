@@ -1,113 +1,62 @@
 """RDS and Redis resource collector."""
 from __future__ import annotations
 
-import json
 import logging
-import subprocess
 from typing import Any
 
 from resource_model import Resource
 from cli_utils import cli_call
 from cost_model import estimate_monthly_cost, compute_days_until_expire
+from cms_client import fetch_metrics_parallel
 
 logger = logging.getLogger(__name__)
 
+# RDS uses acs_rds_dashboard with dbInstanceId dimension
 _RDS_CMS_METRICS = {
     "cpu_util_avg": "CpuUsage",
     "mem_util_avg": "MemoryUsage",
     "disk_util_avg": "DiskUsage",
     "iops_util_avg": "IOPSUsage",
-    "net_in_avg": "SQLServer_NetworkInNew",
-    "net_out_avg": "SQLServer_NetworkOutNew",
+    "net_in_avg": "Total_NetworkIn",
+    "net_out_avg": "Total_NetworkOut",
 }
 
+# Redis/Tair uses acs_kvstore (no _dashboard suffix)
 _REDIS_CMS_METRICS = {
     "cpu_util_avg": "CpuUsage",
     "mem_util_avg": "MemoryUsage",
+    "connection_util_avg": "ConnectionUsage",
     "net_in_avg": "IntranetIn",
     "net_out_avg": "IntranetOut",
 }
 
 
-def _fetch_cms_metric(
-    metric_name: str,
-    namespace: str,
-    instance_id: str,
-    days: int = 7,
-) -> float:
-    """Fetch a single CMS metric average over `days` days. Returns 0.0 on failure."""
-    start = (
-        f"$(date -u -d '{days} days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null "
-        f"|| date -u -v-{days}d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
-    )
-    end = "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
-    dimensions = f'[{{"instanceId":"{instance_id}"}}]'
-    cmd = (
-        f"aliyun cms DescribeMetricList"
-        f" --MetricName {metric_name}"
-        f" --Namespace {namespace}"
-        f" --Dimensions '{dimensions}'"
-        f" --StartTime {start}"
-        f" --EndTime {end}"
-        f" --Period 86400"
-    )
-    try:
-        result = subprocess.run(cmd.replace(" --output json", ""), shell=True, capture_output=True, text=True, timeout=30)  # aliyun CLI v3 compat
-        if result.returncode != 0:
-            logger.debug("CMS %s/%s returned non-zero: %s", namespace, metric_name, result.stderr)
-            return 0.0
-        data = json.loads(result.stdout)
-        dps = data.get("Datapoints", "")
-        if not dps:
-            return 0.0
-
-        # Datapoints can be a JSON string or already-parsed list
-        if isinstance(dps, str):
-            try:
-                dps = json.loads(dps)
-            except (json.JSONDecodeError, TypeError):
-                return 0.0
-
-        # Extract values from list of datapoint objects
-        values: list[float] = []
-        if isinstance(dps, list):
-            for dp in dps:
-                if isinstance(dp, dict):
-                    avg = dp.get("Average")
-                    if avg is not None:
-                        try:
-                            values.append(float(avg))
-                        except (ValueError, TypeError):
-                            pass
-        elif isinstance(dps, dict):
-            for v in dps.values():
-                try:
-                    values.append(float(v))
-                except (ValueError, TypeError):
-                    pass
-
-        if not values:
-            return 0.0
-        return sum(values) / len(values)
-    except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception) as e:
-        logger.debug("CMS fetch %s/%s failed: %s", namespace, metric_name, e)
-        return 0.0
-
-
 def _fetch_rds_metrics(instance_id: str) -> dict[str, float]:
+    """Fetch all CMS metrics for an RDS instance in parallel."""
     namespace = "acs_rds_dashboard"
-    metrics: dict[str, float] = {}
-    for field, metric_name in _RDS_CMS_METRICS.items():
-        metrics[field] = _fetch_cms_metric(metric_name, namespace, instance_id)
-    return metrics
+    tasks = [
+        (metric_name, namespace, instance_id, 7, "dbInstanceId")
+        for metric_name in _RDS_CMS_METRICS.values()
+    ]
+    results = fetch_metrics_parallel(tasks, max_workers=len(tasks))
+    return {
+        field: results.get((metric_name, namespace), 0.0)
+        for field, metric_name in _RDS_CMS_METRICS.items()
+    }
 
 
 def _fetch_redis_metrics(instance_id: str) -> dict[str, float]:
-    namespace = "acs_kvstore_dashboard"
-    metrics: dict[str, float] = {}
-    for field, metric_name in _REDIS_CMS_METRICS.items():
-        metrics[field] = _fetch_cms_metric(metric_name, namespace, instance_id)
-    return metrics
+    """Fetch all CMS metrics for a Redis/Tair instance in parallel."""
+    namespace = "acs_kvstore"
+    tasks = [
+        (metric_name, namespace, instance_id, 7, "instanceId")
+        for metric_name in _REDIS_CMS_METRICS.values()
+    ]
+    results = fetch_metrics_parallel(tasks, max_workers=len(tasks))
+    return {
+        field: results.get((metric_name, namespace), 0.0)
+        for field, metric_name in _REDIS_CMS_METRICS.items()
+    }
 
 
 def collect_rds_resources(region: str) -> list[Resource]:
@@ -149,7 +98,9 @@ def _parse_rds(inst: dict[str, Any]) -> Resource:
         iops_util_avg=cms_metrics.get("iops_util_avg", 0.0),
         net_in_avg=cms_metrics.get("net_in_avg", 0.0),
         net_out_avg=cms_metrics.get("net_out_avg", 0.0),
-        monthly_cost=estimate_monthly_cost("rds", "", cpu_cores, memory_gb, disk_gb, is_prepaid),
+        monthly_cost=estimate_monthly_cost(
+            "rds", "", cpu_cores, memory_gb, disk_gb, is_prepaid,
+        ),
         is_prepaid=1 if is_prepaid else 0,
         days_until_expire=compute_days_until_expire(inst.get("ExpireTime")),
     )
@@ -182,7 +133,9 @@ def _parse_redis(inst: dict[str, Any]) -> Resource:
         iops_util_avg=0.0,
         net_in_avg=cms_metrics.get("net_in_avg", 0.0),
         net_out_avg=cms_metrics.get("net_out_avg", 0.0),
-        monthly_cost=estimate_monthly_cost("redis", "", 0, cap_float, 0.0, is_prepaid),
+        monthly_cost=estimate_monthly_cost(
+            "redis", "", 0, cap_float, 0, is_prepaid,
+        ),
         is_prepaid=1 if is_prepaid else 0,
         days_until_expire=compute_days_until_expire(inst.get("EndTime")),
     )

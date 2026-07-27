@@ -131,7 +131,7 @@ structured Markdown reports.
 
 | Model | File | Algorithm | Purpose |
 |-------|------|-----------|---------|
-| Anomaly Detector | `iforest_detector.py` | Z-score thresholding | Detect cost outliers |
+| Anomaly Detector | `zscore_detector.py` | Z-score thresholding | Detect cost outliers |
 | Clusterer | `dbscan_cluster.py` | Vectorized DBSCAN (O(n²) via numpy) | Group similar resources |
 | Cost Predictor | `xgboost_predictor.py` | OLS linear regression | Predict cost from CPU/Mem |
 
@@ -266,7 +266,7 @@ Extracts 15-dimensional feature vectors: capacity, utilization, cost, derived ra
 python3 -c "
 from data_pipeline import load_resources
 from feature_engine import extract_features
-from iforest_detector import detect_anomalies
+from zscore_detector import detect_anomalies
 from dbscan_cluster import cluster_resources
 from xgboost_predictor import predict_cost
 import json
@@ -334,7 +334,7 @@ Run just the anomaly detection step on pre-collected resources.
 python3 -c "
 from data_pipeline import load_resources
 from feature_engine import extract_features
-from iforest_detector import detect_anomalies
+from zscore_detector import detect_anomalies
 
 resources = load_resources('{{user.output_dir}}/resources_enriched.json')
 features = extract_features(resources)
@@ -434,7 +434,7 @@ The generated Markdown report contains 4 sections:
 | **Pipeline** | `pipeline.py` | Parallel resource collection (6 collectors) |
 | **Data Pipeline** | `data_pipeline.py` | JSON serialization/deserialization |
 | **Feature Engine** | `feature_engine.py` | 15-dim feature extraction |
-| **Anomaly Detector** | `iforest_detector.py` | Z-score threshold anomaly detection |
+| **Anomaly Detector** | `zscore_detector.py` | Z-score threshold anomaly detection |
 | **Clusterer** | `dbscan_cluster.py` | Vectorized DBSCAN (numpy) |
 | **Cost Predictor** | `xgboost_predictor.py` | OLS linear regression |
 | **Tag Enricher** | `tag_collector.py` | Batch Tag API enrichment |

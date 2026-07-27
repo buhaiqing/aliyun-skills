@@ -5,9 +5,10 @@ import json
 
 import pytest
 
-from ecs_collector import _parse_cms_datapoints, _sum_disk, _get_tag
+from ecs_collector import _sum_disk, _get_tag
 from db_collector import _parse_rds, _parse_redis
 from net_collector import _parse_slb, _parse_oss_line, _parse_k8s_node
+from cms_client import _parse_cms_datapoints
 from resource_model import Resource
 
 
@@ -33,27 +34,44 @@ class TestParseCmsDatapoints:
         assert result == pytest.approx(4.85)
 
     def test_single_datapoint(self) -> None:
-        data = {"Datapoints": [{"Average": 10.0}]}
+        data = {"Datapoints": [{"timestamp": 1234, "Average": 10.0}]}
         assert _parse_cms_datapoints(data) == 10.0
+
+    def test_datapoint_missing_timestamp_key(self) -> None:
+        data = {"Datapoints": [{"Average": 10.0}]}
+        assert _parse_cms_datapoints(data) == 0.0
 
     def test_datapoint_missing_average_key(self) -> None:
         data = {"Datapoints": [{"timestamp": 123, "Minimum": 1.0}]}
         assert _parse_cms_datapoints(data) == 0.0
 
     def test_datapoint_average_is_none(self) -> None:
-        data = {"Datapoints": [{"Average": None}]}
+        data = {"Datapoints": [{"timestamp": 1, "Average": None}]}
         assert _parse_cms_datapoints(data) == 0.0
+
+    def test_multi_port_aggregation(self) -> None:
+        """SLB-style: multiple entries per timestamp (one per port) should be summed."""
+        data = {
+            "Datapoints": [
+                {"timestamp": 1000, "Average": 10.0, "port": "80"},
+                {"timestamp": 1000, "Average": 20.0, "port": "443"},
+                {"timestamp": 2000, "Average": 15.0, "port": "80"},
+                {"timestamp": 2000, "Average": 25.0, "port": "443"},
+            ]
+        }
+        # ts=1000: 10+20=30, ts=2000: 15+25=40, avg = (30+40)/2 = 35.0
+        assert _parse_cms_datapoints(data) == 35.0
 
     def test_string_encoded_json(self) -> None:
         dps_str = json.dumps([
-            {"Average": 3.0},
-            {"Average": 7.0},
+            {"timestamp": 1, "Average": 3.0},
+            {"timestamp": 2, "Average": 7.0},
         ])
         data = {"Datapoints": dps_str}
         assert _parse_cms_datapoints(data) == 5.0
 
     def test_string_encoded_single_value(self) -> None:
-        data = {"Datapoints": json.dumps([{"Average": 42.0}])}
+        data = {"Datapoints": json.dumps([{"timestamp": 1, "Average": 42.0}])}
         assert _parse_cms_datapoints(data) == 42.0
 
     def test_dict_type_datapoints(self) -> None:
@@ -63,22 +81,24 @@ class TestParseCmsDatapoints:
     def test_non_numeric_average_skipped(self) -> None:
         data = {
             "Datapoints": [
-                {"Average": 5.0},
-                {"Average": "N/A"},
-                {"Average": 10.0},
+                {"timestamp": 1, "Average": 5.0},
+                {"timestamp": 1, "Average": "N/A"},
+                {"timestamp": 2, "Average": 10.0},
             ]
         }
+        # ts=1: 5.0, ts=2: 10.0, avg = 7.5
         assert _parse_cms_datapoints(data) == 7.5
 
     def test_mixed_valid_invalid(self) -> None:
         data = {
             "Datapoints": [
-                {"Average": 10.0},
-                {"Average": None},
-                {"timestamp": 123},
-                {"Average": 20.0},
+                {"timestamp": 1, "Average": 10.0},
+                {"timestamp": 1, "Average": None},
+                {"timestamp": 1},
+                {"timestamp": 2, "Average": 20.0},
             ]
         }
+        # ts=1: 10.0, ts=2: 20.0, avg = 15.0
         assert _parse_cms_datapoints(data) == 15.0
 
     def test_invalid_json_string(self) -> None:
@@ -318,17 +338,17 @@ class TestParseK8sNode:
             "name": "worker-1",
             "instance_type": "ecs.n4.large",
             "cpu": 2,
-            "memory": 8589934592,  # bytes (8 GiB)
-            "disk": 42949672960,   # bytes (40 GiB)
+            "memory": 8388608,  # KiB (8 GiB)
+            "disk": 41943040,   # KiB (40 GiB)
         }
         r = _parse_k8s_node(node)
         assert r.resource_id == "node-xxx"
         assert r.resource_type == "k8s_node"
         assert r.instance_name == "worker-1"
         assert r.cpu_cores == 2
-        # 8589934592 / 1024 / 1024 / 1024 = 8.0
+        # 8388608 / 1024 / 1024 = 8.0
         assert r.memory_gb == pytest.approx(8.0, rel=1e-3)
-        # 42949672960 / 1024 / 1024 / 1024 = 40.0
+        # 41943040 / 1024 / 1024 = 40.0
         assert r.disk_gb == pytest.approx(40.0, rel=1e-3)
 
     def test_zero_values(self) -> None:
