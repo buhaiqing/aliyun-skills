@@ -60,41 +60,49 @@ def _fetch_cms_metric(
             logger.debug("CMS %s for %s returned non-zero: %s", metric_name, instance_id, result.stderr)
             return 0.0
         data = json.loads(result.stdout)
-        dps = data.get("Datapoints", "")
-        if not dps:
-            return 0.0
-
-        # Datapoints can be a JSON string or already-parsed list
-        if isinstance(dps, str):
-            try:
-                dps = json.loads(dps)
-            except (json.JSONDecodeError, TypeError):
-                return 0.0
-
-        # Extract values from list of datapoint objects
-        values: list[float] = []
-        if isinstance(dps, list):
-            for dp in dps:
-                if isinstance(dp, dict):
-                    avg = dp.get("Average")
-                    if avg is not None:
-                        try:
-                            values.append(float(avg))
-                        except (ValueError, TypeError):
-                            pass
-        elif isinstance(dps, dict):
-            for v in dps.values():
-                try:
-                    values.append(float(v))
-                except (ValueError, TypeError):
-                    pass
-
-        if not values:
-            return 0.0
-        return sum(values) / len(values)
+        return _parse_cms_datapoints(data)
     except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception) as e:
         logger.debug("CMS fetch for %s/%s failed: %s", namespace, metric_name, e)
         return 0.0
+
+
+def _parse_cms_datapoints(data: dict[str, Any]) -> float:
+    """Parse CMS DescribeMetricList response and return average value.
+
+    Extracted as a pure function for testability. Returns 0.0 if no valid data.
+    """
+    dps = data.get("Datapoints", "")
+    if not dps:
+        return 0.0
+
+    # Datapoints can be a JSON string or already-parsed list
+    if isinstance(dps, str):
+        try:
+            dps = json.loads(dps)
+        except (json.JSONDecodeError, TypeError):
+            return 0.0
+
+    # Extract values from list of datapoint objects
+    values: list[float] = []
+    if isinstance(dps, list):
+        for dp in dps:
+            if isinstance(dp, dict):
+                avg = dp.get("Average")
+                if avg is not None:
+                    try:
+                        values.append(float(avg))
+                    except (ValueError, TypeError):
+                        pass
+    elif isinstance(dps, dict):
+        for v in dps.values():
+            try:
+                values.append(float(v))
+            except (ValueError, TypeError):
+                pass
+
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
 
 
 def _fetch_ecs_metrics(instance_id: str, region: str, days: int = 7) -> dict[str, float]:
