@@ -76,3 +76,45 @@ class TestRedactRaw:
         from alicloud_shared.chat_context import redact_raw
         result = redact_raw({"foo": 1, "bar": True})
         assert result == {"foo": 1, "bar": True}
+
+
+class TestAdapterRegistry:
+    def test_normalize_unknown_returns_cli_fallback(self):
+        from alicloud_shared.chat_context import normalize
+        ctx = normalize("unknown-platform", {})
+        assert ctx.platform == "unknown-platform"
+        assert ctx.chat_type == "n/a"
+
+    def test_register_then_normalize(self):
+        from alicloud_shared.chat_context import normalize, register_adapter, _ADAPTERS
+        from alicloud_shared.chat_context import ChatContext
+        def my_adapter(payload):
+            return ChatContext(user_id="x", session_id="y", platform="myplat", chat_type="api", raw=payload)
+        try:
+            register_adapter("myplat", my_adapter)
+            ctx = normalize("myplat", {"k": "v"})
+            assert ctx.platform == "myplat"
+            assert ctx.user_id == "x"
+            assert ctx.raw == {"k": "v"}
+        finally:
+            _ADAPTERS.pop("myplat", None)
+
+
+class TestNormalizeCli:
+    def test_default_user_id_anonymous(self, monkeypatch):
+        monkeypatch.delenv("USER", raising=False)
+        from alicloud_shared.chat_context import normalize_cli
+        ctx = normalize_cli()
+        assert ctx.user_id == "anonymous"
+
+    def test_uses_user_env(self, monkeypatch):
+        monkeypatch.setenv("USER", "alice")
+        from alicloud_shared.chat_context import normalize_cli
+        ctx = normalize_cli()
+        assert ctx.user_id == "alice"
+
+    def test_session_id_has_cli_prefix(self, monkeypatch):
+        from alicloud_shared.chat_context import normalize_cli
+        ctx = normalize_cli()
+        assert ctx.session_id.startswith("cli-")
+        assert ctx.platform == "cli"
