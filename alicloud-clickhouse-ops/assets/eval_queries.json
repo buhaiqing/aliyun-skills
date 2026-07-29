@@ -1,0 +1,188 @@
+{
+  "skill": "alicloud-clickhouse-ops",
+  "cli_applicability": "dual-path",
+  "editions": ["enterprise", "classic"],
+  "version": "1.0.0",
+  "queries": [
+    {
+      "query": "查询 ClickHouse 实例",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "any"
+    },
+    {
+      "query": "列出所有 ClickHouse 集群",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 实例详情",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "any"
+    },
+    {
+      "query": "创建 ClickHouse 实例",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "enterprise"
+    },
+    {
+      "query": "创建企业版 ClickHouse 集群",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "enterprise"
+    },
+    {
+      "query": "创建 serverless ClickHouse",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    },
+    {
+      "query": "删除 ClickHouse 实例",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "any"
+    },
+    {
+      "query": "释放 ClickHouse 集群",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P0",
+      "edition": "any"
+    },
+    {
+      "query": "重启 ClickHouse",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "停止 ClickHouse 实例",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    },
+    {
+      "query": "启动 ClickHouse",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    },
+    {
+      "query": "扩容 ClickHouse 节点",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    },
+    {
+      "query": "ClickHouse 升配",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "创建 ClickHouse 账户",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "重置 ClickHouse 密码",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "修改 ClickHouse 账户权限",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "删除 ClickHouse 账户",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 备份策略",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "查询 ClickHouse 备份",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 慢查询",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "分析 ClickHouse 慢查询趋势",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 白名单",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "修改 ClickHouse 安全 IP",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 端点",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 连接串",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 计算组",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    },
+    {
+      "query": "终止长查询 ClickHouse",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 配置修改",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 升级引擎版本",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "any"
+    },
+    {
+      "query": "ClickHouse 多可用区部署",
+      "expected_skill": "alicloud-clickhouse-ops",
+      "priority": "P1",
+      "edition": "enterprise"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+# Example configuration for alicloud-clickhouse-ops
+# This file serves as a template for ClickHouse instance configuration.
+# CLI Applicability: dual-path (Enterprise Edition CLI + Classic Edition SDK)
+
+# UX Configuration
+# All UX settings follow ../../alicloud-skill-generator/references/user-experience-spec.md
+ux:
+  # Onboarding settings
+  onboarding:
+    quick_start_enabled: true
+    show_capabilities_table: true
+    prerequisite_checklist: true
+    edition_selection_prompt: true  # NEW: dual-path skills must prompt for edition
+
+  # Interaction settings
+  interaction:
+    max_prompts_describe: 1
+    max_prompts_create: 3
+    max_prompts_modify: 2
+    max_prompts_delete: 1
+    confirmation_required_for_destructive: true
+    smart_defaults_enabled: true
+
+  # Smart defaults (applied when user does not specify)
+  smart_defaults:
+    instance_description_pattern: "ch-cluster-{timestamp}"
+    edition: "enterprise"  # NEW: default to Enterprise (CLI-supported)
+    engine_version: "23.8"
+    node_count: 2
+    node_count_min: 2
+    node_count_max: 16
+    node_scale_min: 4   # Serverless
+    node_scale_max: 8   # Serverless (explicit, prevents runaway)
+    storage_quota_gb: 100
+    db_time_zone: "UTC"
+    region_source: "env.ALIBABA_CLOUD_REGION_ID"
+    timeout_seconds: 1800
+    poll_interval_seconds: 30
+
+  # Path selection (NEW for dual-path)
+  path_selection:
+    # Auto-detect from instance ID prefix / API response
+    enterprise_indicators:
+      - "NodeCount field present in DescribeDBInstanceAttribute"
+      - "API version 2023-05-22"
+      - "StartDBInstance / StopDBInstance available"
+    classic_indicators:
+      - "DBClusterId field present"
+      - "API version 2019-11-11"
+      - "ModifyDBCluster / CreateDatabase legacy APIs"
+    fallback: "ask_user"  # Don't guess; prompt user
+
+  # Feedback settings
+  feedback:
+    show_progress_for_ops_over_seconds: 10
+    show_elapsed_time: true
+    show_estimated_remaining: true
+    success_show_next_steps: true
+    failure_show_remediation: true
+
+  # Error handling settings
+  error_handling:
+    format: "[ERROR] {code}: {summary}\n\nWhat happened:\n{explanation}\n\nHow to fix:\n{remediation}\n\nNext step:\n{next_action}"
+    auto_retry_throttling: true
+    max_retries_throttling: 3
+    backoff_strategy: "exponential"
+    show_request_id: true
+
+  # Escalation settings
+  escalation:
+    template_enabled: true
+    include_request_id: true
+    include_instance_id: true
+    include_error_code: true
+    include_timestamp: true
+    support_channel: "https://workorder.console.aliyun.com/"
+
+# Credentials
+credentials:
+  access_key_id: "{{env.ALIBABA_CLOUD_ACCESS_KEY_ID}}"
+  access_key_secret: "{{env.ALIBABA_CLOUD_ACCESS_KEY_SECRET}}"
+  region_id: "{{env.ALIBABA_CLOUD_REGION_ID}}"
+
+# Plugin (Enterprise Edition)
+plugin:
+  name: "aliyun-cli-clickhouse"
+  install_command: "aliyun plugin install --names aliyun-cli-clickhouse"
+  verify_command: "aliyun clickhouse DescribeRegions"
+  min_version: "v0.7.1"
+
+# SDK (Classic Edition)
+sdk:
+  language: "go"
+  package: "github.com/alibabacloud-go/clickhouse-20191111/v3/client"
+  go_version_minimum: "1.21"
+  setup_script: "./alicloud-jit-setup.sh"
+
+# Instance defaults
+instance_defaults:
+  region: "cn-hangzhou"
+  edition: "enterprise"
+  engine: "ClickHouse"
+  engine_version: "23.8"
+  node_count: 2
+  storage_quota_gb: 100
+  charge_type: "PostPaid"
+  timeout_seconds: 1800
+  poll_interval_seconds: 30
+  multi_zone_enabled: false  # Enable for production HA
+
+# Serverless defaults (Enterprise Edition)
+serverless_defaults:
+  enabled: false
+  node_scale_min: 4
+  node_scale_max: 8  # Explicit guard against runaway billing
+  min_storage_gb: 100
+  max_storage_gb: 1000
+
+# Classic Edition defaults (SDK path)
+classic_defaults:
+  # Use only when instance is confirmed Classic edition
+  node_class: "S1.NORMAL"
+  storage_type: "cloud_essd"
+  enable_public_connection: false
+
+# Account defaults
+account_defaults:
+  account_type: "Normal"  # Normal or Super
+  dml_auth_setting: "ReadOnly"  # ReadOnly / ReadWrite / DDLOnly / ReadOnlyDDL / All
+  password_min_length: 8
+  password_max_length: 32
+  password_complexity: 3  # Must contain 3 of {upper, lower, digit, symbol}
+
+# Security IP defaults
+security_ip_defaults:
+  initial_list: "127.0.0.1"  # Forces explicit whitelisting
+  modify_mode: 1  # 1=append (safe), 0=overwrite (dangerous)
+  prohibit_in_production:
+    - "0.0.0.0/0"
+
+# Backup defaults
+backup_defaults:
+  auto_backup_enabled: true
+  preferred_backup_period: "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday"
+  preferred_backup_time: "02:00Z"
+  backup_retention_period: 7
+  cross_region_enabled: false
+  backup_before_restart: true
+  backup_before_upgrade: true
+  backup_before_delete: true  # Verify backup exists before DeleteDBInstance
+
+# Slow query monitoring
+slow_query_defaults:
+  enabled: true
+  threshold_ms: 1000
+  top_n_records: 20
+  kill_long_running_seconds: 600  # 10 min
+
+# Monitoring (CMS)
+monitoring:
+  namespace: "acs_clickhouse"
+  metrics:
+    - name: "cpu_usage"
+      threshold: 80
+      period_seconds: 300
+      evaluation_count: 2
+    - name: "memory_usage"
+      threshold: 85
+      period_seconds: 300
+      evaluation_count: 2
+    - name: "disk_usage"
+      threshold: 80
+      period_seconds: 300
+      evaluation_count: 2
+    - name: "connection_usage"
+      threshold: 80
+      period_seconds: 300
+      evaluation_count: 1
+    - name: "failed_query_count"
+      threshold: 0
+      period_seconds: 60
+      evaluation_count: 1
+    - name: "slow_query_count"
+      threshold: 10
+      period_seconds: 60
+      evaluation_count: 1
+
+# Well-Architected settings
+well_architected:
+  security:
+    https_enabled: true
+    whitelist_restriction: true
+    vpc_only_access: true  # Public endpoint disabled
+    ram_least_privilege: true
+    actiontrail_enabled: true
+
+  stability:
+    min_nodes: 2
+    multi_zone_deployment: false  # Set true for production
+    daily_backup: true
+    multi_zone_for_production: true
+
+  cost:
+    serverless_for_variable_workload: false
+    stop_not_delete_for_dev: true
+    right_sizing_enabled: true
+    idle_detection_enabled: true
+    node_scale_max_explicit: true  # Always set explicit max
+
+  efficiency:
+    batch_operations_enabled: true
+    auto_backup_enabled: true
+    slow_query_alerting: true
+    alarm_storm_handling: true
+
+  performance:
+    cms_monitoring_enabled: true
+    slow_log_analysis_enabled: true
+    computing_group_for_workload_isolation: false  # Set true for production
+    query_optimization_enabled: true
+
+# GCL settings
+gcl:
+  enabled: true
+  max_iter: 2
+  destructive_op_confirmation: true
+  backup_required_for_delete: true
+  password_never_log: true
+  serverless_node_scale_max_required: true
+  security_ip_overwrite_justification_required: true
+
+# Output settings
+output:
+  json_paths:
+    db_instance_id: "Body.DBInstanceId"
+    db_instance_status: "Body.DBInstance.DBInstanceStatus"
+    db_instance_description: "Body.DBInstance.DBInstanceDescription"
+    node_count: "Body.DBInstance.NodeCount"
+    engine_version: "Body.DBInstance.EngineVersion"
+    backup_id: "Body.Backups.Backup[0].BackupId"
+    backup_status: "Body.Backups.Backup[0].BackupStatus"
+    account_name: "Body.Accounts.Account[0].AccountName"
+    security_ip_list: "Body.SecurityIPList[0].SecurityIPList"
+    endpoint_address: "Body.Data.Endpoints[0].Address"

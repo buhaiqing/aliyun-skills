@@ -1,6 +1,6 @@
 # Skill 功能矩阵 (Skill Matrix)
 
-> 速览：本仓库共有 **51 个 `alicloud-*` 技能目录**（全部含 `SKILL.md`，详见下方两个表）。
+> 速览：本仓库共有 **52 个 `alicloud-*` 技能目录**（全部含 `SKILL.md`，详见下方两个表）。
 > 下表按 **能力维度** 标注每个技能能做什么，帮助你快速找到对应技能，而不是逐个翻 `SKILL.md`。
 > 完整触发词与参数见各技能目录下的 `SKILL.md`。
 > 客观列（生命周期/监控告警/诊断排障）可由 `python3 scripts/gen_skill_matrix.py generate` 从 frontmatter 自动生成；CI 通过 `check` 子命令检测漂移。安全合规等主观列仍需人工维护。
@@ -40,7 +40,7 @@
 | `nat-ops` | NAT 网关 | ✅ | — | ✅ | — | SNAT/DNAT/FULLNAT 配置 |
 | `vpc-ops` | VPC 专有网络 | ✅ | — | — | — | 网络资源全生命周期 |
 | `cen-ops` | 云企业网 CEN | ✅ | ✅ | ✅ | — | 跨地域组网 |
-| `dns-ops` | 云解析 DNS | ✅ | — | — | — | 公网/私有权威解析 |
+| `clickhouse-ops` | ClickHouse | ✅ | ✅ | ✅ | — | 实时分析库，双路径（企业版 CLI + 经典版 SDK） |
 | `oss-ops` | 对象存储 OSS | ✅ | — | — | — | 存储桶与对象管理 |
 | `nas-ops` | 文件存储 NAS | ✅ | — | — | — | 文件系统创建/挂载/删除 |
 | `elasticsearch-ops` | Elasticsearch | ✅ | ✅ | ✅ | — | 部署/配置/排障，含 AIOps |
