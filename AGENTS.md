@@ -87,22 +87,7 @@ Canonical skill: `karpathy-guidelines`.
 | **CG3** | **Grep 作为 fallback** | 以下情况使用 grep/Glob/Read：CodeGraph MCP 不可用/超时、搜索结果为空（可能索引未覆盖）、需要文本正则匹配（非结构化搜索）、需要读取文件完整内容进行编辑 |
 | **CG4** | **Change → Sync → Verify** | 每次代码修改后必须：1) `mcp__codegraph__sync` 更新索引 → 2) 用 CodeGraph 验证修改的一致性（引用未断裂、符号未丢失） |
 
-**决策流程**：
-
-```
-代码理解任务
-  │
-  ├─ Step 1: mcp__codegraph__sync         ← 同步索引
-  │
-  ├─ Step 2: CodeGraph MCP 查询           ← 优先尝试
-  │     ├─ 成功且有结果 → 使用结果，结束
-  │     └─ 失败/无结果/超时 → Step 3
-  │
-  └─ Step 3: Grep/Glob/Read fallback      ← 仅在 CodeGraph 不可用时
-        ├─ grep -n "pattern" -- "*.py"     （精确文本搜索）
-        ├─ Glob "**/*.py"                   （文件模式匹配）
-        └─ Read file_path                   （读取完整内容）
-```
+**决策流程**：Sync → CodeGraph MCP 查询 → 成功则用结果，失败则 fallback Grep/Glob/Read。
 
 **禁止项（Anti-patterns）**：
 - ❌ 跳过 CodeGraph Sync，直接用 grep 搜索代码
@@ -242,19 +227,7 @@ In the Implement phase, **TDD is non-negotiable** — see the Iron Law:
 
 Combined with GCL (§12), every cloud operation also runs through the Generator ↔ Critic adversarial loop.
 
-### 4.4 Superpowers Skill Binding
-
-This workflow is realized through the Superpowers skill suite:
-
-| Phase | Superpowers Skill |
-|-------|-------------------|
-| SPEC | `superpowers:writing-plans` (spec mode) / `superpowers:brainstorming` |
-| PLAN | `superpowers:writing-plans` (plan mode) |
-| IMPLEMENT | `superpowers:subagent-driven-development` + `superpowers:test-driven-development` + `superpowers:executing-plans` |
-
-> When a task arrives, the default reflex is **NOT** "open the editor". It is **"write the Spec, get alignment, then Plan"**.
-
-### 4.5 Enforcement
+### 4.4 Enforcement
 
 | If You See | Action |
 |------------|--------|
@@ -269,39 +242,11 @@ This workflow is realized through the Superpowers skill suite:
 
 ## 5. Idempotent Provisioning
 
-```bash
-# Probe → install only if missing → execute
-if ! command -v redis-cli &>/dev/null; then
-  apt-get install -y redis-tools
-fi
-redis-cli -h host DEL key
-```
+Probe → install only if missing → execute. Use `command -v` checks before installation commands.
 
 ---
 
-## 6. Cross-Skill Composition
-
-Inline necessary commands in SKILL.md. Document the dependency in comments. Do NOT formal import/require another skill.
-
-```markdown
-# Execution (uses aliyun ecs RunCommand; see alicloud-ecs-ops for advanced usage)
-aliyun ecs RunCommand --RegionId ... --CommandContent "..."
-```
-
----
-
-## 7. Data Plane vs Control Plane
-
-| Plane | Capability | Channel | Example Operations |
-|-------|-----------|---------|-------------------|
-| **Control Plane** | Instance lifecycle, config | `aliyun {product}` API | Create/Delete/Describe/Modify instances |
-| **Data Plane** | Data read/write, command execution | `redis-cli` / SDK direct | DEL, GET, SET, TTL, EVAL |
-
-Data-plane gap: `redis-ops` → `ecs-ops RunCommand` → target ECS executes `redis-cli`.
-
----
-
-## 8. Security Constraints
+## 6. Security Constraints
 
 - **Never output credentials**: Replace `ALIBABA_CLOUD_ACCESS_KEY_SECRET` in logs with `****`.
 - **Passwords via env vars**: `REDISCLI_AUTH` instead of `-a <password>`.
@@ -352,9 +297,8 @@ docker compose --profile runtime up -d    # Minimal runtime
 ./alicloud-jit-setup.sh
 
 # Python 3.10 baseline
-python3 scripts/check_py310_compat.py
 pip install -r alicloud-gcl-runner-ops/requirements.txt   # pyyaml + pytest
-cd alicloud-gcl-runner-ops/scripts && python3 -m unittest gcl_runner_test -v
+python3 -m unittest discover -s alicloud-gcl-runner-ops/scripts
 ```
 
 ---
@@ -433,20 +377,7 @@ After every skill update, auto-run 2 rounds of self-review and fix all issues.
 
 ## 12. Generator-Critic-Loop (GCL)
 
-完整规范已下沉到 [`docs/generator-critic-loop.md`](docs/generator-critic-loop.md)。包含：
-
-- **Roles**：G / H / C / O 四角色
-- **Critic Test & Regression Assessment**（MANDATORY）
-- **Rubric Dimensions**：≥5 维度（Correctness / Safety / Idempotency / Traceability / Spec Compliance）
-- **Loop Flow**：H pre-check → G execute → C critique → O decide
-- **Termination**：PASS / MAX_ITER / SAFETY_FAIL / HALLUCINATION_ABORT
-- **Trace Audit**：每 run 必落盘 JSON，含脱敏
-- **Skill Classification**：30+ skill 表，按 risk 分 required/recommended/optional
-- **Anti-Patterns**：禁用模式清单
-
-**完整规范**：[`docs/gcl-spec.md`](docs/gcl-spec.md)（含 trace schema、per-skill rubric 配置）
-
-**速查入口**：[`docs/generator-critic-loop.md`](docs/generator-critic-loop.md)
+完整规范：[`docs/gcl-spec.md`](docs/gcl-spec.md) (roles/rubric/loop/trace) · 速查：[`docs/generator-critic-loop.md`](docs/generator-critic-loop.md)
 
 ---
 
@@ -458,11 +389,7 @@ After every skill update, auto-run 2 rounds of self-review and fix all issues.
 | **R2** | **Do NOT** `git add` runtime artifacts. If user asks, STOP, list paths + risks, wait for explicit confirmation |
 | **R3** | Committed content = templates only (e.g. `environments/*.example`) |
 
-**Layout** (`${SKILLS_DIR}/.runtime/`):
-
-```text
-audit/ · traces/ · sessions/ · logs/ · metrics/ · memory/ · reflexion/ · token/
-```
+**Layout** (`${SKILLS_DIR}/.runtime/`): `audit/ · traces/ · sessions/ · logs/ · metrics/ · memory/ · reflexion/ · token/`
 
 Cleanup: `make runtime-clean` (dry-run) / `make runtime-clean-apply` / `make memory-maintain-apply`
 
@@ -484,11 +411,7 @@ Full reference: [docs/cli-usage-patterns.md](docs/cli-usage-patterns.md)
 
 ### 14.2 Error Recovery
 
-1. **STOP** — Do not retry with guessed parameters
-2. **READ** — Check error message for hints
-3. **HELP** — `aliyun <product> <action> --help`
-4. **FIX** — Correct format
-5. **RETRY** — Execute with verified parameters
+STOP → READ error → `--help` → FIX format → RETRY
 
 ### 14.3 Cross-Platform Date Compatibility (MANDATORY)
 
@@ -498,8 +421,6 @@ Always use dual-branch fallback pattern:
 # 1-hour offset (Linux | macOS)
 $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)
 ```
-
-Never hardcode single-platform `date -d` or `date -v`.
 
 ---
 
@@ -516,51 +437,18 @@ Never hardcode single-platform `date -d` or `date -v`.
 **Framework entry**：[`alicloud-runtime-harness-ops`](alicloud-runtime-harness-ops/SKILL.md)
 
 ---
+## 16. Execution Memory & Reflexion (Layers 1-2)
 
-## 16. Execution Memory Index
+Every GCL trace is indexed into JSONL execution memory; failure patterns are deduped into a reflexion store. Full specs: [§16](docs/gcl-spec.md#16-memory-index--execution-memory-layer) / [§15](docs/gcl-spec.md#15-reflexion-layer-2).
 
-Every GCL trace is automatically indexed into a JSONL-based execution memory. Full spec: [docs/gcl-spec.md §16](docs/gcl-spec.md#16-memory-index--execution-memory-layer)
+| Layer | Functions | Non-fatal |
+|-------|-----------|-----------|
+| **L1 Memory** | `memory_store`/`retrieve`/`maintain` | `[WARN]` on failure |
+| **L2 Reflexion** | `reflexion_extract`/`store`/`retrieve`/`report`/`maintain` | `[WARN]` on failure |
 
-| Function | Purpose |
-|----------|---------|
-| `memory_store(trace)` | Index GCL trace into JSONL (skill, operation) |
-| `memory_retrieve(skill, operation, top_k)` | Return most recent `top_k` entries |
-| `memory_maintain(memory_root, keep_days, apply)` | Prune old entries; dry-run supported |
+**Ownership**: Product skills own runbook/GCL gates; shared runtime owns store/persist/maintain; repo tooling owns reports/summaries. Product skills **MUST NOT** document memory/Reflexion workflows.
 
-**Non-fatal guarantee**: Memory store failures log as `[WARN]` and never change runner exit code.
-
-### 16.8 Platform Ownership — Product Skills Excluded
-
-| Owner | Responsibility |
-|-------|----------------|
-| **Product skill** | Runbook, GCL gate artifacts, SkillOpt wrapper |
-| **Shared runtime** | `memory_store`/`memory_store_lite`, trace persist, Reflexion extract/store, TTL maintain |
-| **Repo / ops tooling** | `reflexion report`, memory maintain, offline LLM summarization |
-
-Product skills **MUST NOT** document skill-owned memory/Reflexion/learning workflows as part of the skill contract.
-
----
-
-## 17. Reflexion Memory (Layer 2)
-
-Extracts structured failure patterns from GCL traces into a deduped JSON store. Full spec: docs/gcl-spec.md §15
-
-| Function | Purpose |
-|----------|---------|
-| `reflexion_extract(trace)` | Extract failure pattern |
-| `reflexion_store(pattern)` | Store deduped + count increment |
-| `reflexion_retrieve(skill, op, top_k)` | R2 pre-flight traps |
-| `reflexion_report()` | Regenerate `docs/failure-patterns.md` |
-| `reflexion_maintain(apply)` | Prune patterns (count < 3 → removed) |
-
-**Five failure categories**: `cli_parameter`, `skill_generation`, `cross_skill`, `runtime`, `token_efficiency`
-
-**Non-fatal guarantee**: Same as Layer 1.
-
-**Line budget**: `docs/failure-patterns.md` ≤ 200 lines.
-
----
-
+**L2 categories**: `cli_parameter` / `skill_generation` / `cross_skill` / `runtime` / `token_efficiency`. Budget: `docs/failure-patterns.md` ≤ 200 lines.
 ## 18. Compound Engineering（复利工程）
 
 > **核心原则**：每次设计/开发不只解决当前问题，还要沉淀可复用的模式、模板和决策记录，让下一次同类工作更快更好。
@@ -596,104 +484,15 @@ Markdown 标题转 GitHub 锚点的规则：`lower` → 删除所有**非** `[�
 
 ### 18.7 FinOps/ML 模块开发复盘（`alicloud-aiops-ml` 试点沉淀）
 
-> 6 轮迭代（a35b0af → 1c007be）的实战经验。本项目未来添加 Python 工具模块（尤其是涉及数值计算 / subprocess / 并发）时必读。
+> 6 轮迭代的实战经验。本项目未来添加 Python 工具模块时必读。
 
-**FM-R1 — 数值算法的 RED 测试必须包含 4 项不变性**
-
-向量化的距离/归一化/矩阵运算，RED 测试必须有：
-
-- ✅ **对称性**：`A == A.T`（距离矩阵、协方差矩阵）
-- ✅ **对角线**：`diag(A) == 0`（自距离为零）
-- ✅ **vs 朴素 O(n²) 参考实现**：`np.testing.assert_allclose(..., atol=1e-10)` —— 朴素循环慢但正确，是数值正确性的 ground truth
-- ✅ **边界**：empty / single element / identical / well-separated
-
-反模式：用 `atol=1e-7` 觉得"够严"。浮点恒等式（如 `‖a-b‖² = ‖a‖² + ‖b‖² - 2a·b`）会产生 ~1e-16 负零误差，`np.sqrt(1e-16)` 给出 `1e-8` —— 会被 `atol=1e-7` 放过但破坏对角线对称性。
-
-**FM-R2 — 接口破坏要么显式文档要么给默认值**
-
-新增必填参数（如 `enrich_tags(..., account_id)`）的两种合规做法：
-
-```python
-# 选项 A：默认值 + DeprecationWarning（推荐，向后兼容）
-def enrich_tags(resources, region, account_id=None):
-    if account_id is None:
-        warnings.warn("account_id required in next release", DeprecationWarning, stacklevel=2)
-        account_id = os.environ.get("ALIBABA_CLOUD_ACCOUNT_ID", "")
-
-# 选项 B：commit message 显式写 BREAKING CHANGE（破坏 OK，但必须声明）
-# Commit message 必须含 "BREAKING CHANGE: ..." 段，便于 grep
-```
-
-反模式：静默把必填参数加到中间位置，无 commit 标记，无测试更新——调用方必崩但发现得很晚。
-
-**FM-R3 — 性能测试用绝对上界，不用相对比较**
-
-```python
-# ✅ 绝对上界（CI 抖动不影响）
-def test_vectorized_dbscan_completes_quickly():
-    elapsed = measure_time(lambda: cluster_resources(resources, features))
-    assert elapsed < 2.0, f"n=500 took {elapsed:.2f}s; expected <2s"
-
-# ❌ 相对比较（CI 抖动会假阳性 / 假阴性）
-def test_vectorized_dbscan_faster_than_legacy():
-    assert new_elapsed < legacy_elapsed  # 新实现有 import overhead，n 小时反慢
-```
-
-**FM-R4 — `except Exception` 必须配套 logging + 文档意图**
-
-```python
-# ✅ 标准格式
-try:
-    results[name] = future.result()
-except Exception as e:                    # 只捕 Exception，不吞 BaseException
-    logger.warning("Collector %s failed for region=%s: %s", name, region, e)
-    results[name] = []
-    failures[name] = e                    # 记录失败供后续分析
-
-if failures and len(failures) == len(collectors):
-    raise RuntimeError(f"All collectors failed: {sorted(failures)}")  # 全失败时显式抛
-```
-
-反模式：裸 `except Exception: pass` —— 调试时找不到失败原因，`Ctrl+C` 也被吞（生产环境大坑）。**KeyboardInterrupt / SystemExit 自动传播**（它们是 BaseException 子类），无需额外处理。
-
-**FM-R5 — 向量化性能优化的 4 步协议**
-
-```
-1. 基线测量：time.perf_counter() 实测原版耗时（必须有数，不是"感觉慢"）
-2. RED 测试断言"绝对上界"：elapsed < 2.0（不用相对比较）
-3. 实现：prefer O(n²) 算法 → numpy einsum/cdist/identity trick
-4. 量化对比：新耗时 / 旧耗时 + 峰值内存
-```
-
-实测案例（`alicloud-aiops-ml/dbscan_cluster.py`）：
-
-- DBSCAN n=1000: 5.92s → 0.11s (**52x**)
-- 距离矩阵内存: 30.5MB → 23.0MB (**-25%**)
-
-**FM-R6 — 优化后必须删除 dead code**
-
-性能对比保留下来的旧函数（如 `_simple_dbscan`）如果不删：
-
-- 维护负担：以后 bugfix 只改新版，旧版漂移
-- 调用歧义：新人不知道该用哪个
-
-判断标准：在主代码路径上 grep，确认只有测试文件 import。纯测试用 → 删除。
-
-**FM-R7 — 4 轮 review 的共同规律**
-
-`alicloud-aiops-ml` 经过 6 轮 review（3 轮 bug fix + 1 轮 perf + 2 轮 perf review），发现一个反直觉的模式：
-
-> **每一轮 review 都只能找到「前面 round 引入的新 bug」**。Round 3 修复的 ARN 硬编码其实是 Round 1 重构时引入的；Round 4 的 H2 浮点噪声是 Round 4 自家向量化引入的。
-
-结论：**N+1 轮 review 的价值递减但不为零**——至少还能捕获 self-introduced bug。建议任何 Python 工具模块至少做 2 轮 review（功能正确性 + 安全性/性能），超过 3 轮 ROI 递减。
-
-**FM-R8 — `code-reviewer` agent 不可用时的 fallback 协议**
-
-OpenCode 当前 session 没有 `code-reviewer` subagent_type。Fallback 流程：
-
-1. 仍按 skill 协议调用一次（验证不可用）
-2. 失败后**自己 review**，但保持输出格式统一：CRITICAL/HIGH/MEDIUM/LOW + file:line 引用 + fix 建议
-3. 不要"为了通过"放过真问题
-4. **触发第二轮**（自审）捕获第一轮漏掉的，特别是 self-introduced bug
-
-反模式：跳过 review 直接 ship。
+| # | 规则 | 要旨 | 反模式 |
+|---|------|------|--------|
+| **FM-R1** | 数值 RED 测试 4 不变性 | 对称性 + 对角线 + vs 朴素参考 + 边界 | `atol=1e-7` 放过浮点噪声破坏对称性 |
+| **FM-R2** | 接口破坏声明 | 默认值+DeprecationWarning，或 commit 写 BREAKING CHANGE | 静默加必填参数，无标记无测试 |
+| **FM-R3** | 性能测试绝对上界 | `elapsed < 2.0`，不用相对比较 | 用"新比旧快"断言，CI 抖动假阳性 |
+| **FM-R4** | except Exception 必 logging | `logger.warning(...)` + 记录 failures；全失败时 re-raise | 裸 `except Exception: pass`（吞 Ctrl+C） |
+| **FM-R5** | 向量化 4 步协议 | 基线→RED→实现→量化对比 | 无基线直接优化 |
+| **FM-R6** | 优化后删 dead code | grep 确认只有测试 import 则删除 | 保留旧函数，漂移 + 歧义 |
+| **FM-R7** | review 轮次 ROI | ≥2 轮（功能+安全/性能）；>3 轮 ROI 递减 | 跳过 review |
+| **FM-R8** | code-reviewer fallback | 调用→失败→自审→二轮 | 跳过直接 ship |
