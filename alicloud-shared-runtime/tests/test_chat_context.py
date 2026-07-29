@@ -2,6 +2,34 @@
 import pytest
 
 
+class TestContextVar:
+    def test_current_returns_none_by_default(self):
+        from alicloud_shared.chat_context import current
+        assert current() is None
+
+    def test_bind_then_current(self):
+        from alicloud_shared.chat_context import bind, current, ChatContext
+        ctx = ChatContext(user_id="u", session_id="s", platform="cli", chat_type="n/a", raw={})
+        bind(ctx)
+        try:
+            assert current() == ctx
+        finally:
+            # reset for other tests
+            from alicloud_shared.chat_context import _ctx_var
+            _ctx_var.set(None)
+
+    def test_bind_overwrites(self):
+        from alicloud_shared.chat_context import bind, current, ChatContext, _ctx_var
+        try:
+            ctx1 = ChatContext(user_id="u1", session_id="s1", platform="wecom", chat_type="group", raw={})
+            ctx2 = ChatContext(user_id="u2", session_id="s2", platform="feishu", chat_type="p2p", raw={})
+            bind(ctx1)
+            bind(ctx2)
+            assert current() == ctx2
+        finally:
+            _ctx_var.set(None)
+
+
 class TestChatContext:
     def test_required_fields(self):
         from alicloud_shared.chat_context import ChatContext
