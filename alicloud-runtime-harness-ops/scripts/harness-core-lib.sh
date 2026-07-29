@@ -1603,7 +1603,7 @@ _skillopt_emit_direct_trace() {
             params: $params,
             input: [],
             resource_dimensions: {},
-            missing_dimensions: "[]",
+            missing_dimensions: false,
             warning: null,
             suggestion: null,
             start_time: $ts,

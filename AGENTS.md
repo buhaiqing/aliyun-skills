@@ -456,7 +456,7 @@ $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%
    }
    ```
    绕过 Wrapper（被 `require_skillopt_wrapper` 守卫拒绝）的调用由 `skillopt_run_aliyun` 发射 `entrypoint: "direct"` trace（`invocation.raw_command` = 原始命令行），仍返回 64 拒绝。测试上下文（`_SKILLOPT_SKIP_WRAPPER_CHECK=1`）豁免。
-3. **每个产品 Skill 必须声明 wrapper-first 且存在 wrapper 脚本**：SKILL.md 须含 `EXECUTION MANDATORY RULE` 块并同时引用 `harness-wrapper` 与 `skillopt-wrapper`；`scripts/` 下须存在 `*-harness-wrapper.sh`。该约束由 `scripts/validate-wrapper-first-docs.sh` 在合并前强制（44 个产品 skill 已全绿）。
+3. **每个产品 Skill 必须声明 wrapper-first 且存在 wrapper 脚本**：SKILL.md 须含 `EXECUTION MANDATORY RULE` 块并同时引用 `harness-wrapper` 与 `skillopt-wrapper`；`scripts/` 下须存在 `*-harness-wrapper.sh`。该约束由 `scripts/validate-wrapper-first-docs.sh` 在合并前强制（基线扫描时全部产品 skill 已全绿；该脚本动态统计，新增产品 skill 自动纳入校验）。
 4. **库目录豁免**：`alicloud-runtime-harness-ops` 与 `alicloud-skillopt-ops` 是提供 Harness 的库，自身不该有产品 wrapper，门禁跳过这两个目录。
 
 ### 数据契约（trace-*.json 顶层）

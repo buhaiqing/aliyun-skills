@@ -49,7 +49,20 @@
   ```
 - **`direct` trace**：`skillopt_run_aliyun` 在 `require_skillopt_wrapper` 拒绝处，改为**先发射 `entrypoint:"direct"` trace**（带 `raw_command` = 原始 argv），仍返回 64 拒绝。测试上下文（`_SKILLOPT_SKIP_WRAPPER_CHECK=1`）豁免。
 - **Langfuse 镜像**：`_skillopt_langfuse_create_trace` 的 `metadata` 增加 `invocation.entrypoint` + `wrapper`。
-- **审计脚本** `scripts/audit-wrapper-coverage.sh`：扫 `.runtime/traces/*/trace-*.json`，列出 `entrypoint != "wrapper"`（或缺失 `invocation`），exit 1 若有（CI 闭环）。可选 `--crosscheck-actiontrail` 用现有 `gcl-actiontrail-crosscheck` 校验 `direct` 为真实云事件。
+- **审计脚本** `scripts/audit-wrapper-coverage.sh`：扫指定 `TRACE_DIR`（**必填**，不默认扫全仓库 `.runtime`，避免历史 `direct` trace 让 CI 永久红）。两种模式：
+  - 默认：缺失 `invocation` 块 = 硬失败（exit 1，schema 违规）；`entrypoint:"direct"` 仅 WARN（可观测的绕过信号，非硬失败）。
+  - `--strict`：任何非 wrapper trace（含 direct）均 exit 1。
+  - CI 必须传**本次运行的新鲜 trace 目录**；可选 `--crosscheck-actiontrail`（若 `gcl-actiontrail-crosscheck` 存在）校验 direct 为真实云事件。
+
+## 4.1 不可打破的不变式（INV — non-negotiable）
+
+> 用户明确要求：本地数据源是首要真相源，Langfuse 仅为下游上报，此顺序**绝不能回归**。
+
+- **INV-1（本地优先）**: `skillopt_trace_start` 与 `_skillopt_emit_direct_trace` **必须先**把完整 trace 写入本地 `.runtime/traces/<skill>/trace-*.json`，**之后**才触发任何 Langfuse 导出。
+  - Langfuse 是本地写成功的**副作用**，不是替代。任何让 Langfuse 成为真相源、或跳过本地文件的改动都是回归，**必须拒绝**。
+  - 证据：当前 `skillopt_trace_start` L928 写本地文件 → L934-940 在 `if skillopt_langfuse_required` 下才导出；`_skillopt_emit_direct_trace` L1582-1620 仅写本地、不碰 Langfuse。已核实符合 INV-1。
+- **INV-2（同存储同 schema）**: `wrapper` 与 `direct` 两类 trace 落**同一目录、同一 JSON schema**（仅 `invocation.entrypoint` 不同）。审计/覆盖率统计只依赖本地文件，不依赖 Langfuse。
+- **INV-3（回归护栏）**: 闭环验证中加入 V-inv 检查：运行时确认本地 `.json` 在 Langfuse 导出调用前已存在；若某次改动让导出先于本地写，门禁 fail。
 
 ## 5. 数据契约
 
@@ -73,6 +86,7 @@ Langfuse trace metadata 新增：`invocation_entrypoint`, `invocation_wrapper`�
 - V4: `validate-wrapper-first-docs.sh` 对 44 产品 skill 全绿；人为移除某 skill 的 wrapper 脚本 → 脚本红。
 - V5: `alicloud-skill-generator` 新生成的 Skill 自带 wrapper-first 声明 + wrapper 脚本。
 - V6: 全量 `make test-integration` 通过（含新增门禁）。
+- **V-inv（INV-1 回归护栏）**: 运行时断言本地 trace `.json` 先于 Langfuse 导出存在——`skillopt_trace_start` 执行后、Langfuse 导出前，本地文件已落盘且含 `invocation` 块；`_skillopt_emit_direct_trace` 只写本地、无 Langfuse 调用。任何破坏此顺序的 diff 视为回归，门禁 fail。
 
 ## 7. 风险
 
