@@ -351,6 +351,84 @@ class TestLangfuseEnvVarCompat(unittest.TestCase):
         assert urlopen_called == [], "urlopen should not be called when no host env var is set"
 
 
+class TestTraceCreateRequired(unittest.TestCase):
+    """Regression: trace-create event MUST be sent before observations,
+    otherwise GET /api/public/traces/{id} returns 404 indefinitely.
+
+    Langfuse's Ingestion API requires trace-create; span/generation-create
+    alone create orphan observations that show up only via the observations
+    endpoint but not the trace endpoint.
+    """
+
+    def test_trace_create_event_payload(self):
+        hr = _load_harness_runtime()
+
+        captured = {}
+        with patch.object(hr, "post", side_effect=lambda e, p: captured.setdefault("payload", p)):
+            os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+            os.environ["LANGFUSE_BASE_URL"] = "https://test.langfuse.example.com"
+            os.environ["LANGFUSE_PUBLIC_KEY"] = "pk"
+            os.environ["LANGFUSE_SECRET_KEY"] = "sk"
+
+            hr.cmd_trace_create(argparse_namespace_stub(
+                trace_id="trace-must-exist",
+                name="my-trace",
+                timestamp="2026-07-29T23:00:00Z",
+                input_json="",
+                output_json="",
+                metadata_json="{}",
+                user_id="alice",
+                session_id="sess-1",
+                platform="wecom",
+                chat_type="group",
+                tags="prod,monitor",
+            ))
+
+        ev = captured["payload"]["batch"][0]
+        assert ev["type"] == "trace-create"
+        assert ev["id"] == "trace-must-exist"
+        body = ev["body"]
+        assert body["id"] == "trace-must-exist"
+        assert body["name"] == "my-trace"
+        assert body["timestamp"] == "2026-07-29T23:00:00Z"
+        # Chat context fields go into trace metadata
+        meta = body["metadata"]
+        assert meta["user_id"] == "alice"
+        assert meta["session_id"] == "sess-1"
+        assert meta["platform"] == "wecom"
+        assert meta["chat_type"] == "group"
+        assert body["tags"] == ["prod", "monitor"]
+
+    def test_trace_create_chat_context_appears_on_trace_metadata(self):
+        """The chat context (user_id etc.) must end up on trace metadata, not just observation metadata."""
+        hr = _load_harness_runtime()
+
+        captured = []
+        with patch.object(hr, "post", side_effect=lambda e, p: captured.append(p)):
+            os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+            os.environ["LANGFUSE_BASE_URL"] = "https://test.langfuse.example.com"
+            os.environ["LANGFUSE_PUBLIC_KEY"] = "pk"
+            os.environ["LANGFUSE_SECRET_KEY"] = "sk"
+
+            hr.cmd_trace_create(argparse_namespace_stub(
+                trace_id="t1",
+                name="chat-trace",
+                timestamp="2026-07-29T23:00:00Z",
+                input_json="", output_json="", metadata_json="{}",
+                user_id="bob",
+                session_id="chatid-1",
+                platform="feishu",
+                chat_type="p2p",
+                tags="",
+            ))
+
+        body = captured[0]["batch"][0]["body"]
+        meta = body["metadata"]
+        # All 4 chat-context fields present on trace
+        for f in ["user_id", "session_id", "platform", "chat_type"]:
+            assert f in meta, f"trace metadata missing {f}"
+
+
 def argparse_namespace_stub(**kwargs):
     """Build a simple argparse.Namespace from kwargs."""
     import argparse

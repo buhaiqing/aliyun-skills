@@ -44,6 +44,37 @@ def event(event_id: str, event_type: str, timestamp: str, body: dict[str, Any]) 
     return {"id": event_id, "type": event_type, "timestamp": timestamp, "body": body}
 
 
+def cmd_trace_create(args: argparse.Namespace) -> None:
+    """Create a Langfuse trace. MUST be called before span/generation-create.
+
+    Without trace-create, observations are accepted (HTTP 207, status 201)
+    but the trace is NOT queryable via GET /api/public/traces/{id}
+    (returns 404 indefinitely). This is required for full trace visibility.
+    """
+    metadata = load_json(args.metadata_json, {})
+    if args.user_id:
+        metadata = {**metadata, "user_id": args.user_id}
+    if args.session_id:
+        metadata = {**metadata, "session_id": args.session_id}
+    if args.platform:
+        metadata = {**metadata, "platform": args.platform}
+    if args.chat_type:
+        metadata = {**metadata, "chat_type": args.chat_type}
+    body = {
+        "id": args.trace_id,
+        "name": args.name,
+        "timestamp": args.timestamp,
+        "metadata": metadata,
+    }
+    if args.input_json != "":
+        body["input"] = load_json(args.input_json, None)
+    if args.output_json != "":
+        body["output"] = load_json(args.output_json, None)
+    if args.tags:
+        body["tags"] = [t.strip() for t in args.tags.split(",") if t.strip()]
+    post("/api/public/ingestion", {"batch": [event(args.trace_id, "trace-create", args.timestamp, body)]})
+
+
 def cmd_span_create(args: argparse.Namespace) -> None:
     metadata = load_json(args.metadata_json, {})
     if args.status:
@@ -115,6 +146,19 @@ def main() -> int:
     bind_from_env()
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
+    t = sub.add_parser("trace-create")
+    t.add_argument("--trace-id", required=True)
+    t.add_argument("--name", required=True)
+    t.add_argument("--timestamp", required=True)
+    t.add_argument("--input-json", default="")
+    t.add_argument("--output-json", default="")
+    t.add_argument("--metadata-json", default="{}")
+    t.add_argument("--user-id", default="")
+    t.add_argument("--session-id", default="")
+    t.add_argument("--platform", default="")
+    t.add_argument("--chat-type", default="")
+    t.add_argument("--tags", default="")
+    t.set_defaults(func=cmd_trace_create)
     p = sub.add_parser("span-create")
     p.add_argument("--span-id", required=True)
     p.add_argument("--trace-id", required=True)
