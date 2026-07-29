@@ -1236,11 +1236,11 @@ _skillopt_langfuse_post() {
     local auth
     auth="$(printf '%s' "${LANGFUSE_PUBLIC_KEY}:${LANGFUSE_SECRET_KEY}" | base64)"
     
-    curl -s --max-time 5 --retry 2 --retry-delay 1 -X POST "${LANGFUSE_HOST}${endpoint}" \
+    curl -s --max-time 10 -X POST "${LANGFUSE_HOST}${endpoint}" \
         -H "Authorization: Basic ${auth}" \
         -H "Content-Type: application/json" \
         -d "$payload" \
-        >/dev/null 2>&1 &
+        >/dev/null 2>&1
 }
 
 # Internal: Create session in Langfuse
