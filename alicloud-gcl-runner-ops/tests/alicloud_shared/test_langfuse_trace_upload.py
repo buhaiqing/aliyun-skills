@@ -273,6 +273,84 @@ class TestLangfuseUploadViaCLI(unittest.TestCase):
         # the actual HTTP call to avoid hitting a real Langfuse server.
 
 
+class TestLangfuseEnvVarCompat(unittest.TestCase):
+    """LANGFUSE_BASE_URL (preferred) + LANGFUSE_HOST (legacy fallback)."""
+
+    def setUp(self):
+        for k in ["SKILLOPT_LANGFUSE_ENABLED", "LANGFUSE_HOST", "LANGFUSE_BASE_URL",
+                  "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"]:
+            os.environ.pop(k, None)
+
+    def test_base_url_takes_precedence_over_host(self):
+        """When both env vars set, BASE_URL wins."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_BASE_URL"] = "https://primary.langfuse.example.com"
+        os.environ["LANGFUSE_HOST"] = "https://legacy.langfuse.example.com"
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk"
+
+        hr = _load_harness_runtime()
+        captured_endpoint = []
+        with patch.object(hr, "post", side_effect=lambda e, p: captured_endpoint.append(e)):
+            hr.cmd_span_create(argparse_namespace_stub(
+                span_id="s", trace_id="t", name="n", timestamp="2026-07-29T23:00:00Z",
+                end_time="", parent_id="", input_json="", output_json="",
+                metadata_json="{}", status="", level="", status_message="",
+            ))
+        assert len(captured_endpoint) == 1
+        # Endpoint is just the path; but the host was read. We verify via urlopen mock.
+        urlopen_called_with = []
+        real_urlopen = hr.urllib.request.urlopen
+        def capture_urlopen(req, **kwargs):
+            urlopen_called_with.append(req.full_url)
+            return real_urlopen(req, **kwargs)
+        with patch.object(hr.urllib.request, "urlopen", side_effect=capture_urlopen):
+            hr.cmd_span_create(argparse_namespace_stub(
+                span_id="s", trace_id="t", name="n", timestamp="2026-07-29T23:00:00Z",
+                end_time="", parent_id="", input_json="", output_json="",
+                metadata_json="{}", status="", level="", status_message="",
+            ))
+        assert urlopen_called_with[0].startswith("https://primary.langfuse.example.com")
+
+    def test_host_works_as_fallback_when_base_url_unset(self):
+        """When only LANGFUSE_HOST is set, it still works (backward compat)."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_HOST"] = "https://legacy-only.langfuse.example.com"
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk"
+
+        hr = _load_harness_runtime()
+        urlopen_called_with = []
+        real_urlopen = hr.urllib.request.urlopen
+        def capture_urlopen(req, **kwargs):
+            urlopen_called_with.append(req.full_url)
+            return real_urlopen(req, **kwargs)
+        with patch.object(hr.urllib.request, "urlopen", side_effect=capture_urlopen):
+            hr.cmd_span_create(argparse_namespace_stub(
+                span_id="s", trace_id="t", name="n", timestamp="2026-07-29T23:00:00Z",
+                end_time="", parent_id="", input_json="", output_json="",
+                metadata_json="{}", status="", level="", status_message="",
+            ))
+        assert urlopen_called_with[0].startswith("https://legacy-only.langfuse.example.com")
+
+    def test_no_url_means_noop(self):
+        """When neither BASE_URL nor HOST is set, urlopen is not called."""
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk"
+        # No LANGFUSE_HOST or LANGFUSE_BASE_URL
+
+        hr = _load_harness_runtime()
+        urlopen_called = []
+        with patch.object(hr.urllib.request, "urlopen",
+                          side_effect=lambda r, **k: urlopen_called.append(r.full_url)):
+            hr.cmd_span_create(argparse_namespace_stub(
+                span_id="s", trace_id="t", name="n", timestamp="2026-07-29T23:00:00Z",
+                end_time="", parent_id="", input_json="", output_json="",
+                metadata_json="{}", status="", level="", status_message="",
+            ))
+        assert urlopen_called == [], "urlopen should not be called when no host env var is set"
+
+
 def argparse_namespace_stub(**kwargs):
     """Build a simple argparse.Namespace from kwargs."""
     import argparse

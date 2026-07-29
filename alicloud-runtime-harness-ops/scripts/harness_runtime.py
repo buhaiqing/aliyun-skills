@@ -21,7 +21,7 @@ def load_json(value: str, default: Any) -> Any:
 def post(endpoint: str, payload: dict[str, Any]) -> None:
     if os.environ.get("SKILLOPT_LANGFUSE_ENABLED") != "true":
         return
-    host = os.environ.get("LANGFUSE_HOST", "")
+    host = os.environ.get("LANGFUSE_BASE_URL") or os.environ.get("LANGFUSE_HOST", "")
     public_key = os.environ.get("LANGFUSE_PUBLIC_KEY", "")
     secret_key = os.environ.get("LANGFUSE_SECRET_KEY", "")
     if not host or not public_key or not secret_key:
