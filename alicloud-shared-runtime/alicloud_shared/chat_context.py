@@ -82,3 +82,22 @@ def normalize_cli(*, source: str = "cli") -> ChatContext:
         chat_type="n/a",
         raw={},
     )
+
+
+def bind_from_env() -> ChatContext | None:
+    """Bind a chat context from CHAT_* environment variables.
+
+    Returns the bound context, or None if CHAT_PLATFORM is not set.
+    """
+    platform = os.environ.get("CHAT_PLATFORM")
+    if not platform:
+        return None
+    ctx = ChatContext(
+        user_id=os.environ.get("CHAT_USER_ID") or "anonymous",
+        session_id=os.environ.get("CHAT_SESSION_ID") or "unknown",
+        platform=platform,
+        chat_type=os.environ.get("CHAT_TYPE") or "n/a",
+        raw={},
+    )
+    bind(ctx)
+    return ctx
