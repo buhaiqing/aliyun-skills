@@ -280,3 +280,65 @@ class TestTraceLogger:
         assert "python_version" in run.provenance
         assert "platform" in run.provenance
         assert "started_at_iso" in run.provenance
+
+
+class TestNewFields:
+    """P8 — chat-context fields on TraceRun + new() factory."""
+
+    def test_new_factory_injects_from_chat_context(self) -> None:
+        """new() should pull user_id/session_id/platform from bind() context."""
+        from alicloud_shared.chat_context import ChatContext, _ctx_var, bind
+        from trace_logger import TraceRun
+
+        try:
+            ctx = ChatContext(
+                user_id="alice",
+                session_id="s1",
+                platform="wecom",
+                chat_type="group",
+                raw={},
+            )
+            bind(ctx)
+            run = TraceRun.new()
+            assert run.user_id == "alice"
+            assert run.session_id == "s1"
+            assert run.platform == "wecom"
+            assert run.chat_type == "group"
+        finally:
+            _ctx_var.set(None)
+
+    def test_new_factory_no_context(self) -> None:
+        """new() without context should set fields to None."""
+        from alicloud_shared.chat_context import _ctx_var
+        from trace_logger import TraceRun
+
+        _ctx_var.set(None)
+        run = TraceRun.new()
+        assert run.user_id is None
+        assert run.session_id is None
+        assert run.platform is None
+        assert run.chat_type is None
+
+    def test_to_dict_includes_new_fields(self) -> None:
+        from trace_logger import TraceRun
+
+        run = TraceRun(
+            user_id="u",
+            session_id="s",
+            platform="wecom",
+            chat_type="group",
+        )
+        d = run.to_dict()
+        assert d["user_id"] == "u"
+        assert d["session_id"] == "s"
+        assert d["platform"] == "wecom"
+        assert d["chat_type"] == "group"
+
+    def test_backward_compat_old_construction(self) -> None:
+        from trace_logger import TraceRun
+
+        run = TraceRun()
+        assert run.user_id is None
+        assert run.session_id is None
+        assert run.platform is None
+        assert run.chat_type is None

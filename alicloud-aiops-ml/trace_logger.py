@@ -110,6 +110,26 @@ class TraceRun:
     steps: list[TraceStep] = field(default_factory=list)
     summary: dict[str, Any] = field(default_factory=dict)
     provenance: dict[str, Any] = field(default_factory=dict)
+    session_id: str | None = None
+    user_id: str | None = None
+    platform: str | None = None
+    chat_type: str | None = None
+
+    @classmethod
+    def new(cls, **kwargs: Any) -> "TraceRun":
+        """Factory that auto-injects user_id/session_id/platform from chat context.
+
+        Caller-supplied kwargs win over the bound ChatContext defaults.
+        """
+        from alicloud_shared.chat_context import current
+
+        ctx = current()
+        if ctx is not None:
+            kwargs.setdefault("user_id", ctx.user_id)
+            kwargs.setdefault("session_id", ctx.session_id)
+            kwargs.setdefault("platform", ctx.platform)
+            kwargs.setdefault("chat_type", ctx.chat_type)
+        return cls(**kwargs)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to JSON-compatible dict."""
@@ -124,6 +144,10 @@ class TraceRun:
             "steps": [s.to_dict() for s in self.steps],
             "summary": self.summary,
             "provenance": self.provenance,
+            "session_id": self.session_id,
+            "user_id": self.user_id,
+            "platform": self.platform,
+            "chat_type": self.chat_type,
         }
 
     def to_json(self, indent: int = 2) -> str:
