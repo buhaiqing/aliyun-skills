@@ -324,7 +324,10 @@ fi
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/waf-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/waf-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun waf ...` 命令在执行时应替换为 `./scripts/waf-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun waf` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/waf-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun waf ...` 命令在执行时应替换为 `./scripts/waf-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun waf` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

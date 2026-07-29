@@ -210,7 +210,10 @@ Full response schemas → [API & SDK Usage](references/api-sdk-usage.md).
 
 Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 
-> **EXECUTION MANDATORY RULE:** 所有 CLI 步骤优先通过 `./scripts/oss-skillopt-wrapper.sh` 运行；wrapper 不可用时降级到 `ossutil`；ossutil 无法覆盖的操作使用 OSS Go SDK V2。参考 `## Runtime Rules`。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/oss-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `ossutil ...` 命令在执行时应替换为 `./scripts/oss-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `ossutil` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ### Operation Index
 

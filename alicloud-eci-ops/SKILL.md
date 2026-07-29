@@ -301,7 +301,10 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/eci-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/eci-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun eci ...` 命令在执行时应替换为 `./scripts/eci-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun eci` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/eci-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun eci ...` 命令在执行时应替换为 `./scripts/eci-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun eci` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

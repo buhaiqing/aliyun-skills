@@ -17,7 +17,7 @@ DOCTOR_OP ?=
 
 export ALIYUN_SKILLS_ROOT := $(SKILLS_DIR)
 
-.PHONY: help lint lint-fix test test-coverage validate fmt build dev-up clean \
+.PHONY: help lint lint-fix test test-coverage test-integration validate fmt build dev-up clean \
         runtime-layout runtime-clean runtime-clean-apply \
         runtime-clean-memory-fixtures runtime-clean-memory-fixtures-apply \
         memory-maintain memory-maintain-apply \
@@ -90,10 +90,30 @@ test:
 	@echo ""
 	@echo "==> Running shared product-skill doc/contract tests..."
 	@python -m pytest scripts/skill_docs_test.py -v --tb=short
+	@echo ""
+	@echo "==> Running wrapper-first integration + doc-compliance gates..."
+	@$(MAKE) test-integration
 
 test-coverage:
 	@echo "==> Running tests with coverage..."
 	@cd alicloud-topo-discovery && pytest --cov=scripts --cov-report=html --cov-report=term-missing || true
+
+# ===========================================
+# Wrapper-First Integration & Doc-Compliance Gates
+# ===========================================
+# GCL golden gate: a REAL wrapper must emit a trace carrying the 4 mandatory
+# signals (trace_id/session_id/user_id/llm_usage), every wrapper-skill SKILL.md
+# must declare the MANDATORY wrapper-first rule, and the rollup golden suite
+# (incl. G6) must pass.
+test-integration:
+	@echo "==> Integration: real wrapper emits 4-signal trace..."
+	@bash scripts/test-wrapper-first-integration.sh
+	@echo ""
+	@echo "==> Doc-compliance: every wrapper-skill declares MANDATORY wrapper-first..."
+	@bash scripts/validate-wrapper-first-docs.sh
+	@echo ""
+	@echo "==> Rollup golden tests (G1-G6)..."
+	@bash scripts/test-token-rollup.sh
 
 # ===========================================
 # Validation

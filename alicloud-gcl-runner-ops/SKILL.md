@@ -44,6 +44,9 @@ execution here rather than implementing inline GCL logic.
 
 
 > **EXECUTION MANDATORY RULE**: 所有 GCL runner 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/gcl-runner-skillopt-wrapper.sh` 运行。
+> 以下所有调用在执行时应替换为 `./scripts/gcl-runner-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回原生调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 GCL runner 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/gcl-runner-skillopt-wrapper.sh` 运行。
 > 以下所有 `python3 scripts/gcl_runner.py ...`示例在执行时应替换为`./scripts/gcl-runner-skillopt-wrapper.sh ...`（参数原样传递）。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh`缺失时，才退回到原生`aliyun` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

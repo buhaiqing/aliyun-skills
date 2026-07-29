@@ -59,7 +59,10 @@ to product skills), pure billing (`alicloud-billing-ops`), pure RAM policy desig
 Required env vars: `ALIBABA_CLOUD_ACCESS_KEY_ID`,
 `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`.
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 Runtime Harness wrapper `./scripts/cms-harness-wrapper.sh` 运行（旧的 `./scripts/cms-skillopt-wrapper.sh` 仍可作为 shim 使用）。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cms-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun cms ...` 命令在执行时应替换为 `./scripts/cms-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cms` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 Runtime Harness wrapper `./scripts/cms-harness-wrapper.sh` 运行（旧的 `./scripts/cms-skillopt-wrapper.sh` 仍可作为 shim 使用）。
 > 以下所有代码块中的 `aliyun cms ...` 命令在执行时应替换为 `./scripts/cms-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `harness-lib.sh` 缺失时，才退回到原生 `aliyun cms` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

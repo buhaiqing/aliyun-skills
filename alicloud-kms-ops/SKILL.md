@@ -244,7 +244,10 @@ aliyun kms ListKeys --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 |---------|------|---------|
 | 1.0.0 | 2026-05-20 | Initial KMS ops skill — dual-path (CLI + SDK), 17 operations |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/kms-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/kms-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun kms ...` 命令在执行时应替换为 `./scripts/kms-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun kms` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/kms-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun kms ...` 命令在执行时应替换为 `./scripts/kms-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun kms` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

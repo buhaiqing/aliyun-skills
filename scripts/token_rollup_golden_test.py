@@ -331,5 +331,52 @@ class GoldenIntegrationTests(unittest.TestCase):
         self.assertEqual(len(indexed), 4, f"Expected 4 indexed files, got {len(indexed)}")
 
 
+    # ── Scenario G6: Pipeline-level 4-signal contract (real-wrapper complement) ──
+
+    def test_g6_wrapper_emits_four_signals(self) -> None:
+        """G6: A fake wrapper trace placed on disk → rollup_apply normalizes it
+        and the 4-signal contract survives the full pipeline (trace_id,
+        session_id, user_id, llm_usage), and the skill appears in by_skill.
+
+        This complements scripts/test-wrapper-first-integration.sh, which
+        asserts the same 4 signals on a trace emitted by a REAL wrapper.
+        """
+        # Place the fixture as a real on-disk trace under the canonical layout.
+        traces_dir = self.root / ".runtime" / "traces" / "alicloud-ecs-ops"
+        traces_dir.mkdir(parents=True)
+        trace_path = traces_dir / "trace-g6.json"
+        shutil.copy(GOLDEN / "G6-wrapper-four-signals.json", trace_path)
+        self._touch_recent(trace_path)
+
+        # Full rollup (dry-run).
+        result = tr.rollup_apply(self.root, since_days=7, apply=False, full=True)
+        self.assertEqual(result["trace_records"], 1,
+                         "Expected 1 trace record from the G6 fixture")
+
+        rollup = result["rollup"]
+        by_skill = rollup["by_skill"]
+        self.assertIn("alicloud-ecs-ops", by_skill,
+                      "rollup by_skill missing alicloud-ecs-ops")
+        self.assertEqual(by_skill["alicloud-ecs-ops"]["trace_count"], 1,
+                         "Expected 1 ecs trace in by_skill")
+
+        # Re-derive the normalized record to assert the 4-signal contract.
+        records, _ = tr.collect_records(self.root, since_days=7, mode="full")
+        self.assertEqual(len(records), 1)
+        rec = records[0]
+        self._assert_has_4_metadata(rec,
+                                    trace_id="golden-trace-g6",
+                                    session_id="golden-sess-g6",
+                                    user_id="golden-user-g6",
+                                    min_tokens=500)
+        # The normalized dict serialization must also carry all 4 signals.
+        d = tr.record_to_dict(rec)
+        self._assert_dict_has_4_metadata(d,
+                                         trace_id="golden-trace-g6",
+                                         session_id="golden-sess-g6",
+                                         user_id="golden-user-g6")
+        self.assertEqual(d["llm_usage"]["total_tokens"], 500)
+
+
 if __name__ == "__main__":
     unittest.main()

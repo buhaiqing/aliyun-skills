@@ -41,6 +41,23 @@ fi
 
 SCAN_TIMESTAMP=$(date +%FT%T%z)
 
+# Route through Runtime Harness wrapper when available (AGENTS.md §15.8).
+# Falls back to native aliyun only if the product wrapper is missing.
+_topo_aliyun() {
+    local product="$1"; shift
+    # Resolve repo root portably: ALIYUN_SKILLS_ROOT > git toplevel > script-relative fallback.
+    # No hardcoded absolute paths — must work on any machine.
+    local root="${ALIYUN_SKILLS_ROOT:-}"
+    if [[ -z "$root" ]]; then
+        root="$(git -C "${BASH_SOURCE[0]%/*}" rev-parse --show-toplevel 2>/dev/null)" \
+            || root="$(cd "${BASH_SOURCE[0]%/*}/../.." && pwd)"
+    fi
+    local wh="$root/alicloud-${product}-ops/scripts/${product}-harness-wrapper.sh"
+    # Pass product explicitly so the wrapper's own PRODUCT default is overridden
+    # (avoids silent mis-routing if a wrapper default ever diverges from its dir name).
+    if [[ -f "$wh" ]]; then exec "$wh" "$product" "$@"; else aliyun "$product" "$@"; fi
+}
+
 echo "[DIAG] Starting network topology scan... Mode: $REPORT_MODE | Region: $REGION_ID | Tmp: $TMP_DATA_DIR"
 
 # Safety Gate: Read-Only Verification (optimized: dedup by API name)
@@ -62,15 +79,15 @@ verify_cmd() {
 # ---- Phase 1: Parallel data collection ----
 phase1_pids=()
 verify_cmd "aliyun vpc DescribeVpcs"
-aliyun vpc DescribeVpcs --RegionId $REGION_ID > "$TMP_DATA_DIR/vpcs.json" & phase1_pids+=($!)
+_topo_aliyun vpc DescribeVpcs --RegionId $REGION_ID > "$TMP_DATA_DIR/vpcs.json" & phase1_pids+=($!)
 verify_cmd "aliyun slb DescribeLoadBalancers"
-aliyun slb DescribeLoadBalancers --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/slbs.json" & phase1_pids+=($!)
+_topo_aliyun slb DescribeLoadBalancers --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/slbs.json" & phase1_pids+=($!)
 verify_cmd "aliyun vpc DescribeNatGateways"
-aliyun vpc DescribeNatGateways --RegionId $REGION_ID --PageSize 50 > "$TMP_DATA_DIR/nats.json" & phase1_pids+=($!)
+_topo_aliyun vpc DescribeNatGateways --RegionId $REGION_ID --PageSize 50 > "$TMP_DATA_DIR/nats.json" & phase1_pids+=($!)
 verify_cmd "aliyun vpc DescribeEipAddresses"
-aliyun vpc DescribeEipAddresses --RegionId $REGION_ID --PageSize 50 > "$TMP_DATA_DIR/eips.json" & phase1_pids+=($!)
+_topo_aliyun vpc DescribeEipAddresses --RegionId $REGION_ID --PageSize 50 > "$TMP_DATA_DIR/eips.json" & phase1_pids+=($!)
 verify_cmd "aliyun ecs DescribeSecurityGroups"
-aliyun ecs DescribeSecurityGroups --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/sgs.json" & phase1_pids+=($!)
+_topo_aliyun ecs DescribeSecurityGroups --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/sgs.json" & phase1_pids+=($!)
 
 echo -e "\n📡 Waiting for core network resources (5 parallel)..."
 wait "${phase1_pids[@]}"
@@ -82,7 +99,7 @@ FIRST_VPC_ID=$(echo "$VPC_IDS" | awk '{print $1}')
 if [ -n "$FIRST_VPC_ID" ]; then
   # Collect VSwitches for the first VPC
   verify_cmd "aliyun vpc DescribeVSwitches"
-  aliyun vpc DescribeVSwitches --RegionId $REGION_ID --VpcId $FIRST_VPC_ID --PageSize 50 > "$TMP_DATA_DIR/vswitches.json"
+  _topo_aliyun vpc DescribeVSwitches --RegionId $REGION_ID --VpcId $FIRST_VPC_ID --PageSize 50 > "$TMP_DATA_DIR/vswitches.json"
   
   # Save multi-VPC context for renderer
   echo "$VPC_IDS" > "$TMP_DATA_DIR/multi_vpc_ids.txt"
@@ -91,11 +108,11 @@ if [ -n "$FIRST_VPC_ID" ]; then
       echo -e "\n📡 Phase 2: Detailed Resources..."
       phase2_pids=()
       verify_cmd "aliyun ecs DescribeInstances"
-      aliyun ecs DescribeInstances --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/ecs.json" & phase2_pids+=($!)
+      _topo_aliyun ecs DescribeInstances --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/ecs.json" & phase2_pids+=($!)
       verify_cmd "aliyun cs DescribeClustersV1"
-      aliyun cs DescribeClustersV1 --page_size 50 > "$TMP_DATA_DIR/ack.json" & phase2_pids+=($!)
+      _topo_aliyun cs DescribeClustersV1 --page_size 50 > "$TMP_DATA_DIR/ack.json" & phase2_pids+=($!)
       verify_cmd "aliyun rds DescribeDBInstances"
-      aliyun rds DescribeDBInstances --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/rds.json" & phase2_pids+=($!)
+      _topo_aliyun rds DescribeDBInstances --RegionId $REGION_ID --PageSize 100 > "$TMP_DATA_DIR/rds.json" & phase2_pids+=($!)
       echo -e "\n⏳ Waiting for detailed resources (3 parallel)..."
       wait "${phase2_pids[@]}"
   fi

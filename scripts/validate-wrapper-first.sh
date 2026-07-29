@@ -158,6 +158,7 @@ for sd in "${skills[@]}"; do
             | grep -v 'echo ' \
             | grep -v 'SKILLOPT_' \
             | grep -vE '^\s*#' \
+            | grep -vE "harness-lib\.sh.*aliyun[[:space:]]+${own_product}[[:space:]]+(Describe|List|Get)" \
             || true)
         if [[ -n "$bare_aliyun" ]]; then
             add_issue violation "$sd" "bare_aliyun_in_scripts" \

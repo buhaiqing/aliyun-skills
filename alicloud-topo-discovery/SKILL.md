@@ -77,6 +77,13 @@ topology diagrams and resource inventory reports.
 | **Discovery vs operations** | This skill handles "discovery"; product skills handle "operations". If the user needs to modify resources after discovery, route to the corresponding product skill |
 | **AIOps integration** | `alicloud-aiops-cruise` calls this skill's `topo-render.py` during patrol to render topology and overlay health status |
 
+## Runtime Rules
+
+| Area | Rule | Reference |
+| --- | --- | --- |
+| CLI path | **MANDATORY**: All `aliyun <product>` execution in `scripts/topo-scan.sh` is routed through each product's Runtime Harness wrapper via the `_topo_aliyun` helper (scripts/topo-scan.sh). Falls back to native `aliyun <product>` only when the product's wrapper is missing. | [Harness](../alicloud-ecs-ops/scripts/ecs-harness-wrapper.sh), [AGENTS.md §15.8](../../AGENTS.md) |
+| Fallback | When a product's harness wrapper script is absent, `_topo_aliyun` directly invokes the native `aliyun <product>` CLI as a fallback (graceful degradation). | scripts/topo-scan.sh |
+
 ## Trigger & Scope
 
 ### SHOULD Use This Skill When
