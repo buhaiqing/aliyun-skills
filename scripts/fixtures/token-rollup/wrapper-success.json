@@ -1,6 +1,7 @@
 {
   "trace_id": "trace-fixture-wrapper-1",
   "session_id": "sess-token-rollup-1",
+  "user_id": "fixture-user-1",
   "skill": "alicloud-ecs-ops",
   "coding_agent": "cursor",
   "product": "ecs",

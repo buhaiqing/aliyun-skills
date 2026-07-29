@@ -1,6 +1,7 @@
 {
   "trace_id": "trace-fixture-wrapper-fail",
   "session_id": "sess-token-rollup-2",
+  "user_id": "fixture-user-1",
   "skill": "alicloud-cms-ops",
   "coding_agent": "unknown",
   "product": "cms",

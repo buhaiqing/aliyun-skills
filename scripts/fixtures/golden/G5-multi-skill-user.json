@@ -1,0 +1,46 @@
+{
+  "trace_id": "golden-trace-g5-multi",
+  "session_id": "golden-sess-g5",
+  "user_id": "golden-user-g5",
+  "skill": "alicloud-slb-ops",
+  "coding_agent": "cursor",
+  "product": "slb",
+  "action": "DescribeLoadBalancers",
+  "status": "success",
+  "start_time": "2026-07-29T14:00:00+0000",
+  "end_time": "2026-07-29T14:00:04+0000",
+  "llm_usage": {
+    "prompt_tokens": 600,
+    "completion_tokens": 150,
+    "total_tokens": 750
+  },
+  "llm_generations": [
+    {
+      "role": "agent_turn",
+      "coding_agent": "cursor",
+      "model": "claude-sonnet-4",
+      "prompt_tokens": 400,
+      "completion_tokens": 100,
+      "total_tokens": 500,
+      "source": "agent_turn"
+    },
+    {
+      "role": "harness_llm",
+      "coding_agent": "cursor",
+      "model": "gpt-4o-mini",
+      "prompt_tokens": 200,
+      "completion_tokens": 50,
+      "total_tokens": 250,
+      "source": "harness_llm"
+    }
+  ],
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["user-context7/search", "user-context7/fetch", "custom/tool-a", "custom/tool-b"],
+      "mcp_tools_invoked": ["user-context7/search", "custom/tool-a"],
+      "mcp_tool_utilization": 0.5,
+      "mcp_schema_waste_tokens": 50,
+      "attribution_confidence": "mixed"
+    }
+  }
+}

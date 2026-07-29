@@ -1,0 +1,64 @@
+{
+  "trace_id": "golden-trace-g3-gcl",
+  "session_id": "golden-sess-g3",
+  "user_id": "golden-user-g3",
+  "skill": "alicloud-ecs-ops",
+  "operation": "CreateInstance",
+  "coding_agent": "harness_cli",
+  "started_at": "2026-07-29T12:00:00+0000",
+  "iterations": [
+    {
+      "iter": 1,
+      "critic": {
+        "critic_meta": {
+          "mode": "llm",
+          "coding_agent": "harness_cli",
+          "model": "gpt-4o-mini",
+          "llm_usage": {
+            "prompt_tokens": 300,
+            "completion_tokens": 50,
+            "total_tokens": 350
+          }
+        }
+      }
+    },
+    {
+      "iter": 2,
+      "critic": {
+        "critic_meta": {
+          "mode": "llm",
+          "coding_agent": "harness_cli",
+          "model": "gpt-4o-mini",
+          "llm_usage": {
+            "prompt_tokens": 250,
+            "completion_tokens": 40,
+            "total_tokens": 290
+          }
+        }
+      }
+    },
+    {
+      "iter": 3,
+      "critic": {
+        "critic_meta": {
+          "mode": "llm",
+          "coding_agent": "harness_cli",
+          "model": "gpt-4o-mini",
+          "llm_usage": {
+            "prompt_tokens": 200,
+            "completion_tokens": 30,
+            "total_tokens": 230
+          }
+        }
+      }
+    }
+  ],
+  "final": {
+    "status": "MAX_ITER",
+    "iter": 3
+  },
+  "failure_pattern": {
+    "category": "max_iter",
+    "trap_label": "ECSSecurityGroupRules"
+  }
+}

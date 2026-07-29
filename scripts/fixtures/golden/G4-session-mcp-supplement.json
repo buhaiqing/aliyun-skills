@@ -1,0 +1,29 @@
+{
+  "trace_id": "golden-trace-g4-no-mcp",
+  "session_id": "golden-sess-g4",
+  "user_id": "golden-user-g4",
+  "skill": "alicloud-rds-ops",
+  "coding_agent": "cursor",
+  "product": "rds",
+  "action": "DescribeDBInstances",
+  "status": "success",
+  "start_time": "2026-07-29T13:00:00+0000",
+  "end_time": "2026-07-29T13:00:03+0000",
+  "llm_usage": {
+    "prompt_tokens": 150,
+    "completion_tokens": 80,
+    "total_tokens": 230
+  },
+  "llm_generations": [
+    {
+      "role": "agent_turn",
+      "coding_agent": "cursor",
+      "model": "claude-sonnet-4",
+      "prompt_tokens": 150,
+      "completion_tokens": 80,
+      "total_tokens": 230,
+      "source": "agent_turn"
+    }
+  ],
+  "agent_turn_id": "turn-g4-001"
+}

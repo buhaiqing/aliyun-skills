@@ -1,0 +1,13 @@
+{
+  "session_id": "golden-sess-g4",
+  "skill": "alicloud-rds-ops",
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["user-context7/search", "user-context7/fetch", "plugin/insight"],
+      "mcp_tools_invoked": ["user-context7/search"],
+      "mcp_tool_utilization": 0.3333,
+      "mcp_schema_waste_tokens": 200,
+      "attribution_confidence": "estimated"
+    }
+  }
+}

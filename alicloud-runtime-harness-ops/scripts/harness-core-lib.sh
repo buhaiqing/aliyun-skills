@@ -865,6 +865,7 @@ skillopt_trace_start() {
     input_json="$(printf '%s\n' "${params[@]+"${params[@]}"}" | jq -R -s 'split("\n") | map(select(length > 0))')"
     local coding_agent
     coding_agent="$(skillopt_resolve_coding_agent)"
+    local uid="${HARNESS_USER_ID:-${USER:-anonymous}}"
 
     # Extract resource_dimensions + missing_dimensions via WT-1 parser.
     # Failure → null defaults; never raises.
@@ -893,9 +894,11 @@ skillopt_trace_start() {
         --argjson input "$input_json" \
         --argjson resource_dimensions "$resource_dimensions_json" \
         --argjson missing_dimensions "$missing_dimensions" \
+        --arg uid "$uid" \
         '{
             trace_id: $tid,
             session_id: $sid,
+            user_id: $uid,
             skill: $skill,
             coding_agent: $coding_agent,
             product: $product,

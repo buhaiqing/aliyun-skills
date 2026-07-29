@@ -58,6 +58,7 @@ printf '%s\n' '{}' > "$SKILLOPT_RUNTIME_DATA"
 ALIBABA_CLOUD_RUNTIME_DIR="$_lt_root"
 export ALIYUN_SKILLS_ROOT="$REPO_ROOT"
 export HARNESS_CODING_AGENT="cursor"
+export HARNESS_USER_ID="token-test-user"
 
 # shellcheck source=/dev/null
 source "$ROOT/scripts/harness-paths.sh"
@@ -75,6 +76,12 @@ if jq -e '.llm_generations == [] and .llm_usage.total_tokens == 0 and .coding_ag
   ok "trace_start seeds llm_generations/llm_usage/coding_agent"
 else
   bad "trace_start missing TEL seed fields"
+fi
+
+if jq -e '.user_id == "token-test-user"' "$_trace_file" >/dev/null 2>&1; then
+  ok "trace_start includes user_id from HARNESS_USER_ID"
+else
+  bad "trace_start missing or incorrect user_id"
 fi
 
 skillopt_record_llm_usage "$(jq -n '{
