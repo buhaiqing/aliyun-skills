@@ -1,23 +1,24 @@
 #!/bin/bash
 # scripts/validate-wrapper-first-docs.sh
 #
-# Doc-compliance gate (Generator GCL gate): every product skill that ships a
-# Runtime Harness wrapper (*-harness-wrapper.sh or *-skillopt-wrapper.sh) MUST
-# declare the MANDATORY wrapper-first rule in its SKILL.md.
+# Doc-compliance + wrapper-existence gate (Generator GCL gate):
+# every PRODUCT skill MUST
+#   1. declare the MANDATORY wrapper-first rule in its SKILL.md, AND
+#   2. ship a canonical Runtime Harness wrapper at scripts/*-harness-wrapper.sh.
 #
-# Required literals (per AGENTS.md §15.8):
+# The two library skills (alicloud-runtime-harness-ops, alicloud-skillopt-ops)
+# are exempt — they PROVIDE the harness, they do not consume a product wrapper.
+#
+# Required SKILL.md literals (per AGENTS.md §15.8):
 #   - the canonical declaration block: "EXECUTION MANDATORY RULE"
 #   - a reference to the wrapper entrypoint: both "harness-wrapper" and
 #     "skillopt-wrapper" (the block must mention the preferred harness wrapper
 #     and the legacy shim), so a mention inside an unrelated code example does
 #     not yield a false PASS.
 #
-# Discovery reuses scripts/lib/runtime-harness-discover.sh (same helper
-# validate-wrapper-first.sh uses) to enumerate skills that have a wrapper.
-#
 # Exit codes:
-#   0  every wrapper-skill SKILL.md declares the MANDATORY wrapper-first rule
-#   1  one or more wrapper-skill SKILL.md is missing the declaration
+#   0  every product skill declares wrapper-first AND ships a wrapper
+#   1  one or more product skills fail the declaration or wrapper check
 #   2  usage / environment error
 
 set -uo pipefail
@@ -29,14 +30,23 @@ source "$SCRIPT_DIR/lib/runtime-harness-discover.sh"
 
 cd "$REPO_ROOT"
 
+# Library skills that provide the harness are exempt from the wrapper check.
+EXEMPT_LIBS=("alicloud-runtime-harness-ops" "alicloud-skillopt-ops")
+
 skills=()
-while IFS= read -r d || [[ -n "$d" ]]; do
-    [[ -n "$d" ]] || continue
+for d in "$REPO_ROOT"/alicloud-*-ops; do
+    [[ -d "$d" ]] || continue
+    name="$(basename "$d")"
+    skip=false
+    for ex in "${EXEMPT_LIBS[@]}"; do
+        [[ "$name" == "$ex" ]] && skip=true && break
+    done
+    $skip && continue
     skills+=("$d")
-done < <(rh_list_skill_dirs_with_wrapper "$REPO_ROOT")
+done
 
 if [[ ${#skills[@]} -eq 0 ]]; then
-    echo "No skills with a Runtime Harness wrapper found — nothing to check."
+    echo "No product skills found — nothing to check."
     exit 0
 fi
 
@@ -45,7 +55,7 @@ pass=0
 fail=0
 
 echo "=== validate-wrapper-first-docs.sh ==="
-echo "Skills with a wrapper: $total"
+echo "Product skills checked: $total (libraries exempt: ${EXEMPT_LIBS[*]})"
 echo
 
 for sd in "${skills[@]}"; do
@@ -60,6 +70,7 @@ for sd in "${skills[@]}"; do
 
     has_mandatory_block=false
     has_both_wrappers=false
+    has_wrapper_script=false
 
     # Precise contract: the canonical "> **EXECUTION MANDATORY RULE**" block must
     # exist AND reference both the harness wrapper and the legacy skillopt shim.
@@ -70,19 +81,25 @@ for sd in "${skills[@]}"; do
         has_both_wrappers=true
     fi
 
-    if $has_mandatory_block && $has_both_wrappers; then
-        echo "PASS: $name — declares MANDATORY wrapper-first (EXECUTION MANDATORY RULE + harness/skillopt wrappers)"
+    # P5: every product skill must ship a canonical harness wrapper.
+    if ls "$sd/scripts/"*-harness-wrapper.sh >/dev/null 2>&1; then
+        has_wrapper_script=true
+    fi
+
+    if $has_mandatory_block && $has_both_wrappers && $has_wrapper_script; then
+        echo "PASS: $name — declares MANDATORY wrapper-first + ships *-harness-wrapper.sh"
         pass=$((pass + 1))
     else
-        echo "FAIL: $name — missing wrapper-first declaration"
+        echo "FAIL: $name — wrapper-first compliance gap"
         $has_mandatory_block || echo "      - 'EXECUTION MANDATORY RULE' block not found in SKILL.md"
         $has_both_wrappers || echo "      - SKILL.md must reference BOTH 'harness-wrapper' and 'skillopt-wrapper'"
+        $has_wrapper_script || echo "      - missing scripts/*-harness-wrapper.sh"
         fail=$((fail + 1))
     fi
 done
 
 echo
-echo "Summary: $pass PASS / $fail FAIL (of $total wrapper-skills)"
+echo "Summary: $pass PASS / $fail FAIL (of $total product skills)"
 
 if [[ $fail -gt 0 ]]; then
     exit 1

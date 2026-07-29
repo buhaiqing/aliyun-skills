@@ -437,6 +437,46 @@ $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%
 **Framework entry**：[`alicloud-runtime-harness-ops`](alicloud-runtime-harness-ops/SKILL.md)
 
 ---
+
+## 15.8 Wrapper-First 强制一致性（🔴 MANDATORY）
+
+> 关联 SPEC：[docs/spec-invocation-tracking.md](docs/spec-invocation-tracking.md)
+> 目标：所有对 `aliyun` / 产品 CLI 的调用都必须走 Wrapper，且产出可观测 trace（含 `invocation` 来源块）；绕过 Wrapper 的调用必须**可见、可追踪、合并前被拦截**。
+
+### 强制规则
+
+1. **单点收口**：所有 `aliyun` 执行（含 lib 内部调用、wrapper fallback）都必须经 `skillopt_run_aliyun`，不得裸调 `aliyun`。
+2. **Trace 含 `invocation` 来源块**：Wrapper 路径 trace 的顶层必须含
+   ```json
+   "invocation": {
+     "entrypoint": "wrapper",
+     "wrapper": "<product>-harness-wrapper.sh",
+     "wrapper_version": "<SKILLOPT_HARNESS_LIB_VERSION>",
+     "raw_command": null
+   }
+   ```
+   绕过 Wrapper（被 `require_skillopt_wrapper` 守卫拒绝）的调用由 `skillopt_run_aliyun` 发射 `entrypoint: "direct"` trace（`invocation.raw_command` = 原始命令行），仍返回 64 拒绝。测试上下文（`_SKILLOPT_SKIP_WRAPPER_CHECK=1`）豁免。
+3. **每个产品 Skill 必须声明 wrapper-first 且存在 wrapper 脚本**：SKILL.md 须含 `EXECUTION MANDATORY RULE` 块并同时引用 `harness-wrapper` 与 `skillopt-wrapper`；`scripts/` 下须存在 `*-harness-wrapper.sh`。该约束由 `scripts/validate-wrapper-first-docs.sh` 在合并前强制（44 个产品 skill 已全绿）。
+4. **库目录豁免**：`alicloud-runtime-harness-ops` 与 `alicloud-skillopt-ops` 是提供 Harness 的库，自身不该有产品 wrapper，门禁跳过这两个目录。
+
+### 数据契约（trace-*.json 顶层）
+
+```json
+"invocation": {
+  "entrypoint": "wrapper" | "direct",
+  "wrapper": "string | null",
+  "wrapper_version": "string | null",
+  "raw_command": "string | null"
+}
+```
+
+### 闭环
+
+- 运行时：绕过 Wrapper 的调用 → `direct` trace 落同一存储（`.runtime/traces/`）。
+- 静态门禁：`scripts/validate-wrapper-first-docs.sh` 校验每个产品 Skill 的声明 + wrapper 脚本存在性。
+- 审计：`scripts/audit-wrapper-coverage.sh <trace_dir>` 扫描 trace，捞出 `entrypoint != "wrapper"` 或缺失 `invocation` 者并 `exit 1`（CI 闭环）。
+
+---
 ## 16. Execution Memory & Reflexion (Layers 1-2)
 
 Every GCL trace is indexed into JSONL execution memory; failure patterns are deduped into a reflexion store. Full specs: [§16](docs/gcl-spec.md#16-memory-index--execution-memory-layer) / [§15](docs/gcl-spec.md#15-reflexion-layer-2).

@@ -21,6 +21,10 @@ SKILLOPT_CURRENT_FLOW_SPAN_NAME="${SKILLOPT_CURRENT_FLOW_SPAN_NAME:-}"
 SKILLOPT_TRACE_START_TIME="${SKILLOPT_TRACE_START_TIME:-}"
 SKILLOPT_LANGFUSE_APP="${SKILLOPT_LANGFUSE_APP:-aliyun-skills}"
 
+# Version of this core library; embedded in every trace's invocation.wrapper_version
+# so consumers can tell which harness emitted a given trace.
+SKILLOPT_HARNESS_LIB_VERSION="0.1.0"
+
 # PR-7: HARNESS_* canonical user-facing env; SKILLOPT_* legacy compat (HARNESS wins when set).
 _skillopt_harness_merge_env() {
     # Ignore mirror values from a prior skillopt_init unless the user changed HARNESS_* since then.
@@ -895,6 +899,7 @@ skillopt_trace_start() {
         --argjson resource_dimensions "$resource_dimensions_json" \
         --argjson missing_dimensions "$missing_dimensions" \
         --arg uid "$uid" \
+        --arg libver "$SKILLOPT_HARNESS_LIB_VERSION" \
         '{
             trace_id: $tid,
             session_id: $sid,
@@ -913,7 +918,13 @@ skillopt_trace_start() {
             status: "running",
             spans: [],
             llm_generations: [],
-            llm_usage: {prompt_tokens: 0, completion_tokens: 0, total_tokens: 0}
+            llm_usage: {prompt_tokens: 0, completion_tokens: 0, total_tokens: 0},
+            invocation: {
+                entrypoint: "wrapper",
+                wrapper: ($skill + "-harness-wrapper.sh"),
+                wrapper_version: $libver,
+                raw_command: null
+            }
         }' > "$trace_file"
     
     _skillopt_ingest_w3c_traceparent
@@ -1279,6 +1290,7 @@ _skillopt_langfuse_create_trace() {
         --arg w3c_trace_id "$w3c_trace_id" \
         --arg app "$SKILLOPT_LANGFUSE_APP" \
         --arg uid "$uid" \
+        --arg wrapper "$SKILLOPT_SKILL_TAG-harness-wrapper.sh" \
         --argjson input "${input:-null}" \
         '{batch: [{
             id: $tid,
@@ -1292,6 +1304,7 @@ _skillopt_langfuse_create_trace() {
                 input: $input,
                 metadata: (
                     {app: $app, skill: $skill, product: $product, action: $action, user_id: $uid}
+                    + {invocation_entrypoint: "wrapper", invocation_wrapper: $wrapper}
                     + (if $w3c_trace_id == "" then {} else {w3c_trace_id: $w3c_trace_id} end)
                 )
             }
@@ -1545,6 +1558,70 @@ skillopt_extract_error_code() {
     printf '%s' "$code"
 }
 
+# Emit a minimal "direct" trace for an aliyun call that bypassed the wrapper.
+# Called from skillopt_run_aliyun's guard-refusal path (non-test context) so that
+# every bypassed call is still recorded in the same trace store as wrapper calls.
+# Mirrors the trace schema written by skillopt_trace_start but with
+# invocation.entrypoint = "direct" and invocation.raw_command = the original argv.
+_skillopt_emit_direct_trace() {
+    local product="$1"; shift
+    local action="$1"; shift
+
+    local trace_dir="${_SKILLOPT_TRACE_DIR:-${SKILLS_DIR:-$PWD}/.runtime/traces/unknown}"
+    mkdir -p "$trace_dir" 2>/dev/null || true
+
+    local trace_id="trace-${SKILLOPT_SESSION_ID}-$(date +%s)-${RANDOM}"
+    local ts
+    ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+    local raw_command
+    raw_command="$(printf '%s ' "$product" "$action" "$@")"
+    raw_command="${raw_command% }"
+    local skill="${SKILLOPT_SKILL_TAG:-<unknown>}"
+    local uid="${HARNESS_USER_ID:-${USER:-anonymous}}"
+
+    local trace_file="${trace_dir}/${trace_id}.json"
+    (umask 077 && : > "$trace_file") 2>/dev/null || true
+
+    jq -n \
+        --arg tid "$trace_id" \
+        --arg sid "$SKILLOPT_SESSION_ID" \
+        --arg skill "$skill" \
+        --arg product "$product" \
+        --arg action "$action" \
+        --arg ts "$ts" \
+        --arg params "$raw_command" \
+        --arg uid "$uid" \
+        --arg raw "$raw_command" \
+        '{
+            trace_id: $tid,
+            session_id: $sid,
+            user_id: $uid,
+            skill: $skill,
+            coding_agent: "unknown",
+            product: $product,
+            action: $action,
+            params: $params,
+            input: [],
+            resource_dimensions: {},
+            missing_dimensions: "[]",
+            warning: null,
+            suggestion: null,
+            start_time: $ts,
+            status: "running",
+            spans: [],
+            llm_generations: [],
+            llm_usage: {prompt_tokens: 0, completion_tokens: 0, total_tokens: 0},
+            invocation: {
+                entrypoint: "direct",
+                wrapper: null,
+                wrapper_version: null,
+                raw_command: $raw
+            }
+        }' > "$trace_file" 2>/dev/null || true
+
+    skillopt_log "trace: direct $trace_id $product $action"
+}
+
 # Run aliyun once; capture combined output in SKILLOPT_LAST_OUTPUT.
 skillopt_run_aliyun() {
     local product="$1"; shift
@@ -1555,6 +1632,11 @@ skillopt_run_aliyun() {
     # P1 guard: refuse to run aliyun directly when a wrapper exists.
     # In test contexts (skillopt-core-lib.sh tests), set _SKILLOPT_SKIP_WRAPPER_CHECK=1.
     if ! require_skillopt_wrapper "$product" "$action"; then
+        # Non-test context: still record the bypassed call as a "direct" trace so
+        # it remains observable in the same store as wrapper traces (P1).
+        if [[ "${_SKILLOPT_SKIP_WRAPPER_CHECK:-0}" != "1" ]]; then
+            _skillopt_emit_direct_trace "$product" "$action" "$@"
+        fi
         rm -f "$tmp_out"
         return 64
     fi
@@ -1594,10 +1676,21 @@ require_skillopt_wrapper() {
         return 0
     fi
 
-    # Wrapper self-call exemption: when this guard is reached via skillopt_wrap,
-    # we are already inside the recommended wrapper-first path
+    # Library-internal repair/diagnostic calls (e.g. harness-lib.sh region
+    # auto-completion and resource-existence probes during self-repair) set
+    # _SKILLOPT_INTERNAL_REPAIR=1 around their skillopt_run_aliyun call. These are
+    # not user commands and must not be refused by the wrapper guard; they are
+    # still observable because they route through skillopt_run_aliyun.
+    if [[ "${_SKILLOPT_INTERNAL_REPAIR:-0}" == "1" ]]; then
+        return 0
+    fi
+
+    # Wrapper self-call exemption: when this guard is reached via skillopt_wrap /
+    # harness_wrap (anywhere in the call stack), we are already inside the
+    # recommended wrapper-first path
     # (alicloud-<product>-ops/scripts/<product>-skillopt-wrapper.sh -> skillopt_wrap -> here).
-    # Inspect FUNCNAME for skillopt_wrap; that proves the call came from the wrapper entry.
+    # A full-stack scan also exempts library-internal repair functions that run
+    # *within* a wrapped session (e.g. skillopt_run_aliyun -> repair -> aliyun).
     local fn
     for fn in "${FUNCNAME[@]:1}"; do
         if [[ "$fn" == "skillopt_wrap" || "$fn" == "harness_wrap" ]]; then

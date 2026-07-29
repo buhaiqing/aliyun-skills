@@ -33,7 +33,10 @@ SUBCMD="$1"; shift
 if [ "$SKILLOPT_LOADED" = true ]; then
     skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"
 else
-    # Fallback: call aliyun directly, stripping any --skillopt-* flags
+    # Fallback used only when harness-lib.sh could not be sourced (last resort).
+    # If the core lib was somehow sourced but skillopt_wrap is unavailable, route
+    # through skillopt_run_aliyun so the call stays observable + guard-enforced;
+    # otherwise call aliyun directly.
     FILTERED_ARGS=()
     for arg in "$@"; do
         case "$arg" in
@@ -41,5 +44,9 @@ else
             *) FILTERED_ARGS+=("$arg") ;;
         esac
     done
-    aliyun "$PRODUCT" "$SUBCMD" "${FILTERED_ARGS[@]}"
+    if declare -F skillopt_run_aliyun >/dev/null 2>&1; then
+        skillopt_run_aliyun "$PRODUCT" "$SUBCMD" "${FILTERED_ARGS[@]}"
+    else
+        aliyun "$PRODUCT" "$SUBCMD" "${FILTERED_ARGS[@]}"
+    fi
 fi
