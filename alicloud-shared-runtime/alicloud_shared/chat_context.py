@@ -5,6 +5,8 @@ plus platform adapters registered via a registry.
 """
 from __future__ import annotations
 
+import datetime
+import os
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -48,3 +50,35 @@ def bind(ctx: ChatContext) -> None:
 def current() -> ChatContext | None:
     """Return the currently bound chat context, or None."""
     return _ctx_var.get()
+
+
+_ADAPTERS: dict[str, Callable[[Any], ChatContext]] = {}
+
+
+def register_adapter(platform: str, fn: Callable[[Any], ChatContext]) -> None:
+    """Register a platform-specific chat context adapter."""
+    _ADAPTERS[platform] = fn
+
+
+def normalize(platform: str, payload: Any) -> ChatContext:
+    """Normalize a payload into ChatContext using the registered adapter.
+
+    Falls back to normalize_cli for unknown platforms.
+    """
+    fn = _ADAPTERS.get(platform)
+    if fn is not None:
+        return fn(payload)
+    return normalize_cli(source=platform)
+
+
+def normalize_cli(*, source: str = "cli") -> ChatContext:
+    """Default CLI fallback adapter."""
+    user_id = os.environ.get("USER") or "anonymous"
+    session_id = f"cli-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}-{os.getpid()}"
+    return ChatContext(
+        user_id=user_id,
+        session_id=session_id,
+        platform=source,
+        chat_type="n/a",
+        raw={},
+    )
