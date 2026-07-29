@@ -1,0 +1,1 @@
+"""Platform-specific chat context adapters (placeholder for P3-P4)."""

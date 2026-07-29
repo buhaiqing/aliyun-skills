@@ -1,0 +1,1 @@
+"""Chat context propagation (placeholder for P1)."""
