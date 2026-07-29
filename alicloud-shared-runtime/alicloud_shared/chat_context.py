@@ -35,3 +35,16 @@ class ChatContext:
     platform: str
     chat_type: str
     raw: dict[str, Any]
+
+
+_ctx_var: ContextVar[ChatContext | None] = ContextVar("chat_ctx", default=None)
+
+
+def bind(ctx: ChatContext) -> None:
+    """Bind a chat context for the current async task / thread."""
+    _ctx_var.set(ctx)
+
+
+def current() -> ChatContext | None:
+    """Return the currently bound chat context, or None."""
+    return _ctx_var.get()
