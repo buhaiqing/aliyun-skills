@@ -62,6 +62,9 @@ class ExecutionTrace:
     dry_run: bool = True
     success: bool = False
     session_id: str | None = None
+    user_id: str | None = None
+    platform: str | None = None
+    chat_type: str | None = None
     commands: list[CommandRecord] = field(default_factory=list)
     plan_summary: dict[str, Any] | None = None
     intent: dict[str, Any] | None = None
@@ -81,6 +84,9 @@ class ExecutionTrace:
             "dry_run": self.dry_run,
             "success": self.success,
             "session_id": self.session_id,
+            "user_id": self.user_id,
+            "platform": self.platform,
+            "chat_type": self.chat_type,
             "generator": {
                 "commands": [c.to_dict() for c in self.commands],
                 "plan_summary": self.plan_summary,
@@ -89,6 +95,22 @@ class ExecutionTrace:
             "critic": self.critic,
             "artifacts": self.artifacts,
         }
+
+    @classmethod
+    def new(cls, **kwargs: Any) -> "ExecutionTrace":
+        """Factory that auto-injects user_id/session_id/platform from chat context."""
+        try:
+            from alicloud_shared.chat_context import current
+        except ImportError:
+            # ponytail: shared runtime not on sys.path — trace still works, just uncorrelated
+            return cls(**kwargs)
+        ctx = current()
+        if ctx is not None:
+            kwargs.setdefault("user_id", ctx.user_id)
+            kwargs.setdefault("session_id", ctx.session_id)
+            kwargs.setdefault("platform", ctx.platform)
+            kwargs.setdefault("chat_type", ctx.chat_type)
+        return cls(**kwargs)
 
 
 def parse_plan_summary(plan_stdout: str) -> dict[str, Any] | None:
