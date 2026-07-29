@@ -363,7 +363,20 @@ def enforce_size_limit(runtime_root: Path, max_size_mb: float, apply: bool) -> d
             "enforced": True, "deleted": deleted}
 
 
+# ponytail: shared runtime lives in a sibling skill dir; no-op if absent
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[3] / "alicloud-gcl-runner-ops" / "scripts"
+if _SHARED_SCRIPTS.is_dir() and str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+
+try:
+    from alicloud_shared.chat_context import bind_from_env
+except ImportError:  # shared runtime unavailable — skill runs, just uncorrelated
+    def bind_from_env() -> None:
+        return None
+
+
 def main():
+    bind_from_env()
     p = argparse.ArgumentParser(description="Sprint 19: .runtime/ 清理工具")
     p.add_argument("--baseline-keep-days", type=int, default=90,
                    help="baseline 保留天数 (默认 90)")

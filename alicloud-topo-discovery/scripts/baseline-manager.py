@@ -279,7 +279,20 @@ def _guess_resource_type(rid: str) -> str:
     return "Unknown"
 
 
+# ponytail: shared runtime lives in a sibling skill dir; no-op if absent
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[2] / "alicloud-gcl-runner-ops" / "scripts"
+if _SHARED_SCRIPTS.is_dir() and str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+
+try:
+    from alicloud_shared.chat_context import bind_from_env
+except ImportError:  # shared runtime unavailable — skill runs, just uncorrelated
+    def bind_from_env() -> None:
+        return None
+
+
 def main():
+    bind_from_env()
     args = parse_args()
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
