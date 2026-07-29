@@ -118,3 +118,43 @@ class TestNormalizeCli:
         ctx = normalize_cli()
         assert ctx.session_id.startswith("cli-")
         assert ctx.platform == "cli"
+
+
+class TestBindFromEnv:
+    def test_no_env_returns_none(self, monkeypatch):
+        for key in ["CHAT_PLATFORM", "CHAT_USER_ID", "CHAT_SESSION_ID", "CHAT_TYPE"]:
+            monkeypatch.delenv(key, raising=False)
+        from alicloud_shared.chat_context import bind_from_env, current, _ctx_var
+        try:
+            result = bind_from_env()
+            assert result is None
+            assert current() is None
+        finally:
+            _ctx_var.set(None)
+
+    def test_full_env_binds(self, monkeypatch):
+        monkeypatch.setenv("CHAT_PLATFORM", "wecom")
+        monkeypatch.setenv("CHAT_USER_ID", "u1")
+        monkeypatch.setenv("CHAT_SESSION_ID", "s1")
+        monkeypatch.setenv("CHAT_TYPE", "group")
+        from alicloud_shared.chat_context import bind_from_env, current, _ctx_var
+        try:
+            result = bind_from_env()
+            assert result is not None
+            assert result.platform == "wecom"
+            assert result.user_id == "u1"
+            assert result.session_id == "s1"
+            assert result.chat_type == "group"
+            assert current() == result
+        finally:
+            _ctx_var.set(None)
+
+    def test_anonymous_fallback_for_user(self, monkeypatch):
+        monkeypatch.setenv("CHAT_PLATFORM", "wecom")
+        monkeypatch.delenv("CHAT_USER_ID", raising=False)
+        from alicloud_shared.chat_context import bind_from_env, _ctx_var
+        try:
+            result = bind_from_env()
+            assert result.user_id == "anonymous"
+        finally:
+            _ctx_var.set(None)
