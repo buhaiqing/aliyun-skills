@@ -924,7 +924,7 @@ skillopt_trace_start() {
         local w3c_trace_id=""
         w3c_trace_id="$(jq -r '.w3c_trace_context.trace_id // empty' "$trace_file" 2>/dev/null || echo "")"
         _skillopt_langfuse_create_trace "$trace_id" "$SKILLOPT_SESSION_ID" \
-            "$product" "$action" "$ts" "$input_json" "$w3c_trace_id"
+            "$product" "$action" "$ts" "$input_json" "$w3c_trace_id" "$uid"
         _skillopt_langfuse_create_span "$flow_span_id" "$trace_id" "${product}.${action}" "$ts"
     fi
     
@@ -1266,6 +1266,7 @@ _skillopt_langfuse_create_trace() {
     local ts="$5"
     local input="$6"
     local w3c_trace_id="${7:-}"
+    local uid="${8:-}"
     
     _skillopt_langfuse_post "/api/public/ingestion" "$(jq -n \
         --arg tid "$trace_id" \
@@ -1277,6 +1278,7 @@ _skillopt_langfuse_create_trace() {
         --arg action "$action" \
         --arg w3c_trace_id "$w3c_trace_id" \
         --arg app "$SKILLOPT_LANGFUSE_APP" \
+        --arg uid "$uid" \
         --argjson input "${input:-null}" \
         '{batch: [{
             id: $tid,
@@ -1284,11 +1286,12 @@ _skillopt_langfuse_create_trace() {
             timestamp: $ts,
             body: {
                 id: $tid,
+                userId: ($uid | if . == "" then null else . end),
                 sessionId: $sid,
                 name: $name,
                 input: $input,
                 metadata: (
-                    {app: $app, skill: $skill, product: $product, action: $action}
+                    {app: $app, skill: $skill, product: $product, action: $action, user_id: $uid}
                     + (if $w3c_trace_id == "" then {} else {w3c_trace_id: $w3c_trace_id} end)
                 )
             }

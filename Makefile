@@ -114,6 +114,9 @@ test-integration:
 	@echo ""
 	@echo "==> Rollup golden tests (G1-G6)..."
 	@bash scripts/test-token-rollup.sh
+	@echo ""
+	@echo "==> Langfuse reporting: 4-signal trace reaches Langfuse (skips if no creds)..."
+	@bash scripts/test-langfuse-reporting.sh
 
 # ===========================================
 # Validation
