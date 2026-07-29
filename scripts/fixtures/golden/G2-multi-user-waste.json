@@ -1,0 +1,27 @@
+{
+  "trace_id": "golden-trace-g2-waste",
+  "session_id": "golden-sess-g2",
+  "user_id": "golden-user-g2",
+  "skill": "alicloud-ecs-ops",
+  "coding_agent": "cursor",
+  "product": "ecs",
+  "action": "DeleteInstance",
+  "status": "failed",
+  "error_code": "InvalidInstanceId.NotFound",
+  "end_time": "2026-07-29T11:00:00+0000",
+  "llm_usage": {
+    "prompt_tokens": 200,
+    "completion_tokens": 50,
+    "total_tokens": 250
+  },
+  "llm_generations": [],
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["user-context7/search", "user-context7/fetch"],
+      "mcp_tools_invoked": ["user-context7/fetch"],
+      "mcp_tool_utilization": 0.5,
+      "mcp_schema_waste_tokens": 80,
+      "attribution_confidence": "estimated"
+    }
+  }
+}

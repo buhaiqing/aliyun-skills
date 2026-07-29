@@ -171,6 +171,7 @@ class NormalizedRecord:
     l2_category_hint: str = ""
     trace_path: str = ""
     agent_turn_id: str = ""
+    user_id: str = ""
 
 
 def record_to_dict(rec: NormalizedRecord) -> dict[str, Any]:
@@ -179,6 +180,7 @@ def record_to_dict(rec: NormalizedRecord) -> dict[str, Any]:
         "source": rec.source,
         "trace_id": rec.trace_id,
         "session_id": rec.session_id,
+        "user_id": rec.user_id,
         "skill": rec.skill,
         "operation": rec.operation,
         "status": rec.status,
@@ -204,6 +206,7 @@ def record_from_dict(data: dict[str, Any]) -> NormalizedRecord | None:
             source=str(data.get("source") or "unknown"),
             trace_id=str(data.get("trace_id") or ""),
             session_id=str(data.get("session_id") or ""),
+            user_id=str(data.get("user_id") or ""),
             skill=str(data.get("skill") or "unknown"),
             operation=str(data.get("operation") or "unknown"),
             status=str(data.get("status") or "unknown"),
@@ -298,6 +301,7 @@ def normalize_wrapper_trace(trace: dict[str, Any], path: Path) -> NormalizedReco
         source="wrapper",
         trace_id=str(trace.get("trace_id") or path.stem),
         session_id=str(trace.get("session_id") or ""),
+        user_id=str(trace.get("user_id") or ""),
         skill=str(trace.get("skill") or "unknown"),
         operation=str(trace.get("action") or trace.get("operation") or "unknown"),
         status=status,
@@ -351,6 +355,7 @@ def normalize_gcl_trace(trace: dict[str, Any], path: Path) -> NormalizedRecord |
         source="gcl-runner",
         trace_id=str(trace.get("trace_id") or path.stem),
         session_id=str(trace.get("session_id") or ""),
+        user_id=str(trace.get("user_id") or ""),
         skill=str(trace.get("skill") or "unknown"),
         operation=str(trace.get("operation") or trace.get("op") or "unknown"),
         status=status,
@@ -648,6 +653,8 @@ def build_waste_events(records: Iterable[NormalizedRecord]) -> list[dict[str, An
         events.append(
             {
                 "trace_id": rec.trace_id,
+                "session_id": rec.session_id,
+                "user_id": rec.user_id,
                 "skill": rec.skill,
                 "operation": rec.operation,
                 "source": rec.source,

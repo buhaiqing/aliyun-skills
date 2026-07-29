@@ -340,6 +340,94 @@ class TokenRollupTests(unittest.TestCase):
         self.assertIn("turn-rollup-1", agg["by_turn"])
         self.assertEqual(agg["by_turn"]["turn-rollup-1"]["llm_usage"]["total_tokens"], 1000)
 
+    # === user_id tests ===
+
+    def _make_recent(self, user_id: str = "") -> tr.NormalizedRecord:
+        """Helper: create NormalizedRecord with default values and optional user_id."""
+        return tr.NormalizedRecord(
+            source="test",
+            trace_id="test-trace",
+            session_id="test-session",
+            user_id=user_id,
+            skill="test-skill",
+            operation="test-op",
+            status="success",
+            success=True,
+            waste=False,
+            timestamp=datetime.now(timezone.utc),
+            coding_agent="test-agent",
+            model="test-model",
+            llm_usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            critic_tokens=5,
+            agent_turn_tokens=0,
+        )
+
+    def test_user_id_in_wrapper_trace(self) -> None:
+        """S1: Wrapper trace with user_id → NormalizedRecord.user_id = value"""
+        fake_path = Path(self._tmp) / "fake.json"
+        fake_path.touch()
+        data = {
+            "trace_id": "t1", "session_id": "s1", "user_id": "test-user-42",
+            "skill": "ecs", "action": "DescribeInstances", "status": "success",
+            "llm_usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+        }
+        rec = tr.normalize_wrapper_trace(data, fake_path)
+        assert rec is not None
+        self.assertEqual(rec.user_id, "test-user-42")
+
+    def test_user_id_in_gcl_trace(self) -> None:
+        """S2: GCL trace with user_id → NormalizedRecord.user_id = value"""
+        fake_path = Path(self._tmp) / "fake.json"
+        fake_path.touch()
+        data = {
+            "trace_id": "g1", "session_id": "s1", "user_id": "gcl-user-99",
+            "skill": "ecs", "operation": "DescribeInstances",
+            "coding_agent": "agent", "final": {"status": "PASS"},
+            "iterations": [{
+                "critic": {"critic_meta": {
+                    "llm_usage": {"total_tokens": 50, "prompt_tokens": 30, "completion_tokens": 20}
+                }},
+            }],
+        }
+        rec = tr.normalize_gcl_trace(data, fake_path)
+        assert rec is not None
+        self.assertEqual(rec.user_id, "gcl-user-99")
+
+    def test_user_id_cache_roundtrip(self) -> None:
+        """S3: NormalizedRecord → record_to_dict → record_from_dict preserves user_id"""
+        rec = self._make_recent(user_id="roundtrip-user")
+        d = tr.record_to_dict(rec)
+        restored = tr.record_from_dict(d)
+        assert restored is not None
+        self.assertEqual(restored.user_id, "roundtrip-user")
+
+    def test_user_id_default_empty(self) -> None:
+        """Edge case: JSON without user_id → NormalizedRecord.user_id == ''"""
+        fake_path = Path(self._tmp) / "fake.json"
+        fake_path.touch()
+        data = {
+            "trace_id": "t1", "session_id": "s1",
+            "skill": "ecs", "action": "DescribeInstances", "status": "success",
+            "llm_usage": {"total_tokens": 10},
+        }
+        rec = tr.normalize_wrapper_trace(data, fake_path)
+        assert rec is not None
+        self.assertEqual(rec.user_id, "")
+
+    def test_user_id_in_waste_event(self) -> None:
+        """S4: build_waste_events output includes user_id"""
+        rec = tr.NormalizedRecord(
+            source="wrapper", trace_id="t1", session_id="s1", user_id="waste-user",
+            skill="ecs", operation="op", status="failed", success=False,
+            waste=True, timestamp=datetime.now(timezone.utc),
+            coding_agent="agent", model="model",
+            llm_usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
+            critic_tokens=5, agent_turn_tokens=0,
+        )
+        events = tr.build_waste_events([rec])
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].get("user_id"), "waste-user")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,7 @@
 {
   "trace_id": "gcl-fixture-max-iter",
+  "session_id": "",
+  "user_id": "fixture-user-1",
   "skill": "alicloud-ecs-ops",
   "operation": "DeleteInstance",
   "started_at": "2026-06-22T12:00:00+0000",
