@@ -195,7 +195,10 @@ aliyun cbn DescribeCens
 | Route map/QoS/flow log/health check | Traffic control, observability, resilience | Medium |
 | Diagnose route conflict | Read-only route conflict and route table checks | Low |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cen-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cbn-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun cen ...` 命令在执行时应替换为 `./scripts/cbn-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cen` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cen-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun cen ...` 命令在执行时应替换为 `./scripts/cen-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cen` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

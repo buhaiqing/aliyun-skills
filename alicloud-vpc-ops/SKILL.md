@@ -172,8 +172,8 @@ Every operation: **Pre-flight → Execute → Validate → Recover**. Do not ski
 
 **Preference hint:** CLI is preferred for coverage and simplicity; Go SDK is used for operations CLI does not expose.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun vpc ...` 命令在执行时应替换为 `./scripts/vpc-skillopt-wrapper.sh <subcommand> ...`。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` 运行（优先 `./scripts/vpc-harness-wrapper.sh`）。
+> 以下所有代码块中的 `aliyun vpc ...` 命令在执行时应替换为 `./scripts/vpc-harness-wrapper.sh <subcommand> ...`（兼容 `./scripts/vpc-skillopt-wrapper.sh`）。
 > 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun vpc` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 

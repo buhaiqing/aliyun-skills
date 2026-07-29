@@ -70,6 +70,14 @@ access gateway** that provides:
 | **Domain colleague** | DMS data governance expertise + context for database teams | SQL approval flow, NL2SQL intelligent query, fine-grained permission runbook |
 | **Harnessed delivery** | Explainable, observable outcomes | GCL rubric + wrapper-first CLI |
 
+## Runtime Rules
+
+| Area | Rule | Reference |
+| --- | --- | --- |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dms-skillopt-wrapper.sh` for all DMS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dms` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
+| GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
+
 ## Trigger & Scope (Agent-Readable)
 
 ### SHOULD Use This Skill When
@@ -187,6 +195,11 @@ aliyun dms ListDatabases --PageSize 50
 
 Every operation: **Pre-flight → Execute (CLI or SDK) → Validate → Recover**. Do
 not skip phases.
+
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dms-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun dms ...` 命令在执行时应替换为 `./scripts/dms-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun dms` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ### Operation: Submit SQL Task (SQL Approval Flow)
 

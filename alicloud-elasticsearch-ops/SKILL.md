@@ -237,7 +237,10 @@ func main() {
 | 2.0.0 | 2026-05-17 | Well-Architected Framework optimization: Security (92%), Stability (88%). Added security-enhancement.md, stability-enhancement.md, knowledge-base.md, batch-operations.md. P0 gaps resolved. |
 | 1.0.0 | 2026-05-17 | Initial Elasticsearch SDK-only skill based on elasticsearch-20170613 v6.3.0 |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/elasticsearch-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/elasticsearch-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun elasticsearch ...` 命令在执行时应替换为 `./scripts/elasticsearch-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun elasticsearch` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/elasticsearch-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun elasticsearch ...` 命令在执行时应替换为 `./scripts/elasticsearch-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun elasticsearch` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

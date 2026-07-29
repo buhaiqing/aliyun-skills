@@ -187,7 +187,10 @@ aliyun dts DescribeDtsJobs --RegionId {{env.ALIBABA_CLOUD_REGION_ID}}
 |---------|------|---------|
 | 1.0.0 | 2026-06-04 | Initial DTS skill with migration, sync, change tracking, instance lifecycle, GCL integration |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dts-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dts-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun dts ...` 命令在执行时应替换为 `./scripts/dts-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dts` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dts-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun dts ...` 命令在执行时应替换为 `./scripts/dts-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dts` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

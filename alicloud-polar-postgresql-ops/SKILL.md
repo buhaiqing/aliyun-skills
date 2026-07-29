@@ -34,7 +34,10 @@ metadata:
 | CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/polar-postgresql-skillopt-wrapper.sh` for all Polar-PostgreSQL CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun polar-postgresql` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/polar-postgresql-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/polardb-postgresql-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun polardb ...` 命令在执行时应替换为 `./scripts/polardb-postgresql-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun polardb` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/polar-postgresql-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun polardb ...` 命令在执行时应替换为 `./scripts/polar-postgresql-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun polardb` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

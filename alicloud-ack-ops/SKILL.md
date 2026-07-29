@@ -176,7 +176,10 @@ fallback), response validation, and failure recovery.
 | 2.1.1 | 2026-06-11 | 新增巡检前置检查机制: ① 添加 inspection-access-patterns.md 文档 ② 更新 intelligent-inspection.md 增加前置检查脚本 ③ SKILL.md 增加巡检触发规则和前置检查操作章节 |
 | 1.0.0 | 2026-05-14 | Initial ACK skill with cluster and node pool operations |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ack-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ack-skillopt-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun cs ...` 命令在执行时应替换为 `./scripts/ack-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cs` CLI 调用。
+> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ack-skillopt-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun cs ...` 命令在执行时应替换为 `./scripts/ack-skillopt-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cs` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

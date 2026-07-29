@@ -1,0 +1,47 @@
+{
+  "trace_id": "golden-trace-g6",
+  "session_id": "golden-sess-g6",
+  "user_id": "golden-user-g6",
+  "skill": "alicloud-ecs-ops",
+  "coding_agent": "cursor",
+  "product": "ecs",
+  "action": "DescribeInstances",
+  "status": "success",
+  "start_time": "2026-07-29T11:00:00+0000",
+  "end_time": "2026-07-29T11:00:05+0000",
+  "llm_usage": {
+    "prompt_tokens": 400,
+    "completion_tokens": 100,
+    "total_tokens": 500
+  },
+  "llm_generations": [
+    {
+      "role": "agent_turn",
+      "coding_agent": "cursor",
+      "model": "claude-sonnet-4",
+      "prompt_tokens": 300,
+      "completion_tokens": 50,
+      "total_tokens": 350,
+      "source": "agent_turn"
+    },
+    {
+      "role": "harness_llm",
+      "coding_agent": "cursor",
+      "model": "gpt-4o-mini",
+      "prompt_tokens": 100,
+      "completion_tokens": 50,
+      "total_tokens": 150,
+      "source": "harness_llm"
+    }
+  ],
+  "context_metadata": {
+    "mcp": {
+      "mcp_tools_loaded": ["user-context7/search"],
+      "mcp_tools_invoked": ["user-context7/search"],
+      "mcp_tool_utilization": 1.0,
+      "mcp_schema_waste_tokens": 0,
+      "attribution_confidence": "observed"
+    }
+  },
+  "agent_turn_id": "turn-g6-001"
+}
