@@ -3,7 +3,9 @@ import argparse
 import base64
 import json
 import os
+import sys
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 
@@ -97,7 +99,20 @@ def cmd_generation_create(args: argparse.Namespace) -> None:
     )
 
 
+# ponytail: shared runtime lives in a sibling skill dir; no-op if absent
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[2] / "alicloud-gcl-runner-ops" / "scripts"
+if _SHARED_SCRIPTS.is_dir() and str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+
+try:
+    from alicloud_shared.chat_context import bind_from_env
+except ImportError:  # shared runtime unavailable — skill runs, just uncorrelated
+    def bind_from_env() -> None:
+        return None
+
+
 def main() -> int:
+    bind_from_env()
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("span-create")

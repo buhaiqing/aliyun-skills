@@ -1570,7 +1570,20 @@ class ReverseEngineering:
             return True
 
 
+# ponytail: shared runtime lives in a sibling skill dir; no-op if absent
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[2] / "alicloud-gcl-runner-ops" / "scripts"
+if _SHARED_SCRIPTS.is_dir() and str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+
+try:
+    from alicloud_shared.chat_context import bind_from_env
+except ImportError:  # shared runtime unavailable — skill runs, just uncorrelated
+    def bind_from_env() -> None:
+        return None
+
+
 def main():
+    bind_from_env()
     parser = argparse.ArgumentParser(
         description="Reverse Engineer Alibaba Cloud Resources to Terraform"
     )

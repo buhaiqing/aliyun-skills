@@ -4,6 +4,9 @@ Test script for HCL generation functions.
 验证新添加的 RDS/Redis/SLB/EIP/SG HCL 生成函数
 """
 
+import sys
+from pathlib import Path
+
 from reverse_engineering import ResourceMapper
 
 
@@ -192,8 +195,21 @@ def test_all_resource_types():
     print("\n✅ All resource types are mapped\n")
 
 
+# ponytail: shared runtime lives in a sibling skill dir; no-op if absent
+_SHARED_SCRIPTS = Path(__file__).resolve().parents[2] / "alicloud-gcl-runner-ops" / "scripts"
+if _SHARED_SCRIPTS.is_dir() and str(_SHARED_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SHARED_SCRIPTS))
+
+try:
+    from alicloud_shared.chat_context import bind_from_env
+except ImportError:  # shared runtime unavailable — skill runs, just uncorrelated
+    def bind_from_env() -> None:
+        return None
+
+
 def main():
     """Run all tests."""
+    bind_from_env()
     print("\n" + "=" * 60)
     print("HCL Generation Function Tests")
     print("=" * 60 + "\n")

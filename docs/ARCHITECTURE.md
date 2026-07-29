@@ -123,6 +123,10 @@
 └──────────────────────────────────────────────────────────────────────────┘
 ```markdown
 
+> Trace schema 详见 [SPEC-2026-07-29-chat-context](../superpowers/specs/2026-07-29-unified-chat-context-tracing-design.md) 与 [ADR-001](architecture/ADR-001-unified-chat-context-tracing.md)。
+
+- 平台维度(platform / user_id / session_id)并入 Langfuse Trace,见 [SPEC-2026-07-29-chat-context](../superpowers/specs/2026-07-29-unified-chat-context-tracing-design.md) §验收标准
+
 ### 核心组件说明
 
 | 组件 | 职责 | 一句话 |
@@ -171,6 +175,9 @@
 | CI/CD 发版后触发检查 | REST API | 同步返回 pass/fail |
 | 人在对话窗口问问题 | MCP Server | LLM Agent 调用 MCP tools |
 | 定时巡检 | REST API | Cron 触发，结果推送 IM |
+
+> **澄清**:"双模式接入"指的是本仓库内部 REST API / MCP Server(由 Agent Runtime 暴露给外部系统)。
+> 通过 [Nanobot OpenAI API](https://github.com/HKUDS/nanobot/blob/main/docs/openai-api.md) 调入的 `POST /v1/chat/completions` 是**另一条独立契约**,见 [ADR-001 §2.6](architecture/ADR-001-unified-chat-context-tracing.md#26-http-post-作为第-4-类通道)。
 
 ---
 

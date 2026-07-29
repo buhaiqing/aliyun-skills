@@ -33,6 +33,30 @@ except ImportError:
     from scripts.nl2hcl_generator import Colors, NL2HCLGenerator, log_dry_run, print_dry_run_banner  # type: ignore
     from scripts.reverse_engineering import ReverseEngineering  # type: ignore
 
+try:
+    from alicloud_shared.chat_context import bind_from_env as _bind_from_env, current as _chat_current
+except ImportError:  # pragma: no cover
+    _bind_from_env = None
+    _chat_current = None
+
+
+def _derive_chat_fields() -> dict[str, str]:
+    """Return session_id/user_id/platform/chat_type from chat context or CLI fallback."""
+    ctx = _chat_current() if _chat_current is not None else None
+    if ctx is not None:
+        return {
+            "session_id": ctx.session_id,
+            "user_id": ctx.user_id,
+            "platform": ctx.platform,
+            "chat_type": ctx.chat_type,
+        }
+    return {
+        "session_id": new_session_id(),
+        "user_id": os.environ.get("USER", "unknown"),
+        "platform": "cli",
+        "chat_type": "n/a",
+    }
+
 
 WIZARD_VERSION = "1.0.0"
 SESSION_DIR = Path.home() / ".aliyun-terraform" / "sessions"
@@ -224,9 +248,13 @@ class WizardRunner:
         request: str | None = None,
         dry_run: bool = True,
     ) -> WizardSession:
+        # Bind chat context from env (Nanobot-injected or CLI fallback no-op)
+        if _bind_from_env is not None:
+            _bind_from_env()
+        chat = _derive_chat_fields()
         session = WizardSession(
-            session_id=new_session_id(),
-            user_id=os.environ.get("USER", "unknown"),
+            session_id=chat["session_id"],
+            user_id=chat["user_id"],
             workflow_type="nl2hcl",
         )
         params: dict[str, Any] = {}
@@ -327,6 +355,9 @@ class WizardRunner:
                 plan_stdout=dry_result.plan_stdout,
                 intent=intent,
                 session_id=session.session_id,
+                user_id=session.user_id,
+                platform=chat["platform"],
+                chat_type=chat["chat_type"],
             )
 
         elapsed_ms = int((time.time() - t0) * 1000)
@@ -400,9 +431,12 @@ class WizardRunner:
         discover: bool = True,
         dry_run: bool = True,
     ) -> WizardSession:
+        if _bind_from_env is not None:
+            _bind_from_env()
+        chat = _derive_chat_fields()
         session = WizardSession(
-            session_id=new_session_id(),
-            user_id=os.environ.get("USER", "unknown"),
+            session_id=chat["session_id"],
+            user_id=chat["user_id"],
             workflow_type="import",
         )
 

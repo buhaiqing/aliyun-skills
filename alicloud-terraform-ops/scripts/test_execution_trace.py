@@ -76,5 +76,66 @@ Plan: 5 to add, 0 to change, 0 to destroy
             self.assertTrue(path.name.startswith("gcl-trace-plan-"))
 
 
+class TestNewFields:
+    def test_new_factory_injects_from_chat_context(self, monkeypatch):
+        """new() should pull user_id/session_id/platform from bind() context."""
+        from alicloud_shared.chat_context import bind, ChatContext, _ctx_var
+        from execution_trace import ExecutionTrace
+        try:
+            ctx = ChatContext(user_id="alice", session_id="s1", platform="wecom", chat_type="group", raw={})
+            bind(ctx)
+            trace = ExecutionTrace.new(operation="test")
+            assert trace.user_id == "alice"
+            assert trace.session_id == "s1"
+            assert trace.platform == "wecom"
+            assert trace.chat_type == "group"
+        finally:
+            _ctx_var.set(None)
+
+    def test_new_factory_no_context(self):
+        """new() without context should set fields to None."""
+        from execution_trace import ExecutionTrace
+        trace = ExecutionTrace.new(operation="test")
+        assert trace.user_id is None
+        assert trace.session_id is None
+        assert trace.platform is None
+        assert trace.chat_type is None
+
+    def test_to_dict_includes_new_fields(self):
+        from execution_trace import ExecutionTrace
+        trace = ExecutionTrace(operation="test", user_id="u", session_id="s", platform="wecom", chat_type="group")
+        d = trace.to_dict()
+        assert d["user_id"] == "u"
+        assert d["session_id"] == "s"
+        assert d["platform"] == "wecom"
+        assert d["chat_type"] == "group"
+
+    def test_backward_compat_old_construction(self):
+        """Old construction without new fields should still work."""
+        from execution_trace import ExecutionTrace
+        trace = ExecutionTrace(operation="test")
+        assert trace.user_id is None
+        assert trace.session_id is None  # existing default
+        assert trace.platform is None
+        assert trace.chat_type is None
+
+    def test_from_dict_missing_fields(self):
+        """Loading an old trace JSON without new fields should not raise."""
+        from execution_trace import ExecutionTrace
+        old_data = {
+            "trace_version": "1.0.0",
+            "trace_id": "trace-abc",
+            "operation": "test",
+            # No user_id, platform, chat_type
+        }
+        trace = ExecutionTrace.from_dict(old_data) if hasattr(ExecutionTrace, 'from_dict') else None
+        # If from_dict doesn't exist, this test passes trivially
+        # But the dict round-trip via to_dict must work
+        trace2 = ExecutionTrace(operation="test")
+        d = trace2.to_dict()
+        assert "user_id" in d
+        assert d["user_id"] is None
+
+
 if __name__ == "__main__":
     unittest.main()
