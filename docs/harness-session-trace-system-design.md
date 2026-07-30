@@ -1273,8 +1273,40 @@ bash scripts/test-langfuse-gray-skills.sh
 | `llm_usage` | object | `{prompt_tokens, completion_tokens, total_tokens}` 聚合值 |
 | `has_llm_usage` | boolean | `total_tokens > 0` 时为 `true`，用于快速过滤 |
 
+### 决策 7: Langfuse Token Consumption Report — 远程拉取 + sessionID 聚合
+
+**时间**: 2026-07-30  
+**决策**: 提供 `make langfuse-token-report` 从 Langfuse 远程拉取各 sessionID 的 Token 消耗报表，与 `scripts/token_rollup.py`（本地）互补  
+**理由**:
+
+- **互相补足**：本地 trace 适用于单机实时分析；Langfuse 远程适用于跨机器聚合 / 账单审计 / 长期存档（本地有 TTL=7d 限制）
+- **简化使用**：`metadata.has_llm_usage=true` 的过滤逻辑已被 `langfuse_token_report.py` 复用
+- **退出码结构**：与 `block-result-code` 协议保持一致，缺凭证 = exit 1，其他错误 [2-5]
+
+**调用方式**：
+
+```bash
+make langfuse-token-report SINCE_DAYS=7
+make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=30
+make langfuse-token-report FORMAT=json OUTPUT=report.json
+```
+
+**架构变化**：新依赖 `urllib.request`（stdlib，无新依赖）、新脚本 `scripts/langfuse_token_report.py`（~460 lines）。
+
+**交付内容**：
+
+| 文件 | 职责 |
+|------|------|
+| `scripts/langfuse_token_report.py` | CLI 脚本：`pull` / `session` sub-commands |
+| `scripts/test_langfuse_token_report.py` | 单元测试（17 个用例） |
+| `Makefile` `langfuse-token-report` | 集成入口 |
+| `docs/specs/langfuse-token-report.md` | SPEC |
+| `docs/plans/langfuse-token-report.md` | PLAN |
+
+**双数据源设计**：本地（token_rollup.py）用于 实时 / 离线分析；远程（langfuse_token_report.py）用于 跨机器 / 账单报表。
+
 ---
 
-**文档版本**: v2.4  
+**文档版本**: v2.5  
 **最后更新**: 2026-07-30  
 **维护者**: Runtime Harness Team

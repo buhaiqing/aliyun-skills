@@ -14,6 +14,12 @@ DOCTOR_WORK := $(SKILLS_DIR)/.runtime/doctor/work
 DOCTOR_SINCE_DAYS ?= 7
 DOCTOR_SKILL ?=
 DOCTOR_OP ?=
+SINCE_DAYS ?= 7
+SESSION_ID ?=
+FORMAT ?=
+OUTPUT ?=
+LANGFUSE_TOKEN_SCRIPT ?= python3 scripts/langfuse_token_report.py
+LANGFUSE_TOKEN_ENV_FILE ?= LANGFUSE_ENV_FILE=.env
 
 export ALIYUN_SKILLS_ROOT := $(SKILLS_DIR)
 
@@ -64,6 +70,12 @@ help:
 	@echo "      Layer 3 only: strategy_retrieve JSON from docs/strategy-baseline.json"
 	@echo "  make doctor-weekly              Preview weekly review (dry-run, no writes)"
 	@echo "  make doctor-weekly-apply        Full local weekly (writes baseline + report + token rollup)"
+	@echo ""
+	@echo "Langfuse Token Consumption:"
+	@echo "  make langfuse-token-report SINCE_DAYS=7"
+	@echo "      Pull traces from Langfuse, aggregate by sessionID (default: last 7 days)"
+	@echo "  make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=7"
+	@echo "      Drill down on a single sessionID"
 	@echo ""
 	@echo "Environment: SKILLS_DIR=$(SKILLS_DIR)"
 
@@ -194,6 +206,30 @@ runtime-clean-memory-fixtures:
 
 runtime-clean-memory-fixtures-apply:
 	@python3 $(REPO_CLEANUP) --purge-memory-fixtures --apply
+
+# ===========================================
+# Langfuse Token Consumption Report
+# Pulls traces from Langfuse, aggregates by sessionID.
+# Requires LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY (set in .env).
+# Usage:
+#   make langfuse-token-report SINCE_DAYS=7
+#   make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=30
+#   make langfuse-token-report FORMAT=json OUTPUT=report.json SINCE_DAYS=30
+# ===========================================
+
+langfuse-token-report:
+	@if [ -n "$(SESSION_ID)" ]; then \
+		echo "==> Drilling down on session_id=$(SESSION_ID) (since=$(SINCE_DAYS)d)..."; \
+		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) session \
+			--session-id "$(SESSION_ID)" \
+			--since-days $(SINCE_DAYS); \
+	else \
+		echo "==> Aggregating token usage by sessionID (since=$(SINCE_DAYS)d)..."; \
+		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) pull \
+			--since-days $(SINCE_DAYS) \
+			$(if $(OUTPUT),--output $(OUTPUT),) \
+			$(if $(FORMAT),--format $(FORMAT),); \
+	fi
 
 # ===========================================
 # Layer 3 Doctor (manual local entrypoints)

@@ -229,6 +229,57 @@ for t in traces:
 
 即可过滤出所有调用了 LLM 的 GCL trace。
 
+### 4.6 从 Langfuse 拉取各 sessionID Token 报表
+
+通过 Makefile 拉取指定时段各 sessionID 的 token 消耗报表（需 Langfuse 凭证）：
+
+```bash
+# 最近 7 天各 sessionID 报表（表格输出）
+make langfuse-token-report SINCE_DAYS=7
+
+# 最近 30 天報表，输出到 JSON 文件
+make langfuse-token-report SINCE_DAYS=30 FORMAT=json OUTPUT=report.json
+
+# 指定起止日期
+python3 scripts/langfuse_token_report.py pull \
+    --from 2026-07-01 --to 2026-07-30 \
+    --format json
+
+# 单 sessionID 明细
+make langfuse-token-report SESSION_ID=sess-claude-abc123 SINCE_DAYS=30
+
+# 不带 Makefile：直接调用脚本
+LANGFUSE_ENV_FILE=.env python3 scripts/langfuse_token_report.py pull --since-days 7
+```
+
+**输出示例**（表格）：
+
+```
+=== Langfuse Token Consumption Report ===
+Period: 2026-07-23 → 2026-07-30 (7 days)
+Total Sessions: 12   Total Traces: 150   Total Tokens: 236,000
+-----------------------------------------------------------------------------------------------
+Session ID                          Traces    Prompt  Completion      Total User
+-----------------------------------------------------------------------------------------------
+sess-claude-abc123                     42   120,500       8,200    128,700 alice
+sess-trae-xyz789                        8    30,200       1,500     31,700 bob
+...
+-----------------------------------------------------------------------------------------------
+```
+
+**退出码**：
+
+| 码 | 说明 |
+|----|------|
+| 0 | 成功 |
+| 1 | `BLOCKED:no-credentials` (缺少 Langfuse 凭证) |
+| 2 | 网络错误 |
+| 3 | 认证错误（401/403） |
+| 4 | 限流（429） |
+| 5 | 参数无效 |
+
+**凭证加载顺序**：`.env` 文件（通过 `LANGFUSE_ENV_FILE`） → 环境变量（`LANGFUSE_HOST` / `LANGFUSE_BASE_URL` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY`）。
+
 ---
 
 ## 5. 集成测试
