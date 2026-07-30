@@ -155,18 +155,108 @@ skillopt_init() {
     
     # Validate Langfuse configuration if enabled
     if [[ "$SKILLOPT_LANGFUSE_ENABLED" == "true" ]]; then
-        local missing_vars=()
-        [[ -z "$LANGFUSE_HOST" ]] && missing_vars+=("LANGFUSE_HOST")
-        [[ -z "$LANGFUSE_PUBLIC_KEY" ]] && missing_vars+=("LANGFUSE_PUBLIC_KEY")
-        [[ -z "$LANGFUSE_SECRET_KEY" ]] && missing_vars+=("LANGFUSE_SECRET_KEY")
-        
-        if [[ ${#missing_vars[@]} -gt 0 ]]; then
-            local error_msg="HARNESS_LANGFUSE_ENABLED=true but missing required environment variables: ${missing_vars[*]}"
-            echo "ERROR: $error_msg" >&2
-            skillopt_log "ERROR: $error_msg"
-            return 1
-        fi
+        skillopt_langfuse_validate || return 1
     fi
+}
+
+# Validate Langfuse credentials and report connection details.
+# Called automatically from skillopt_init when SKILLOPT_LANGFUSE_ENABLED=true.
+# Returns 0 on success, non-zero on failure.
+skillopt_langfuse_validate() {
+    local missing_vars=()
+    [[ -z "${LANGFUSE_HOST:-}" ]] && missing_vars+=("LANGFUSE_HOST")
+    [[ -z "${LANGFUSE_PUBLIC_KEY:-}" ]] && missing_vars+=("LANGFUSE_PUBLIC_KEY")
+    [[ -z "${LANGFUSE_SECRET_KEY:-}" ]] && missing_vars+=("LANGFUSE_SECRET_KEY")
+
+    if [[ ${#missing_vars[@]} -gt 0 ]]; then
+        echo "ERROR: SKILLOPT_LANGFUSE_ENABLED=true but missing env vars: ${missing_vars[*]}" >&2
+        skillopt_log "ERROR: langfuse missing env vars: ${missing_vars[*]}"
+        return 1
+    fi
+
+    skillopt_log "langfuse: validating credentials at $LANGFUSE_HOST ..."
+
+    # Probe ingestion endpoint to verify credentials
+    local auth_base64
+    auth_base64="$(printf '%s' "${LANGFUSE_PUBLIC_KEY}:${LANGFUSE_SECRET_KEY}" | base64)"
+    local http_code
+    http_code="$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+        -X POST "${LANGFUSE_HOST}/api/public/ingestion" \
+        -H "Authorization: Basic $auth_base64" \
+        -H "Content-Type: application/json" \
+        -d '{"batch":[]}' 2>/dev/null || echo "000")"
+
+    if [[ "$http_code" == "200" ]] || [[ "$http_code" == "207" ]]; then
+        skillopt_log "langfuse: credential check PASS (HTTP $http_code)"
+    elif [[ "$http_code" == "401" ]]; then
+        echo "ERROR: Langfuse credential validation FAILED (HTTP 401 Unauthorized)" >&2
+        skillopt_log "ERROR: langfuse auth failed HTTP 401 -- check LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY"
+        return 1
+    else
+        echo "WARN: Langfuse credential check returned unexpected HTTP $http_code" >&2
+        skillopt_log "WARN: langfuse check HTTP $http_code"
+    fi
+
+    # Report connection details (host, org, project, api_version)
+    local lf_info
+    lf_info="$(python3 - "$LANGFUSE_HOST" "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" 2>/dev/null << 'PYEOF'
+import os, sys, base64, urllib.request
+host, pk, sk = sys.argv[1], sys.argv[2], sys.argv[3]
+org_name, project_name, project_id, api_ver = "unknown", "unknown", "unknown", "v2"
+
+# Get org + project details via SDK (uses project-scoped key list endpoint)
+try:
+    import langfuse
+    os.environ.update(LANGFUSE_HOST=host, LANGFUSE_PUBLIC_KEY=pk, LANGFUSE_SECRET_KEY=sk)
+    l = langfuse.get_client()
+    pid = l._get_project_id()
+    if pid:
+        project_id = pid
+        result = l.api.projects.get()
+        if result.data:
+            project_name = result.data[0].name
+            org_name = result.data[0].organization.name
+except Exception:
+    pass
+
+# Confirm API version via OTLP endpoint (HTTP 400 = endpoint exists = v2)
+try:
+    req = urllib.request.Request(
+        host + "/api/public/otel/v1/traces",
+        data=b"{}", method="POST",
+        headers={"Authorization": "Basic " + base64.b64encode(f"{pk}:{sk}".encode()).decode(),
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=8) as r:
+        api_ver = "v2"
+except urllib.error.HTTPError as e:
+    if e.code == 400:
+        api_ver = "v2"
+except Exception:
+    pass
+
+print("LANGFUSE_HOST=" + host)
+print("LANGFUSE_ORG=" + org_name)
+print("LANGFUSE_PROJECT=" + project_name)
+print("LANGFUSE_PROJECT_ID=" + project_id)
+print("LANGFUSE_API_VERSION=" + api_ver)
+PYEOF
+)"
+
+    local lf_host lf_org lf_proj lf_proj_id lf_ver
+    lf_host="$(echo "$lf_info" | grep "^LANGFUSE_HOST=" | cut -d= -f2)"
+    lf_org="$(echo "$lf_info" | grep "^LANGFUSE_ORG=" | cut -d= -f2)"
+    lf_proj="$(echo "$lf_info" | grep "^LANGFUSE_PROJECT=" | cut -d= -f2)"
+    lf_proj_id="$(echo "$lf_info" | grep "^LANGFUSE_PROJECT_ID=" | cut -d= -f2)"
+    lf_ver="$(echo "$lf_info" | grep "^LANGFUSE_API_VERSION=" | cut -d= -f2-)"
+
+    # Export for downstream use
+    export SKILLOPT_LANGFUSE_ORG="$lf_org"
+    export SKILLOPT_LANGFUSE_PROJECT="$lf_proj"
+    export SKILLOPT_LANGFUSE_PROJECT_ID="$lf_proj_id"
+
+    skillopt_log "langfuse: host=$lf_host org=$lf_org project=$lf_proj($lf_proj_id) api=$lf_ver"
+
+    [[ -n "$lf_host" ]] && echo "[Langfuse] HOST=$lf_host Org=$lf_org Project=$lf_proj($lf_proj_id) API=$lf_ver"
 }
 
 skillopt_log() {
@@ -2238,6 +2328,6 @@ if [[ -n "${BASH_VERSION:-}" ]]; then
               skillopt_cb_check skillopt_cb_record_failure skillopt_cb_record_success skillopt_cb_reset \
               skillopt_session_init skillopt_trace_start skillopt_trace_span skillopt_trace_span_io skillopt_trace_end \
               skillopt_resolve_coding_agent skillopt_record_llm_usage \
-              skillopt_params_to_json skillopt_wrap harness_wrap
+              skillopt_params_to_json skillopt_wrap harness_wrap skillopt_langfuse_validate
 fi
 

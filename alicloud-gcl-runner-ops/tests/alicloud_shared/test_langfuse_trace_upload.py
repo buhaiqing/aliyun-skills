@@ -435,5 +435,122 @@ def argparse_namespace_stub(**kwargs):
     return argparse.Namespace(**kwargs)
 
 
+class TestGclRunnerLangfuseReporting(unittest.TestCase):
+    """Test gcl_runner.py Langfuse reporting functionality."""
+
+    def setUp(self):
+        # Reset env vars
+        for k in ["SKILLOPT_LANGFUSE_ENABLED", "LANGFUSE_HOST",
+                  "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY",
+                  "HARNESS_USER_ID", "HARNESS_SESSION_ID"]:
+            os.environ.pop(k, None)
+
+    def _load_gcl_runner(self):
+        """Load gcl_runner.py as a module."""
+        spec = importlib.util.spec_from_file_location(
+            "gcl_runner_test", _SCRIPTS / "gcl_runner.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        # Mock sys.argv to avoid argparse errors
+        with patch.object(sys, "argv", ["gcl_runner.py"]):
+            spec.loader.exec_module(mod)
+        return mod
+
+    def test_langfuse_info_skipped_when_disabled(self):
+        """Verify no Langfuse output when disabled."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "false"
+        mod = self._load_gcl_runner()
+        # Should not raise, just return silently
+        mod._print_langfuse_info()
+
+    def test_langfuse_info_skipped_when_no_host(self):
+        """Verify no Langfuse output when host is missing."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ.pop("LANGFUSE_HOST", None)
+        os.environ.pop("LANGFUSE_BASE_URL", None)
+        mod = self._load_gcl_runner()
+        mod._print_langfuse_info()  # Should not raise
+
+    def test_report_trace_skipped_when_disabled(self):
+        """Verify _report_trace_to_langfuse returns False when disabled."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "false"
+        mod = self._load_gcl_runner()
+        trace = {"skill": "test", "iterations": []}
+        result = mod._report_trace_to_langfuse(trace, Path("/tmp/test-trace.json"))
+        self.assertFalse(result)
+
+    def test_report_trace_skipped_when_no_credentials(self):
+        """Verify _report_trace_to_langfuse returns False when credentials missing."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_HOST"] = "https://test.example.com"
+        os.environ.pop("LANGFUSE_PUBLIC_KEY", None)
+        os.environ.pop("LANGFUSE_SECRET_KEY", None)
+        mod = self._load_gcl_runner()
+        trace = {"skill": "test", "iterations": []}
+        result = mod._report_trace_to_langfuse(trace, Path("/tmp/test-trace.json"))
+        self.assertFalse(result)
+
+    def test_report_trace_metadata_structure(self):
+        """Verify _report_trace_to_langfuse builds correct metadata."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_HOST"] = "https://test.example.com"
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-test"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk-test"
+        os.environ["HARNESS_USER_ID"] = "test-user"
+        os.environ["HARNESS_SESSION_ID"] = "test-session"
+        mod = self._load_gcl_runner()
+
+        # Mock urllib to capture the request
+        captured = {}
+        class MockResp:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+            def read(self):
+                return json.dumps({"successes": [{"id": "test", "status": 201}]}).encode()
+
+        def mock_urlopen(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["data"] = json.loads(req.data)
+            return MockResp()
+
+        trace = {
+            "skill": "alicloud-ecs-ops",
+            "rubric_version": "v1.0.0",
+            "final": {"status": "PASS"},
+            "iterations": [{
+                "generator": {
+                    "command": "aliyun ecs DescribeInstances",
+                    "exit_code": 0,
+                    "duration_ms": 1000,
+                    "request_id": "req-123",
+                    "execution_path": "direct_aliyun",
+                },
+                "critic": {
+                    "scores": {"safety": 1.0, "correctness": 1.0}
+                }
+            }]
+        }
+
+        with patch("urllib.request.urlopen", mock_urlopen):
+            result = mod._report_trace_to_langfuse(trace, Path("/tmp/test-trace.json"))
+
+        self.assertTrue(result)
+        self.assertIn("/api/public/ingestion", captured["url"])
+
+        # Verify batch structure
+        batch = captured["data"]["batch"][0]
+        self.assertEqual(batch["type"], "trace-create")
+        body = batch["body"]
+        self.assertEqual(body["name"], "alicloud-ecs-ops gcl-runner")
+        self.assertEqual(body["metadata"]["skill"], "alicloud-ecs-ops")
+        self.assertEqual(body["metadata"]["user_id"], "test-user")
+        self.assertEqual(body["metadata"]["session_id"], "test-session")
+        self.assertEqual(body["metadata"]["command"], "aliyun ecs DescribeInstances")
+        self.assertEqual(body["metadata"]["exit_code"], 0)
+        self.assertEqual(body["metadata"]["rubric_scores"], {"safety": 1.0, "correctness": 1.0})
+
+
 if __name__ == "__main__":
     unittest.main()

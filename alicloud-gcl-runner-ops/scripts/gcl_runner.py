@@ -99,6 +99,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+from datetime import datetime, timezone
 import json
 import os
 import re
@@ -211,6 +212,137 @@ def aiopscruise_health_check(
     except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError) as exc:
         _log("event=aiopscruise_health_check result=error exception={}", exc)
         return {"findings": [], "total": 0, "critical_count": 0}
+
+# Langfuse Info (non-fatal)
+# ---------------------------------------------------------------------------
+
+def _print_langfuse_info() -> None:
+    """Print Langfuse connection info after preflight passes (if enabled)."""
+    if os.environ.get("SKILLOPT_LANGFUSE_ENABLED") != "true":
+        return
+
+    lf_host = os.environ.get("LANGFUSE_BASE_URL") or os.environ.get("LANGFUSE_HOST", "")
+    if not lf_host:
+        return
+
+    # Use cached values if already set by harness wrapper
+    lf_org = os.environ.get("SKILLOPT_LANGFUSE_ORG") or os.environ.get("LANGFUSE_ORG", "")
+    lf_proj = os.environ.get("SKILLOPT_LANGFUSE_PROJECT") or os.environ.get("LANGFUSE_PROJECT", "")
+
+    # If org/project not cached, try to fetch via SDK (non-fatal)
+    if not lf_org or lf_org == "unknown":
+        lf_org, lf_proj = _fetch_langfuse_org_project(lf_host)
+
+    print(f"[Langfuse] HOST={lf_host} Org={lf_org} Project={lf_proj}", file=sys.stderr)
+
+
+def _fetch_langfuse_org_project(host: str) -> tuple[str, str]:
+    """Fetch org and project names from Langfuse via SDK (non-fatal)."""
+    import base64
+    import urllib.request
+
+    pk = os.environ.get("LANGFUSE_PUBLIC_KEY", "")
+    sk = os.environ.get("LANGFUSE_SECRET_KEY", "")
+    if not pk or not sk:
+        return "", ""
+
+    org_name, project_name = "", ""
+    try:
+        import langfuse
+        os.environ.update(LANGFUSE_HOST=host, LANGFUSE_PUBLIC_KEY=pk, LANGFUSE_SECRET_KEY=sk)
+        lf_client = langfuse.get_client()
+        pid = lf_client._get_project_id()
+        if pid:
+            result = lf_client.api.projects.get()
+            if result.data:
+                project_name = result.data[0].name
+                org_name = result.data[0].organization.name
+    except Exception:
+        pass
+
+    return org_name, project_name
+
+
+def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
+    """Report GCL trace to Langfuse (non-fatal). Returns True if successful."""
+    if os.environ.get("SKILLOPT_LANGFUSE_ENABLED") != "true":
+        return False
+
+    lf_host = os.environ.get("LANGFUSE_BASE_URL") or os.environ.get("LANGFUSE_HOST", "")
+    lf_pk = os.environ.get("LANGFUSE_PUBLIC_KEY", "")
+    lf_sk = os.environ.get("LANGFUSE_SECRET_KEY", "")
+    if not lf_host or not lf_pk or not lf_sk:
+        _log("event=langfuse_report status=skipped reason=missing_credentials")
+        return False
+
+    import base64
+    import urllib.request
+
+    auth = base64.b64encode(f"{lf_pk}:{lf_sk}".encode()).decode()
+    trace_id = trace_path.stem
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    # Extract key fields from trace
+    skill = trace.get("skill", "")
+    iterations = trace.get("iterations", [])
+    final_status = trace.get("final", {}).get("status", "UNKNOWN")
+    user_id = os.environ.get("HARNESS_USER_ID", os.environ.get("SKILLOPT_USER_ID", ""))
+    session_id = os.environ.get("HARNESS_SESSION_ID", os.environ.get("SKILLOPT_SESSION_ID", ""))
+
+    # Build trace metadata
+    metadata = {
+        "skill": skill,
+        "status": final_status,
+        "user_id": user_id,
+        "session_id": session_id,
+        "trace_path": str(trace_path),
+        "rubric_version": trace.get("rubric_version", ""),
+    }
+
+    # Add execution details from first iteration
+    if iterations:
+        gen = iterations[0].get("generator", {})
+        metadata.update({
+            "command": gen.get("command", ""),
+            "exit_code": gen.get("exit_code"),
+            "duration_ms": gen.get("duration_ms"),
+            "request_id": gen.get("request_id", ""),
+            "execution_path": gen.get("execution_path", ""),
+        })
+        critic = iterations[0].get("critic", {})
+        scores = critic.get("scores", {})
+        if scores:
+            metadata["rubric_scores"] = scores
+
+    # Build trace body
+    body = {
+        "id": trace_id,
+        "name": f"{skill} gcl-runner",
+        "timestamp": ts,
+        "metadata": metadata,
+    }
+
+    # Post to Langfuse
+    batch = [{"id": trace_id, "type": "trace-create", "timestamp": ts, "body": body}]
+    try:
+        req = urllib.request.Request(
+            f"{lf_host}/api/public/ingestion",
+            data=json.dumps({"batch": batch}, ensure_ascii=False).encode(),
+            headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            resp = json.loads(r.read())
+            if resp.get("successes"):
+                _log("event=langfuse_report status=success trace_id={}", trace_id)
+                return True
+            else:
+                _log("event=langfuse_report status=failed response={}", resp)
+                return False
+    except Exception as e:
+        _log("event=langfuse_report status=error exception={}", e)
+        return False
+
 
 # Logging
 # ---------------------------------------------------------------------------
@@ -3104,6 +3236,9 @@ def main(argv: list[str] | None = None) -> int:
         _log("event=preflight result=failed errors={}", errors)
         return EXIT_USAGE_ERROR
 
+    # Print Langfuse connection info if enabled (after preflight pass)
+    _print_langfuse_info()
+
     # R2: Layer 1–3 memory pre-flight retrieval (non-fatal)
     memory_preflight_enabled = (
         not args.disable_memory_preflight
@@ -3192,6 +3327,12 @@ def main(argv: list[str] | None = None) -> int:
             _log("event=memory_store result=success trace={}", path.name)
     except Exception as exc:
         _log("event=memory_store result=error exception={}", exc)
+
+    # Report trace to Langfuse (non‑fatal)
+    try:
+        _report_trace_to_langfuse(trace, path)
+    except Exception as exc:
+        _log("event=langfuse_report result=error exception={}", exc)
 
     # Purge unknown.jsonl test artifacts after each GCL run (non‑fatal)
     try:
