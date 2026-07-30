@@ -25,7 +25,7 @@ aliyun dysmsapi DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-sms-ops
-./scripts/dysmsapi-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/dysmsapi-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

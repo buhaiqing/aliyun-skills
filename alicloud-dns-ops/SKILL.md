@@ -84,7 +84,7 @@ rules, pre-flight checks, **dual-path execution** (official `aliyun` CLI primary
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dns-skillopt-wrapper.sh` for all DNS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alidns` or `aliyun pvtz` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dns-harness-wrapper.sh` for all DNS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alidns` or `aliyun pvtz` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 | DNS Safety | DNS changes can affect global traffic; always validate NS status and domain ownership before modifications | [DNS Safety](references/dns-safety.md) |
@@ -312,10 +312,7 @@ After DNS operations, validate:
 |---------|------|---------|
 | 1.0.0 | 2026-07-03 | Initial DNS skill with public authoritative DNS, PrivateZone, GTM, DNSSEC, and query analytics |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dns-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/dns-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun alidns ...` 命令在执行时应替换为 `./scripts/dns-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun alidns` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dns-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun alidns ...` 或 `aliyun pvtz ...` 命令在执行时应替换为 `./scripts/dns-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun alidns` 或 `aliyun pvtz` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun alidns` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

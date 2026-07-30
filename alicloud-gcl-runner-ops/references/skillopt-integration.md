@@ -22,7 +22,7 @@ Shared core: [`alicloud-skillopt-ops`](../../alicloud-skillopt-ops/SKILL.md)
 
 ```bash
 cd alicloud-gcl-runner-ops
-SKILLOPT_ENABLED=true ./scripts/gcl-runner-skillopt-wrapper.sh \
+SKILLOPT_ENABLED=true ./scripts/gcl-runner-harness-wrapper.sh \
   --skill alicloud-ecs-ops \
   --op DescribeInstances \
   --command "aliyun ecs DescribeInstances --PageSize 1" \
@@ -36,7 +36,7 @@ export SKILLOPT_ENABLED=true
 export SKILLOPT_LANGFUSE_ENABLED=true
 # LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY from repo .env
 
-./scripts/gcl-runner-skillopt-wrapper.sh \
+./scripts/gcl-runner-harness-wrapper.sh \
   --skillopt-enable \
   --skillopt-langfuse-enable \
   --skillopt-session-id "sess-gcl-$(date +%s)" \
@@ -54,7 +54,7 @@ and `gcl_runner.py --test-assessment` for mechanical test-accuracy critique.
 
 ## Fallback
 
-If `skillopt-lib.sh` is missing, the wrapper runs `python3 scripts/gcl_runner.py`
+If `harness-lib.sh` is missing, the wrapper runs `python3 scripts/gcl_runner.py`
 directly (SkillOpt flags stripped).
 
 ## Reference

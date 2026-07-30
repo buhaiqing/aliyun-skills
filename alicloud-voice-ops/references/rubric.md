@@ -46,7 +46,7 @@ metadata:
 
 | Score | Meaning |
 |:-----:|---------|
-| **1** | Routed via `./scripts/voice-skillopt-wrapper.sh` |
+| **1** | Routed via `./scripts/voice-harness-wrapper.sh` |
 | **0** | Direct `aliyun dyvmsapi` while wrapper exists — **WRAPPER_BYPASS** |
 
 ## 3. Changelog

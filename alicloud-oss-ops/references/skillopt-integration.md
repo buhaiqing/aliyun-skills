@@ -15,7 +15,7 @@ legacy `skillopt-lib.sh` symlink) sources
 
 ## Environment Variable Loading
 
-The wrapper and `skillopt-lib.sh` **automatically load** `.env` on every invocation. Manual `source ../.env` is optional.
+The wrapper and `harness-lib.sh` **automatically load** `.env` on every invocation. Manual `source ../.env` is optional.
 
 | Priority (high → low) | Source |
 |----------------------|--------|
@@ -58,7 +58,7 @@ aliyun oss DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 ```bash
 cd alicloud-oss-ops
 # .env is auto-loaded from repo root or skill directory — no manual source needed
-./scripts/oss-skillopt-wrapper.sh ls
+./scripts/oss-harness-wrapper.sh ls
 ```
 
 ## Langfuse Tracing
@@ -70,7 +70,7 @@ cd alicloud-oss-ops
 # .env auto-loaded; only needed if you want to verify vars in current shell
 # source ../.env
 
-./scripts/oss-skillopt-wrapper.sh ls \
+./scripts/oss-harness-wrapper.sh ls \
   --skillopt-langfuse-enable \
   --skillopt-session-id sess-debug-$(date +%s)
 ```

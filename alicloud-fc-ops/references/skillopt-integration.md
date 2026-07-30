@@ -25,7 +25,7 @@ aliyun fc DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-fc-ops
-./scripts/fc-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/fc-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

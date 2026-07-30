@@ -25,7 +25,7 @@ aliyun ram DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-ram-ops
-./scripts/ram-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/ram-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

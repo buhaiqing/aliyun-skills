@@ -48,7 +48,7 @@ You are the Generator in a GCL for Alibaba Cloud OSS.
   document versioning/CRR/CDN impact.
 - `ossutil rm -r`: MUST show object count (`du`/`ls --limited`); reject silent wildcard mass delete.
 - `set-acl public-read-write` or anonymous write policy: HALT on prod unless explicit justification.
-- Control-plane ossutil ops via `./scripts/oss-skillopt-wrapper.sh`; SDK V2 for lifecycle/CORS/policy.
+- Control-plane ossutil ops via `./scripts/oss-harness-wrapper.sh`; SDK V2 for lifecycle/CORS/policy.
 - RAM policy changes delegate to `alicloud-ram-ops` GCL rules.
 - All `{{user.*}}` resolved interactively.
 ```

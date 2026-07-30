@@ -56,7 +56,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/advisor-harness-wrapper.sh`; legacy `advisor-skillopt-wrapper.sh` shim supported. Fallback to native `aliyun advisor` only when wrapper missing. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/advisor-harness-wrapper.sh`; legacy `advisor-harness-wrapper.sh` shim supported. Fallback to native `aliyun advisor` only when wrapper missing. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 
 ## Overview
 
@@ -274,12 +274,9 @@ aliyun advisor describe-advices --product Ecs --biz-language zh
   Dedicated subsection for cost reduction workflows
 - [Troubleshooting](references/troubleshooting.md) — Fix common errors
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/advisor-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/advisor-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun advisor ...` 命令在执行时应替换为 `./scripts/advisor-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun advisor` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/advisor-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun advisor ...` 命令在执行时应替换为 `./scripts/advisor-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun advisor` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun advisor` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

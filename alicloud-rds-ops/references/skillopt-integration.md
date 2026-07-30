@@ -25,7 +25,7 @@ aliyun rds DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-rds-ops
-./scripts/rds-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/rds-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing
@@ -55,7 +55,7 @@ When `SKILLOPT_LANGFUSE_ENABLED=true`, all wrapper executions are automatically 
 source .env
 export ALIBABA_CLOUD_ACCESS_KEY_ID ALIBABA_CLOUD_ACCESS_KEY_SECRET ALIBABA_CLOUD_REGION_ID
 export SKILLOPT_LANGFUSE_ENABLED=true LANGFUSE_HOST LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY
-./scripts/rds-skillopt-wrapper.sh DescribeDBInstances --RegionId cn-hangzhou
+./scripts/rds-harness-wrapper.sh DescribeDBInstances --RegionId cn-hangzhou
 
 # Check local trace
 ls -lt .runtime/traces/alicloud-rds-ops/ | head -3

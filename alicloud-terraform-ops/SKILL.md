@@ -77,17 +77,14 @@ delegation_rules:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/terraform-harness-wrapper.sh` when using Alibaba Cloud CLI paths; primary IaC execution uses Python scripts + `terraform` binary. Legacy `terraform-skillopt-wrapper.sh` shim supported. Fallback: when the wrapper is unavailable or `skillopt-lib.sh` is missing, call the `terraform` binary directly (driven by `scripts/` Python orchestrators); native `aliyun terraform` CLI is only used for the small subset of data-plane reads not covered by `terraform show`/`state`. | [Scripts](scripts/README.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/terraform-harness-wrapper.sh` when using Alibaba Cloud CLI paths; primary IaC execution uses Python scripts + `terraform` binary. Legacy `terraform-harness-wrapper.sh` shim supported. Fallback: when the wrapper is unavailable or `skillopt-lib.sh` is missing, call the `terraform` binary directly (driven by `scripts/` Python orchestrators); native `aliyun terraform` CLI is only used for the small subset of data-plane reads not covered by `terraform show`/`state`. | [Scripts](scripts/README.md), [Harness](references/skillopt-integration.md) |
 
 Terraform IaC skill for Alibaba Cloud infrastructure lifecycle management. Declarative, version-controlled, multi-environment orchestration.
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/terraform-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/terraform-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun terraform ...` 命令在执行时应替换为 `./scripts/terraform-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun terraform` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/terraform-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun terraform ...` 命令在执行时应替换为 `./scripts/terraform-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun terraform` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun terraform` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 >
 ## 1. Overview

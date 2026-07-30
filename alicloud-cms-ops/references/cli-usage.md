@@ -20,7 +20,7 @@ aliyun cms2 --help
 
 ## SkillOpt Integration Flags
 
-These flags are **parsed by the SkillOpt wrapper only** (`cms-skillopt-wrapper.sh` or
+These flags are **parsed by the SkillOpt wrapper only** (`cms-harness-wrapper.sh` or
 `skillopt_wrap`). They are **not** native `aliyun` CLI parameters.
 
 | Flag | Description | Default |
@@ -34,7 +34,7 @@ These flags are **parsed by the SkillOpt wrapper only** (`cms-skillopt-wrapper.s
 ### Example Usage
 
 ```bash
-./scripts/cms-skillopt-wrapper.sh DescribeMetricList --skillopt-enable \
+./scripts/cms-harness-wrapper.sh DescribeMetricList --skillopt-enable \
     --Namespace acs_ecs_dashboard --MetricName CPUUtilization \
     --Dimensions '[{"instanceId":"i-abc123"}]'
 ```
@@ -117,12 +117,12 @@ To enable automated self-repair and dynamic configuration optimization for CMS c
 ### Direct Command Usage
 
 SkillOpt flags are processed by the wrapper, **not** by the `aliyun` CLI itself.
-Always route CMS commands through `cms-skillopt-wrapper.sh` (or the alias) when
+Always route CMS commands through `cms-harness-wrapper.sh` (or the alias) when
 you want self-repair and optimization.
 
 ```bash
 # Enable SkillOpt for a single command
-./scripts/cms-skillopt-wrapper.sh DescribeMetricList --skillopt-enable \
+./scripts/cms-harness-wrapper.sh DescribeMetricList --skillopt-enable \
     --Namespace acs_ecs_dashboard --MetricName CPUUtilization \
     --Dimensions '[{"instanceId":"i-abc123"}]'
 

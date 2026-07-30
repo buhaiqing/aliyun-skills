@@ -76,19 +76,19 @@ the 5+3-dim structure from `AGENTS.md` §12.3 and the prior pilots.
 ### 2.X Wrapper Compliance (per `AGENTS.md` §15.8 + GCL §3, §14.2.4)
 
 **Definition:** Every `aliyun <product>` invocation against this skill
-MUST be routed through `scripts/<product>-skillopt-wrapper.sh`, not
+MUST be routed through `scripts/<product>-harness-wrapper.sh`, not
 invoked as a bare CLI call. A direct call is a **silent bypass** that
 strips self-repair, Langfuse tracing, and circuit-breaker protection.
 
 | Score | Meaning |
 |:-----:|---------|
 | **1** | The command was routed through the skillopt wrapper (or a non-aliyun path: SDK / data-plane tool / no-wrapper skill) |
-| **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
+| **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-harness-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
 
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
-  AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
+  AND `scripts/*-harness-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
 - Otherwise, `wrapper_compliance = 1`.
 

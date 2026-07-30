@@ -78,7 +78,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/sls-skillopt-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/sls-harness-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 
@@ -209,12 +209,9 @@ aliyun sls GET /logstores/my-logstore/logs \
 |---------|----------|----------|
 | [SLB Access Log Cruise](references/runbooks/slb-access-log-cruise.md) | SLB 七层访问日志多维度巡检 | 并行查询、自动发现目标、异常阈值检测 |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/sls-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/sls-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun sls ...` 命令在执行时应替换为 `./scripts/sls-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun sls` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/sls-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun sls ...` 命令在执行时应替换为 `./scripts/sls-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun sls` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun sls` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)
@@ -375,7 +372,7 @@ aliyun sls DELETE /logstores/{{user.logstore}} \
 
 ```bash
 # Top N 子域名（按 PV）
-./scripts/sls-skillopt-wrapper.sh GET /logstores/{{user.logstore}}/logs \
+./scripts/sls-harness-wrapper.sh GET /logstores/{{user.logstore}}/logs \
   --header "x-log-apiversion=0.9.0" \
   --query "* | select host, count(*) as pv, sum({{field.bytes_out}})/1024/1024 as mb_out, avg({{field.rt}}) as avg_rt group by host order by pv desc limit 20" \
   --from {{user.time_from}} --to {{user.time_to}} \
@@ -384,7 +381,7 @@ aliyun sls DELETE /logstores/{{user.logstore}} \
 
 ```bash
 # Top N 子域名（按出向流量字节）
-./scripts/sls-skillopt-wrapper.sh GET /logstores/{{user.logstore}}/logs \
+./scripts/sls-harness-wrapper.sh GET /logstores/{{user.logstore}}/logs \
   --header "x-log-apiversion=0.9.0" \
   --query "* | select host, sum({{field.bytes_out}})/1024/1024/1024 as gb_out, count(*) as pv group by host order by gb_out desc limit 20" \
   --from {{user.time_from}} --to {{user.time_to}} \
@@ -393,14 +390,14 @@ aliyun sls DELETE /logstores/{{user.logstore}} \
 
 ```bash
 # 趋势：每小时各子域名 QPS（识别突发热点）
-./scripts/sls-skillopt-wrapper.sh GET /logstores/{{user.logstore}}/logs \
+./scripts/sls-harness-wrapper.sh GET /logstores/{{user.logstore}}/logs \
   --header "x-log-apiversion=0.9.0" \
   --query "* | select date_trunc('hour', __time__) as hr, host, count(*) as cnt group by hr, host order by hr" \
   --from {{user.time_from}} --to {{user.time_to}} \
   --project "{{user.project_name}}"
 ```
 
-> **Fallback:** wrapper 或 `skillopt-lib.sh` 缺失时，将 `./scripts/sls-skillopt-wrapper.sh` 替换为 `aliyun sls`，并在 trace 的 `execution_path` 中标记为 `direct_aliyun`。
+> **Fallback:** wrapper 或 `skillopt-lib.sh` 缺失时，将 `./scripts/sls-harness-wrapper.sh` 替换为 `aliyun sls`，并在 trace 的 `execution_path` 中标记为 `direct_aliyun`。
 >
 > **SDK Fallback:** wrapper 与 CLI 均不可用时（如离线运行环境），改走 JIT Go SDK，参见 [API & SDK Usage](references/api-sdk-usage.md)。
 

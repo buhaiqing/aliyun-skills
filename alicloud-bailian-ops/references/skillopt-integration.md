@@ -25,7 +25,7 @@ aliyun bailian DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-bailian-ops
-./scripts/bailian-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/bailian-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

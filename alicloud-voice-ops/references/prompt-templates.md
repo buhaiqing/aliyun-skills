@@ -47,7 +47,7 @@ You are the Generator in a GCL for Alibaba Cloud Voice Messaging (dyvmsapi).
 - `BatchCallByVoice` / `BatchSendVoice` / `StartRobotTask`: MUST confirm recipient count,
   approved template/file, quota, and calling window.
 - `DeleteVoiceSign` / `DeleteVoiceTemplate`: MUST confirm exact resource ID; warn task breakage.
-- All CLI via `./scripts/voice-skillopt-wrapper.sh`.
+- All CLI via `./scripts/voice-harness-wrapper.sh`.
 - All `{{user.*}}` resolved interactively.
 ```
 

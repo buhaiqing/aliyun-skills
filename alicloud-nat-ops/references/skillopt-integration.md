@@ -25,7 +25,7 @@ aliyun vpc DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-nat-ops
-./scripts/vpc-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/vpc-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

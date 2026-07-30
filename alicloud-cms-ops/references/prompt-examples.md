@@ -407,7 +407,7 @@ CMS 告警 {{user.alarm_name}} 触发，
 **执行命令**：
 
 ```bash
-./scripts/cms-skillopt-wrapper.sh report --skillopt-report
+./scripts/cms-harness-wrapper.sh report --skillopt-report
 ```
 
 **报告内容**：
@@ -439,7 +439,7 @@ skillopt_report "/tmp/skillopt-report.md"
 **执行命令**：
 
 ```bash
-./scripts/cms-skillopt-wrapper.sh report --skillopt-report | grep -A 10 "健康状态"
+./scripts/cms-harness-wrapper.sh report --skillopt-report | grep -A 10 "健康状态"
 ```
 
 **健康阈值**：

@@ -51,7 +51,7 @@ as primary path, **JIT Go SDK** as fallback), response validation, and failure r
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/actiontrail-harness-wrapper.sh` for all ActionTrail CLI operations; legacy `./scripts/actiontrail-skillopt-wrapper.sh` shim supported. Fallback to native `aliyun actiontrail` only when wrapper missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/actiontrail-harness-wrapper.sh` for all ActionTrail CLI operations; legacy `./scripts/actiontrail-harness-wrapper.sh` shim supported. Fallback to native `aliyun actiontrail` only when wrapper missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ### CLI applicability (repository policy)
 
@@ -227,12 +227,9 @@ aliyun actiontrail DescribeTrails
 | CreateDeliveryHistoryJob | Backfill historical events | Medium | Low |
 | CreateComplianceTrail | Create a compliance-grade trail (all regions, all events) | Medium | Low |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/actiontrail-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/actiontrail-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun actiontrail ...` 命令在执行时应替换为 `./scripts/actiontrail-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun actiontrail` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/actiontrail-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun actiontrail ...` 命令在执行时应替换为 `./scripts/actiontrail-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun actiontrail` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun actiontrail` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

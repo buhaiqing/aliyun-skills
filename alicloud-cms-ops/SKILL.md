@@ -49,7 +49,7 @@ to product skills), pure billing (`alicloud-billing-ops`), pure RAM policy desig
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the Runtime Harness wrapper `./scripts/cms-harness-wrapper.sh` with `--skillopt-enable` for **all** `aliyun cms` / `aliyun cms2` calls (read-only and mutating) to enable automated self-repair, dynamic optimization, and Langfuse tracing. The legacy `./scripts/cms-skillopt-wrapper.sh` shim delegates to the harness wrapper. Fallback to native `aliyun cms` is permitted only when the wrapper file is confirmed missing or `harness-lib.sh` cannot be sourced. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path | **MANDATORY**: Always prefer the Runtime Harness wrapper `./scripts/cms-harness-wrapper.sh` with `--skillopt-enable` for **all** `aliyun cms` / `aliyun cms2` calls (read-only and mutating) to enable automated self-repair, dynamic optimization, and Langfuse tracing. The legacy `./scripts/cms-harness-wrapper.sh` shim delegates to the harness wrapper. Fallback to native `aliyun cms` is permitted only when the wrapper file is confirmed missing or `harness-lib.sh` cannot be sourced. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
 | Ops report | When user asks for "运营摘要", "Runtime Harness 报告", "SkillOpt 报告", "健康状态", or "运行统计", use `./scripts/cms-harness-wrapper.sh report --skillopt-report` to generate Markdown operations summary without calling aliyun CLI. | [SkillOpt](references/skillopt-integration.md#operations-summary-report) |
 | SDK path | Use JIT Go SDK only when CLI lacks request shape or plugin is unavailable | [SDK](references/api-sdk-usage.md), [Integration](references/integration.md) |
 | CLI verification | Run `<action> --help` before first use; auto-install missing `cms`/`cms2` plugins, then verify | [Plugin setup](references/cli-usage.md#cli-plugins-and-ai-mode), [Diagnosis](references/cli-install-diagnosis.md) |
@@ -59,12 +59,9 @@ to product skills), pure billing (`alicloud-billing-ops`), pure RAM policy desig
 Required env vars: `ALIBABA_CLOUD_ACCESS_KEY_ID`,
 `ALIBABA_CLOUD_ACCESS_KEY_SECRET`, `ALIBABA_CLOUD_REGION_ID`.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cms-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/cms-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun cms ...` 命令在执行时应替换为 `./scripts/cms-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cms` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 Runtime Harness wrapper `./scripts/cms-harness-wrapper.sh` 运行（旧的 `./scripts/cms-skillopt-wrapper.sh` 仍可作为 shim 使用）。
-> 以下所有代码块中的 `aliyun cms ...` 命令在执行时应替换为 `./scripts/cms-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `harness-lib.sh` 缺失时，才退回到原生 `aliyun cms` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun cms` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Common Pre-flight

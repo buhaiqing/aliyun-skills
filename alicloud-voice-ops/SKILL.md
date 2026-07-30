@@ -42,16 +42,13 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/voice-skillopt-wrapper.sh` for all Voice CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun voice` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always use wrapper `./scripts/dyvmsapi-harness-wrapper.sh` for all Voice CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun dyvmsapi` only when the wrapper is unavailable. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 | GCL | All write operations MUST pass GCL review before execution | [GCL Rubric](references/rubric.md) |
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/dyvmsapi-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun dyvmsapi ...` 命令在执行时应替换为 `./scripts/dyvmsapi-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dyvmsapi` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/voice-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun dyvmsapi ...` 命令在执行时应替换为 `./scripts/voice-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dyvmsapi` CLI 调用。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/dyvmsapi-harness-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun voice ...` 命令在执行时应替换为 `./scripts/dyvmsapi-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun voice` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 >
 ## Common JSON Paths (Centralized)

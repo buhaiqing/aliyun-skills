@@ -41,20 +41,16 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path (control plane) | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/redis-skillopt-wrapper.sh` for all r-kvstore control-plane CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun r-kvstore` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path (control plane) | **MANDATORY**: Always use wrapper `./scripts/redis-harness-wrapper.sh` for all r-kvstore control-plane CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun r-kvstore` only when the wrapper is unavailable. `redis-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [Harness](references/skillopt-integration.md) |
 | Credentials | Read `{env.*}` from environment; wrapper auto-loads repo/skill `.env` — never ask user to paste secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/redis-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun r ...` 命令在执行时应替换为 `./scripts/redis-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun r` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/redis-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun r-kvstore ...` 命令在执行时应替换为 `./scripts/redis-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun r-kvstore` CLI 调用。
+> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 wrapper `./scripts/redis-harness-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun r-kvstore ...` 命令在执行时应替换为 `./scripts/redis-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun r-kvstore` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
->
 ## Overview
 
 Alibaba Cloud Redis / Tair (KVStore) provides managed Redis-compatible and

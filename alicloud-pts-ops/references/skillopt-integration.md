@@ -25,7 +25,7 @@ aliyun pts DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-pts-ops
-./scripts/pts-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/pts-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

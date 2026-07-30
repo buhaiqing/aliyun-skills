@@ -25,7 +25,7 @@ aliyun kms DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-kms-ops
-./scripts/kms-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/kms-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

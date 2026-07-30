@@ -21,7 +21,7 @@ cd alicloud-advisor-ops
 ./scripts/advisor-harness-wrapper.sh get-product-list
 ```
 
-Legacy shim: `./scripts/advisor-skillopt-wrapper.sh` → harness wrapper.
+Legacy shim: `./scripts/advisor-harness-wrapper.sh` → harness wrapper.
 
 > **CLI form:** Advisor plugin uses **kebab-case** subcommands (`get-product-list`, not `GetProductList`).
 

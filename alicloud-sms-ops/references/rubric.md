@@ -46,7 +46,7 @@ metadata:
 
 | Score | Meaning |
 |:-----:|---------|
-| **1** | Routed via `./scripts/sms-skillopt-wrapper.sh` |
+| **1** | Routed via `./scripts/sms-harness-wrapper.sh` |
 | **0** | Direct `aliyun dysmsapi` while wrapper exists — **WRAPPER_BYPASS** |
 
 ## 3. Changelog

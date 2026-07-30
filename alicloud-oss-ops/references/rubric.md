@@ -70,7 +70,7 @@ metadata:
 
 | Score | Meaning |
 |:-----:|---------|
-| **1** | Routed via `./scripts/oss-skillopt-wrapper.sh` or OSS Go SDK V2 / `ossutil` data-plane (no bare deprecated `aliyun oss`) |
+| **1** | Routed via `./scripts/oss-harness-wrapper.sh` or OSS Go SDK V2 / `ossutil` data-plane (no bare deprecated `aliyun oss`) |
 | **0** | Direct deprecated `aliyun oss` or bypass while wrapper exists — **WRAPPER_BYPASS** |
 
 ## 4. Cross-Skill Delegation

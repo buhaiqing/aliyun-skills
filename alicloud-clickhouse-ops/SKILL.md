@@ -107,7 +107,7 @@ In addition to the Five Core Standards, every generated skill MUST map its opera
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/clickhouse-skillopt-wrapper.sh` for all ClickHouse CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun clickhouse` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/clickhouse-harness-wrapper.sh` for all ClickHouse CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun clickhouse` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
 | Plugin (Enterprise) | **MANDATORY**: Verify `aliyun-cli-clickhouse` plugin is installed before any `aliyun clickhouse` call | CLI Setup |
 | SDK (Classic) | **MANDATORY**: Use Go SDK `github.com/alibabacloud-go/clickhouse-20191111/v3/client` for Classic Edition ops | `references/api-sdk-usage.md` |
 | Path selection | **CRITICAL**: Always verify target instance edition BEFORE selecting CLI vs SDK | `references/rubric.md` §2 |
@@ -334,7 +334,7 @@ func main() {
 
 Every operation: **Pre-flight → Execute → Validate → Recover**. Do not skip phases.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/clickhouse-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/clickhouse-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun clickhouse ...` 命令在执行时应替换为 `./scripts/clickhouse-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun clickhouse` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

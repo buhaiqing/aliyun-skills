@@ -80,12 +80,12 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/mongodb-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/mongodb-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun dds ...` 命令在执行时应替换为 `./scripts/mongodb-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun dds` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 Harness wrapper `./scripts/mongodb-harness-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun dds ...` 命令在执行时应替换为 `./scripts/mongodb-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `harness-lib.sh` 缺失时，才退回到原生 `aliyun dds` CLI 调用。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/mongodb-harness-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun mongodb ...` 命令在执行时应替换为 `./scripts/mongodb-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun mongodb` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 >
 ## Trigger & Scope (Agent-Readable)

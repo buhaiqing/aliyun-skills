@@ -25,7 +25,7 @@ aliyun dts DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-dts-ops
-./scripts/dts-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/dts-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

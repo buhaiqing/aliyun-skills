@@ -46,18 +46,15 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path (control plane) | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ask-skillopt-wrapper.sh` for all cs control-plane CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cs` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path (control plane) | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ask-harness-wrapper.sh` for all cs control-plane CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cs` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{env.*}` from environment; wrapper auto-loads repo/skill `.env` — never ask user to paste secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ask-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/ask-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun cs ...` 命令在执行时应替换为 `./scripts/ask-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cs` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ask-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun cs ...` 命令在执行时应替换为 `./scripts/ask-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun cs` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun cs` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 >
 ## ✅ OpenAPI 验证状态 (VERIFIED 2026-06-02)
@@ -287,7 +284,7 @@ aliyun cs GET /clusters --RegionId $ALIBABA_CLOUD_REGION_ID \
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2026-06-02 | Initial ASK skill split from `alicloud-ack-ops`. Covers `cluster_type=ManagedKubernetes + profile=Serverless` lifecycle, kubeconfig, addon subset, ECI quota pre-flight. |
-| 1.1.0 | 2026-06-18 | **Renamed** from `alicloud-ack-serverless-ops` → `alicloud-ask-ops` to align with the user-facing product name (ASK = Serverless Kubernetes) and existing internal references. CLI command remains `cs`; wrapper renamed to `ask-skillopt-wrapper.sh`. All cross-skill references and GCL mapping tables updated. |
+| 1.1.0 | 2026-06-18 | **Renamed** from `alicloud-ack-serverless-ops` → `alicloud-ask-ops` to align with the user-facing product name (ASK = Serverless Kubernetes) and existing internal references. CLI command remains `cs`; wrapper renamed to `ask-harness-wrapper.sh`. All cross-skill references and GCL mapping tables updated. |
 
 ---
 

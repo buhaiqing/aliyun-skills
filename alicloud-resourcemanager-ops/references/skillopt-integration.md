@@ -25,7 +25,7 @@ aliyun resourcemanager DescribeInstances --skillopt-enable --RegionId cn-hangzho
 
 ```bash
 cd $(pwd)/alicloud-resourcemanager-ops
-./scripts/resourcemanager-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/resourcemanager-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

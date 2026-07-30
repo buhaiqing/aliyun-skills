@@ -65,7 +65,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/pts-skillopt-wrapper.sh` for all PTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun pts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/pts-harness-wrapper.sh` for all PTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun pts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Common JSON Paths (Centralized)
 
@@ -184,12 +184,9 @@ aliyun pts list-pts-scene --page-number 1 --page-size 10 --region "${ALIBABA_CLO
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/pts-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/pts-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun pts ...` 命令在执行时应替换为 `./scripts/pts-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun pts` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/pts-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun pts ...` 命令在执行时应替换为 `./scripts/pts-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun pts` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun pts` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

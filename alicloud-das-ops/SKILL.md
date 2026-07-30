@@ -51,7 +51,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/das-skillopt-wrapper.sh` for all DAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun das` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/das-harness-wrapper.sh` for all DAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun das` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 
@@ -234,12 +234,9 @@ Nearly all DAS API responses follow this five-element envelope:
 | 1.1.0 | 2026-06-01 | Added SQL concurrency control operations: EnableSqlConcurrencyControl, DisableSqlConcurrencyControl, DisableAllSqlConcurrencyControlRules, GetRunningSqlConcurrencyControlRules, GetSqlConcurrencyControlRulesHistory, GetSqlConcurrencyControlKeywordsFromSqlText |
 | 1.0.0 | 2026-05-14 | Initial DAS ops skill with SDK-only execution, covering instance registration, inspection, diagnosis, cache analysis, deadlock analysis, session management, space analysis, SQL throttling, event subscription, autonomous events, SQL insight, and query governance |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/das-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/das-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun das ...` 命令在执行时应替换为 `./scripts/das-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun das` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/das-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun das ...` 命令在执行时应替换为 `./scripts/das-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun das` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun das` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

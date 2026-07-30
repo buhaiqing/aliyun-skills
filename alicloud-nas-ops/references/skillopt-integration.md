@@ -25,7 +25,7 @@ aliyun nas DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-nas-ops
-./scripts/nas-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/nas-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

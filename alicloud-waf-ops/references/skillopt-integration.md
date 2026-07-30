@@ -25,7 +25,7 @@ aliyun waf DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-waf-ops
-./scripts/waf-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/waf-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

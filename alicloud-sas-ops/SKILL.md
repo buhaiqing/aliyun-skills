@@ -76,7 +76,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 | Rule | Requirement |
 |------|-------------|
-| **CLI path** | MANDATORY: Use `./scripts/sas-skillopt-wrapper.sh` for all operations. Fallback to `aliyun sas` only when the wrapper is missing or broken. |
+| **CLI path** | MANDATORY: Use `./scripts/sas-harness-wrapper.sh` for all operations. Fallback to `aliyun sas` only when the wrapper is missing or broken. |
 | **SkillOpt Integration** | [skillopt-integration.md](references/skillopt-integration.md) |
 
 > **Wrapper-First Execution**: All CLI examples below should be executed via the SkillOpt wrapper script, which provides automated self-repair, Langfuse tracing, and circuit breaker protection. Only use native `aliyun sas` commands if the wrapper script is unavailable.
@@ -192,12 +192,9 @@ aliyun sas DescribeCloudCenterInstances \
 | CreateVirusScanOnceTask | One-time virus scan | Medium | Low |
 | AddUninstallClientsByUuids | Uninstall agent | Low | **High** |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/sas-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/sas-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun sas ...` 命令在执行时应替换为 `./scripts/sas-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun sas` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/sas-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun sas ...` 命令在执行时应替换为 `./scripts/sas-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun sas` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun sas` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

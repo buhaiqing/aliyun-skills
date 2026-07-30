@@ -17,7 +17,7 @@ to CMS CLI operations via a shell wrapper library.
 User / Agent
      │
      ▼
-cms-skillopt-wrapper.sh          ← entry point (strips --skillopt-* flags)
+cms-harness-wrapper.sh          ← entry point (strips --skillopt-* flags)
      │
      ▼
 scripts/skillopt-lib.sh
@@ -74,7 +74,7 @@ Two layers run before command execution when SkillOpt is enabled:
 ### Option 1 — Wrapper Script (recommended)
 
 ```bash
-./scripts/cms-skillopt-wrapper.sh DescribeMetricList --skillopt-enable \
+./scripts/cms-harness-wrapper.sh DescribeMetricList --skillopt-enable \
     --Namespace acs_ecs_dashboard \
     --MetricName CPUUtilization \
     --Period 60 \
@@ -134,7 +134,7 @@ The circuit breaker has three states:
 Enable the circuit breaker with `--skillopt-cb-enable` and configure thresholds:
 
 ```bash
-./scripts/cms-skillopt-wrapper.sh DescribeMetricList \
+./scripts/cms-harness-wrapper.sh DescribeMetricList \
     --skillopt-enable \
     --skillopt-cb-enable \
     --skillopt-cb-threshold 5 \
@@ -218,7 +218,7 @@ Generate a Markdown-formatted operations summary with health status, call statis
 
 ```bash
 # Output to stdout
-./scripts/cms-skillopt-wrapper.sh report --skillopt-report
+./scripts/cms-harness-wrapper.sh report --skillopt-report
 
 # Or source the library and call directly
 source scripts/skillopt-lib.sh
@@ -317,4 +317,4 @@ ls -lt .runtime/traces/alicloud-cms-ops/ | head -3
 - [SkillOpt Project Page](https://microsoft.github.io/SkillOpt/)
 - [Alibaba Cloud CMS API](https://api.aliyun.com/product/Cms)
 - [skillopt-lib.sh](../scripts/skillopt-lib.sh) — core library source
-- [cms-skillopt-wrapper.sh](../scripts/cms-skillopt-wrapper.sh) — entry point
+- [cms-harness-wrapper.sh](../scripts/cms-harness-wrapper.sh) — entry point

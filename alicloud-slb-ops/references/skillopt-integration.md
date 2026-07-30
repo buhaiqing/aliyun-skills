@@ -25,7 +25,7 @@ aliyun slb DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-slb-ops
-./scripts/slb-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/slb-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

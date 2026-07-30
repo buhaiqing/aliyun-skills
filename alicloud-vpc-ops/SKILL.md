@@ -64,7 +64,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` for all VPC CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun vpc` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/vpc-harness-wrapper.sh` for all VPC CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun vpc` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 
@@ -172,8 +172,8 @@ Every operation: **Pre-flight → Execute → Validate → Recover**. Do not ski
 
 **Preference hint:** CLI is preferred for coverage and simplicity; Go SDK is used for operations CLI does not expose.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/vpc-skillopt-wrapper.sh` 运行（优先 `./scripts/vpc-harness-wrapper.sh`）。
-> 以下所有代码块中的 `aliyun vpc ...` 命令在执行时应替换为 `./scripts/vpc-harness-wrapper.sh <subcommand> ...`（兼容 `./scripts/vpc-skillopt-wrapper.sh`）。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/vpc-harness-wrapper.sh` 运行（优先 `./scripts/vpc-harness-wrapper.sh`）。
+> 以下所有代码块中的 `aliyun vpc ...` 命令在执行时应替换为 `./scripts/vpc-harness-wrapper.sh <subcommand> ...`（兼容 `./scripts/vpc-harness-wrapper.sh`）。
 > 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun vpc` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 

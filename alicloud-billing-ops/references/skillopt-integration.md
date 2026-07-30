@@ -25,7 +25,7 @@ aliyun bssopenapi DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-billing-ops
-./scripts/bssopenapi-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/bssopenapi-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

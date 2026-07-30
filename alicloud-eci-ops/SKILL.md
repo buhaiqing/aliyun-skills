@@ -286,7 +286,7 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 
 | Rule | Requirement |
 |------|-------------|
-| **CLI Path** | `./scripts/eci-skillopt-wrapper.sh eci <subcommand> [params]` |
+| **CLI Path** | `./scripts/eci-harness-wrapper.sh eci <subcommand> [params]` |
 | **Fallback** | Use native `aliyun eci <subcommand> [params]` **only** when the wrapper script is missing or cannot be sourced |
 | **SkillOpt Enabled** | Set `SKILLOPT_ENABLED=true` to enable automated self-repair, retries, and Langfuse tracing |
 | **Session ID** | Pass `--skillopt-session-id <session-id>` to enable multi-skill trace correlation |
@@ -301,17 +301,14 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/eci-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/eci-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun eci ...` 命令在执行时应替换为 `./scripts/eci-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun eci` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/eci-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun eci ...` 命令在执行时应替换为 `./scripts/eci-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun eci` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun eci` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)
 
-> **⚠️ MANDATORY NOTE**: All CLI examples in this document MUST be executed via the SkillOpt wrapper script (`./scripts/eci-skillopt-wrapper.sh`). Fallback to native `aliyun eci` commands is permitted **only** when the wrapper script is missing or cannot be sourced.
+> **⚠️ MANDATORY NOTE**: All CLI examples in this document MUST be executed via the SkillOpt wrapper script (`./scripts/eci-harness-wrapper.sh`). Fallback to native `aliyun eci` commands is permitted **only** when the wrapper script is missing or cannot be sourced.
 
 Every operation: **Pre-flight → Execute (CLI primary / SDK fallback) → Validate
 → Recover**. Do not skip phases.

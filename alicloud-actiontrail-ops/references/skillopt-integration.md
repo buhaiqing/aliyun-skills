@@ -25,7 +25,7 @@ aliyun actiontrail DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-actiontrail-ops
-./scripts/actiontrail-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/actiontrail-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

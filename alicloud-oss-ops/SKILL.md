@@ -38,7 +38,7 @@ metadata:
     names (ListBuckets / PutBucket / GetBucketInfo / ...) shown in the Operation
     tables below. Those tables document the OpenAPI surface; for actual
     execution, use one of:
-      1. `./scripts/oss-skillopt-wrapper.sh <ossutil-verb> [args]` (primary,
+      1. `./scripts/oss-harness-wrapper.sh <ossutil-verb> [args]` (primary,
          enables self-repair + Langfuse tracing), or
       2. `ossutil <ossutil-verb> [args]` (direct, no SkillOpt), or
       3. OSS Go SDK V2 (`github.com/aliyun/aliyun-oss-go-sdk/oss`) for the
@@ -69,7 +69,7 @@ Operational runbook for Alibaba Cloud OSS (12-nines durability). Execution paths
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path (control plane) | **MANDATORY**: Always prefer `./scripts/oss-skillopt-wrapper.sh` for ossutil-coverable operations; fallback to `ossutil` only when wrapper is unavailable. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path (control plane) | **MANDATORY**: Always prefer `./scripts/oss-harness-wrapper.sh` for ossutil-coverable operations; fallback to `ossutil` only when wrapper is unavailable. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | CLI path (data plane) | For upload/download/list, use `ossutil` directly (native data-plane tool). | [CLI](references/cli-usage.md) |
 | Non-ossutil ops | Use OSS Go SDK V2 (`github.com/aliyun/aliyun-oss-go-sdk/oss`). | [API & SDK](references/api-sdk-usage.md) |
 | Credentials | Read `{{env.*}}` from environment; wrapper auto-loads `.env` — never ask user to paste secrets. | [Integration](references/integration.md), [SkillOpt](references/skillopt-integration.md) |
@@ -210,7 +210,7 @@ Full response schemas → [API & SDK Usage](references/api-sdk-usage.md).
 
 Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/oss-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/oss-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `ossutil ...` 命令在执行时应替换为 `./scripts/oss-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `ossutil` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
@@ -221,11 +221,11 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 |---|-----------|-----------|---------------|-----------|
 | 1 | **Validate Bucket Name** | Bash helper | `{{user.bucket_name}}` | [CLI → Defensive Validation](references/cli-usage.md#defensive-validation-helpers) |
 | 2 | **Validate Object Key** | Bash helper | `{{user.object_key}}` | [CLI → Defensive Validation](references/cli-usage.md#defensive-validation-helpers) |
-| 3 | **List Buckets** | Wrapper: `./scripts/oss-skillopt-wrapper.sh ls` · Fallback: `ossutil ls` | — | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
-| 4 | **Create Bucket** | Wrapper: `./scripts/oss-skillopt-wrapper.sh mb oss://{{user.bucket_name}} --storage-class "{{user.storage_class|Standard}}" --acl "{{user.acl|private}}"` · Fallback: `ossutil mb`  (`{{user.bucket_name}}`, `{{user.storage_class}}`, `{{user.acl}}` [CLI](references/cli-usage.md#command-map--ossutil-data-plane))|
-| 5 | **Delete Bucket** | Wrapper: `./scripts/oss-skillopt-wrapper.sh rm oss://{{user.bucket_name}}` · Fallback: `ossutil rm` | `{{user.bucket_name}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
-| 6 | **Get Bucket Info** | Wrapper: `./scripts/oss-skillopt-wrapper.sh stat oss://{{user.bucket_name}}` · Fallback: `ossutil stat` | `{{user.bucket_name}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
-| 7 | **Get/Set Bucket ACL** | Wrapper: `./scripts/oss-skillopt-wrapper.sh stat` (get) / `set-acl` (set) · Fallback: `ossutil stat` / `ossutil set-acl` | `{{user.bucket_name}}`, `{{user.acl}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 3 | **List Buckets** | Wrapper: `./scripts/oss-harness-wrapper.sh ls` · Fallback: `ossutil ls` | — | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 4 | **Create Bucket** | Wrapper: `./scripts/oss-harness-wrapper.sh mb oss://{{user.bucket_name}} --storage-class "{{user.storage_class|Standard}}" --acl "{{user.acl|private}}"` · Fallback: `ossutil mb`  (`{{user.bucket_name}}`, `{{user.storage_class}}`, `{{user.acl}}` [CLI](references/cli-usage.md#command-map--ossutil-data-plane))|
+| 5 | **Delete Bucket** | Wrapper: `./scripts/oss-harness-wrapper.sh rm oss://{{user.bucket_name}}` · Fallback: `ossutil rm` | `{{user.bucket_name}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 6 | **Get Bucket Info** | Wrapper: `./scripts/oss-harness-wrapper.sh stat oss://{{user.bucket_name}}` · Fallback: `ossutil stat` | `{{user.bucket_name}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 7 | **Get/Set Bucket ACL** | Wrapper: `./scripts/oss-harness-wrapper.sh stat` (get) / `set-acl` (set) · Fallback: `ossutil stat` / `ossutil set-acl` | `{{user.bucket_name}}`, `{{user.acl}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 8 | **Get/Set Bucket Lifecycle** | OSS Go SDK V2 (`GetBucketLifecycle` / `PutBucketLifecycle`) | `{{user.bucket_name}}`, lifecycle rules JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
 | 9 | **Get/Set Bucket Referer** | OSS Go SDK V2 (`GetBucketReferer` / `PutBucketReferer`) | `{{user.bucket_name}}`, referer config JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
 | 10 | **Get/Set Bucket CORS** | OSS Go SDK V2 (`GetBucketCors` / `PutBucketCors`) | `{{user.bucket_name}}`, CORS config JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
@@ -235,14 +235,14 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 | 14 | **Get/Set Bucket Policy** | OSS Go SDK V2 (`GetBucketPolicy` / `PutBucketPolicy`) | `{{user.bucket_name}}`, policy JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
 | 15 | **Get/Set Bucket Versioning** | OSS Go SDK V2 (`GetBucketVersioning` / `PutBucketVersioning`) | `{{user.bucket_name}}`, versioning config JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
 | 16 | **Get/Set Bucket Encryption** | OSS Go SDK V2 (`GetBucketEncryption` / `PutBucketEncryption`) | `{{user.bucket_name}}`, encryption config JSON | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
-| 17 | **List Objects** | Wrapper: `./scripts/oss-skillopt-wrapper.sh ls oss://{{user.bucket_name}}/{{user.prefix|}} -r` · Fallback: `ossutil ls` | `{{user.bucket_name}}`, `{{user.prefix}}`  ([CLI](references/cli-usage.md#command-map--ossutil-data-plane))|
+| 17 | **List Objects** | Wrapper: `./scripts/oss-harness-wrapper.sh ls oss://{{user.bucket_name}}/{{user.prefix|}} -r` · Fallback: `ossutil ls` | `{{user.bucket_name}}`, `{{user.prefix}}`  ([CLI](references/cli-usage.md#command-map--ossutil-data-plane))|
 | 18 | **Upload Object (Small)** | `ossutil cp "{{user.local_path}}" oss://{{user.bucket_name}}/{{user.object_key}}` | `{{user.local_path}}`, `{{user.bucket_name}}`, `{{user.object_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 19 | **Upload Object (Large/Multipart)** | `ossutil cp --part-size 104857600 --thread-count 10 --checkpoint-dir /tmp/ossutil-checkpoint` | `{{user.local_path}}`, `{{user.bucket_name}}`, `{{user.object_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 20 | **Download Object** | `ossutil cp oss://{{user.bucket_name}}/{{user.object_key}} "{{user.local_path}}"` | `{{user.bucket_name}}`, `{{user.object_key}}`, `{{user.local_path}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 21 | **Delete Object(s)** | `ossutil rm oss://{{user.bucket_name}}/{{user.object_key}}` · Bulk: `ossutil rm oss://{{user.bucket_name}}/{{user.prefix}} -r` | `{{user.bucket_name}}`, `{{user.object_key}}`, `{{user.prefix}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
-| 22 | **Copy Object** | Wrapper: `./scripts/oss-skillopt-wrapper.sh cp oss://{{user.src_bucket}}/{{user.src_key}} oss://{{user.dest_bucket}}/{{user.dest_key}}` · Fallback: `ossutil cp` | `{{user.src_bucket}}`, `{{user.src_key}}`, `{{user.dest_bucket}}`, `{{user.dest_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 22 | **Copy Object** | Wrapper: `./scripts/oss-harness-wrapper.sh cp oss://{{user.src_bucket}}/{{user.src_key}} oss://{{user.dest_bucket}}/{{user.dest_key}}` · Fallback: `ossutil cp` | `{{user.src_bucket}}`, `{{user.src_key}}`, `{{user.dest_bucket}}`, `{{user.dest_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 23 | **Generate Presigned URL** | `ossutil sign oss://{{user.bucket_name}}/{{user.object_key}} --timeout 3600` | `{{user.bucket_name}}`, `{{user.object_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
-| 24 | **Restore Archived Object** | Wrapper: `./scripts/oss-skillopt-wrapper.sh restore oss://{{user.bucket_name}}/{{user.object_key}}` · Fallback: `ossutil restore` | `{{user.bucket_name}}`, `{{user.object_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
+| 24 | **Restore Archived Object** | Wrapper: `./scripts/oss-harness-wrapper.sh restore oss://{{user.bucket_name}}/{{user.object_key}}` · Fallback: `ossutil restore` | `{{user.bucket_name}}`, `{{user.object_key}}` | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 | 25 | **List/Abort Multipart Uploads** | OSS Go SDK V2 (`ListMultipartUploads` / `AbortMultipartUpload`) | `{{user.bucket_name}}`, `{{user.object_key}}`, `uploadId` | [API & SDK](references/api-sdk-usage.md#sdk-operations-map-control-plane-openapi-2019-05-17) |
 | 26 | **Image Processing** | `ossutil cp oss://{{user.bucket_name}}/{{user.object_key}}?x-oss-process=image/... "{{user.local_path}}"` | `{{user.bucket_name}}`, `{{user.object_key}}`, image params | [CLI](references/cli-usage.md#command-map--ossutil-data-plane) |
 
@@ -252,7 +252,7 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 > 2. Bucket name valid: `validate_oss_bucket_name` → exit 0
 > 3. Object key valid (if applicable): `validate_oss_object_key` → exit 0
 > 4. Bucket exists (for existing-bucket ops): `ossutil stat oss://{{user.bucket_name}}` → no error
-> 5. Wrapper present (for wrapper path): `ls alicloud-oss-ops/scripts/oss-skillopt-wrapper.sh` → file exists
+> 5. Wrapper present (for wrapper path): `ls alicloud-oss-ops/scripts/oss-harness-wrapper.sh` → file exists
 >
 > **Post-execution Validation (common):**
 >
@@ -269,7 +269,7 @@ Every operation follows: **Pre-flight → Execute → Validate → Recover**.
 3. **Go runtime** (for SDK fallback) — `./alicloud-jit-setup.sh` or see [Integration](references/integration.md)
 4. **Credentials** — set `ALIBABA_CLOUD_ACCESS_KEY_ID` / `ALIBABA_CLOUD_ACCESS_KEY_SECRET` / `ALIBABA_CLOUD_REGION_ID`; **NEVER** output the secret value — always display as `****`
 5. **Configure ossutil** — `ossutil config` (one-time interactive; writes `~/.ossutilconfig`)
-6. **Verify** — `cd alicloud-oss-ops && ./scripts/oss-skillopt-wrapper.sh ls` (fallback: `ossutil ls`)
+6. **Verify** — `cd alicloud-oss-ops && ./scripts/oss-harness-wrapper.sh ls` (fallback: `ossutil ls`)
 
 > **Security:** Never commit `.env` or `~/.ossutilconfig` to version control. Full setup guide → [Integration](references/integration.md).
 

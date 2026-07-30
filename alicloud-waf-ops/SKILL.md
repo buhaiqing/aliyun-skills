@@ -76,7 +76,7 @@ and failure recovery.
 ## Runtime Rules (MANDATORY)
 
 ### CLI Path Preference
-**MANDATORY**: All CLI operations MUST be executed via the SkillOpt wrapper script (`scripts/waf-skillopt-wrapper.sh`) to enable automated self-repair, Langfuse tracing, and circuit breaker protection.
+**MANDATORY**: All CLI operations MUST be executed via the SkillOpt wrapper script (`scripts/waf-harness-wrapper.sh`) to enable automated self-repair, Langfuse tracing, and circuit breaker protection.
 
 **Fallback Path**: Only use native `aliyun waf-openapi` commands when the wrapper script is confirmed missing or `scripts/skillopt-lib.sh` cannot be sourced.
 
@@ -84,7 +84,7 @@ and failure recovery.
 
 ```bash
 # List all protected domains via SkillOpt wrapper
-./scripts/waf-skillopt-wrapper.sh waf-openapi DescribeDomainList \
+./scripts/waf-harness-wrapper.sh waf-openapi DescribeDomainList \
   --RegionId cn-hangzhou \
   --InstanceId "{{user.instance_id}}" \
   --version 2021-10-01 \
@@ -324,17 +324,14 @@ fi
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/waf-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/waf-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun waf ...` 命令在执行时应替换为 `./scripts/waf-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun waf` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/waf-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun waf ...` 命令在执行时应替换为 `./scripts/waf-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun waf` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun waf` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)
 
-> **IMPORTANT**: All CLI examples below MUST be executed via the SkillOpt wrapper script (`scripts/waf-skillopt-wrapper.sh`) to enable automated self-repair, Langfuse tracing, and circuit breaker protection. Only use native `aliyun waf-openapi` commands if the wrapper is unavailable.
+> **IMPORTANT**: All CLI examples below MUST be executed via the SkillOpt wrapper script (`scripts/waf-harness-wrapper.sh`) to enable automated self-repair, Langfuse tracing, and circuit breaker protection. Only use native `aliyun waf-openapi` commands if the wrapper is unavailable.
 
 Every operation: **Pre-flight → Execute (CLI + SDK) → Validate → Recover**.
 

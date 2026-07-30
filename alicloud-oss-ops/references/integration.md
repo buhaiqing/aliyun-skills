@@ -212,7 +212,7 @@ Credentials can be sourced from multiple locations:
 Shell env (highest) > `.env` file > ossutil config > aliyun config > defaults (lowest)
 ```markdown
 
-**SkillOpt wrapper** (`scripts/oss-skillopt-wrapper.sh`) and `scripts/skillopt-lib.sh` auto-load:
+**SkillOpt wrapper** (`scripts/oss-harness-wrapper.sh`) and `scripts/skillopt-lib.sh` auto-load:
 
 1. `${REPO_ROOT}/.env` (e.g. `aliyun-skills/.env`)
 2. `${SKILL_ROOT}/.env` (e.g. `alicloud-oss-ops/.env`)

@@ -25,7 +25,7 @@ aliyun mongodb DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-mongodb-ops
-./scripts/mongodb-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/mongodb-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 

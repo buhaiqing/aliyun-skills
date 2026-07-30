@@ -47,7 +47,7 @@ metadata:
 
 | Score | Meaning |
 |:-----:|---------|
-| **1** | Routed via `./scripts/nas-skillopt-wrapper.sh` |
+| **1** | Routed via `./scripts/nas-harness-wrapper.sh` |
 | **0** | Direct `aliyun nas` while wrapper exists — **WRAPPER_BYPASS** |
 
 ## 3. Cross-Skill Delegation

@@ -25,7 +25,7 @@ aliyun ecs DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-ecs-ops
-./scripts/ecs-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/ecs-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

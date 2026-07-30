@@ -25,7 +25,7 @@ aliyun cbn DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-cen-ops
-./scripts/cbn-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/cbn-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

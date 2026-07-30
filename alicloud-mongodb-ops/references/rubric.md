@@ -174,19 +174,19 @@ MongoDB-specific hot-spots the Critic MUST flag before scoring:
 ### 2.4 Wrapper Compliance (per `AGENTS.md` §15.8 + GCL §3, §14.2.4)
 
 **Definition:** Every `aliyun <product>` invocation against this skill
-MUST be routed through `scripts/<product>-skillopt-wrapper.sh`, not
+MUST be routed through `scripts/<product>-harness-wrapper.sh`, not
 invoked as a bare CLI call. A direct call is a **silent bypass** that
 strips self-repair, Langfuse tracing, and circuit-breaker protection.
 
 | Score | Meaning |
 |:-----:|---------|
 | **1** | The command was routed through the skillopt wrapper (or a non-aliyun path: SDK / data-plane tool / no-wrapper skill) |
-| **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-skillopt-wrapper.sh` exists — **WRAPPER_BYPASS** |
+| **0** | The command is a direct `aliyun <product>` call while the skill's `scripts/*-harness-wrapper.sh` exists — **WRAPPER_BYPASS** |
 
 **Wrapper-bypass detection rule:**
 
 - If the command starts with `aliyun <product>` and `PRODUCT_CLI[skill] == product`
-  AND `scripts/*-skillopt-wrapper.sh` exists in the skill directory, then
+  AND `scripts/*-harness-wrapper.sh` exists in the skill directory, then
   `wrapper_compliance = 0` and the decision is `WRAPPER_BYPASS` (exit code 6).
 - Otherwise, `wrapper_compliance = 1`.
 
@@ -266,7 +266,7 @@ Use case: User asks "list all MongoDB instances in cn-hangzhou".
 - `DescribeDBInstances` is a read-only op — Safety gate N/A.
 - Region (`cn-hangzhou`) is in user's declared region.
 - Response includes `DBInstanceId` and `DBInstanceStatus` — Correctness = 1.0.
-- Command was routed through `scripts/dds-skillopt-wrapper.sh` (or via sdk_jit) — wrapper_compliance = 1.0.
+- Command was routed through `scripts/dds-harness-wrapper.sh` (or via sdk_jit) — wrapper_compliance = 1.0.
 - `RequestId` present in stdout — Traceability = 1.0.
 
 ### Example 2: `CreateAccount` PASS (account provisioning)

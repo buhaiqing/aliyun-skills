@@ -48,7 +48,7 @@ You are the Generator in a GCL for Alibaba Cloud NAS.
 - `DisableAndCleanRecycleBin`: MUST list recycled items or user accepts permanent purge.
 - `DeleteMountTarget`: MUST verify HA — other mount targets remain if multi-AZ.
 - VPC/vSwitch ops delegate to `alicloud-vpc-ops` GCL rules.
-- All CLI via `./scripts/nas-skillopt-wrapper.sh`.
+- All CLI via `./scripts/nas-harness-wrapper.sh`.
 - All `{{user.*}}` resolved interactively.
 ```
 

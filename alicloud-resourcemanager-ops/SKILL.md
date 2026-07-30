@@ -37,7 +37,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-skillopt-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-harness-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 
@@ -226,12 +226,9 @@ aliyun resourcemanager ListResourceGroups
 |---------|------|---------|
 | 1.0.0 | 2026-05-30 | Initial skill covering Resource Manager + Tag operations |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/resourcemanager-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/resourcemanager-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun resourcemanager ...` 命令在执行时应替换为 `./scripts/resourcemanager-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun resourcemanager` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/resourcemanager-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun resourcemanager ...` 命令在执行时应替换为 `./scripts/resourcemanager-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun resourcemanager` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun resourcemanager` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

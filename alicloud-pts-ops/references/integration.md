@@ -62,7 +62,7 @@ aliyun plugin install --names aliyun-cli-pts
 ## SkillOpt Wrapper
 
 ```bash
-./scripts/pts-skillopt-wrapper.sh list-pts-scene --page-number 1 --page-size 10
+./scripts/pts-harness-wrapper.sh list-pts-scene --page-number 1 --page-size 10
 ```markdown
 
 See [skillopt-integration.md](skillopt-integration.md).

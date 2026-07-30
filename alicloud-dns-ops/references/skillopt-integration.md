@@ -13,7 +13,7 @@ The `alicloud-dns-ops` skill uses the standard SkillOpt wrapper pattern:
 
 ```bash
 # Primary execution path
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord \
+./scripts/dns-harness-wrapper.sh alidns AddRecord \
   --DomainName "example.com" \
   --RR "www" \
   --Type "A" \
@@ -72,7 +72,7 @@ export HARNESS_ENABLED=true
 export HARNESS_SKILL_TAG="alicloud-dns-ops"
 
 # Execute with tracing
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord ...
+./scripts/dns-harness-wrapper.sh alidns AddRecord ...
 ```
 
 ### With Langfuse
@@ -86,7 +86,7 @@ export LANGFUSE_PUBLIC_KEY="pk-..."
 export LANGFUSE_SECRET_KEY="sk-..."
 
 # Execute with tracing
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord ...
+./scripts/dns-harness-wrapper.sh alidns AddRecord ...
 ```
 
 ## Configuration
@@ -137,7 +137,7 @@ optimization:
 
 ```bash
 # Test input validation
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord \
+./scripts/dns-harness-wrapper.sh alidns AddRecord \
   --DomainName "example.com" \
   --RR "www" \
   --Type "INVALID" \
@@ -146,7 +146,7 @@ optimization:
 # Expected: Input validation error
 
 # Test conflict detection
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord \
+./scripts/dns-harness-wrapper.sh alidns AddRecord \
   --DomainName "example.com" \
   --RR "www" \
   --Type "CNAME" \
@@ -197,7 +197,7 @@ curl http://localhost:9090/metrics | grep dns_
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| Wrapper not found | Script not executable | `chmod +x scripts/dns-skillopt-wrapper.sh` |
+| Wrapper not found | Script not executable | `chmod +x scripts/dns-harness-wrapper.sh` |
 | Core library not found | Path incorrect | Check `SKILLOPT_CORE_LIB` path |
 | Validation failing | Invalid input | Check record format, TTL, weight |
 | Conflict detected | Existing records | Remove conflicting records first |
@@ -210,7 +210,7 @@ curl http://localhost:9090/metrics | grep dns_
 export SKILLOPT_DEBUG=true
 
 # Run with debug output
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord ...
+./scripts/dns-harness-wrapper.sh alidns AddRecord ...
 ```
 
 ### Logs
@@ -232,7 +232,7 @@ tail -f .runtime/logs/dns-ops/error.log
 
 ```bash
 # Preferred
-./scripts/dns-skillopt-wrapper.sh alidns AddRecord ...
+./scripts/dns-harness-wrapper.sh alidns AddRecord ...
 
 # Not preferred (bypasses self-repair)
 aliyun alidns AddRecord ...

@@ -25,7 +25,7 @@ aliyun polardb DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-polar-mysql-ops
-./scripts/polardb-mysql-skillopt-wrapper.sh DescribeDBClusters --RegionId cn-hangzhou
+./scripts/polardb-mysql-harness-wrapper.sh DescribeDBClusters --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

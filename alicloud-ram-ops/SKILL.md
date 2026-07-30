@@ -86,18 +86,15 @@ before and after application.
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-skillopt-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-harness-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 
 
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ram-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/ram-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun ram ...` 命令在执行时应替换为 `./scripts/ram-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun ram` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/ram-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun ram ...` 命令在执行时应替换为 `./scripts/ram-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun ram` CLI 调用。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun ram` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 >
 ## Trigger & Scope (Agent-Readable)

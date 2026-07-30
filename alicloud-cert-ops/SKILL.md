@@ -72,11 +72,11 @@ replacement workflow** end-to-end.
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/cert-skillopt-wrapper.sh` for all CAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cas` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/cert-harness-wrapper.sh` for all CAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cas` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. For runtime enforcement, source the shared shim: `source ../../alicloud-skill-generator/scripts/skillopt-shim/aliyun-shim.sh`. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md), [Shim](../alicloud-skill-generator/scripts/skillopt-shim/SHIM-README.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cert-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/cert-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun cas ...` 命令在执行时应替换为 `./scripts/cert-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun cas` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

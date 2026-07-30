@@ -32,7 +32,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/billing-skillopt-wrapper.sh` for all Billing CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun billing` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/billing-harness-wrapper.sh` for all Billing CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun billing` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 
@@ -241,12 +241,9 @@ aliyun bssopenapi QueryBillOverview --BillingCycle "2026-05"
 
 ---
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/bssopenapi-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun bss ...` 命令在执行时应替换为 `./scripts/bssopenapi-harness-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun bss` CLI 调用。
-> 参考 `## Runtime Rules` 中的 CLI path 规则。 **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/billing-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun bss ...` 命令在执行时应替换为 `./scripts/billing-skillopt-wrapper.sh <subcommand> ...`。
-> 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun bss` CLI 调用。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/billing-harness-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun bss ...` 命令在执行时应替换为 `./scripts/billing-harness-wrapper.sh <subcommand> ...`。
+> 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun bss` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
 ## Execution Flows (Agent-Readable)

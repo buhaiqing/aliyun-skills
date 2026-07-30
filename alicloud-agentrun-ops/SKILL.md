@@ -45,7 +45,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/agentrun-harness-wrapper.sh` for harness/trace plumbing. Primary execution: HTTP API (`assets/code-snippets/`) or AgentRun CLI (`ar`) via `assets/code-snippets/cli_*.sh`. Legacy `agentrun-skillopt-wrapper.sh` shim supported. Fallback to native `aliyun agentrun` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [API](references/api-sdk-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/agentrun-harness-wrapper.sh` for harness/trace plumbing. Primary execution: HTTP API (`assets/code-snippets/`) or AgentRun CLI (`ar`) via `assets/code-snippets/cli_*.sh`. Legacy `agentrun-harness-wrapper.sh` shim supported. Fallback to native `aliyun agentrun` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [API](references/api-sdk-usage.md), [Harness](references/skillopt-integration.md) |
 | CLI preference | Terminal/CI scenarios: use CLI (`ar`). Programmatic/embedded: use HTTP API. | [CLI Guide](#agentrun-cli) |
 
 ## Overview
@@ -296,8 +296,8 @@ curl -X POST "https://agentrun.${ALIBABA_CLOUD_REGION_ID}.aliyuncs.com/2025-09-1
 | 1.1.0 | 2026-05-19 | Security2: Add security-enhancement.md, fix RAM Policy Resource scoping, credential masking, Safety Gates for DeleteTemplate/ExecCommand/TTY/KillProcess, input validation, STS credential flow. F24: Add execution flows for UpdateTemplate, DeleteTemplate, MCP operations, Context Management, File System operations, ExecCommand, Process Management, HealthCheck, WebSocket TTY, List Resources pagination, example-config.yaml |
 | 1.0.0 | 2026-05-18 | Initial AgentRun ops skill — template/instance CRUD, code execution, file ops, TTY |
 
-> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/agentrun-skillopt-wrapper.sh` 运行。
-> 以下所有代码块中的 `aliyun agentrun ...` 命令在执行时应替换为 `./scripts/agentrun-skillopt-wrapper.sh <subcommand> ...`。
+> **EXECUTION MANDATORY RULE**: 所有 control-plane CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/agentrun-harness-wrapper.sh` 运行。
+> 以下所有代码块中的 `aliyun agentrun ...` 命令在执行时应替换为 `./scripts/agentrun-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用或 `skillopt-lib.sh` 缺失时，才退回到原生 `aliyun agentrun` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。
 
@@ -476,7 +476,7 @@ ar template delete $TEMPLATE_NAME
 
 Every operation: **Pre-flight → Sign Request → Execute HTTP → Validate → Recover**.
 
-> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/agentrun-skillopt-wrapper.sh` 运行。
+> **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 SkillOpt wrapper `./scripts/agentrun-harness-wrapper.sh` 运行。
 > 以下所有代码块中的 `aliyun agentrun ...` 命令在执行时应替换为 `./scripts/agentrun-harness-wrapper.sh <subcommand> ...`。
 > 仅在 wrapper 脚本不可用时，才退回到原生 `aliyun agentrun` CLI 调用。
 > 参考 `## Runtime Rules` 中的 CLI path 规则。

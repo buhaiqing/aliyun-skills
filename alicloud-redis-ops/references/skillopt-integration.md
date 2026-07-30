@@ -25,7 +25,7 @@ aliyun redis DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-redis-ops
-./scripts/redis-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/redis-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing

@@ -25,7 +25,7 @@ aliyun sas DescribeInstances --skillopt-enable --RegionId cn-hangzhou
 
 ```bash
 cd $(pwd)/alicloud-sas-ops
-./scripts/sas-skillopt-wrapper.sh DescribeInstances --RegionId cn-hangzhou
+./scripts/sas-harness-wrapper.sh DescribeInstances --RegionId cn-hangzhou
 ```
 
 ## Langfuse Tracing
