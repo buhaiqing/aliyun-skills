@@ -134,7 +134,7 @@ def normalize_cli(*, source: str = "cli") -> ChatContext:
 ### 2.4 适配器注册表(可扩展性)
 
 ```python
-# alicloud-shared-runtime/chat_context.py
+# alicloud-gcl-runner-ops/scripts/alicloud_shared/chat_context.py
 _ADAPTERS: dict[str, Callable[[dict], ChatContext]] = {}
 
 def register_adapter(platform: str, fn: Callable[[dict], ChatContext]) -> None:
@@ -246,7 +246,7 @@ curl http://nanobot:8900/v1/chat/completions \
 **normalize_http adapter 设计**:
 
 ```python
-# alicloud-shared-runtime/adapters/http_api.py
+# alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/http_api.py
 import time
 
 def normalize_http(*, headers: dict, body: dict, caller_id: str) -> ChatContext:
@@ -305,7 +305,7 @@ def normalize_http(*, headers: dict, body: dict, caller_id: str) -> ChatContext:
 
 | 代价 | 缓解 |
 |---|---|
-| 新增一个共享运行时包 `alicloud-shared-runtime` | 现有 skill 改 import 路径;一次性成本,后续所有 skill 受益 |
+| 新增一个共享运行时包 `alicloud-gcl-runner-ops/scripts/alicloud_shared/` | 现有 skill 改 import 路径;一次性成本,后续所有 skill 受益 |
 | WeCom 单聊 session 边界是启发式的(时间窗) | 在 adapter 层明确文档化"30 分钟空闲 = 新 session",业务方知情 |
 | `platform` 字段暴露在 trace 数据中(轻微信息泄露) | 接受:trace 文件落盘已脱敏 secret,platform 是必要的审计维度 |
 | nanobot 入口需要改成调用 `register_adapter` + `bind(chat_context)` | 由 nanobot 适配层一次性改造,skill 层无感 |
@@ -393,12 +393,12 @@ env["FEISHU_USER_ID"] = ""  # 不适用
 
 | 路径 | 改动 | 行数估计 |
 |---|---|---|
-| `alicloud-shared-runtime/chat_context.py` **(新建)** | `ChatContext` dataclass + `ContextVar` + 适配器注册表 + `normalize_cli` + `bind_from_env()` | ~90 |
-| `alicloud-shared-runtime/adapters/wecom.py` **(新建)** | `normalize_wecom()`(含单聊 session 合成) | ~30 |
-| `alicloud-shared-runtime/adapters/feishu.py` **(新建)** | `normalize_feishu()` | ~15 |
-| `alicloud-shared-runtime/adapters/dingtalk.py` **(新建)** | `normalize_dingtalk()` | ~20 |
-| `alicloud-shared-runtime/adapters/http_api.py` **(新建)** | `normalize_http()`(第 4 类通道) | ~25 |
-| `alicloud-shared-runtime/adapters/__init__.py` | `register_adapter(...)` 调用 4 个平台 | ~12 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/chat_context.py` **(新建)** | `ChatContext` dataclass + `ContextVar` + 适配器注册表 + `normalize_cli` + `bind_from_env()` | ~90 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/wecom.py` **(新建)** | `normalize_wecom()`(含单聊 session 合成) | ~30 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/feishu.py` **(新建)** | `normalize_feishu()` | ~15 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/dingtalk.py` **(新建)** | `normalize_dingtalk()` | ~20 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/http_api.py` **(新建)** | `normalize_http()`(第 4 类通道) | ~25 |
+| `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/__init__.py` | `register_adapter(...)` 调用 4 个平台 | ~12 |
 | `alicloud-terraform-ops/scripts/execution_trace.py` | 加 `user_id` / `platform` 字段 + `ExecutionTrace.new()` 工厂 | +15 / -0 |
 | `alicloud-aiops-ml/trace_logger.py` | `TraceRun` 加同样 3 字段 + 工厂方法 | +15 / -0 |
 | `alicloud-terraform-ops/scripts/wizard_cli.py` | 入口 bind CLI context,`persist_dry_run_trace` 透传 user_id / platform | +10 / -0 |
@@ -424,7 +424,7 @@ env["FEISHU_USER_ID"] = ""  # 不适用
 ### 5.3 迁移路径
 
 1. **Phase 1**(本 ADR 落地,无 Nanobot 依赖):
-   - 建 `alicloud-shared-runtime/` 共享包
+   - 建 `alicloud-gcl-runner-ops/scripts/alicloud_shared/` 共享包
    - 加 `chat_context.py` + `normalize_cli()` + `bind_from_env()` 默认降级
    - 加 `normalize_wecom / feishu / dingtalk / http` 四个 adapter + 注册表
    - 现有 `ExecutionTrace` / `TraceRun` 加 `user_id` / `platform` 字段 + `new()` 工厂方法

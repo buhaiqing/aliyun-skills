@@ -30,7 +30,7 @@
 
 | 阶段 | 任务 | 验证手段 | 预计 LOC |
 |---|---|---|---|
-| **P0** | 建 `alicloud-shared-runtime/` 包骨架 + pyproject | 包 import 成功 | ~30 |
+| **P0** | 建 `alicloud-gcl-runner-ops/scripts/alicloud_shared/` 包骨架（重命名自原 `alicloud-shared-runtime/`） | 包 import 成功 | ~30 |
 | **P1** | TDD: `ChatContext` dataclass + `redact_raw()` | 单元测试全绿 | ~60 |
 | **P2** | TDD: ContextVar + `bind()` / `current()` | 单元测试全绿 | ~30 |
 | **P3** | TDD: 适配器注册表 + `normalize_cli()` 默认 | 单元测试全绿 | ~50 |
@@ -67,21 +67,19 @@ REFACTOR → 清理代码,测试保持绿
 
 ### P0: 包骨架
 
-**目标**:`alicloud-shared-runtime/` 可被 import。
+**目标**:`alicloud-gcl-runner-ops/scripts/alicloud_shared/` 可被 import。
 
 **文件**:
-- `alicloud-shared-runtime/pyproject.toml`
-- `alicloud-shared-runtime/alicloud_shared/__init__.py`
-- `alicloud-shared-runtime/alicloud_shared/chat_context.py`(占位)
-- `alicloud-shared-runtime/alicloud_shared/adapters/__init__.py`(占位)
-- `alicloud-shared-runtime/alicloud_shared/subprocess_utils.py`(占位)
-- `alicloud-shared-runtime/tests/__init__.py`
+- `alicloud-gcl-runner-ops/scripts/alicloud_shared/__init__.py`
+- `alicloud-gcl-runner-ops/scripts/alicloud_shared/chat_context.py`
+- `alicloud-gcl-runner-ops/scripts/alicloud_shared/adapters/__init__.py`
+- `alicloud-gcl-runner-ops/scripts/alicloud_shared/subprocess_utils.py`
+- `alicloud-gcl-runner-ops/tests/alicloud_shared/`（测试目录）
 
 **验证**:
 ```bash
-cd alicloud-shared-runtime
-pip install -e .
-python -c "from alicloud_shared.chat_context import ChatContext"
+cd alicloud-gcl-runner-ops
+python3 -c "import sys; sys.path.insert(0, 'scripts'); from alicloud_shared.chat_context import ChatContext"
 ```
 
 **Gate**:全部占位模块可 import 无报错。

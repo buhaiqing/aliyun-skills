@@ -19,7 +19,7 @@ SkillOpt provides automated self-repair and dynamic parameter optimization for e
 |-----------|-------|--------|
 | **M1 (A)** | `scripts/skill_evolution/` — export trajectories, trainable seed, dataset; pilot `alicloud-ecs-ops` | ✅ |
 | **M2 (B)** | `benchmark/alicloud_ops/` — dataloader + rollout + scorer + `run_milestone_b.sh` | ✅ |
-| **M3 (C)** | SkillOpt-Sleep nightly queue + L3 priority + draft PR (human merge) | 📋 |
+| **M3 (C)** | SkillOpt-Sleep nightly queue + L3 priority + draft PR (human merge) | 🔶 4/6 done (M3.3 + M3.5 open) |
 
 Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see README).
 
@@ -27,12 +27,14 @@ Operator: `run_milestone_a.sh` · `run_milestone_b.sh` (see README).
 
 > **Depends on:** M1 + M2 green. **Non-goals:** auto-merge `SKILL.md`; hot-path wrapper changes.
 
-- [ ] **M3.1** `scripts/skill_evolution/queue_nightly.py` — scan L1 JSONL + L2 `reflexion.json`, rank `(skill, failure_pattern.count, eval_priority)`
-- [ ] **M3.2** Integrate `make doctor-weekly-apply` / `docs/strategy-baseline.json` — enqueue high-risk skills from L3
+- [x] **M3.1** `scripts/skill_evolution/queue_nightly.py` — scan L1 JSONL + L2 `reflexion.json`, rank `(skill, failure_pattern.count, eval_priority)` ✅ (re-baselined 2026-07-30: scans L1+L2+L3, `scan_l3_strategy` present)
+- [x] **M3.2** Integrate `make doctor-weekly-apply` / `docs/strategy-baseline.json` — enqueue high-risk skills from L3 ✅ (re-baselined 2026-07-30: `queue_nightly.py` reads `docs/strategy-baseline.json` + `strategy-report.md`, `W_L3=0.2`)
 - [ ] **M3.3** `run_milestone_c.sh` — for each queued skill: `run_milestone_b.sh` → optional `skillopt train` (offline) → write `.runtime/skill-evolution/{skill}/best_skill.md` candidate
-- [ ] **M3.4** PR drafter — diff `best_skill.md` vs `SKILL.md` selected sections; require `skill-change-critic-gate.sh verify --run` before opening PR
+- [x] **M3.4** PR drafter — diff `best_skill.md` vs `SKILL.md` selected sections; require `skill-change-critic-gate.sh verify --run` before opening PR ✅ (re-baselined 2026-07-30: `scripts/skill-change-critic-gate.sh` exists)
 - [ ] **M3.5** Scheduler — local cron or `.github/workflows/skill-evolution-weekly.yml` (git-signal-only GHA branch; runtime queue on maintainer machine per [memory-strategy.md](docs/memory-strategy.md) Local-first)
-- [ ] **M3.6** Tests — `scripts/test-skill-evolution-milestone-c.sh` (queue ranking + mock train path, no auto-commit)
+- [x] **M3.6** Tests — `scripts/test-skill-evolution-milestone-c.sh` (queue ranking + mock train path, no auto-commit) ✅ (re-baselined 2026-07-30: test exists)
+
+> **M3 re-baselined 2026-07-30**: audit of `scripts/skill_evolution/` found M3.1/M3.2/M3.4/M3.6 already implemented in code (TODO checklist was stale). Remaining = **M3.3** (orchestrator script) + **M3.5** (scheduler). Plan/SPEC: `docs/superpowers/plans/2026-07-30-ms-skillopt-milestone-c-{spec,plan}.md`.
 
 ### ✅ Fully Integrated (4/4 files) — 40 skills
 

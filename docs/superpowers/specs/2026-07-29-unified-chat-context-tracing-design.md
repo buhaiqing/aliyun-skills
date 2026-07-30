@@ -51,7 +51,7 @@
 
 | 范围 | 说明 |
 |---|---|
-| 新增共享包 | `alicloud-shared-runtime/` 含 `chat_context.py` + `adapters/` 子包 |
+| 新增共享包 | `alicloud-gcl-runner-ops/scripts/alicloud_shared/` 含 `chat_context.py` + `adapters/` 子包（落点重命名自原 `alicloud-shared-runtime/`） |
 | Trace schema 扩展 | `ExecutionTrace` / `TraceRun` 各加 3 字段:`user_id` / `platform` / `chat_type` |
 | 工厂方法 | `ExecutionTrace.new()` / `TraceRun.new()` 自动从 contextvar 注入 |
 | Wizard 集成 | `wizard_cli.py` 入口 bind CLI context,`persist_dry_run_trace` 透传 user_id / platform |
@@ -178,7 +178,7 @@ subprocess.run(cmd, env={**os.environ, "OTHER": value})
 subprocess.run(cmd, env={"OTHER": value})  # CHAT_PLATFORM 等丢失
 ```
 
-**实现位置**:`alicloud-shared-runtime/subprocess_utils.py` 提供 `safe_subprocess_env()` 包装:
+**实现位置**:`alicloud-gcl-runner-ops/scripts/alicloud_shared/subprocess_utils.py` 提供 `safe_subprocess_env()` 包装:
 
 ```python
 def safe_subprocess_env(extra: dict | None = None) -> dict:
@@ -232,11 +232,11 @@ RAW_REDACT_KEYS = frozenset({
 })
 ```
 
-**实现位置**:`alicloud-shared-runtime/chat_context.py` 提供 `redact_raw(raw_dict)` 函数,所有 adapter **必须调用**后赋值给 `raw` 字段。
+**实现位置**:`alicloud-gcl-runner-ops/scripts/alicloud_shared/chat_context.py` 提供 `redact_raw(raw_dict)` 函数,所有 adapter **必须调用**后赋值给 `raw` 字段。
 
 ### 6.2 trace 落盘目录访问控制
 
-trace JSON 写入 `alicloud-shared-runtime/...` 或现有 `${SKILLS_DIR}/.runtime/audit/` 目录,**假定**该目录受 ACL 控制(仅运维账号可读)。**不在本 SPEC 范围**——由基础设施团队保证。
+trace JSON 写入 `alicloud-gcl-runner-ops/scripts/alicloud_shared/...` 或现有 `${SKILLS_DIR}/.runtime/audit/` 目录,**假定**该目录受 ACL 控制(仅运维账号可读)。**不在本 SPEC 范围**——由基础设施团队保证。
 
 ### 6.3 user_id 处理
 
