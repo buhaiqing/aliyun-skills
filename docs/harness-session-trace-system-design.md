@@ -1256,8 +1256,25 @@ bash scripts/test-langfuse-gray-skills.sh
 - 无 Langfuse 时仍闭合 Layer 1（`memory_store_lite` + `error_code`）、Layer 2 plan **B**（allowlisted failures）、R2 preflight 合并
 - 与 logs retention 对齐，防止 `.runtime/traces/` 膨胀
 
+### 决策 6: GCL Runner Trace 上报 metadata.llm_usage
+
+**时间**: 2026-07-30  
+**决策**: gcl_runner.py 上报 Langfuse 时，在 trace metadata 中包含 `llm_usage` 聚合字段，供 Langfuse UI 过滤有 Token 消耗的 trace  
+**理由**:
+
+- 简化 Token 消耗统计：只需过滤 `metadata.has_llm_usage=true` 即可找到所有 LLM 调用
+- 避免为每个 LLM 调用创建独立 generation，增加存储和查询复杂度
+- `llm_usage` 从 `iterations[].critic._critic_llm_meta.llm_usage` 聚合而来，与本地 trace 一致
+
+**字段设计**:
+
+| metadata 字段 | 类型 | 说明 |
+|--------------|------|------|
+| `llm_usage` | object | `{prompt_tokens, completion_tokens, total_tokens}` 聚合值 |
+| `has_llm_usage` | boolean | `total_tokens > 0` 时为 `true`，用于快速过滤 |
+
 ---
 
-**文档版本**: v2.3  
-**最后更新**: 2026-06-21  
+**文档版本**: v2.4  
+**最后更新**: 2026-07-30  
 **维护者**: Runtime Harness Team

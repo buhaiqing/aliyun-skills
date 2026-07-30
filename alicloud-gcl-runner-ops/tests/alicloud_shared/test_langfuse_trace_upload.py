@@ -550,6 +550,67 @@ class TestGclRunnerLangfuseReporting(unittest.TestCase):
         self.assertEqual(body["metadata"]["command"], "aliyun ecs DescribeInstances")
         self.assertEqual(body["metadata"]["exit_code"], 0)
         self.assertEqual(body["metadata"]["rubric_scores"], {"safety": 1.0, "correctness": 1.0})
+        # Verify llm_usage fields (new in v2)
+        self.assertIn("llm_usage", body["metadata"])
+        self.assertIn("has_llm_usage", body["metadata"])
+        self.assertEqual(body["metadata"]["has_llm_usage"], False)  # No llm_usage in this trace
+        self.assertEqual(body["metadata"]["llm_usage"]["total_tokens"], 0)
+
+    def test_report_trace_with_llm_usage(self):
+        """Verify llm_usage aggregation when trace contains critic._critic_llm_meta."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_HOST"] = "https://test.example.com"
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-test"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk-test"
+        os.environ["HARNESS_USER_ID"] = "test-user"
+        os.environ["HARNESS_SESSION_ID"] = "test-session"
+        mod = self._load_gcl_runner()
+
+        captured = {}
+        class MockResp:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+            def read(self):
+                return json.dumps({"successes": [{"id": "test", "status": 201}]}).encode()
+
+        def mock_urlopen(req, timeout=None):
+            captured["url"] = req.full_url
+            captured["data"] = json.loads(req.data)
+            return MockResp()
+
+        with patch("urllib.request.urlopen", mock_urlopen):
+            # Trace with llm_usage in critic
+            trace = {
+                "skill": "alicloud-ecs-ops",
+                "session_id": "test-session",
+                "final": {"status": "PASS"},
+                "iterations": [
+                    {
+                        "critic": {
+                            "_critic_llm_meta": {
+                                "llm_usage": {
+                                    "prompt_tokens": 1000,
+                                    "completion_tokens": 200,
+                                    "total_tokens": 1200
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+            from pathlib import Path
+            trace_path = Path("/tmp/test-trace.json")
+            result = mod._report_trace_to_langfuse(trace, trace_path)
+
+        self.assertTrue(result)
+        self.assertIn("batch", captured["data"])
+        body = captured["data"]["batch"][0]["body"]
+        self.assertEqual(body["metadata"]["has_llm_usage"], True)
+        self.assertEqual(body["metadata"]["llm_usage"]["prompt_tokens"], 1000)
+        self.assertEqual(body["metadata"]["llm_usage"]["completion_tokens"], 200)
+        self.assertEqual(body["metadata"]["llm_usage"]["total_tokens"], 1200)
 
 
 if __name__ == "__main__":

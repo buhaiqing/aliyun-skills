@@ -152,14 +152,50 @@ python3 alicloud-gcl-runner-ops/scripts/gcl_runner.py \
 | `status` | 执行状态：`PASS` / `FAIL` / `WRAPPER_BYPASS` |
 | `user_id` | 用户标识（从环境变量或 IM 平台获取） |
 | `session_id` | 会话标识 |
+| `llm_usage` | **LLM Token 消耗汇总**（见下表） |
+| `has_llm_usage` | **是否有 Token 消耗**（布尔值，用于过滤） |
 | `command` | 执行的命令 |
 | `exit_code` | 命令退出码 |
 | `duration_ms` | 执行耗时（毫秒） |
 | `rubric_scores` | GCL 评分结果 |
 
+**llm_usage 字段结构**：
+
+| 子字段 | 类型 | 说明 |
+|--------|------|------|
+| `prompt_tokens` | int | 提示词 token 数 |
+| `completion_tokens` | int | 回答 token 数 |
+| `total_tokens` | int | 总 token 数 |
+
+**示例**（仅在 `has_llm_usage=true` 时 total_tokens > 0）：
+```json
+{
+  "metadata": {
+    "llm_usage": {
+      "prompt_tokens": 1500,
+      "completion_tokens": 200,
+      "total_tokens": 1700
+    },
+    "has_llm_usage": true
+  }
+}
+```
+
 ### 4.3 从 metadata 提取用户会话
 
 Langfuse API 返回时，`user_id` 和 `session_id` 在顶层字段可能为空，需从 `metadata` 中提取：
+
+```python
+for t in traces:
+    metadata = t.get("metadata", {})
+    user_id = metadata.get("user_id", "")      # 从 metadata 提取
+    session_id = metadata.get("session_id", "")  # 从 metadata 提取
+    print(f"User: {user_id}, Session: {session_id}")
+```
+
+### 4.4 从 metadata 提取 LLM Token 消耗
+
+Langfuse 上报时，Token 消耗在 `metadata.llm_usage` 中（仅当 `has_llm_usage=true` 且 `total_tokens > 0` 时有效）：
 
 ```python
 import urllib.request
@@ -167,7 +203,7 @@ import base64
 
 auth = base64.b64encode(f"{pk}:{sk}".encode()).decode()
 req = urllib.request.Request(
-    f"{LF_HOST}/api/public/traces?limit=10",
+    f"{LF_HOST}/api/public/traces?limit=100",
     headers={"Authorization": f"Basic {auth}"}
 )
 
@@ -176,10 +212,22 @@ with urllib.request.urlopen(req) as r:
 
 for t in traces:
     metadata = t.get("metadata", {})
-    user_id = metadata.get("user_id", "")      # 从 metadata 提取
-    session_id = metadata.get("session_id", "")  # 从 metadata 提取
-    print(f"User: {user_id}, Session: {session_id}")
+    llm_usage = metadata.get("llm_usage", {})
+    if llm_usage.get("total_tokens", 0) > 0:
+        print(f"Token消耗: prompt={llm_usage['prompt_tokens']}, "
+              f"completion={llm_usage['completion_tokens']}, "
+              f"total={llm_usage['total_tokens']}")
 ```
+
+### 4.5 Langfuse UI 过滤有 Token 消耗的 Trace
+
+在 Langfuse UI 的 **Traces** 页面：
+
+1. 点击 **Add filter**
+2. 选择 `metadata.has_llm_usage` → `=` → `true`
+3. 或选择 `metadata.llm_usage.total_tokens` → `>` → `0`
+
+即可过滤出所有调用了 LLM 的 GCL trace。
 
 ---
 

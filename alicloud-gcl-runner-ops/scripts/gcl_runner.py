@@ -289,6 +289,18 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
     user_id = os.environ.get("HARNESS_USER_ID", os.environ.get("SKILLOPT_USER_ID", ""))
     session_id = os.environ.get("HARNESS_SESSION_ID", os.environ.get("SKILLOPT_SESSION_ID", ""))
 
+    # Aggregate LLM usage across all iterations (for Langfuse filtering)
+    llm_usage_total = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    has_llm_usage = False
+    for iteration in iterations:
+        critic_llm = iteration.get("critic", {}).get("_critic_llm_meta", {})
+        usage = critic_llm.get("llm_usage")
+        if usage and isinstance(usage, dict):
+            has_llm_usage = True
+            llm_usage_total["prompt_tokens"] += usage.get("prompt_tokens", 0)
+            llm_usage_total["completion_tokens"] += usage.get("completion_tokens", 0)
+            llm_usage_total["total_tokens"] += usage.get("total_tokens", 0)
+
     # Build trace metadata
     metadata = {
         "skill": skill,
@@ -297,6 +309,8 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
         "session_id": session_id,
         "trace_path": str(trace_path),
         "rubric_version": trace.get("rubric_version", ""),
+        "llm_usage": llm_usage_total,
+        "has_llm_usage": has_llm_usage,
     }
 
     # Add execution details from first iteration
