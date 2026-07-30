@@ -31,7 +31,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always use wrapper `./scripts/polardb-postgresql-harness-wrapper.sh` for all Polar-PostgreSQL CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always use wrapper `./scripts/polardb-postgresql-harness-wrapper.sh` for all Polar-PostgreSQL CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable.  `polardb-postgresql-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 
 
 > **EXECUTION MANDATORY RULE**: 所有 CLI 执行步骤 **必须** 通过 wrapper `./scripts/polardb-postgresql-harness-wrapper.sh` 运行。

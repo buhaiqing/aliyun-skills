@@ -31,7 +31,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path (control plane) | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/polardb-mysql-harness-wrapper.sh` for all polardb control-plane CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path (control plane) | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/polardb-mysql-harness-wrapper.sh` for all polardb control-plane CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `polardb-mysql-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{env.*}` from environment; wrapper auto-loads repo/skill `.env` — never ask user to paste secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 

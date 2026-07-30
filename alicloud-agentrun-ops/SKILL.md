@@ -45,7 +45,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/agentrun-harness-wrapper.sh` for harness/trace plumbing. Primary execution: HTTP API (`assets/code-snippets/`) or AgentRun CLI (`ar`) via `assets/code-snippets/cli_*.sh`. Legacy `agentrun-harness-wrapper.sh` shim supported. Fallback to native `aliyun agentrun` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [API](references/api-sdk-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/agentrun-harness-wrapper.sh` for harness/trace plumbing. Primary execution: HTTP API (`assets/code-snippets/`) or AgentRun CLI (`ar`) via `assets/code-snippets/cli_*.sh`. Legacy `agentrun-harness-wrapper.sh` shim supported. Fallback to native `aliyun agentrun` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `agentrun-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [API](references/api-sdk-usage.md), [Harness](references/skillopt-integration.md) |
 | CLI preference | Terminal/CI scenarios: use CLI (`ar`). Programmatic/embedded: use HTTP API. | [CLI Guide](#agentrun-cli) |
 
 ## Overview

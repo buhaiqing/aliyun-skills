@@ -77,7 +77,7 @@ delegation_rules:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/terraform-harness-wrapper.sh` when using Alibaba Cloud CLI paths; primary IaC execution uses Python scripts + `terraform` binary. Legacy `terraform-harness-wrapper.sh` shim supported. Fallback: when the wrapper is unavailable or `skillopt-lib.sh` is missing, call the `terraform` binary directly (driven by `scripts/` Python orchestrators); native `aliyun terraform` CLI is only used for the small subset of data-plane reads not covered by `terraform show`/`state`. | [Scripts](scripts/README.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/terraform-harness-wrapper.sh` when using Alibaba Cloud CLI paths; primary IaC execution uses Python scripts + `terraform` binary. Legacy `terraform-harness-wrapper.sh` shim supported. Fallback: when the wrapper is unavailable or `skillopt-lib.sh` is missing, call the `terraform` binary directly (driven by `scripts/` Python orchestrators); native `aliyun terraform` CLI is only used for the small subset of data-plane reads not covered by `terraform show`/`state`. `terraform-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [Scripts](scripts/README.md), [Harness](references/skillopt-integration.md) |
 
 Terraform IaC skill for Alibaba Cloud infrastructure lifecycle management. Declarative, version-controlled, multi-environment orchestration.
 

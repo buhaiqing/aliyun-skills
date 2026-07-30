@@ -221,6 +221,11 @@ def _print_langfuse_info() -> None:
     if os.environ.get("SKILLOPT_LANGFUSE_ENABLED") != "true":
         return
 
+    # Opt-in fast-path: skip the SDK call (which can DNS-block in sandboxes).
+    # Default (env unset / !=1) keeps the current production behaviour.
+    if os.environ.get("GCL_SKIP_LANGFUSE_INFO") == "1":
+        return
+
     lf_host = os.environ.get("LANGFUSE_BASE_URL") or os.environ.get("LANGFUSE_HOST", "")
     if not lf_host:
         return
@@ -264,7 +269,19 @@ def _fetch_langfuse_org_project(host: str) -> tuple[str, str]:
 
 
 def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
-    """Report GCL trace to Langfuse (non-fatal). Returns True if successful."""
+    """Report GCL trace to Langfuse (non-fatal). Returns True if successful.
+
+    De-duplication contract:
+    -----------------------
+    * When ``SKILLOPT_CURRENT_TRACE_ID`` is set (the harness wrapper has
+      already created a Langfuse trace), we **reuse that trace id** so the
+      GCL metadata lands on the same trace — not a new one. This prevents
+      the duplicate-reporting bug where a single logical operation shows
+      up as two distinct traces in Langfuse (one from the wrapper, one
+      from this runner).
+    * When invoked directly (no wrapper), we fall back to using the local
+      ``gcl-trace-*.json`` filename stem as the trace id (existing behavior).
+    """
     if os.environ.get("SKILLOPT_LANGFUSE_ENABLED") != "true":
         return False
 
@@ -279,7 +296,14 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
     import urllib.request
 
     auth = base64.b64encode(f"{lf_pk}:{lf_sk}".encode()).decode()
-    trace_id = trace_path.stem
+    # When invoked via the harness wrapper (skillopt_wrap), the wrapper has
+    # already created a Langfuse trace under SKILLOPT_CURRENT_TRACE_ID. To
+    # avoid duplicate reporting for the same logical operation, we reuse that
+    # trace id (Langfuse treats a second trace-create event with the same body.id
+    # as an upsert, merging GCL-specific metadata onto the wrapper trace).
+    # When invoked directly (no wrapper), we fall back to the gcl-trace-* stem.
+    wrapper_trace_id = os.environ.get("SKILLOPT_CURRENT_TRACE_ID", "").strip()
+    trace_id = wrapper_trace_id or trace_path.stem
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Extract key fields from trace
@@ -313,6 +337,12 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
         "has_llm_usage": has_llm_usage,
         # Distinguish GCL Runner trace from wrapper trace (harness-core-lib.sh)
         "trace_source": "gcl_runner",
+        # Invocation entrypoint is fixed at the trace-producer level (this
+        # runner is always the producer). Whether the trace id is shared with
+        # a wrapper-managed trace is a DIAGNOSTIC concern, surfaced via the
+        # `langfuse_report` log line — not embedded in the trace metadata,
+        # where it would confuse downstream Langfuse consumers filtering on
+        # `invocation_entrypoint`.
         "invocation_entrypoint": "gcl_runner",
     }
 
@@ -351,7 +381,12 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
         with urllib.request.urlopen(req, timeout=10) as r:
             resp = json.loads(r.read())
             if resp.get("successes"):
-                _log("event=langfuse_report status=success trace_id={}", trace_id)
+                _log(
+                    "event=langfuse_report status=success trace_id={} mode={}{}",
+                    trace_id,
+                    "wrapper_upsert" if wrapper_trace_id else "new_trace",
+                    (f" wrapper_trace_id={wrapper_trace_id}" if wrapper_trace_id else ""),
+                )
                 return True
             else:
                 _log("event=langfuse_report status=failed response={}", resp)

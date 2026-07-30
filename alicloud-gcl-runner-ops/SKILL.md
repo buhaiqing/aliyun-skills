@@ -35,7 +35,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/gcl-runner-harness-wrapper.sh`for all GCL Runner CLI operations to enable automated self-repair and dynamic optimization; fallback to native`aliyun gcl-runner`only when the wrapper is unavailable or`skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/gcl-runner-harness-wrapper.sh`for all GCL Runner CLI operations to enable automated self-repair and dynamic optimization; fallback to native`aliyun gcl-runner`only when the wrapper is unavailable or`skillopt-lib.sh` is missing.  `gcl-runner-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 This skill provides the **Generator-Critic-Loop (GCL)** adversarial quality gate
 as defined in `AGENTS.md §12` and [`docs/gcl-spec.md`](../docs/gcl-spec.md). It is

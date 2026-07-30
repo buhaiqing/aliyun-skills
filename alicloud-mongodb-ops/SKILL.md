@@ -74,7 +74,7 @@ Operations map to Alibaba Cloud's [Well-Architected Framework](https://help.aliy
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/mongodb-harness-wrapper.sh` for all MongoDB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dds` only when the wrapper is unavailable or `harness-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/mongodb-harness-wrapper.sh` for all MongoDB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dds` only when the wrapper is unavailable or `harness-lib.sh` is missing.  `mongodb-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | CLI, [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 

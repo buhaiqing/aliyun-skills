@@ -76,7 +76,7 @@ See [references/well-architected-assessment.md](references/well-architected-asse
 
 | Rule | Requirement |
 |------|-------------|
-| **CLI path** | MANDATORY: Use `./scripts/sas-harness-wrapper.sh` for all operations. Fallback to `aliyun sas` only when the wrapper is missing or broken. |
+| **CLI path**  `sas-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | MANDATORY: Use `./scripts/sas-harness-wrapper.sh` for all operations. Fallback to `aliyun sas` only when the wrapper is missing or broken. |
 | **SkillOpt Integration** | [skillopt-integration.md](references/skillopt-integration.md) |
 
 > **Wrapper-First Execution**: All CLI examples below should be executed via the SkillOpt wrapper script, which provides automated self-repair, Langfuse tracing, and circuit breaker protection. Only use native `aliyun sas` commands if the wrapper script is unavailable.

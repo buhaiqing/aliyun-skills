@@ -71,7 +71,7 @@ ALB is Alibaba Cloud's Layer 7 (HTTP/HTTPS/QUIC) load balancer. This skill is an
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/alb-harness-wrapper.sh` for all ALB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alb` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/alb-harness-wrapper.sh` for all ALB CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alb` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `alb-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 

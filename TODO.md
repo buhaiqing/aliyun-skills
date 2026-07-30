@@ -68,6 +68,73 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 
 ## Recent Updates
 
+- ✅ **Wrapper-First P1 batch cleanup: 39 个 skill 全部清零** (2026-07-30):
+  - 起点: validate-wrapper-first-docs.sh `5 PASS / 39 FAIL` (44 total)
+  - 终点: `44 PASS / 0 FAIL` — 全部 44 个 product skill 完整通过
+  - 一次性批量 fix 39 个 SKILL.md,采用 redis-ops 模式
+    ("`<slug>-skillopt-wrapper.sh` is a legacy delegate that forwards to
+     the harness wrapper — prefer the harness wrapper directly."):
+    - 38 个走通用 anchor:首个含 `MANDATORY` + `|` + `harness-wrapper` 的表格行,
+      在 2nd-to-last `|` 之前插入 legacy-shim 句,markdown 表格结构保持。
+    - 1 个特例 cms-ops: L52 已有 "The legacy ./scripts/cms-harness-wrapper.sh shim"
+      句,把 `cms-harness-wrapper.sh` 改成 `cms-skillopt-wrapper.sh` (实际 legacy 名字)。
+    - 1 个 eci-ops: 无 MANDATORY 表格行,在 L311 MANDATORY NOTE blockquote
+      末尾追加 legacy-shim 句。
+  - 契约测试扩到 44 个 (test_wrapper_first_docs.py) — 任何未来 SKILL.md
+    漏掉 `skillopt-wrapper` 字面量会立即 CI 失败。
+  - 校正一处事实: eip-ops 实际复用 vpc-harness-wrapper.sh (EIP API 在 VPC product 下),
+    跨产品 wrapper 复用是真实设计,测试 slug 改为 `vpc` 反映事实。
+  - 验证: bash scripts/validate-wrapper-first-docs.sh `44 PASS / 0 FAIL`;
+    集成套件 + alicloud_shared + langfuse_report 共 **129/129 全绿**,性能
+    仍稳定 ~20s (89 → 129 增加 40 个契约测试)。
+
+- ✅ **Wrapper-First P1 debt: 4 个 skill 晋升** (2026-07-30):
+  - 范围: alicloud-terraform-ops / alicloud-voice-ops / alicloud-vpc-ops / alicloud-waf-ops
+    (用户本轮指定 4 个;其余 39 个 P1 债不在本轮范围)。
+  - 原因: scripts/validate-wrapper-first-docs.sh(AGENTS.md §15.8)要求 SKILL.md
+    同时含 harness-wrapper + skillopt-wrapper 字面量 — 这 4 个只提了 harness wrapper。
+  - 修法: 文档级外科手术 — 在 4 个 SKILL.md 的 CLI path MANDATORY 行追加一句
+    "{product}-skillopt-wrapper.sh is a legacy delegate that forwards to the
+    harness wrapper — prefer the harness wrapper directly." (redis-ops 已用此模式)。
+    wrapper 脚本完全不动,生产代码完全不动。
+  - 验证: 新增 alicloud-gcl-runner-ops/tests/integration/test_wrapper_first_docs.py
+    4 个契约测试(RED→GREEN 闭环);bash scripts/validate-wrapper-first-docs.sh
+    从 1 PASS / 43 FAIL 升至 5 PASS / 39 FAIL;集成套件 89/89 全绿,
+    性能优化仍然 17.1s 稳定。
+
+- ✅ **集成测试性能优化** (2026-07-30):
+  - 背景:`alicloud-gcl-runner-ops/tests/integration/` 8 个测试 32s → 17.1s (47% 节省);
+    主因是每次 wrapper 启动都跑 `skillopt_langfuse_validate`(curl --max-time 10 + python3 SDK)
+    和 `gcl_runner._print_langfuse_info`(langfuse SDK) 在沙箱里全部 DNS 失败但仍等满超时。
+  - 方案:新增两个 **opt-in** env 门,**默认 off** 完全保留生产行为:
+    - `SKILLOPT_LANGFUSE_SKIP_VALIDATE=1` → `skillopt_langfuse_validate` 跳过 curl+SDK 探测,
+      只做 env check。用于: 集成测试沙箱、未来批量 CI、健康检查已知的 LAN 部署。
+    - `GCL_SKIP_LANGFUSE_INFO=1` → `gcl_runner._print_langfuse_info` 跳过 SDK 调用。
+    - `GCL_MEMORY_PREFLIGHT_ENABLED=false` → 已有支持(测试直接路径利用)。
+  - 实施: TDD 三步 — RED(`test_perf_gates.py` 4 个测试)→ GREEN(harness-core-lib.sh +
+    gcl_runner.py 各加 ~6 行)→ 接入集成测试的 `_make_env`/`setUp`。
+  - 不变量保留: `_report_trace_to_langfuse` body shape 字节级一致;
+    `SKILLOPT_CURRENT_TRACE_ID` upsert 契约(Bug 2 修复)保持;Langfuse 5xx/401 仍可观察;
+    wrapper 退出码语义不变。
+  - 验证: 集成套件 12/12 → 17.1s;alicloud_shared + integration + langfuse_report
+    **85/85 通过**;`Langfuse POST missing curl retry/max-time` 失败为 pre-existing
+    (与本次改动无关,见 baseline stash 对照)。
+
+- ✅ **Chat Context 追踪 + Langfuse 上报去重修复** (2026-07-30):
+  - Bug 1: `gcl-runner-harness-wrapper.sh` 在 `set -u` 下引用未赋值的 `${SUBCMD}` → 启动即崩溃。
+    Fix: `${SUBCMD:-run}` 默认值。同步 pattern 与 40 个其他 product wrapper 一致。
+  - Bug 2: 通过 wrapper 调用 `gcl_runner.py` 时,wrapper 创建 trace A、runner 又创建 trace B,
+    同一逻辑操作在 Langfuse 里出现 2 条 trace(去重失败,session 聚合被分裂)。
+    Fix: `_report_trace_to_langfuse` 检测 `SKILLOPT_CURRENT_TRACE_ID` 时复用 wrapper 的 trace id(upsert),
+    让 GCL metadata 落到同一 trace。`harness-lib.sh::skillopt_run_aliyun` 在调用 gcl-runner 子进程时透传该变量。
+  - 设计:诊断信息(`mode=wrapper_upsert wrapper_trace_id=X`)只走日志,不入 trace metadata,
+    避免误导下游 Langfuse 仪表盘按 `invocation_entrypoint` 过滤。
+  - 新增 `tests/integration/test_duplicate_langfuse_reporting.py`(直接调用 + wrapper 调用两个场景,
+    mock Langfuse 抓全部 POST,断言唯一 trace id)+ `tests/langfuse_report/test_langfuse_token_report.py`
+    (时间窗口解析、session 聚合、报表渲染)。49+10=59 测试全绿。
+  - `make langfuse-token-report SINCE_MINUTES=30` 命令语法/时间窗口逻辑已验证,网络层因沙箱无 DNS 不可达
+    (`hai-langfuse-int.hd123.com` 解析失败);`make test-integration` 前四段通过,真实 Langfuse GET-back 阶段同样被 DNS 阻断,待网络恢复后复跑。
+
 - ✅ **Harness-lib header comment fix** (2026-06-23): Corrected copy-paste `alicloud-ecs-ops` headers in `alicloud-fc-ops`, `alicloud-polar-mysql-ops`, `alicloud-ram-ops`, `alicloud-sls-ops`, `alicloud-vpc-ops` `scripts/harness-lib.sh`.
 - ✅ **Langfuse tracing docs rollout** (2026-06-23): Added standardized Langfuse section to 34 `references/skillopt-integration.md` files; verification examples now use product-appropriate read-only operations instead of generic `DescribeInstances`; added billing dual-wrapper note.
 - ✅ **ActionTrail GCL artifacts (Phase 2)** (2026-06-21): `alicloud-actiontrail-ops` — `references/rubric.md` + `references/prompt-templates.md`; SKILL.md Quality Gate section; clears structure-check GCL warnings.

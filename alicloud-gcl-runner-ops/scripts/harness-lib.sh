@@ -51,10 +51,14 @@ skillopt_run_aliyun() {
     set +e
     if [[ "$product" == "gcl-runner" ]]; then
         local skills_root="${ALIYUN_SKILLS_ROOT:-${_SKILLOPT_SKILLS_ROOT:-}}"
+        # Propagate the wrapper-managed trace id so gcl_runner.py can upsert
+        # onto the SAME Langfuse trace instead of creating a duplicate one.
+        # (See _report_trace_to_langfuse de-duplication contract.)
+        local -a runner_env=(SKILLOPT_CURRENT_TRACE_ID="${SKILLOPT_CURRENT_TRACE_ID:-}")
         if [[ -n "$skills_root" ]]; then
-            ALIYUN_SKILLS_ROOT="$skills_root" python3 "${_SKILLOPT_LIB_DIR}/gcl_runner.py" "$@" >"$tmp_out" 2>&1
+            env "${runner_env[@]}" ALIYUN_SKILLS_ROOT="$skills_root" python3 "${_SKILLOPT_LIB_DIR}/gcl_runner.py" "$@" >"$tmp_out" 2>&1
         else
-            python3 "${_SKILLOPT_LIB_DIR}/gcl_runner.py" "$@" >"$tmp_out" 2>&1
+            env "${runner_env[@]}" python3 "${_SKILLOPT_LIB_DIR}/gcl_runner.py" "$@" >"$tmp_out" 2>&1
         fi
     else
         aliyun "$product" "$action" "$@" >"$tmp_out" 2>&1

@@ -42,7 +42,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always use wrapper `./scripts/dyvmsapi-harness-wrapper.sh` for all Voice CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun dyvmsapi` only when the wrapper is unavailable. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always use wrapper `./scripts/dyvmsapi-harness-wrapper.sh` for all Voice CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun dyvmsapi` only when the wrapper is unavailable. `dyvmsapi-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 | GCL | All write operations MUST pass GCL review before execution | [GCL Rubric](references/rubric.md) |
 
 

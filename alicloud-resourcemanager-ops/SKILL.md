@@ -37,7 +37,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-harness-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/resourcemanager-harness-wrapper.sh` for all ResourceManager CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun resourcemanager` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `resourcemanager-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 

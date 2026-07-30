@@ -20,4 +20,49 @@ cd alicloud-runtime-harness-ops
 ./test-harness-integration.sh
 ```
 
+## Trace Metadata — `invocation` Schema
+
+Every trace (both local `.runtime/traces/` file and Langfuse mirror) carries an `invocation` block that identifies how the `aliyun` command was invoked.
+
+### Local trace file (`trace-*.json`) — nested `invocation` object
+
+```json
+{
+  "invocation": {
+    "entrypoint": "wrapper" | "direct" | "gcl_runner",
+    "wrapper": "<product>-harness-wrapper.sh | null",
+    "wrapper_version": "<SKILLOPT_HARNESS_LIB_VERSION> | null",
+    "raw_command": "<original argv> | null"
+  }
+}
+```
+
+| Field | Type | `wrapper` | `direct` | `gcl_runner` |
+|-------|------|-----------|----------|--------------|
+| `entrypoint` | string | `"wrapper"` | `"direct"` | `"gcl_runner"` |
+| `wrapper` | string\|null | wrapper script name | `null` | `null` |
+| `wrapper_version` | string\|null | harness lib version | `null` | `null` |
+| `raw_command` | string\|null | `null` | original argv | `null` |
+
+### Langfuse trace `metadata` — flattened fields
+
+Langfuse mirrors the same signal as flat key-value pairs (no nested object):
+
+| Langfuse metadata key | Value |
+|----------------------|-------|
+| `invocation_entrypoint` | `"wrapper"` / `"direct"` / `"gcl_runner"` |
+| `invocation_wrapper` | wrapper script name, or `null` |
+
+### Entrypoint values
+
+| Value | Meaning |
+|-------|---------|
+| `wrapper` | `aliyun` call went through the product's `*-harness-wrapper.sh` (correct path) |
+| `direct` | `require_skillopt_wrapper` guard rejected the call; trace emitted with `raw_command` preserved |
+| `gcl_runner` | Invocation emitted by the GCL Runner itself |
+
+### Audit
+
+Use `scripts/audit-wrapper-coverage.sh <trace_dir>` to scan local traces for any `entrypoint != "wrapper"` or missing `invocation` block. See [AGENTS.md §15.8](../../AGENTS.md) for the mandatory wrapper-first enforcement rules.
+
 See also [AGENTS.md §15.7](../../AGENTS.md) Langfuse lessons L1–L11.

@@ -69,7 +69,7 @@ Operational runbook for Alibaba Cloud OSS (12-nines durability). Execution paths
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path (control plane) | **MANDATORY**: Always prefer `./scripts/oss-harness-wrapper.sh` for ossutil-coverable operations; fallback to `ossutil` only when wrapper is unavailable. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path (control plane) | **MANDATORY**: Always prefer `./scripts/oss-harness-wrapper.sh` for ossutil-coverable operations; fallback to `ossutil` only when wrapper is unavailable.  `oss-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | CLI path (data plane) | For upload/download/list, use `ossutil` directly (native data-plane tool). | [CLI](references/cli-usage.md) |
 | Non-ossutil ops | Use OSS Go SDK V2 (`github.com/aliyun/aliyun-oss-go-sdk/oss`). | [API & SDK](references/api-sdk-usage.md) |
 | Credentials | Read `{{env.*}}` from environment; wrapper auto-loads `.env` — never ask user to paste secrets. | [Integration](references/integration.md), [SkillOpt](references/skillopt-integration.md) |

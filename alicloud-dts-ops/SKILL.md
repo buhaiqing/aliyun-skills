@@ -38,7 +38,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dts-harness-wrapper.sh` for all DTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dts-harness-wrapper.sh` for all DTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun dts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `dts-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 

@@ -176,6 +176,16 @@ skillopt_langfuse_validate() {
 
     skillopt_log "langfuse: validating credentials at $LANGFUSE_HOST ..."
 
+    # Opt-in fast-path: skip the network probe (curl + python3 SDK) when the
+    # caller has explicitly opted out via env. Used by the integration test
+    # suite to keep wall time predictable in sandboxes without DNS. Default
+    # (env unset / !=1) keeps the current production behaviour intact.
+    if [[ "${SKILLOPT_LANGFUSE_SKIP_VALIDATE:-0}" == "1" ]]; then
+        skillopt_log "langfuse: validate=skipped (SKILLOPT_LANGFUSE_SKIP_VALIDATE=1)"
+        echo "[Langfuse] validate=skipped host=$LANGFUSE_HOST"
+        return 0
+    fi
+
     # Probe ingestion endpoint to verify credentials
     local auth_base64
     auth_base64="$(printf '%s' "${LANGFUSE_PUBLIC_KEY}:${LANGFUSE_SECRET_KEY}" | base64)"
@@ -1393,7 +1403,7 @@ _skillopt_langfuse_create_trace() {
                 name: $name,
                 input: $input,
                 metadata: (
-                    {app: $app, skill: $skill, product: $product, action: $action, user_id: $uid}
+                    {app: $app, skill: $skill, product: $product, action: $action, user_id: $uid, session_id: $sid}
                     + {invocation_entrypoint: "wrapper", invocation_wrapper: $wrapper}
                     + (if $w3c_trace_id == "" then {} else {w3c_trace_id: $w3c_trace_id} end)
                 )

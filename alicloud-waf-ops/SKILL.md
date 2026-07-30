@@ -78,7 +78,7 @@ and failure recovery.
 ### CLI Path Preference
 **MANDATORY**: All CLI operations MUST be executed via the SkillOpt wrapper script (`scripts/waf-harness-wrapper.sh`) to enable automated self-repair, Langfuse tracing, and circuit breaker protection.
 
-**Fallback Path**: Only use native `aliyun waf-openapi` commands when the wrapper script is confirmed missing or `scripts/skillopt-lib.sh` cannot be sourced.
+**Fallback Path**: Only use native `aliyun waf-openapi` commands when the wrapper script is confirmed missing or `scripts/skillopt-lib.sh` cannot be sourced. `waf-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly.
 
 ### Wrapper Usage Example
 

@@ -71,7 +71,7 @@ Alibaba Cloud Cloud Enterprise Network (CEN, API/CLI product code `cbn`) connect
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/cen-harness-wrapper.sh` for all CEN CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cbn` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/cen-harness-wrapper.sh` for all CEN CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun cbn` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `cen-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 

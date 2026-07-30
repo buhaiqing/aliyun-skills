@@ -84,7 +84,7 @@ rules, pre-flight checks, **dual-path execution** (official `aliyun` CLI primary
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dns-harness-wrapper.sh` for all DNS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alidns` or `aliyun pvtz` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/dns-harness-wrapper.sh` for all DNS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun alidns` or `aliyun pvtz` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `dns-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read `{{env.*}}` only from environment; never ask user to paste or print secrets | [Integration](references/integration.md) |
 | GCL | All write operations MUST pass GCL adversarial review before execution | [GCL Rubric](references/rubric.md) |
 | DNS Safety | DNS changes can affect global traffic; always validate NS status and domain ownership before modifications | [DNS Safety](references/dns-safety.md) |

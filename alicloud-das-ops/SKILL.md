@@ -51,7 +51,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/das-harness-wrapper.sh` for all DAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun das` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | CLI, [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/das-harness-wrapper.sh` for all DAS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun das` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `das-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | CLI, [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 

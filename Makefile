@@ -131,9 +131,11 @@ test-integration:
 	@echo ""
 	@echo "==> Rollup golden tests (G1-G6)..."
 	@bash scripts/test-token-rollup.sh
-	@echo ""
 	@echo "==> Langfuse reporting: 4-signal trace reaches Langfuse (skips if no creds)..."
-	@bash scripts/test-langfuse-reporting.sh
+	@$(MAKE) langfuse-token-report-test
+# Separate target for test-integration gate; loads .env so Langfuse creds are available.
+langfuse-token-report-test:
+	@$(LANGFUSE_TOKEN_ENV_FILE) bash scripts/test-langfuse-reporting.sh
 
 # ===========================================
 # Validation

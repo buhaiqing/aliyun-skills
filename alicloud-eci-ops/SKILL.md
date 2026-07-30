@@ -308,7 +308,7 @@ aliyun eci DescribeContainerGroups --RegionId $ALIBABA_CLOUD_REGION_ID \
 
 ## Execution Flows (Agent-Readable)
 
-> **⚠️ MANDATORY NOTE**: All CLI examples in this document MUST be executed via the SkillOpt wrapper script (`./scripts/eci-harness-wrapper.sh`). Fallback to native `aliyun eci` commands is permitted **only** when the wrapper script is missing or cannot be sourced.
+> **⚠️ MANDATORY NOTE**: All CLI examples in this document MUST be executed via the SkillOpt wrapper script (`./scripts/eci-harness-wrapper.sh`). Fallback to native `aliyun eci` commands is permitted **only** when the wrapper script is missing or cannot be sourced. `eci-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly.
 
 Every operation: **Pre-flight → Execute (CLI primary / SDK fallback) → Validate
 → Recover**. Do not skip phases.

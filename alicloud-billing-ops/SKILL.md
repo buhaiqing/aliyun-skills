@@ -32,7 +32,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/billing-harness-wrapper.sh` for all Billing CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun billing` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/billing-harness-wrapper.sh` for all Billing CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun billing` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `billing-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Overview
 

@@ -100,7 +100,7 @@ Auto Scaling (ESS) is Alibaba Cloud's elastic scaling service that automatically
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ess-harness-wrapper.sh` for all ESS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun ess` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/ess-harness-wrapper.sh` for all ESS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun ess` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `ess-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Five Core Standards (Quality Gates)
 

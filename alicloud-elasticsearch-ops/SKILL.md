@@ -78,7 +78,7 @@ In addition to the Five Core Standards, every generated skill MUST map its opera
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/elasticsearch-harness-wrapper.sh` for all Elasticsearch operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun` only when the wrapper is unavailable or `harness-lib.sh` is missing. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the harness wrapper `./scripts/elasticsearch-harness-wrapper.sh` for all Elasticsearch operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun` only when the wrapper is unavailable or `harness-lib.sh` is missing.  `elasticsearch-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 

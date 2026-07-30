@@ -56,7 +56,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/advisor-harness-wrapper.sh`; legacy `advisor-harness-wrapper.sh` shim supported. Fallback to native `aliyun advisor` only when wrapper missing. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/advisor-harness-wrapper.sh`; legacy `advisor-harness-wrapper.sh` shim supported. Fallback to native `aliyun advisor` only when wrapper missing.  `advisor-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 
 ## Overview
 

@@ -29,7 +29,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always use wrapper `./scripts/polardb-oracle-harness-wrapper.sh` for all Polar-Oracle CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always use wrapper `./scripts/polardb-oracle-harness-wrapper.sh` for all Polar-Oracle CLI operations to enable automated self-repair, tracing, and dynamic optimization; fallback to native `aliyun polardb` only when the wrapper is unavailable.  `polardb-oracle-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [Harness](references/skillopt-integration.md) |
 
 ## Overview
 

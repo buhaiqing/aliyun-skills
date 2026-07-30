@@ -86,7 +86,7 @@ before and after application.
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-harness-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable. | [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper ./scripts/ram-harness-wrapper.sh to enable automated self-repair; fallback to native aliyun only when wrapper unavailable.  `ram-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [SkillOpt](references/skillopt-integration.md) |
 | Credentials | Read {{env.*}} from environment; never ask user to paste secrets | Integration |
 | GCL | All write operations MUST pass GCL review before execution | GCL Rubric |
 

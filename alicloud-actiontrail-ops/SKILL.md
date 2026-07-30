@@ -51,7 +51,7 @@ as primary path, **JIT Go SDK** as fallback), response validation, and failure r
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Prefer `./scripts/actiontrail-harness-wrapper.sh` for all ActionTrail CLI operations; legacy `./scripts/actiontrail-harness-wrapper.sh` shim supported. Fallback to native `aliyun actiontrail` only when wrapper missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Prefer `./scripts/actiontrail-harness-wrapper.sh` for all ActionTrail CLI operations; legacy `./scripts/actiontrail-harness-wrapper.sh` shim supported. Fallback to native `aliyun actiontrail` only when wrapper missing.  `actiontrail-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ### CLI applicability (repository policy)
 

@@ -65,7 +65,7 @@ metadata:
 
 | Area | Rule | Reference |
 | --- | --- | --- |
-| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/pts-harness-wrapper.sh` for all PTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun pts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
+| CLI path | **MANDATORY**: Always prefer the SkillOpt wrapper `./scripts/pts-harness-wrapper.sh` for all PTS CLI operations to enable automated self-repair and dynamic optimization; fallback to native `aliyun pts` only when the wrapper is unavailable or `skillopt-lib.sh` is missing.  `pts-skillopt-wrapper.sh` is a legacy delegate that forwards to the harness wrapper — prefer the harness wrapper directly. | [CLI](references/cli-usage.md), [SkillOpt](references/skillopt-integration.md) |
 
 ## Common JSON Paths (Centralized)
 
