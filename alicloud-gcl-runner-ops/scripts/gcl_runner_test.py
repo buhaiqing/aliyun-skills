@@ -118,6 +118,12 @@ class _GCLRunnerMemoryIsolatedTest(unittest.TestCase):
         # into sibling tests in this class (or in the rest of the suite).
         self._outer_env = os.environ.get(self._ENV)
         os.environ.pop(self._ENV, None)
+        # Purge stale fixture files that may have leaked into the repo's
+        # .runtime/memory/ from prior test runs — prevents false-positive
+        # "fixture leaked into repo" assertions in isolation tests.
+        repo_memory = Path(".runtime") / "memory"
+        if repo_memory.exists():
+            shutil.rmtree(repo_memory, ignore_errors=True)
         # Test-local tmp_root — the mixin itself doesn't create one; tests
         # that USE the mixin must define their own.
         self.tmp_root = Path(tempfile.mkdtemp())

@@ -1,0 +1,130 @@
+{
+  "cli_parameter": [
+    {
+      "category": "cli_parameter",
+      "command": "aliyun ecs DeleteInstance --InstanceId i-bp1xxxxxxxxxxxx",
+      "consecutive_successes": 40,
+      "count": 5,
+      "error": "MissingParameter: The parameter InstanceId is required",
+      "first_seen": "2026-05-15T10:30:00Z",
+      "fix": "Add .N suffix: --InstanceId.1 i-bp1xxxxxxxxxxxx; RepeatList params need numbered suffix",
+      "git_commit": "a1b2c3d4e5f6789012345678abcdef0123456789",
+      "last_seen": "2026-07-08T16:30:00Z",
+      "recent_failures": 0,
+      "remediated": true,
+      "remediated_at": "2026-07-12T01:01:42.898204Z",
+      "root_cause": "Missing required parameter InstanceId (.N suffix needed for RepeatList)",
+      "skill": "alicloud-ecs-ops",
+      "source": "gcl-runner",
+      "total_opportunities": 40
+    },
+    {
+      "category": "cli_parameter",
+      "command": "aliyun rds DeleteDBInstance --DBInstanceId mydb",
+      "count": 3,
+      "error": "InvalidParameter: The specified parameter DBInstanceId is not valid",
+      "first_seen": "2026-05-20T14:00:00Z",
+      "fix": "Verify DBInstanceId format via aliyun rds DescribeDBInstances; IDs start with rm-/rr-/pgm-/rdm- etc.",
+      "git_commit": "b2c3d4e5f6789012345678abcdef0123456789a",
+      "last_seen": "2026-07-09T09:45:00Z",
+      "root_cause": "InvalidParameter -- DBInstanceId must follow 'rm-xxxxx' or 'rr-xxxxx' format",
+      "skill": "alicloud-rds-ops",
+      "source": "gcl-runner"
+    },
+    {
+      "category": "cli_parameter",
+      "command": "aliyun ecs CreateInstance --InstanceType ecs.g6.large --RegionId cn-hangzhou",
+      "count": 4,
+      "error": "InvalidParameterValue: The specified InstanceType is not available in this region",
+      "first_seen": "2026-03-05T11:30:00Z",
+      "fix": "Run aliyun ecs DescribeInstanceTypes --RegionId to list available types; choose a valid type for the region",
+      "git_commit": "c3d4e5f6789012345678abcdef0123456789ab",
+      "last_seen": "2026-07-10T08:00:00Z",
+      "root_cause": "InvalidParameterValue -- InstanceType not available in the target region",
+      "skill": "alicloud-ecs-ops",
+      "source": "gcl-runner"
+    },
+    {
+      "category": "cli_parameter",
+      "command": "aliyun slb SetBackendServers --LoadBalancerId lb-xxx --BackendServers [{}]",
+      "count": 2,
+      "error": "MissingParam: The parameter BackendServers is missing or invalid",
+      "first_seen": "2026-06-01T09:00:00Z",
+      "fix": "Wrap BackendServers as JSON string array: --BackendServers '[{\"ServerId\":\"i-xxx\",\"Weight\":100}]'",
+      "git_commit": "d4e5f6789012345678abcdef0123456789abc",
+      "last_seen": "2026-07-05T13:20:00Z",
+      "root_cause": "MissingParam -- BackendServers JSON array format is incorrect",
+      "skill": "alicloud-slb-ops",
+      "source": "gcl-runner"
+    },
+    {
+      "category": "cli_parameter",
+      "command": "aliyun vpc DeleteVpc --VpcId vpc-unknown",
+      "count": 3,
+      "error": "ResourceNotFound: The specified VpcId does not exist in this region",
+      "first_seen": "2026-04-22T16:45:00Z",
+      "fix": "Verify VpcId via aliyun vpc DescribeVpcs --RegionId; check cross-region resource references",
+      "git_commit": "e5f6789012345678abcdef0123456789abcd",
+      "last_seen": "2026-07-06T11:10:00Z",
+      "root_cause": "ResourceNotFound -- VpcId not found; may be in a different region or already deleted",
+      "skill": "alicloud-vpc-ops",
+      "source": "gcl-runner"
+    },
+    {
+      "category": "cli_parameter",
+      "command": "aliyun kms ScheduleKeyDeletion --KeyId mk-xxx --PendingWindowInDays 7",
+      "count": 2,
+      "error": "QuotaExceeded: Maximum number of scheduled key deletions exceeded",
+      "first_seen": "2026-06-15T10:30:00Z",
+      "fix": "Cancel pending deletions with CancelKeyDeletion, or request quota increase from Alibaba Cloud",
+      "git_commit": "f6789012345678abcdef0123456789abcde",
+      "last_seen": "2026-07-07T15:50:00Z",
+      "root_cause": "QuotaExceeded -- too many KMS keys pending deletion simultaneously",
+      "skill": "alicloud-kms-ops",
+      "source": "gcl-runner"
+    }
+  ],
+  "cross_skill": [],
+  "generalized_cli": [],
+  "max_iter": [
+    {
+      "best_score": "4.0",
+      "category": "max_iter",
+      "command": "aliyun ecs DescribeInstances --RegionId cn-hangzhou",
+      "consecutive_successes": 8,
+      "count": 3,
+      "failing_dimensions": "correctness",
+      "first_seen": "2026-05-18T13:00:00Z",
+      "fix": "Review failing dimensions; increase --max-iter or refine operation parameters",
+      "git_commit": "234567890abcdef1234567890abcdef123456789",
+      "last_seen": "2026-07-10T06:40:00Z",
+      "low_dimensions": "correctness=0.3",
+      "operation": "DescribeInstances",
+      "recent_failures": 0,
+      "remediated": true,
+      "remediated_at": "2026-07-12T01:02:22.284591Z",
+      "scores": "count=5 sum=4.0",
+      "skill": "alicloud-ecs-ops",
+      "source": "gcl-runner",
+      "total_opportunities": 8
+    }
+  ],
+  "near_miss": [],
+  "runtime": [
+    {
+      "category": "runtime",
+      "count": 2,
+      "failure_pattern": "safety=0 during FlushInstance",
+      "first_seen": "2026-05-12T07:00:00Z",
+      "git_commit": "1234567890abcdef1234567890abcdef12345678",
+      "last_seen": "2026-06-28T10:15:00Z",
+      "operation": "FlushInstance",
+      "prevention": "Add pre-flight guard: prompt user confirmation before FlushInstance; require --Force flag",
+      "root_cause": "Destructive operation flushed all keys without pre-flight confirmation",
+      "skill": "alicloud-redis-ops",
+      "source": "gcl-runner"
+    }
+  ],
+  "skill_generation": [],
+  "token_efficiency": []
+}

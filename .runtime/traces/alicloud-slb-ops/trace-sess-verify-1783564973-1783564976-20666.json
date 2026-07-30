@@ -1,0 +1,93 @@
+{
+  "trace_id": "trace-sess-verify-1783564973-1783564976-20666",
+  "session_id": "sess-verify-1783564973",
+  "skill": "alicloud-slb-ops",
+  "coding_agent": "harness_cli",
+  "product": "slb",
+  "action": "DescribeLoadBalancers",
+  "params": "--RegionId cn-hangzhou ",
+  "input": [
+    "--RegionId",
+    "cn-hangzhou"
+  ],
+  "resource_dimensions": {
+    "resource_group_id": null,
+    "tags": [],
+    "tags_raw": null,
+    "missing_dimensions": true,
+    "warning": "Caller did not specify --ResourceGroupId or --Tag. The Aliyun API will return ALL resources in the region (no default resource-group filtering), which may cause token bloat, latency, and throttle risk.",
+    "suggestion": "Re-run with explicit --ResourceGroupId rg-xxx and/or --Tag.1.Key <k> --Tag.1.Value <v> to scope the query."
+  },
+  "missing_dimensions": true,
+  "warning": "Caller did not specify --ResourceGroupId or --Tag. The Aliyun API will return ALL resources in the region (no default resource-group filtering), which may cause token bloat, latency, and throttle risk.",
+  "suggestion": "Re-run with explicit --ResourceGroupId rg-xxx and/or --Tag.1.Key <k> --Tag.1.Value <v> to scope the query.",
+  "start_time": "2026-07-09T10:42:56+0800",
+  "status": "success",
+  "spans": [
+    {
+      "span_id": "span-optimization-1783564976-25772",
+      "name": "optimization",
+      "status": "success",
+      "timestamp": "2026-07-09T10:42:56+0800",
+      "input": {
+        "product": "slb",
+        "action": "DescribeLoadBalancers",
+        "params": [
+          "--RegionId",
+          "cn-hangzhou"
+        ]
+      },
+      "output": {
+        "product": "slb",
+        "action": "DescribeLoadBalancers",
+        "optimized_params": [
+          "--RegionId",
+          "cn-hangzhou"
+        ]
+      },
+      "metadata": {
+        "product": "slb",
+        "action": "DescribeLoadBalancers",
+        "span_role": "optimization"
+      }
+    }
+  ],
+  "llm_generations": [],
+  "llm_usage": {
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "total_tokens": 0
+  },
+  "memory_preflight": {
+    "version": "1.0.0",
+    "skill": "alicloud-slb-ops",
+    "operation": "DescribeLoadBalancers",
+    "scope": {
+      "resource_group_id": null,
+      "tag_filter": null
+    },
+    "empty": false,
+    "recent_executions": [],
+    "known_traps": [],
+    "success_patterns": [],
+    "strategy_hints": {
+      "truncated": false,
+      "empty": false,
+      "skill_risk": {
+        "risk_score": 0.0109,
+        "failure_rate": 0.0217,
+        "confidence": "high"
+      }
+    },
+    "slots": {
+      "known_traps": "(none — no matching failure patterns in Reflexion memory)",
+      "success_patterns": "(none — no hard-won success patterns for this skill/operation)",
+      "strategy_hints": "- risk_score=0.0109 failure_rate=0.0217 confidence=high",
+      "recent_executions": "(none — no recent executions in Layer 1 memory)"
+    }
+  },
+  "end_time": "2026-07-09T10:42:57+0800",
+  "duration_ms": 1462,
+  "error_code": "",
+  "output": "{\n\t\"LoadBalancers\": {\n\t\t\"LoadBalancer\": [\n\t\t\t{\n\t\t\t\t\"Address\": \"172.16.9.119\",\n\t\t\t\t\"AddressIPVersion\": \"ipv4\",\n\t\t\t\t\"AddressType\": \"intranet\",\n\t\t\t\t\"Bandwidth\": 5120,\n\t\t\t\t\"BusinessStatus\": \"Normal\",\n\t\t\t\t\"CreateTime\": \"2026-04-01T15:30Z\",\n\t\t\t\t\"CreateTimeStamp\": 1775028659000,\n\t\t\t\t\"DeleteProtection\": \"off\",\n\t\t\t\t\"IneffectiveOrderList\": {\n\t\t\t\t\t\"IneffectiveOrder\": []\n\t\t\t\t},\n\t\t\t\t\"InstanceChargeType\": \"PayByCLCU\",\n\t\t\t\t\"InternetChargeType\": \"4\",\n\t\t\t\t\"InternetChargeTypeAlias\": \"paybytraffic\",\n\t\t\t\t\"LoadBalancerId\": \"lb-bp15hbs4eudyp80130s8y\",\n\t\t\t\t\"LoadBalancerName\": \"恰货铺子-ERP-int\",\n\t\t\t\t\"LoadBalancerSpec\": \"slb.lcu.elastic\",\n\t\t\t\t\"LoadBalancerStatus\": \"active\",\n\t\t\t\t\"MasterZoneId\": \"cn-hangzhou-j\",\n\t\t\t\t\"NetworkType\": \"vpc\",\n\t\t\t\t\"PayType\": \"PayOnDemand\",\n\t\t\t\t\"RegionId\": \"cn-hangzhou\",\n\t\t\t\t\"RegionIdAlias\": \"cn-hangzhou\",\n\t\t\t\t\"ResourceGroupId\": \"rg-acfm2csnlx7l5ha\",\n\t\t\t\t\"SlaveZoneId\": \"cn-hangzhou-k\",\n\t\t\t\t\"SpecBpsFlag\": false,\n\t\t\t\t\"Tags\": {\n\t\t\t\t\t\"Tag\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"TagKey\": \"hd监控分级\",\n\t\t\t\t\t\t\t\"TagValue\": \"不监控\"\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t},\n\t\t\t\t\"VSwitchId\": \"vsw-bp1aogq5xvy5lkylfnoze\",\n\t\t\t\t\"VpcId\": \"vpc-bp1dtmvq0buiw68iggqnp\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"Address\": \"172.16.0.167\",\n\t\t\t\t\"AddressIPVersion\": \"ipv4\",\n\t\t\t\t\"AddressType\": \"intranet\",\n\t\t\t\t\"Bandwidth\": 5120,\n\t\t\t\t\"BusinessStatus\": \"Normal\",\n\t\t\t\t\"CreateTime\": \"2026-04-01T15:18Z\",\n\t\t\t\t\"CreateTimeStamp\": 1775027883000,\n\t\t\t\t\"DeleteProtection\": \"off\",\n\t\t\t\t\"IneffectiveOrderList\": {\n\t\t\t\t\t\"IneffectiveOrder\": []\n\t\t\t\t},\n\t\t\t\t\"InstanceChargeType\": \"PayByCLCU\",\n\t\t\t\t\"InternetChargeType\": \"4\",\n\t\t\t\t\"InternetChargeTypeAlias\": \"paybytraffic\",\n\t\t\t\t\"LoadBalancerId\": \"lb-bp1ude0euc3rtb9peut10\",\n\t\t\t\t\"LoadBalancerName\": \"恰货铺子-ERP-prod-internal\",\n\t\t\t\t\"LoadBalancerSpec\": \"slb.lcu.elastic\",\n\t\t\t\t\"LoadBalancerStatus\": \"active\",\n\t\t\t\t\"MasterZoneId\": \"cn-hangzhou-j\",\n\t\t\t\t\"NetworkType\": \"vpc\",\n\t\t\t\t\"PayType\": \"PayOnDemand\",\n\t\t\t\t\"RegionId\": \"cn-hangzhou\",\n\t\t\t\t\"RegionIdAlias\": \"cn-hangzhou\",\n\t\t\t\t\"ResourceGroupId\": \"rg-acfm2csnlx7l5ha\",\n\t\t\t\t\"SlaveZoneId\": \"cn-hangzhou-k\",\n\t\t\t\t\"SpecBpsFlag\": false,\n\t\t\t\t\"Tags\": {\n\t\t\t\t\t\"Tag\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"TagKey\": \"hd监控分级\",\n\t\t\t\t\t\t\t\"TagValue\": \"标准\"\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t},\n\t\t\t\t\"VSwitchId\": \"vsw-bp1rsj1j62y0l9djaon8t\",\n\t\t\t\t\"VpcId\": \"vpc-bp1dtmvq0buiw68iggqnp\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"Address\": \"172.16.0.166\",\n\t\t\t\t\"AddressIPVersion\": \"ipv4\",\n\t\t\t\t\"AddressType\": \"intranet\",\n\t\t\t\t\"Bandwidth\": 5120,\n\t\t\t\t\"BusinessStatus\": \"Normal\",\n\t\t\t\t\"CreateTime\": \"2026-04-01T15:18Z\",\n\t\t\t\t\"CreateTimeStamp\": 1775027881000,\n\t\t\t\t\"DeleteProtection\": \"off\",\n\t\t\t\t\"IneffectiveOrderList\": {\n\t\t\t\t\t\"IneffectiveOrder\": []\n\t\t\t\t},\n\t\t\t\t\"InstanceChargeType\": \"PayByCLCU\",\n\t\t\t\t\"InternetChargeType\": \"4\",\n\t\t\t\t\"InternetChargeTypeAlias\": \"paybytraffic\",\n\t\t\t\t\"LoadBalancerId\": \"lb-bp1uthnwzqfxtfc7f1zb8\",\n\t\t\t\t\"LoadBalancerName\": \"恰货铺子-ERP-prod-external\",\n\t\t\t\t\"LoadBalancerSpec\": \"slb.lcu.elastic\",\n\t\t\t\t\"LoadBalancerStatus\": \"active\",\n\t\t\t\t\"MasterZoneId\": \"cn-hangzhou-j\",\n\t\t\t\t\"NetworkType\": \"vpc\",\n\t\t\t\t\"PayType\": \"PayOnDemand\",\n\t\t\t\t\"RegionId\": \"cn-hangzhou\",\n\t\t\t\t\"RegionIdAlias\": \"cn-hangzhou\",\n\t\t\t\t\"ResourceGroupId\": \"rg-acfm2csnlx7l5ha\",\n\t\t\t\t\"SlaveZoneId\": \"cn-hangzhou-k\",\n\t\t\t\t\"SpecBpsFlag\": false,\n\t\t\t\t\"Tags\": {\n\t\t\t\t\t\"Tag\": [\n\t\t\t\t\t\t{\n\t\t\t\t\t\t\t\"TagKey\": \"hd监控分级\",\n\t\t\t\t\t\t\t\"TagValue\": \"标准\"\n\t\t\t\t\t\t}\n\t\t\t\t\t]\n\t\t\t\t},\n\t\t\t\t\"VSwitchId\": \"vsw-bp1rsj1j62y0l9djaon8t\",\n\t\t\t\t\"VpcId\": \"vpc-bp1dtmvq0buiw68iggqnp\"\n\t\t\t},\n\t\t\t{\n\t\t\t\t\"Address\": \"172.16.0.165\",\n\t\t\t\t\"AddressIPVersion\": \"ipv4\",\n\t\t\t\t\"AddressType\": \"intranet\",\n\t\t\t\t\"Bandwidth\": 5120,\n\t\t\t\t\"BusinessStatus\": \"Normal\",\n\t\t\t\t\"CreateTime\": \"2026-04-01T15:17Z\",\n\t\t\t\t\"CreateTimeStamp\": 1775027878000,\n\t\t\t\t\"DeleteProtection\": \"off\",\n\t\t\t\t\"IneffectiveOrderList\": {\n\t\t\t\t\t\"IneffectiveOrder\": []\n\t\t\t\t},\n\t\t\t\t\"InstanceChargeType\": \"PayByCLCU\",\n\t\t\t\t\"InternetChargeType\": \"4\",\n\t\t\t\t\"InternetChargeTypeAlias\": \"paybytraffic\",\n\t\t\t\t\"LoadBalancerId\": \"lb-bp1pfyw5299cldahni0z9\",\n\t\t\t\t\"LoadBalancerName\": \"恰货铺子-经营助手\",\n\t\t\t\t\"LoadBalancerSpec\": \"slb.lcu.elastic\",\n\t\t\t\t\"LoadBalancerStatus\": \"active\",\n\t\t\t\t\"MasterZoneId\": \"cn-hangzhou-j\",\n\t\t\t\t\"NetworkType\": \"vpc\",\n\t\t\t\t\"PayType\": \"Pa"
+}

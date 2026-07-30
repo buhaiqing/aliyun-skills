@@ -96,13 +96,13 @@ lint-fix:
 # ===========================================
 test:
 	@echo "==> Running GCL runner tests..."
-	@cd alicloud-gcl-runner-ops/scripts && python -m unittest gcl_runner_test -v
+	@cd alicloud-gcl-runner-ops/scripts && python3 -m unittest gcl_runner_test -v
 	@echo ""
 	@echo "==> Running topo-discovery tests (if pytest available)..."
-	@cd alicloud-topo-discovery && python -m pytest tests/ -v --tb=short 2>/dev/null || echo "pytest not available, skipping"
+	@cd alicloud-topo-discovery && python3 -m pytest tests/ -v --tb=short 2>/dev/null || echo "pytest not available, skipping"
 	@echo ""
 	@echo "==> Running shared product-skill doc/contract tests..."
-	@python -m pytest scripts/skill_docs_test.py -v --tb=short
+	@python3 -m pytest scripts/skill_docs_test.py -v --tb=short
 	@echo ""
 	@echo "==> Running wrapper-first integration + doc-compliance gates..."
 	@$(MAKE) test-integration
@@ -142,11 +142,11 @@ langfuse-token-report-test:
 # ===========================================
 validate:
 	@echo "==> Validating skill structures..."
-	@python $(VALIDATE_SCRIPT)
+	@python3 $(VALIDATE_SCRIPT)
 
 validate-strict:
 	@echo "==> Validating skill structures (strict mode)..."
-	@python $(VALIDATE_SCRIPT) --strict
+	@python3 $(VALIDATE_SCRIPT) --strict
 
 # ===========================================
 # Formatting
