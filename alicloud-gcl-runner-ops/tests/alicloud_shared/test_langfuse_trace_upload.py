@@ -556,6 +556,43 @@ class TestGclRunnerLangfuseReporting(unittest.TestCase):
         self.assertEqual(body["metadata"]["has_llm_usage"], False)  # No llm_usage in this trace
         self.assertEqual(body["metadata"]["llm_usage"]["total_tokens"], 0)
 
+    def test_metadata_marks_gcl_runner_source(self):
+        """Verify trace_source / invocation_entrypoint fields distinguish from wrapper trace."""
+        os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"
+        os.environ["LANGFUSE_HOST"] = "https://test.example.com"
+        os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-test"
+        os.environ["LANGFUSE_SECRET_KEY"] = "sk-test"
+        mod = self._load_gcl_runner()
+
+        captured = {}
+        class MockResp:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+            def read(self):
+                return json.dumps({"successes": [{"id": "test", "status": 201}]}).encode()
+
+        def mock_urlopen(req, timeout=None):
+            captured["data"] = json.loads(req.data)
+            return MockResp()
+
+        trace = {
+            "skill": "alicloud-ecs-ops",
+            "session_id": "test-session",
+            "final": {"status": "PASS"},
+            "iterations": [],
+        }
+        from pathlib import Path
+        trace_path = Path("/tmp/test-trace.json")
+        with patch("urllib.request.urlopen", mock_urlopen):
+            mod._report_trace_to_langfuse(trace, trace_path)
+
+        body = captured["data"]["batch"][0]["body"]
+        # Distinguishes from harness wrapper trace (which uses invocation_entrypoint="wrapper")
+        self.assertEqual(body["metadata"]["trace_source"], "gcl_runner")
+        self.assertEqual(body["metadata"]["invocation_entrypoint"], "gcl_runner")
+
     def test_report_trace_with_llm_usage(self):
         """Verify llm_usage aggregation when trace contains critic._critic_llm_meta."""
         os.environ["SKILLOPT_LANGFUSE_ENABLED"] = "true"

@@ -311,6 +311,9 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
         "rubric_version": trace.get("rubric_version", ""),
         "llm_usage": llm_usage_total,
         "has_llm_usage": has_llm_usage,
+        # Distinguish GCL Runner trace from wrapper trace (harness-core-lib.sh)
+        "trace_source": "gcl_runner",
+        "invocation_entrypoint": "gcl_runner",
     }
 
     # Add execution details from first iteration
