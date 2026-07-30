@@ -120,20 +120,24 @@ class TestAggregation(unittest.TestCase):
     """Tests for aggregate_by_session()."""
 
     def test_empty_input(self):
-        self.assertEqual(ltr.aggregate_by_session([]), [])
+        sessions, skipped = ltr.aggregate_by_session([])
+        self.assertEqual(sessions, [])
+        self.assertEqual(skipped, 0)
 
-    def test_filters_out_traces_without_llm_usage(self):
-        """Only traces with has_llm_usage=true or total_tokens>0 are kept."""
+    def test_counts_non_llm_traces_and_aggregates_llm(self):
+        """All traces aggregated; non-LLM traces contribute to trace_count, tokens=0."""
         traces = [
             {"id": "t1", "metadata": {"session_id": "s1", "has_llm_usage": True,
                                        "llm_usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}}},
             {"id": "t2", "metadata": {"session_id": "s1", "has_llm_usage": False,
                                        "llm_usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}},
         ]
-        result = ltr.aggregate_by_session(traces)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].trace_count, 1)
-        self.assertEqual(result[0].total_tokens, 150)
+        sessions, skipped = ltr.aggregate_by_session(traces)
+        self.assertEqual(skipped, 1)
+        self.assertEqual(len(sessions), 1)
+        # Both traces counted; LLM contributes tokens
+        self.assertEqual(sessions[0].trace_count, 2)
+        self.assertEqual(sessions[0].total_tokens, 150)
 
     def test_aggregates_multiple_traces_same_session(self):
         """Multiple traces in same session should accumulate tokens."""
@@ -147,12 +151,12 @@ class TestAggregation(unittest.TestCase):
                           "skill": "rds", "user_id": "alice",
                           "llm_usage": {"prompt_tokens": 200, "completion_tokens": 100, "total_tokens": 300}}},
         ]
-        result = ltr.aggregate_by_session(traces)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].trace_count, 2)
-        self.assertEqual(result[0].total_tokens, 450)
-        self.assertEqual(result[0].prompt_tokens, 300)
-        self.assertEqual(result[0].skill_set, {"ecs", "rds"})
+        sessions, _ = ltr.aggregate_by_session(traces)
+        self.assertEqual(len(sessions), 1)
+        self.assertEqual(sessions[0].trace_count, 2)
+        self.assertEqual(sessions[0].total_tokens, 450)
+        self.assertEqual(sessions[0].prompt_tokens, 300)
+        self.assertEqual(sessions[0].skill_set, {"ecs", "rds"})
 
     def test_buckets_missing_session_id(self):
         """Traces without session_id are bucketed as (no-session)."""
@@ -160,8 +164,8 @@ class TestAggregation(unittest.TestCase):
             {"id": "t1", "metadata": {"has_llm_usage": True,
                                        "llm_usage": {"prompt_tokens": 50, "completion_tokens": 10, "total_tokens": 60}}},
         ]
-        result = ltr.aggregate_by_session(traces)
-        self.assertEqual(result[0].session_id, "(no-session)")
+        sessions, _ = ltr.aggregate_by_session(traces)
+        self.assertEqual(sessions[0].session_id, "(no-session)")
 
     def test_sorted_by_total_tokens_descending(self):
         """Sessions are sorted by total_tokens descending."""
@@ -171,9 +175,29 @@ class TestAggregation(unittest.TestCase):
             {"id": "t2", "metadata": {"session_id": "large", "has_llm_usage": True,
                                        "llm_usage": {"prompt_tokens": 500, "completion_tokens": 100, "total_tokens": 600}}},
         ]
-        result = ltr.aggregate_by_session(traces)
-        self.assertEqual(result[0].session_id, "large")
-        self.assertEqual(result[1].session_id, "small")
+        sessions, _ = ltr.aggregate_by_session(traces)
+        self.assertEqual(sessions[0].session_id, "large")
+        self.assertEqual(sessions[1].session_id, "small")
+
+    def test_truthy_has_llm_usage_values_recognized(self):
+        """_has_llm_usage accepts truthy values (e.g. 'true', 1) defensively."""
+        cases = [
+            ({"has_llm_usage": True}, True),
+            ({"has_llm_usage": "true"}, True),
+            ({"has_llm_usage": 1}, True),
+            ({"has_llm_usage": False}, False),
+            ({"has_llm_usage": None}, False),
+            ({}, False),
+            # Fall-through: llm_usage.total_tokens > 0 is also accepted
+            ({"llm_usage": {"total_tokens": 5}}, True),
+            ({"llm_usage": {"total_tokens": 0}}, False),
+        ]
+        for metadata, expected in cases:
+            trace = {"metadata": metadata}
+            self.assertEqual(
+                ltr._has_llm_usage(trace), expected,
+                f"failed for metadata={metadata}",
+            )
 
 
 class TestBuildReport(unittest.TestCase):
@@ -186,9 +210,10 @@ class TestBuildReport(unittest.TestCase):
             ltr.SessionAggregate(session_id="s2", trace_count=3,
                                  prompt_tokens=200, completion_tokens=80, total_tokens=280),
         ]
-        report = ltr.build_report(sess, "2026-07-23T00:00:00Z", "2026-07-30T00:00:00Z")
+        report = ltr.build_report(sess, "2026-07-23T00:00:00Z", "2026-07-30T00:00:00Z", total_traces=5)
         self.assertEqual(report["summary"]["total_sessions"], 2)
-        self.assertEqual(report["summary"]["total_traces"], 5)
+        self.assertEqual(report["summary"]["traces_in_sessions"], 5)
+        self.assertEqual(report["summary"]["total_traces_in_period"], 5)
         self.assertEqual(report["summary"]["total_tokens"], 430)
         self.assertEqual(report["summary"]["total_prompt_tokens"], 300)
 
@@ -200,7 +225,8 @@ class TestRenderTable(unittest.TestCase):
         report = {
             "version": "1.0.0",
             "period": {"from": "2026-07-23T00:00:00Z", "to": "2026-07-30T00:00:00Z", "days": 7},
-            "summary": {"total_sessions": 1, "total_traces": 5, "total_prompt_tokens": 100,
+            "summary": {"total_sessions": 1, "traces_in_sessions": 5,
+                        "total_prompt_tokens": 100,
                         "total_completion_tokens": 50, "total_tokens": 150},
             "sessions": [
                 {"session_id": "sess-test", "user_id": "alice", "trace_count": 5,
@@ -214,17 +240,33 @@ class TestRenderTable(unittest.TestCase):
         self.assertIn("150", out)
         self.assertIn("alice", out)
 
-    def test_empty_sessions_shows_placeholder(self):
+    def test_empty_sessions_shows_no_traces_found(self):
+        """Empty Langfuse response shows the explicit 'no traces found' message."""
         report = {
             "version": "1.0.0",
             "period": {"from": "", "to": "", "days": 0},
-            "summary": {"total_sessions": 0, "total_traces": 0,
+            "summary": {"total_sessions": 0, "traces_in_sessions": 0,
+                        "total_traces_in_period": 0, "non_llm_traces": 0,
                         "total_prompt_tokens": 0, "total_completion_tokens": 0,
                         "total_tokens": 0},
             "sessions": [],
         }
         out = ltr.render_table(report)
-        self.assertIn("no session records", out)
+        self.assertIn("no traces found", out)
+
+    def test_non_llm_traces_shown_when_no_llm_consumption(self):
+        """When traces exist but none have LLM usage, show the explanatory message."""
+        report = {
+            "version": "1.0.0",
+            "period": {"from": "x", "to": "y", "days": 0},
+            "summary": {"total_sessions": 0, "traces_in_sessions": 5,
+                        "total_traces_in_period": 5, "non_llm_traces": 5,
+                        "total_prompt_tokens": 0, "total_completion_tokens": 0,
+                        "total_tokens": 0},
+            "sessions": [],
+        }
+        out = ltr.render_table(report)
+        self.assertIn("5 non-LLM traces were found but ignored", out)
 
 
 class TestCliIntegration(unittest.TestCase):

@@ -186,24 +186,35 @@ class SessionAggregate:
 
 
 def _has_llm_usage(trace: dict) -> bool:
-    """Return True if trace has any token consumption."""
+    """Return True if trace has any token consumption.
+
+    Accepts both boolean (True/False) and truthy values for `has_llm_usage`
+    to be lenient against serialization quirks (e.g., string "true" from
+    older curl-based ingestion paths).
+    """
     metadata = trace.get("metadata", {})
-    if metadata.get("has_llm_usage") is True:
+    # Tolerate Truthy values: True, "true", 1, "yes", etc.
+    if metadata.get("has_llm_usage"):
         return True
     usage = metadata.get("llm_usage", {})
     return usage.get("total_tokens", 0) > 0
 
 
-def aggregate_by_session(traces: list[dict]) -> list[SessionAggregate]:
+def aggregate_by_session(traces: list[dict]) -> tuple[list[SessionAggregate], int]:
     """Aggregate token usage grouped by session_id.
 
-    Only traces with token consumption are included.
-    Missing session_id is bucketed as "(no-session)".
+    Returns (sessions, non_llm_trace_count) tuple.
+
+    - Without --only-with-llm: ALL traces are aggregated; non-LLM traces contribute
+      to trace_count but their token stats stay 0.
+    - With --only-with-llm filter: only traces with token consumption are aggregated;
+      the rest are skipped entirely.
     """
     buckets: dict[str, SessionAggregate] = {}
+    skipped = 0
     for trace in traces:
         if not _has_llm_usage(trace):
-            continue
+            skipped += 1
         metadata = trace.get("metadata", {})
         session_id = metadata.get("session_id") or "(no-session)"
         usage = metadata.get("llm_usage", {})
@@ -226,12 +237,13 @@ def aggregate_by_session(traces: list[dict]) -> list[SessionAggregate]:
 
     # Sort by total_tokens descending
     sorted_buckets = sorted(buckets.values(), key=lambda b: -b.total_tokens)
-    return sorted_buckets
+    return sorted_buckets, skipped
 
 
-def build_report(sessions: list[SessionAggregate], from_ts: str, to_ts: str) -> dict:
+def build_report(sessions: list[SessionAggregate], from_ts: str, to_ts: str,
+                total_traces: int = 0) -> dict:
     """Build the full JSON report structure."""
-    total_traces = sum(s.trace_count for s in sessions)
+    total_in_report = sum(s.trace_count for s in sessions)
     total_prompt = sum(s.prompt_tokens for s in sessions)
     total_completion = sum(s.completion_tokens for s in sessions)
     total_tokens = sum(s.total_tokens for s in sessions)
@@ -250,7 +262,8 @@ def build_report(sessions: list[SessionAggregate], from_ts: str, to_ts: str) -> 
         },
         "summary": {
             "total_sessions": len(sessions),
-            "total_traces": total_traces,
+            "traces_in_sessions": total_in_report,
+            "total_traces_in_period": total_traces,
             "total_prompt_tokens": total_prompt,
             "total_completion_tokens": total_completion,
             "total_tokens": total_tokens,
@@ -290,15 +303,26 @@ def render_table(report: dict) -> str:
         f"Period: {period['from']} → {period['to']} "
         f"({period['days']} days)"
     )
+    total_in_period = summary.get("traces_in_sessions", summary.get("total_traces", 0))
+    non_llm = summary.get("non_llm_traces", 0)
+    llm_traces = total_in_period - non_llm
     lines.append(
         f"Total Sessions: {summary['total_sessions']}   "
-        f"Total Traces: {summary['total_traces']}   "
+        f"Traces (LLM / Total): {llm_traces} / {total_in_period}   "
         f"Total Tokens: {summary['total_tokens']:,}"
     )
     lines.append("-" * 95)
 
     if not sessions:
-        lines.append("(no session records with token consumption in this period)")
+        if total_in_period == 0:
+            lines.append("(no traces found in this period — Langfuse returned 0 results)")
+        elif non_llm > 0 and llm_traces == 0:
+            lines.append(
+                f"(no LLM token consumption in this period "
+                f"— {non_llm} non-LLM traces were found but ignored)"
+            )
+        else:
+            lines.append("(no session records in this period)")
         return "\n".join(lines)
 
     lines.append(
@@ -357,8 +381,9 @@ def cmd_pull(args: argparse.Namespace) -> int:
         return e.exit_code
 
     print(f"[langfuse-token-report] {len(traces)} traces pulled", file=sys.stderr)
-    sessions = aggregate_by_session(traces)
-    report = build_report(sessions, from_ts, to_ts)
+    sessions, skipped = aggregate_by_session(traces)
+    report = build_report(sessions, from_ts, to_ts, total_traces=len(traces))
+    report["summary"]["non_llm_traces"] = skipped
 
     output = args.output
     if args.format == "json":
