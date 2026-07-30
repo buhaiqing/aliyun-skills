@@ -30,6 +30,7 @@ fi
 SUBCMD="$1"; shift
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-elasticsearch-ops/scripts/elasticsearch-harness-wrapper.sh ${SUBCMD}" >&2
     skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"
 else
     FILTERED_ARGS=()

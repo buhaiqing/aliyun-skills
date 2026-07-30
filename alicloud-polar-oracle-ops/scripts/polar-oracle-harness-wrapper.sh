@@ -46,6 +46,7 @@ if [[ -n "$DBTYPE_DEFAULT" ]] && [[ "$SUBCMD" == Describe* || "$SUBCMD" == List*
 fi
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-polar-oracle-ops/scripts/polar-oracle-harness-wrapper.sh ${SUBCMD}" >&2
     skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"
 else
     FILTERED_ARGS=()

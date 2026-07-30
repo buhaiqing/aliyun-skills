@@ -31,6 +31,7 @@ fi
 SUBCMD="$1"; shift
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-ecs-ops/scripts/ecs-harness-wrapper.sh ${SUBCMD}" >&2
     skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"
 else
     # Fallback used only when harness-lib.sh could not be sourced (last resort).

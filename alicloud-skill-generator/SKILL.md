@@ -64,6 +64,8 @@ Output: alicloud-ecs-ops/ directory with SKILL.md and references/
 
 This **meta-skill** defines **how** to author a new **product-scoped** operational skill (e.g. `alicloud-ecs-ops`) **inside this repo**. It does **not** perform maintenance against a user's cloud account. Live work uses the generated `alicloud-[product]-ops` skills (official `aliyun` CLI with **JIT Go SDK fallback**).
 
+> **Wrapper-First 说明**：此 skill 是 meta-skill（生成器），自身不调用 `aliyun` CLI，因此不需要 Runtime Harness Wrapper。它生成的每个产品 skill **必须**包含 `scripts/<product>-harness-wrapper.sh` 和 `EXECUTION MANDATORY RULE` 声明（见下方 P0 清单第 780-782 行），并通过 `scripts/validate-wrapper-first-docs.sh` 验证。
+
 ### Guidance Freedom Level: Medium (Provide Templates)
 
 This meta-skill operates at **Medium** guidance level: it provides **templates and frameworks** ([alicloud-skill-template.md](references/alicloud-skill-template.md), prompt library, UX spec) while allowing the agent to adapt based on product-specific context. Low-level scripts (CLI installation, Go runtime JIT download) are detailed in [references/execution-environment.md](references/execution-environment.md).

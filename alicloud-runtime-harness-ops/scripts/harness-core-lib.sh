@@ -1629,6 +1629,10 @@ skillopt_run_aliyun() {
     local tmp_out
     tmp_out="$(mktemp "${TMPDIR:-/tmp}/skillopt-out.XXXXXX")"
 
+    # Clear the wrapper-active flag — this function was reached,
+    # so the aliyun call is observable regardless of entrypoint.
+    __SKILLOPT_WRAPPER_ACTIVE=0
+
     # P1 guard: refuse to run aliyun directly when a wrapper exists.
     # In test contexts (skillopt-core-lib.sh tests), set _SKILLOPT_SKIP_WRAPPER_CHECK=1.
     if ! require_skillopt_wrapper "$product" "$action"; then
@@ -2050,6 +2054,11 @@ skillopt_wrap() {
     local product="$1"; shift
     local action="$1";  shift
 
+    # Mark that we entered via wrapper; skillopt_run_aliyun clears this flag.
+    # If the flag persists to the end, the call bypassed skillopt_run_aliyun
+    # (e.g. circuit breaker opened, or a fallback path fired).
+    export __SKILLOPT_WRAPPER_ACTIVE=1
+
     skillopt_init "$@"
 
     skillopt_session_init
@@ -2078,6 +2087,9 @@ skillopt_wrap() {
     if [[ "$SKILLOPT_ENABLED" != "true" ]]; then
         local rc=0
         skillopt_run_aliyun "$product" "$action" "${SKILLOPT_PARAMS[@]+"${SKILLOPT_PARAMS[@]}"}" || rc=$?
+        if [[ "${__SKILLOPT_WRAPPER_ACTIVE:-0}" == "1" ]]; then
+            echo "[WARN] [Wrapper] signal missing — possible direct aliyun call (bypassing harness wrapper)" >&2
+        fi
         printf '%s\n' "$SKILLOPT_LAST_OUTPUT"
         if [[ $rc -eq 0 ]]; then
             skillopt_trace_end "success" "" "$SKILLOPT_LAST_OUTPUT"
@@ -2109,6 +2121,10 @@ skillopt_wrap() {
     skillopt_run_aliyun "$product" "$action" "${SKILLOPT_PARAMS[@]+"${SKILLOPT_PARAMS[@]}"}"
     local exit_code=$?
     local captured_output="$SKILLOPT_LAST_OUTPUT"
+
+    if [[ "${__SKILLOPT_WRAPPER_ACTIVE:-0}" == "1" ]]; then
+        echo "[WARN] [Wrapper] signal missing — possible direct aliyun call (bypassing harness wrapper)" >&2
+    fi
 
     if [[ $exit_code -eq 0 ]]; then
         if declare -f skillopt_check_and_poll_empty >/dev/null 2>&1; then

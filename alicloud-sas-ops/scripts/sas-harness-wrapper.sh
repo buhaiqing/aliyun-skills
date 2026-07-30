@@ -16,4 +16,5 @@ if [[ "${#}" -lt 1 ]]; then
 fi
 
 SUBCMD="$1"; shift
+    echo "[Wrapper] alicloud-sas-ops/scripts/sas-harness-wrapper.sh ${SUBCMD}" >&2
 skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"

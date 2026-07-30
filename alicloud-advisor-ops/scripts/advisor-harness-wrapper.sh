@@ -30,6 +30,7 @@ fi
 SUBCMD="$1"; shift
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-advisor-ops/scripts/advisor-harness-wrapper.sh ${SUBCMD}" >&2
     skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"
 else
     FILTERED_ARGS=()

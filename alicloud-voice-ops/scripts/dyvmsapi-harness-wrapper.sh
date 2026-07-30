@@ -16,4 +16,5 @@ if [[ "${#}" -lt 1 ]]; then
 fi
 
 SUBCMD="$1"; shift
+    echo "[Wrapper] alicloud-voice-ops/scripts/dyvmsapi-harness-wrapper.sh ${SUBCMD}" >&2
 skillopt_wrap "$PRODUCT" "$SUBCMD" "$@"

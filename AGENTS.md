@@ -476,6 +476,25 @@ $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-1H +%Y-%
 - 静态门禁：`scripts/validate-wrapper-first-docs.sh` 校验每个产品 Skill 的声明 + wrapper 脚本存在性。
 - 审计：`scripts/audit-wrapper-coverage.sh <trace_dir>` 扫描 trace，捞出 `entrypoint != "wrapper"` 或缺失 `invocation` 者并 `exit 1`（CI 闭环）。
 
+### Agent 执行自查清单（MANDATORY）
+
+每次执行包含 `aliyun` 的 Bash 命令前，Agent 必须执行以下自查：
+
+| # | 检查项 | 要求 |
+|---|--------|------|
+| 1 | 命令是否以 `aliyun <product>` 开头？ | 是 → 必须走 wrapper |
+| 2 | 是否存在 `alicloud-<product>-ops/scripts/<product>-harness-wrapper.sh`？ | 存在 → **必须**使用 |
+| 3 | 是否存在 `alicloud-<product>-ops/scripts/<product>-skillopt-wrapper.sh`？ | 存在且无 harness wrapper → 使用 |
+| 4 | 两个 wrapper 都不存在？ | 才允许直接 `aliyun` |
+
+**快速执行模板**：`cd alicloud-<product>-ops && ./scripts/<product>-harness-wrapper.sh <action> [params]`
+
+**或使用辅助脚本**（自动解析产品名并走 wrapper）：`bash scripts/check-wrapper.sh aliyun <product> <action> [params]`
+
+**禁止的借口**："只读操作不需要 wrapper"、"直接调更快"、"之前 wrapper 失败过"。
+
+如需绕过（仅限测试）：设置 `_SKILLOPT_SKIP_WRAPPER_CHECK=1` 环境变量。
+
 ---
 ## 16. Execution Memory & Reflexion (Layers 1-2)
 

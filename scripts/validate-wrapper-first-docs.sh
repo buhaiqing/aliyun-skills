@@ -8,6 +8,7 @@
 #
 # The two library skills (alicloud-runtime-harness-ops, alicloud-skillopt-ops)
 # are exempt — they PROVIDE the harness, they do not consume a product wrapper.
+# alicloud-skill-generator is a meta-skill (generator), not a product skill.
 #
 # Required SKILL.md literals (per AGENTS.md §15.8):
 #   - the canonical declaration block: "EXECUTION MANDATORY RULE"
@@ -31,7 +32,7 @@ source "$SCRIPT_DIR/lib/runtime-harness-discover.sh"
 cd "$REPO_ROOT"
 
 # Library skills that provide the harness are exempt from the wrapper check.
-EXEMPT_LIBS=("alicloud-runtime-harness-ops" "alicloud-skillopt-ops")
+EXEMPT_LIBS=("alicloud-runtime-harness-ops" "alicloud-skillopt-ops" "alicloud-skill-generator")
 
 skills=()
 for d in "$REPO_ROOT"/alicloud-*-ops; do

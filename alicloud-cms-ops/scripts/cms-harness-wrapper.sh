@@ -61,6 +61,7 @@ fi
 CMS_SUBCMD="$1"; shift
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-cms-ops/scripts/cms-harness-wrapper.sh ${CMS_SUBCMD}" >&2
     skillopt_wrap "$CMS_PRODUCT" "$CMS_SUBCMD" "$@"
 else
     FILTERED_ARGS=()

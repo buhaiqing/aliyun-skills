@@ -24,6 +24,7 @@ if [[ ${#} -lt 1 ]]; then
 fi
 
 if [ "$SKILLOPT_LOADED" = true ]; then
+    echo "[Wrapper] alicloud-gcl-runner-ops/scripts/gcl-runner-harness-wrapper.sh ${SUBCMD}" >&2
     skillopt_wrap "gcl-runner" "run" "$@"
 else
     FILTERED_ARGS=()
