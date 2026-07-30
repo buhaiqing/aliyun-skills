@@ -15,6 +15,7 @@ DOCTOR_SINCE_DAYS ?= 7
 DOCTOR_SKILL ?=
 DOCTOR_OP ?=
 SINCE_DAYS ?= 7
+SINCE_MINUTES ?=
 SESSION_ID ?=
 FORMAT ?=
 OUTPUT ?=
@@ -219,14 +220,14 @@ runtime-clean-memory-fixtures-apply:
 
 langfuse-token-report:
 	@if [ -n "$(SESSION_ID)" ]; then \
-		echo "==> Drilling down on session_id=$(SESSION_ID) (since=$(SINCE_DAYS)d)..."; \
+		echo "==> Drilling down on session_id=$(SESSION_ID) (since=$(or $(SINCE_MINUTES),$(SINCE_DAYS))$(if $(SINCE_MINUTES),min,d))..."; \
 		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) session \
 			--session-id "$(SESSION_ID)" \
-			--since-days $(SINCE_DAYS); \
+			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(SINCE_DAYS)); \
 	else \
-		echo "==> Aggregating token usage by sessionID (since=$(SINCE_DAYS)d)..."; \
+		echo "==> Aggregating token usage by sessionID..."; \
 		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) pull \
-			--since-days $(SINCE_DAYS) \
+			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(SINCE_DAYS)) \
 			$(if $(OUTPUT),--output $(OUTPUT),) \
 			$(if $(FORMAT),--format $(FORMAT),); \
 	fi

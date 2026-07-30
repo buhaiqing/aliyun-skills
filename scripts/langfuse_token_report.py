@@ -330,6 +330,9 @@ def _resolve_period(args: argparse.Namespace) -> tuple[str, str]:
     if args.from_date and args.to_date:
         from_dt = datetime.fromisoformat(args.from_date).replace(tzinfo=timezone.utc)
         to_dt = datetime.fromisoformat(args.to_date).replace(tzinfo=timezone.utc)
+    elif getattr(args, "since_minutes", None) is not None:
+        from_dt = now - timedelta(minutes=args.since_minutes)
+        to_dt = now
     else:
         days = args.since_days if args.since_days is not None else 7
         from_dt = now - timedelta(days=days)
@@ -436,7 +439,11 @@ def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument(
         "--since-days", type=int, default=None,
-        help="Last N days (default: 7). Conflicts with --from/--to.",
+        help="Last N days (default: 7). Conflicts with --since-minutes/--from/--to.",
+    )
+    common.add_argument(
+        "--since-minutes", type=int, default=None,
+        help="Last N minutes. Useful for short-window diagnostics.",
     )
     common.add_argument("--from", dest="from_date", default=None, help="Start date YYYY-MM-DD")
     common.add_argument("--to", dest="to_date", default=None, help="End date YYYY-MM-DD")
