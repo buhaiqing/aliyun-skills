@@ -1513,6 +1513,147 @@ def maintain_token_artifacts(repo_root: Path, history_keep_days: int = 30, apply
     _log(f"maintain: {'removed' if apply else 'would remove'} {len(removed)} token artifact(s)")
     return {"removed": removed, "history_keep_days": history_keep_days, "apply": apply}
 
+def _session_report(args: argparse.Namespace, repo_root: Path) -> int:
+    """Aggregate normalized records by session_id and render table or JSON."""
+    cache_file = records_cache_path(repo_root)
+    if not cache_file.exists():
+        _log("cache not found, running rollup first...")
+        result = rollup_apply(repo_root, since_days=args.since_days, apply=True, full=True, incremental=False)
+        if result.get("status") == "error":
+            _log(f"rollup failed: {result}")
+            return 1
+        if not cache_file.exists():
+            _log("cache still missing after rollup")
+            return 1
+
+    if args.since_minutes is not None:
+        since = datetime.now(tz=timezone.utc) - timedelta(minutes=args.since_minutes)
+        from_ts = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+        to_ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        days_display = f"{args.since_minutes} minutes"
+    else:
+        since = datetime.now(tz=timezone.utc) - timedelta(days=args.since_days)
+        from_ts = since.strftime("%Y-%m-%dT%H:%M:%SZ")
+        to_ts = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        days_display = f"{args.since_days} days"
+
+    buckets: dict[str, dict] = {}
+    with cache_file.open() as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            rec = record_from_dict(json.loads(line))
+            if rec is None:
+                continue
+            ts = rec.timestamp
+            if ts is None or ts < since:
+                continue
+            sid = rec.session_id or "(no-session)"
+            if sid not in buckets:
+                buckets[sid] = dict(
+                    session_id=sid,
+                    user_id=rec.user_id,
+                    trace_count=0,
+                    skills=set(),
+                    prompt_tokens=0,
+                    completion_tokens=0,
+                    total_tokens=0,
+                    first_trace_at=ts.isoformat() if ts else "",
+                    last_trace_at=ts.isoformat() if ts else "",
+                )
+            b = buckets[sid]
+            b["trace_count"] += 1
+            b["skills"].add(rec.skill)
+            u = rec.llm_usage
+            b["prompt_tokens"] += u.get("prompt_tokens", 0)
+            b["completion_tokens"] += u.get("completion_tokens", 0)
+            b["total_tokens"] += u.get("total_tokens", 0)
+            if ts:
+                ts_iso = ts.isoformat()
+                if not b["first_trace_at"] or ts_iso < b["first_trace_at"]:
+                    b["first_trace_at"] = ts_iso
+                if not b["last_trace_at"] or ts_iso > b["last_trace_at"]:
+                    b["last_trace_at"] = ts_iso
+            if not b["user_id"] and rec.user_id:
+                b["user_id"] = rec.user_id
+
+    sessions = sorted(buckets.values(), key=lambda x: -x["total_tokens"])
+    total_traces = sum(s["trace_count"] for s in sessions)
+    total_prompt = sum(s["prompt_tokens"] for s in sessions)
+    total_completion = sum(s["completion_tokens"] for s in sessions)
+    total_tokens_sum = sum(s["total_tokens"] for s in sessions)
+
+    report = {
+        "version": ROLLUP_VERSION,
+        "source": "local",
+        "period": {
+            "from": from_ts,
+            "to": to_ts,
+            "window_minutes": args.since_minutes,
+            "window_days": args.since_days,
+        },
+        "summary": {
+            "total_sessions": len(sessions),
+            "traces_in_sessions": total_traces,
+            "total_prompt_tokens": total_prompt,
+            "total_completion_tokens": total_completion,
+            "total_tokens": total_tokens_sum,
+        },
+        "sessions": [
+            {
+                "session_id": s["session_id"],
+                "user_id": s["user_id"],
+                "trace_count": s["trace_count"],
+                "skill_count": len(s["skills"]),
+                "skills": sorted(s["skills"]),
+                "prompt_tokens": s["prompt_tokens"],
+                "completion_tokens": s["completion_tokens"],
+                "total_tokens": s["total_tokens"],
+                "first_trace_at": s["first_trace_at"],
+                "last_trace_at": s["last_trace_at"],
+            }
+            for s in sessions
+        ],
+    }
+
+    if args.format == "json":
+        text = json.dumps(report, indent=2, ensure_ascii=False)
+        if args.output:
+            Path(args.output).write_text(text, encoding="utf-8")
+            _log(f"written to {args.output}")
+        else:
+            print(text)
+    else:
+        lines: list[str] = []
+        lines.append("=== Local Token Session Report ===")
+        lines.append(f"Period: {from_ts} → {to_ts} ({days_display})")
+        lines.append(
+            f"Total Sessions: {len(sessions)}   "
+            f"Traces: {total_traces}   "
+            f"Total Tokens: {total_tokens_sum:,}"
+        )
+        lines.append("-" * 102)
+        lines.append(
+            f"{'Session ID':<35} {'Traces':>6} {'Prompt':>8} {'Completion':>10} {'Total':>8}  {'User':<15}"
+        )
+        lines.append("-" * 102)
+        for s in sessions:
+            sid = s["session_id"]
+            if len(sid) > 33:
+                sid = sid[:33] + ".."
+            uid = (s["user_id"] or "")[:15]
+            lines.append(
+                f"{sid:<35} {s['trace_count']:>6} "
+                f"{s['prompt_tokens']:>8,} {s['completion_tokens']:>10,} "
+                f"{s['total_tokens']:>8,}  {uid:<15}"
+            )
+        lines.append("-" * 102)
+        print("\n".join(lines))
+
+    return 0
+
+
 
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="TEL Phase 5 — runtime token rollup")
@@ -1528,6 +1669,13 @@ def build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Force incremental scan (skip unchanged trace files when state exists)",
     )
+
+    ps = sub.add_parser("local-token-report", help="Aggregate local traces by session_id (table or JSON)")
+    ps.add_argument("--since-days", type=int, default=int(os.environ.get("TOKEN_ROLLUP_SINCE_DAYS", "7")))
+    ps.add_argument("--since-minutes", type=int, default=None)
+    ps.add_argument("--repo-root", type=Path, default=None)
+    ps.add_argument("--format", choices=["table", "json"], default="table")
+    ps.add_argument("--output", type=str, default=None, help="Write JSON to file")
 
     pm = sub.add_parser("maintain", help="Prune old token history/reports")
     pm.add_argument("--repo-root", type=Path, default=None)
@@ -1552,6 +1700,8 @@ def main(argv: list[str] | None = None) -> int:
             incremental=args.incremental,
         )
         return 0
+    if args.command == "local-token-report":
+        return _session_report(args, repo_root)
     if args.command == "maintain":
         maintain_token_artifacts(repo_root, history_keep_days=args.history_keep_days, apply=args.apply)
         return 0

@@ -221,18 +221,72 @@ runtime-clean-memory-fixtures-apply:
 # ===========================================
 
 langfuse-token-report:
-	@if [ -n "$(SESSION_ID)" ]; then \
+	@# Show built-in help when no time window is given (origin=file means Makefile default)
+	@if [ "$(origin SINCE_DAYS)" = "file" ] && [ "$(origin SINCE_MINUTES)" = "file" ] && [ "$(origin FROM_DATE)" = "file" ]; then \
+		echo "Usage:"; \
+		echo "  make langfuse-token-report SINCE_DAYS=7"; \
+		echo "  make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=7"; \
+		echo "  make langfuse-token-report FORMAT=json OUTPUT=report.json SINCE_DAYS=30"; \
+		echo ""; \
+		echo "Options:"; \
+		echo "  SINCE_DAYS=N       Last N days (default: 7)"; \
+		echo "  SINCE_MINUTES=N    Last N minutes (overrides SINCE_DAYS)"; \
+		echo "  FROM_DATE=YYYY-MM-DD   Start date (overrides SINCE_DAYS/SINCE_MINUTES)"; \
+		echo "  TO_DATE=YYYY-MM-DD     End date"; \
+		echo "  SESSION_ID=xxx     Drill down on a single sessionID"; \
+		echo "  FORMAT=json|table  Output format (default: table)"; \
+		echo "  OUTPUT=file        Write output to file"; \
+		echo ""; \
+		echo "Aggregation dimensions: session_id, skill, user_id"; \
+		echo "Metrics: trace_count, prompt_tokens, completion_tokens, total_tokens"; \
+		echo ""; \
+		echo "Requires: LANGFUSE_HOST, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY in .env"; \
+		exit 0; \
+	fi
+	@if [ "x$(SESSION_ID)" != "x" ]; then \
 		echo "==> Drilling down on session_id=$(SESSION_ID) (since=$(or $(SINCE_MINUTES),$(SINCE_DAYS))$(if $(SINCE_MINUTES),min,d))..."; \
 		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) session \
 			--session-id "$(SESSION_ID)" \
-			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(SINCE_DAYS)); \
+			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(or $(SINCE_DAYS),7)); \
 	else \
 		echo "==> Aggregating token usage by sessionID..."; \
 		$(LANGFUSE_TOKEN_ENV_FILE) $(LANGFUSE_TOKEN_SCRIPT) pull \
-			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(SINCE_DAYS)) \
+			$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(or $(SINCE_DAYS),7)) \
 			$(if $(OUTPUT),--output $(OUTPUT),) \
 			$(if $(FORMAT),--format $(FORMAT),); \
 	fi
+
+# ===========================================
+# Local Token Session Report
+# ===========================================
+
+local-token-report:
+	@# Show help when no time window is given (origin=file = Makefile default, not user-overridden)
+	@if [ "$(origin SINCE_DAYS)" = "file" ] && [ "$(origin SINCE_MINUTES)" = "file" ]; then \
+		echo "Usage:"; \
+		echo "  make local-token-report SINCE_DAYS=7"; \
+		echo "  make local-token-report SINCE_MINUTES=120"; \
+		echo "  make local-token-report SINCE_DAYS=30 FORMAT=json OUTPUT=report.json"; \
+		echo ""; \
+		echo "Options:"; \
+		echo "  SINCE_DAYS=N       Last N days (default: 7)"; \
+		echo "  SINCE_MINUTES=N    Last N minutes (overrides SINCE_DAYS)"; \
+		echo "  FORMAT=json|table  Output format (default: table)"; \
+		echo "  OUTPUT=file        Write JSON output to file"; \
+		echo ""; \
+		echo "Aggregation dimensions: session_id, skill, user_id"; \
+		echo "Metrics: trace_count, prompt_tokens, completion_tokens, total_tokens"; \
+		echo ""; \
+		echo "Data source: .runtime/token/cache/normalized-records.jsonl"; \
+		echo "  (auto-runs rollup if cache does not exist)"; \
+		exit 0; \
+	fi
+	@echo "==> Aggregating local token usage by sessionID..."
+	@python3 scripts/token_rollup.py local-token-report \
+		$(if $(SINCE_MINUTES),--since-minutes $(SINCE_MINUTES),--since-days $(or $(SINCE_DAYS),7)) \
+		$(if $(FORMAT),--format $(FORMAT),) \
+		$(if $(OUTPUT),--output $(OUTPUT),)
+
 
 # ===========================================
 # Layer 3 Doctor (manual local entrypoints)
