@@ -112,6 +112,10 @@ test-integration:
 	@echo "==> Doc-compliance: every wrapper-skill declares MANDATORY wrapper-first..."
 	@bash scripts/validate-wrapper-first-docs.sh
 	@echo ""
+	@echo "==> Wrapper-coverage audit: no traces escape the wrapper (CI closure)..."
+	@rm -rf "$(CURDIR)/.runtime/audit-ci" && mkdir -p "$(CURDIR)/.runtime/audit-ci"
+	@bash scripts/audit-wrapper-coverage.sh "$(CURDIR)/.runtime/audit-ci"
+	@echo ""
 	@echo "==> Rollup golden tests (G1-G6)..."
 	@bash scripts/test-token-rollup.sh
 	@echo ""

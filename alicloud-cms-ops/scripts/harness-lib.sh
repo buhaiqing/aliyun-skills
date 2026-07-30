@@ -194,7 +194,11 @@ skillopt_repair_error() {
                 skillopt_log "repair[RegionId]: RegionId is missing, attempting auto-completion"
                 local region="${ALIBABA_CLOUD_REGION_ID:-}"
                 if [[ -z "$region" ]]; then
-                    region="$(aliyun ecs DescribeRegions --output cols=RegionId rows=Regions.Region 2>/dev/null | head -n 1 | tr -d ' \r\n' || true)"
+                    if _SKILLOPT_INTERNAL_REPAIR=1 skillopt_run_aliyun ecs DescribeRegions --output cols=RegionId rows=Regions.Region 2>/dev/null; then
+                        region="$(printf '%s' "$SKILLOPT_LAST_OUTPUT" | head -n 1 | tr -d ' \r\n')"
+                    else
+                        region=""
+                    fi
                 fi
                 if [[ -z "$region" ]]; then
                     region="cn-hangzhou"
