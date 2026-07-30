@@ -259,6 +259,25 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 
 Verify: CLI commands are executable, links are valid, examples are correct.
 
+## Token Consumption Reporting
+
+For LLM token consumption analysis (local + Langfuse remote):
+
+```bash
+# Local trace aggregation (TTL-based, last N days)
+python3 scripts/token_rollup.py rollup --apply --since-days 7
+
+# Langfuse remote aggregation by sessionID (needs LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY)
+make langfuse-token-report SINCE_DAYS=7
+make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=30
+make langfuse-token-report FORMAT=json OUTPUT=report.json
+
+# Without Makefile: direct script call
+LANGFUSE_ENV_FILE=.env python3 scripts/langfuse_token_report.py pull --since-days 7
+```
+
+The Langfuse report aggregates `metadata.has_llm_usage=true` traces by `metadata.session_id`, filtering out mechanical-only runs. See [docs/specs/langfuse-token-report.md](docs/specs/langfuse-token-report.md) for full spec.
+
 ## References
 
 - [Alibaba Cloud CLI](https://github.com/aliyun/aliyun-cli)

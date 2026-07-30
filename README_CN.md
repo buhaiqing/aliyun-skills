@@ -223,6 +223,25 @@ npx markdownlint-cli2 "alicloud-*/SKILL.md"
 - [Agent Skills OpenSpec](https://agentskills.io/specification)
 - [阿里云帮助文档](https://help.aliyun.com)
 
+## Token 消耗报表
+
+LLM Token 消耗分析支持本地与 Langfuse 远程两种数据源：
+
+```bash
+# 本地 trace 聚合（基于 TTL，最近 N 天）
+python3 scripts/token_rollup.py rollup --apply --since-days 7
+
+# Langfuse 远程按 sessionID 聚合（需要 LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY）
+make langfuse-token-report SINCE_DAYS=7
+make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=30
+make langfuse-token-report FORMAT=json OUTPUT=report.json
+
+# 不走 Makefile，直接调用脚本
+LANGFUSE_ENV_FILE=.env python3 scripts/langfuse_token_report.py pull --since-days 7
+```
+
+Langfuse 报表只聚合 `metadata.has_llm_usage=true` 的 trace，按 `metadata.session_id` 分组，机械评判不计入。完整 SPEC 见 [docs/specs/langfuse-token-report.md](docs/specs/langfuse-token-report.md)。
+
 ## 常见问题
 
 | Q | A |
