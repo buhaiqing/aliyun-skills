@@ -210,7 +210,8 @@ skillopt_langfuse_validate() {
     # Report connection details (host, org, project, api_version)
     local lf_info
     lf_info="$(python3 - "$LANGFUSE_HOST" "$LANGFUSE_PUBLIC_KEY" "$LANGFUSE_SECRET_KEY" 2>/dev/null << 'PYEOF'
-import os, sys, base64, urllib.request
+import os, sys, base64, urllib.request, socket
+socket.setdefaulttimeout(5)
 host, pk, sk = sys.argv[1], sys.argv[2], sys.argv[3]
 org_name, project_name, project_id, api_ver = "unknown", "unknown", "unknown", "v2"
 

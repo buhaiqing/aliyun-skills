@@ -13,7 +13,7 @@ Generator-Critic-Loop (GCL) adversarial quality gate, defined in
 | `gcl_cms_alarm_setup.py` | **Phase 3-B + Phase 4** alarm setup: idempotent PutMetricAlarm creator for phantom-op findings AND real pass-rate metrics. Reads `crosscheck-report-*.json`, creates/updates 5 phantom alarms (GCL-Phantom-Pass/Fail/Resource-Mismatch/Api-Errors/Timing-Anomaly). Also creates 3 pass-rate alarms (GCL-Safety-Fail-Rate, GCL-Correctness-Drop, GCL-Traceability-Gap) watching `acs_custom_gcl` namespace. |
 | `gcl_actiontrail_crosscheck.py` | **Phase 3-C** cross-checker: verifies GCL traces against ActionTrail `LookupEvents`. Catches `PHANTOM_PASS` / `PHANTOM_FAIL` / `RESOURCE_MISMATCH` / `TIMING_ANOMALY`. |
 | `gcl_actiontrail_crosscheck_test.py` | Pure-stdlib `unittest` suite. 25 tests, ~0.01s runtime. |
-| `gcl_passrate_reporter.py` | **Phase 4** pass-rate reporter: aggregates GCL traces, computes per-skill and per-dimension pass-rates, pushes to CMS custom metrics (`acs_custom_gcl`). |
+| `gcl_passrate_reporter.py` | **Phase 4** pass-rate reporter: aggregates GCL traces, computes per-skill and per-dimension pass-rates, pushes to CMS custom metrics (`acs_custom_gcl`). **P2a**: EWMA degradation detection (`--detect-ewma`) for gradual per-operation decline. |
 | `gcl_smart_alarm_engine.py` | **Phase 7** smart alert engine: pattern-driven dynamic alerting with auto-degradation. Detects `resource_safety_repeated`, `region_safety_burst`, etc. |
 | `gcl_smart_alarm_cms_setup.py` | **Phase 7** CMS alarm setup for smart alert metrics. |
 | `gcl_smart_alarm_test.py` | Unit tests for smart alarm engine (79 tests). |
@@ -25,6 +25,9 @@ Generator-Critic-Loop (GCL) adversarial quality gate, defined in
 | `gcl_memory_e2e_test.py` | **E2E-M1** Layer 1 → Layer 2 → report integration tests. |
 | `memory_preflight.py` | **R2** Unified pre-flight retrieval (`preflight_retrieve`) for Layers 1–3 prompt slots. |
 | `gcl_memory_test.py` | **§16** Unit tests for memory index. |
+| `gcl_strategy.py` | **Layer 3** Strategy Memory: weekly rollup, pattern promotion, Reflexion ROI validation (`roi` subcommand). |
+| `trace_maintain.py` | **P1b** Trace lifecycle management: HOT(0–7d) → WARM(7–30d gzip) → COLD(>30d delete/archive). Idempotent. |
+| `trace_query.py` | **P3b** Unified trace query CLI: multi-dimension filtering (skill/operation/decision/session/user/grep) + table/JSON output. |
 | `README.md` | This file. |
 
 ## What `gcl_runner.py` Does

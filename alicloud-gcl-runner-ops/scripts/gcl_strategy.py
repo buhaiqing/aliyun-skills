@@ -934,6 +934,149 @@ def refresh_report_from_baseline(
     return strategy_report(baseline, delta, output_path=out)
 
 
+# ---------------------------------------------------------------------------
+# P2b: Reflexion ROI Closed-Loop Validation
+# ---------------------------------------------------------------------------
+
+ROI_MIN_SAMPLES = int(os.environ.get("STRATEGY_ROI_MIN_SAMPLES", "5"))
+ROI_IMPROVEMENT_THRESHOLD = float(os.environ.get("STRATEGY_ROI_IMPROVEMENT", "0.05"))
+
+
+def validate_reflexion_roi(
+    repo_root: Path,
+    memory_root: Path | None = None,
+    since_days: int = 30,
+) -> dict[str, Any]:
+    """Validate whether Reflexion patterns delivered measurable ROI.
+
+    For each pattern in reflexion.json that has a ``first_seen`` timestamp,
+    compares the failure rate of the associated skill in the period BEFORE
+    vs AFTER the pattern was first extracted.
+
+    A pattern is considered "effective" if the post-extraction failure rate
+    improved (decreased) by at least ROI_IMPROVEMENT_THRESHOLD.
+
+    Returns:
+        Summary dict with per-pattern ROI assessments and aggregate stats.
+    """
+    reflexion_path = repo_root / REFLEXION_STORE_PATH
+    if not reflexion_path.exists():
+        _log("event=reflexion_roi result=skipped reason=no_reflexion_store")
+        return {"available": False, "patterns_evaluated": 0, "effective": 0, "roi_ratio": 0.0}
+
+    try:
+        store = json.loads(reflexion_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"available": False, "patterns_evaluated": 0, "effective": 0, "roi_ratio": 0.0}
+
+    mem_root = memory_root or Path(os.environ.get("GCL_MEMORY_ROOT", ".runtime/memory"))
+    if not mem_root.is_absolute():
+        mem_root = repo_root / mem_root
+
+    # Load all memory entries once
+    all_entries: list[dict[str, Any]] = []
+    if mem_root.exists():
+        for jsonl in mem_root.glob("alicloud-*-ops/*.jsonl"):
+            try:
+                for line in jsonl.read_text(encoding="utf-8").splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        all_entries.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        continue
+            except OSError:
+                continue
+
+    if not all_entries:
+        _log("event=reflexion_roi result=skipped reason=no_memory_entries")
+        return {"available": False, "patterns_evaluated": 0, "effective": 0, "roi_ratio": 0.0}
+
+    # Index entries by skill with parsed timestamps
+    skill_entries: dict[str, list[tuple[datetime, bool]]] = defaultdict(list)
+    for entry in all_entries:
+        skill = normalize_skill_name(entry.get("skill"))
+        ts_raw = entry.get("timestamp", "")
+        try:
+            ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        passed = bool(entry.get("rubric_pass") or entry.get("exit_code") == 0)
+        skill_entries[skill].append((ts, passed))
+
+    # Evaluate each reflexion pattern
+    assessments: list[dict[str, Any]] = []
+    effective_count = 0
+    evaluated_count = 0
+
+    for category, patterns in store.items():
+        if not isinstance(patterns, list):
+            continue
+        for p in patterns:
+            if not isinstance(p, dict):
+                continue
+            first_seen_raw = p.get("first_seen") or p.get("extracted_at") or ""
+            skill = normalize_skill_name(p.get("skill") or p.get("source_skill") or "")
+            if not first_seen_raw or not skill:
+                continue
+            try:
+                first_seen = datetime.fromisoformat(first_seen_raw.replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                continue
+
+            entries_for_skill = skill_entries.get(skill, [])
+            if not entries_for_skill:
+                continue
+
+            before = [passed for ts, passed in entries_for_skill if ts < first_seen]
+            after = [passed for ts, passed in entries_for_skill if ts >= first_seen]
+
+            if len(before) < ROI_MIN_SAMPLES or len(after) < ROI_MIN_SAMPLES:
+                continue
+
+            evaluated_count += 1
+            before_fr = 1.0 - (sum(before) / len(before))
+            after_fr = 1.0 - (sum(after) / len(after))
+            improvement = before_fr - after_fr
+            is_effective = improvement >= ROI_IMPROVEMENT_THRESHOLD
+
+            if is_effective:
+                effective_count += 1
+
+            assessments.append({
+                "category": category,
+                "skill": skill,
+                "pattern_id": p.get("id", p.get("pattern", ""))[:60],
+                "first_seen": first_seen_raw,
+                "before_failure_rate": round(before_fr, 4),
+                "after_failure_rate": round(after_fr, 4),
+                "improvement": round(improvement, 4),
+                "effective": is_effective,
+                "before_samples": len(before),
+                "after_samples": len(after),
+            })
+
+    roi_ratio = effective_count / evaluated_count if evaluated_count > 0 else 0.0
+
+    result = {
+        "available": True,
+        "patterns_evaluated": evaluated_count,
+        "effective": effective_count,
+        "ineffective": evaluated_count - effective_count,
+        "roi_ratio": round(roi_ratio, 4),
+        "threshold": ROI_IMPROVEMENT_THRESHOLD,
+        "min_samples": ROI_MIN_SAMPLES,
+        "assessments": assessments[:20],  # cap output size
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+
+    _log(
+        f"event=reflexion_roi result=success evaluated={evaluated_count} "
+        f"effective={effective_count} roi_ratio={roi_ratio:.2%}"
+    )
+    return result
+
+
 def run_weekly(
     apply: bool,
     since_days: int,
@@ -1043,6 +1186,11 @@ def main() -> int:
     p_rollup.add_argument("--since-days", type=int, default=7)
     p_rollup.add_argument("--repo-root", type=Path, default=Path.cwd())
 
+    p_roi = sub.add_parser("roi", help="Validate Reflexion pattern ROI (P2b closed-loop)")
+    p_roi.add_argument("--repo-root", type=Path, default=Path.cwd())
+    p_roi.add_argument("--memory-root", type=Path, default=None)
+    p_roi.add_argument("--since-days", type=int, default=30)
+
     args = parser.parse_args()
 
     if args.command == "weekly":
@@ -1069,6 +1217,14 @@ def main() -> int:
             _log("event=runtime_rollup result=dry_run hint=pass --apply to write")
             return 0
         return runtime_rollup_apply(repo_root=args.repo_root, since_days=args.since_days)
+    if args.command == "roi":
+        roi_result = validate_reflexion_roi(
+            repo_root=args.repo_root,
+            memory_root=args.memory_root,
+            since_days=args.since_days,
+        )
+        print(json.dumps(roi_result, indent=2, ensure_ascii=False))
+        return 0
 
     parser.print_help()
     return 1

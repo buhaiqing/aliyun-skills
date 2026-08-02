@@ -14,8 +14,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.1.0"
-  last_updated: "2026-06-21"
+  version: "1.2.0"
+  last_updated: "2026-08-02"
   type: shared-framework
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   environment:

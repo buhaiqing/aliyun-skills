@@ -84,11 +84,30 @@ def parse_iso_timestamp(ts_str: str) -> datetime | None:
     return None
 
 
+def _filename_timestamp(path: Path) -> datetime | None:
+    """Extract timestamp from trace filename (gcl-trace-YYYYMMDD-HHMMSS-*.json).
+
+    Returns None if the filename doesn't match the expected pattern.
+    """
+    m = re.match(r"gcl-trace-(\d{8})-(\d{6})-", path.name)
+    if not m:
+        return None
+    try:
+        return datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").replace(
+            tzinfo=timezone.utc
+        )
+    except ValueError:
+        return None
+
+
 def load_traces(trace_dir: Path, since_hours: int) -> list[dict[str, Any]]:
     """Load GCL trace JSON files from trace_dir, filtered by recency.
 
     Returns traces whose mtime is within ``since_hours`` of now.
     Damaged files are skipped with a warning.
+
+    Optimisation: uses the embedded filename timestamp as a fast pre-filter
+    to avoid stat() + json.loads on clearly-stale files.
     """
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(hours=since_hours)
@@ -99,6 +118,10 @@ def load_traces(trace_dir: Path, since_hours: int) -> list[dict[str, Any]]:
         return traces
 
     for fpath in sorted(trace_dir.glob("gcl-trace-*.json")):
+        # Fast path: skip files whose filename timestamp is before cutoff
+        fname_ts = _filename_timestamp(fpath)
+        if fname_ts is not None and fname_ts < cutoff:
+            continue
         mtime = datetime.fromtimestamp(fpath.stat().st_mtime, tz=timezone.utc)
         if mtime < cutoff:
             continue
@@ -588,6 +611,129 @@ def detect_anomaly(
 
 
 # ---------------------------------------------------------------------------
+# P2a: Operation-level EWMA degradation detection
+# ---------------------------------------------------------------------------
+
+EWMA_ALPHA = float(os.environ.get("GCL_EWMA_ALPHA", "0.3"))
+EWMA_DEGRADATION_THRESHOLD = float(os.environ.get("GCL_EWMA_THRESHOLD", "0.25"))
+EWMA_MIN_SAMPLES = int(os.environ.get("GCL_EWMA_MIN_SAMPLES", "5"))
+
+
+def compute_ewma(values: list[float], alpha: float = EWMA_ALPHA) -> list[float]:
+    """Compute Exponentially Weighted Moving Average series.
+
+    Args:
+        values: Chronological sequence of numeric observations (0.0 or 1.0 for pass/fail).
+        alpha: Smoothing factor in (0, 1]. Higher = more weight on recent.
+
+    Returns:
+        EWMA series of same length as input.
+    """
+    if not values:
+        return []
+    ewma = [values[0]]
+    for v in values[1:]:
+        ewma.append(alpha * v + (1 - alpha) * ewma[-1])
+    return ewma
+
+
+def detect_ewma_degradation(
+    memory_root: Path,
+    output_dir: Path,
+    window_days: int = 90,
+    alpha: float = EWMA_ALPHA,
+    threshold: float = EWMA_DEGRADATION_THRESHOLD,
+    min_samples: int = EWMA_MIN_SAMPLES,
+) -> list[dict[str, Any]]:
+    """Detect gradual per-operation degradation via EWMA.
+
+    Unlike the weekly 3σ check (detect_anomaly), EWMA catches slow
+    degradation that accumulates over many executions without ever
+    triggering a single-week alert.
+
+    For each (skill, operation), computes EWMA of the pass/fail signal
+    (1=pass, 0=fail). If the final EWMA value drops below ``threshold``
+    (i.e., recent success probability < threshold), an alert is raised.
+
+    Returns:
+        List of degradation report dicts, also written to output_dir.
+    """
+    output_dir = Path(output_dir)
+    entries = load_memory_entries(memory_root, window_days)
+    if not entries:
+        print("[INFO] No memory entries found for EWMA analysis.")
+        return []
+
+    # Group by (skill, operation) in chronological order
+    groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for entry in entries:
+        skill = entry.get("skill", "unknown")
+        op = entry.get("operation", "unknown")
+        groups[(skill, op)].append(entry)
+
+    degradations: list[dict[str, Any]] = []
+    now = datetime.now(timezone.utc)
+    ts_file = now.strftime("%Y%m%dT%H%M%S")
+
+    for (skill, op), op_entries in sorted(groups.items()):
+        if len(op_entries) < min_samples:
+            continue
+
+        # Sort by timestamp
+        def _sort_key(e: dict[str, Any]) -> str:
+            return e.get("timestamp", "")
+        op_entries.sort(key=_sort_key)
+
+        # Build pass/fail signal: 1.0 = pass, 0.0 = fail
+        signals = [
+            1.0 if (e.get("rubric_pass") or e.get("exit_code") == 0) else 0.0
+            for e in op_entries
+        ]
+
+        ewma_series = compute_ewma(signals, alpha)
+        final_ewma = ewma_series[-1]
+
+        # Only alert if EWMA dropped below threshold AND was previously higher
+        peak_ewma = max(ewma_series)
+        if final_ewma >= threshold or peak_ewma <= threshold:
+            continue
+
+        drop_magnitude = peak_ewma - final_ewma
+        severity = "HIGH" if drop_magnitude >= 0.4 else "MEDIUM"
+
+        report: dict[str, Any] = {
+            "skill": skill,
+            "operation": op,
+            "detection_method": "ewma",
+            "ewma_alpha": alpha,
+            "final_ewma": round(final_ewma, 4),
+            "peak_ewma": round(peak_ewma, 4),
+            "drop_magnitude": round(drop_magnitude, 4),
+            "severity": severity,
+            "sample_count": len(op_entries),
+            "threshold": threshold,
+            "generated_at": now.isoformat(),
+        }
+
+        safe_name = f"{skill}--{op}".replace("/", "_")
+        out_path = output_dir / f"ewma-{safe_name}-{ts_file}.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        print(
+            f"[EWMA-DEGRADE] {skill}/{op}: final_ewma={final_ewma:.3f} "
+            f"peak={peak_ewma:.3f} drop={drop_magnitude:.3f}"
+        )
+        degradations.append(report)
+
+    if not degradations:
+        print("[INFO] No EWMA degradation detected.")
+
+    return degradations
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -670,6 +816,19 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--anomaly-threshold-relative", type=float, default=0.5,
         help="Relative decline factor for 50%% anomaly detection (default: 0.5)",
     )
+    # ---- P2a: EWMA degradation detection args ----
+    p.add_argument(
+        "--detect-ewma", action="store_true",
+        help="Run per-operation EWMA degradation detection from Layer-1 memory",
+    )
+    p.add_argument(
+        "--ewma-alpha", type=float, default=EWMA_ALPHA,
+        help=f"EWMA smoothing factor (default: {EWMA_ALPHA})",
+    )
+    p.add_argument(
+        "--ewma-threshold", type=float, default=EWMA_DEGRADATION_THRESHOLD,
+        help=f"EWMA degradation alert threshold (default: {EWMA_DEGRADATION_THRESHOLD})",
+    )
     return p
 
 
@@ -692,6 +851,27 @@ def _resolve_runtime_root() -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_arg_parser().parse_args(argv)
+
+    # ---- P2a: EWMA degradation detection mode ----
+    if args.detect_ewma:
+        runtime_root = _resolve_runtime_root()
+        memory_root: Path = args.memory_root or (runtime_root / "memory")
+        output_dir: Path = args.output_dir or (runtime_root / "anomaly")
+
+        degradations = detect_ewma_degradation(
+            memory_root=memory_root,
+            output_dir=output_dir,
+            alpha=args.ewma_alpha,
+            threshold=args.ewma_threshold,
+        )
+
+        if degradations:
+            ops_list = [d["skill"] + "/" + d["operation"] for d in degradations]
+            print(
+                f"[RESULT] Detected {len(degradations)} degraded operation(s):"
+                f" {ops_list}"
+            )
+        return EXIT_CLEAN
 
     # ---- Phase B3: anomaly detection mode ----
     if args.detect_anomaly:

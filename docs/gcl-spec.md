@@ -159,11 +159,19 @@ Every GCL run MUST persist a JSON trace under `.runtime/audit/gcl-runner-ops/gcl
 
 ```json
 {
+  "schema_version": "2.0",
+  "timestamp": "2026-08-02T00:00:00+00:00",
   "skill": "alicloud-ecs-ops",
   "request": "<sanitized user request>",
   "rubric_version": "v1",
   "skill_version": "2.2.1",
   "version_source": "skill_md",
+  "correlation": {
+    "session_id": "<HARNESS_SESSION_ID>",
+    "user_id": "<HARNESS_USER_ID>",
+    "wrapper_trace_id": "<SKILLOPT_CURRENT_TRACE_ID>",
+    "runner_version": "2.0"
+  },
   "iterations": [
     {
       "iter": 1,
@@ -382,6 +390,7 @@ so future cross-farm tooling (e.g. a shared `alicloud-gcl-runner-ops/scripts/gcl
 | 1.8.0 | 2026-06-17 | **Wrapper Compliance (Phase 8)**: New `wrapper_compliance` dimension and `WRAPPER_BYPASS` termination condition (exit code 6) enforce AGENTS.md §15.8 at runtime. §14.2.4 adds H-layer check for bare `aliyun <product>` calls against skills with `scripts/*-skillopt-wrapper.sh`. Trace schema extended with `generator.execution_path` (`wrapper` \| `direct_aliyun` \| `sdk_jit` \| `data_plane` \| `other`) and `generator.execution_path_skill` fields. §9 adds anti-pattern: silent wrapper bypass. All 31 `alicloud-*-ops/references/rubric.md` updated with §2.4 Wrapper Compliance section. `alicloud-gcl-runner-ops/scripts/gcl_runner.py` adds `classify_execution_path()` and `_detect_wrapper_bypass()` functions; test suite extended with 5 new wrapper-compliance tests (87 total). |
 | 1.9.0 | 2026-06-18 | **Phase 3-A (LLM Critic) implemented**: `--critic-mode` argument added (mechanical/llm/hybrid). `load_critic_template()` extracts template from `prompt-templates.md` with placeholder substitution. `critique_llm()` implements OpenAI-compatible HTTP call and JSON response parsing. `hybrid` mode merges mechanical hard gates (safety/credential/wrapper) with LLM nuanced scoring. Pre-flight validation added for `GCL_CRITIC_LLM_ENDPOINT` and `GCL_CRITIC_LLM_API_KEY`. All 93 existing unit tests pass (no breaking changes). `.env.example` updated with GCL environment variables. `README.md` updated with usage examples and roadmap. |
 | 1.10.0 | 2026-06-21 | **Phase 5 extension**: §8 adds `recommended` classification for `alicloud-oss-ops`, `alicloud-nas-ops`, `alicloud-sms-ops`, `alicloud-voice-ops` (12 total `recommended` skills). Each skill ships `references/rubric.md` + `references/prompt-templates.md` + Delegation Rules + `## Quality Gate (GCL)` (`max_iter=3`). |
+| 1.11.0 | 2026-08-02 | **Trace Trajectory Analysis (P0–P3)**: §6 trace schema extended with `schema_version`, `timestamp`, `correlation` block (session/user/wrapper-trace stitching). Langfuse reporting enhanced with per-iteration `span-create` + `score-create` events. New scripts: `trace_maintain.py` (hot/warm/cold lifecycle), `trace_query.py` (unified multi-dimension query). `gcl_passrate_reporter.py` gains EWMA degradation detection (`--detect-ewma`). `gcl_strategy.py` gains Reflexion ROI validation (`roi` subcommand). 594 unit tests pass. |
 
 ---
 

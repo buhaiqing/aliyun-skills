@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import os
+import socket
 import sys
 import urllib.request
 from pathlib import Path
@@ -35,6 +36,10 @@ def post(endpoint: str, payload: dict[str, Any]) -> None:
         method="POST",
     )
     try:
+        # Set a socket-level timeout to cover DNS resolution which
+        # urllib's timeout parameter may not fully cover on all platforms
+        # (e.g. macOS where getaddrinfo can hang on unreachable hosts).
+        socket.setdefaulttimeout(5)
         urllib.request.urlopen(req, timeout=5).read()
     except Exception:
         return

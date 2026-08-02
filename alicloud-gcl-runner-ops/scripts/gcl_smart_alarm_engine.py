@@ -262,8 +262,29 @@ def parse_trace_file(path: Path) -> dict[str, Any] | None:
     }
 
 
+def _filename_timestamp(path: Path) -> datetime | None:
+    """Extract timestamp from trace filename (gcl-trace-YYYYMMDD-HHMMSS-*.json).
+
+    Returns None if the filename doesn't match the expected pattern.
+    """
+    m = re.match(r"gcl-trace-(\d{8})-(\d{6})-", path.name)
+    if not m:
+        return None
+    try:
+        return datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S").replace(
+            tzinfo=timezone.utc
+        )
+    except ValueError:
+        return None
+
+
 def load_traces(trace_dir: Path, window_minutes: int) -> list[dict[str, Any]]:
-    """加载指定时间窗口内的所有trace。"""
+    """加载指定时间窗口内的所有trace。
+
+    Optimisation: uses the embedded filename timestamp to skip files that
+    are clearly outside the window, avoiding expensive json.loads on stale
+    traces.
+    """
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(minutes=window_minutes)
 
@@ -272,6 +293,10 @@ def load_traces(trace_dir: Path, window_minutes: int) -> list[dict[str, Any]]:
         return traces
 
     for path in trace_dir.glob("gcl-trace-*.json"):
+        # Fast path: skip files whose filename timestamp is before cutoff
+        fname_ts = _filename_timestamp(path)
+        if fname_ts is not None and fname_ts < cutoff:
+            continue
         trace = parse_trace_file(path)
         if trace and trace["timestamp"] >= cutoff:
             traces.append(trace)

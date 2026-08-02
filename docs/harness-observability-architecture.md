@@ -217,6 +217,9 @@ Langfuse 追踪事件类型：
 | `optimization` | 参数优化 |
 | `repair` | 错误修复 |
 | `circuit_breaker` | 熔断器状态变化 |
+| `trace-create` | GCL 运行轨迹（gcl_runner.py → Langfuse batch） |
+| `span-create` | GCL 每次迭代 span（含 decision/exit_code/duration） |
+| `score-create` | GCL rubric 维度分数（correctness/safety/idempotency 等） |
 
 ## 7. 部署指南
 

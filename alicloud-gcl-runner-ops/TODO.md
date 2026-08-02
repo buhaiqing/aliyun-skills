@@ -120,6 +120,30 @@
 - [x] **R2 非试点验证**: vpc-ops + slb-ops wrapper-lite → `preflight_retrieve` `{{known_traps}}` 单测
 - [x] **Case-table coverage suggest (Phase 1)**: `parse_repair_table_codes` + `is_mapped_in_repair_table` + `unmapped_in_repair` 标记 + `scan_repair_coverage.py scan|show` (suggest-only, threshold 5, never touches overlay). Phase 2 (GitHub Issue) and Phase 3 (weekly workflow) deferred.
 
+## Trace Trajectory Analysis Optimization (P0–P3) ✅
+
+> 2026-08-02: 全量实施完成，594 单元测试通过。
+
+### P0 — 性能与元数据
+
+- [x] 文件名预过滤：`_filename_timestamp()` 利用嵌入时间戳做零 I/O 过滤（`gcl_passrate_reporter.py`）
+- [x] Trace Schema v2.0 元数据：`schema_version` + `timestamp` + `skill_version` + `version_source`（`gcl_runner.py`）
+
+### P1 — 可观测性增强
+
+- [x] **P1a** Langfuse span+scores 上报：每次迭代生成 `span-create`，最终 critic scores 生成 `score-create`（`gcl_runner.py _report_trace_to_langfuse()`）
+- [x] **P1b** Trace 生命周期管理：HOT(0-7d) → WARM(7-30d gzip) → COLD(>30d 删除/归档)（`scripts/trace_maintain.py`）
+
+### P2 — 退化检测与闭环
+
+- [x] **P2a** Operation 级 EWMA 退化检测：`compute_ewma()` + `detect_ewma_degradation()`，捕获渐进退化（`gcl_passrate_reporter.py`）
+- [x] **P2b** Reflexion ROI 闭环验证：`validate_reflexion_roi()` 对比 pattern 提取前后 failure_rate（`gcl_strategy.py`）
+
+### P3 — 统一查询与关联
+
+- [x] **P3a** 统一 correlation 块：`session_id` / `user_id` / `wrapper_trace_id` / `runner_version`（`gcl_runner.py` trace 初始化）
+- [x] **P3b** trace_query.py 统一查询工具：多维度过滤（skill/operation/decision/session/user/grep）+ table/JSON 输出（`scripts/trace_query.py`）
+
 ## Blocked / Parking Lot
 
 | 项 | 阻塞原因 | 预计解除 |

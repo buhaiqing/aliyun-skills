@@ -98,6 +98,7 @@ DESIGN
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import datetime as _dt
 from datetime import datetime, timezone
 import json
@@ -173,6 +174,9 @@ except ImportError:
         }
 
 # ---------------------------------------------------------------------------
+
+#: Trace schema version — consumers use this for forward-compatible parsing.
+TRACE_SCHEMA_VERSION = "2.0"
 
 # ---------------------------------------------------------------------------
 # D2 — Pre-change health check auto-trigger
@@ -253,6 +257,8 @@ def _fetch_langfuse_org_project(host: str) -> tuple[str, str]:
 
     org_name, project_name = "", ""
     try:
+        import socket
+        socket.setdefaulttimeout(5)
         import langfuse
         os.environ.update(LANGFUSE_HOST=host, LANGFUSE_PUBLIC_KEY=pk, LANGFUSE_SECRET_KEY=sk)
         lf_client = langfuse.get_client()
@@ -294,6 +300,8 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
 
     import base64
     import urllib.request
+    import socket
+    socket.setdefaulttimeout(10)
 
     auth = base64.b64encode(f"{lf_pk}:{lf_sk}".encode()).decode()
     # When invoked via the harness wrapper (skillopt_wrap), the wrapper has
@@ -369,8 +377,45 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
         "metadata": metadata,
     }
 
-    # Post to Langfuse
-    batch = [{"id": trace_id, "type": "trace-create", "timestamp": ts, "body": body}]
+    # Build batch: trace-create + per-iteration spans + scores
+    batch: list[dict[str, Any]] = [{"id": trace_id, "type": "trace-create", "timestamp": ts, "body": body}]
+
+    # P1a: Emit a span per iteration for granular Langfuse visibility
+    for idx, iteration in enumerate(iterations):
+        span_id = f"{trace_id}-iter-{idx + 1}"
+        gen = iteration.get("generator", {})
+        critic = iteration.get("critic", {})
+        span_body: dict[str, Any] = {
+            "id": span_id,
+            "traceId": trace_id,
+            "name": f"iteration-{idx + 1}",
+            "startTime": ts,
+            "metadata": {
+                "iter": iteration.get("iter", idx + 1),
+                "decision": iteration.get("decision", ""),
+                "exit_code": gen.get("exit_code"),
+                "duration_ms": gen.get("duration_ms"),
+                "execution_path": gen.get("execution_path", ""),
+                "blocking": critic.get("blocking", False),
+            },
+        }
+        batch.append({"id": span_id, "type": "span-create", "timestamp": ts, "body": span_body})
+
+    # P1a: Emit numeric scores from the final iteration's critic
+    if iterations:
+        final_scores = iterations[-1].get("critic", {}).get("scores", {})
+        for dim_name, dim_val in final_scores.items():
+            if not isinstance(dim_val, (int, float)):
+                continue
+            score_id = f"{trace_id}-score-{dim_name}"
+            score_body = {
+                "id": score_id,
+                "traceId": trace_id,
+                "name": dim_name,
+                "value": float(dim_val),
+                "comment": f"GCL rubric score ({final_status})",
+            }
+            batch.append({"id": score_id, "type": "score-create", "timestamp": ts, "body": score_body})
     try:
         req = urllib.request.Request(
             f"{lf_host}/api/public/ingestion",
@@ -378,7 +423,20 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
             headers={"Authorization": f"Basic {auth}", "Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=10) as r:
+        # Thread-based timeout to enforce DNS resolution timeout on all
+        # platforms. urllib.request.urlopen's timeout parameter does not
+        # reliably control DNS resolution on macOS, causing ~15 s hangs
+        # for unreachable hosts (e.g. mock.langfuse.local in CI).
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        try:
+            future = executor.submit(urllib.request.urlopen, req)
+            r = future.result(timeout=10)
+        except concurrent.futures.TimeoutError:
+            _log("event=langfuse_report status=timeout trace_id={}", trace_id)
+            return False
+        finally:
+            executor.shutdown(wait=False)
+        try:
             resp = json.loads(r.read())
             if resp.get("successes"):
                 _log(
@@ -391,6 +449,8 @@ def _report_trace_to_langfuse(trace: dict[str, Any], trace_path: Path) -> bool:
             else:
                 _log("event=langfuse_report status=failed response={}", resp)
                 return False
+        finally:
+            r.close()
     except Exception as e:
         _log("event=langfuse_report status=error exception={}", e)
         return False
@@ -2436,12 +2496,23 @@ def run_loop(
     Returns the trace dict (will be persisted to disk by the caller).
     """
     version, source = resolve_skill_version(skill, skills_root)
+    # P3a: Unified correlation block for cross-system trace stitching
+    correlation: dict[str, Any] = {
+        "session_id": os.environ.get("HARNESS_SESSION_ID", os.environ.get("SKILLOPT_SESSION_ID", "")),
+        "user_id": os.environ.get("HARNESS_USER_ID", os.environ.get("SKILLOPT_USER_ID", "")),
+        "wrapper_trace_id": os.environ.get("SKILLOPT_CURRENT_TRACE_ID", ""),
+        "runner_version": TRACE_SCHEMA_VERSION,
+    }
+
     trace: dict[str, Any] = {
+        "schema_version": TRACE_SCHEMA_VERSION,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "skill": skill,
         "request": _sanitize_user_request(user_request),
         "skill_version": version,
         "version_source": source,
         "rubric_version": rubric["version"],
+        "correlation": correlation,
         "iterations": [],
         "failure_pattern": None,  # populated by extract_failure_pattern() if SAFETY_FAIL
     }
