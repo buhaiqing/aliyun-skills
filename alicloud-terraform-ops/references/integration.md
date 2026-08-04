@@ -29,6 +29,8 @@ aliyun configure get current
 python3 alicloud-terraform-ops/scripts/terraform_ops.py --help
 ```
 
+> **完整安装配置指南**: 参见 [runbooks/terraform-setup.md](runbooks/terraform-setup.md)
+
 ## OSS Backend Setup (Minimal)
 
 ```hcl

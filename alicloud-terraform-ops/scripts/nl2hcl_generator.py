@@ -368,6 +368,7 @@ class NL2HCLGenerator:
         r"polardb|polar\s*db|云原生数据库": "alicloud_polardb_cluster",
         r"alb|应用型负载均衡|应用型lb|七层负载": "alicloud_alb_load_balancer",
         r"waf|web安全网关|web应用防火墙|安全防护": "alicloud_wafv3_instance",
+        r"cms|alarm|告警|监控告警|cloudmonitor": "alicloud_cms_alarm",
     }
 
     # 1c1g / 1核1G / 1c1m1 常见规格 → 阿里云规格族映射

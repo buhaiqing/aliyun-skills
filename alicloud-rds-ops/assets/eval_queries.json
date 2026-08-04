@@ -6,7 +6,22 @@
       "priority": "P0"
     },
     {
+      "query": "查看我的 RDS 实例列表",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P0"
+    },
+    {
       "query": "备份数据库",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "删除 RDS 实例",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P0"
+    },
+    {
+      "query": "重启 RDS 数据库",
       "expected_skill": "alicloud-rds-ops",
       "priority": "P0"
     },
@@ -16,19 +31,266 @@
       "priority": "P1"
     },
     {
+      "query": "创建新的数据库",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
       "query": "修改数据库配置参数",
       "expected_skill": "alicloud-rds-ops",
       "priority": "P1"
     },
     {
-      "query": "查看慢 SQL",
+      "query": "查看慢 SQL 日志",
       "expected_skill": "alicloud-rds-ops",
       "priority": "P1"
     },
     {
-      "query": "扩容数据库磁盘",
+      "query": "扩容 RDS 磁盘空间",
       "expected_skill": "alicloud-rds-ops",
       "priority": "P1"
+    },
+    {
+      "query": "修改 RDS 白名单",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 RDS 性能监控",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看数据库账号列表",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "升级 RDS 引擎版本",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "恢复数据库到指定时间点",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看只读实例",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看 Binlog 文件",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看错误日志",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看 SQL 执行记录",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看 RDS 连接信息",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看数据库存储使用量",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "执行 SQL 文件到 RDS",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "RDS 数据库巡检",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P3"
+    },
+    {
+      "query": "RDS CPU 告警怎么诊断",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P3"
+    },
+    {
+      "query": "查看数据库 HA 高可用配置",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P3"
+    },
+    {
+      "query": "删除数据库账号",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "删除数据库",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看备份列表",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    },
+    {
+      "query": "查看参数配置",
+      "expected_skill": "alicloud-rds-ops",
+      "priority": "P2"
+    }
+  ],
+  "negative_queries": [
+    {
+      "query": "创建 ECS 云服务器",
+      "expected_skill": "alicloud-ecs-ops",
+      "rationale": "ECS product keyword must NOT trigger RDS",
+      "priority": "P0"
+    },
+    {
+      "query": "上传文件到 OSS",
+      "expected_skill": "alicloud-oss-ops",
+      "rationale": "OSS object storage — not RDS relational database",
+      "priority": "P0"
+    },
+    {
+      "query": "Redis 缓存扩容",
+      "expected_skill": "alicloud-redis-ops",
+      "rationale": "Redis managed cache — not RDS",
+      "priority": "P0"
+    },
+    {
+      "query": "PolarDB 集群管理",
+      "expected_skill": "alicloud-polar-mysql-ops",
+      "rationale": "PolarDB is separate product from RDS",
+      "priority": "P1"
+    },
+    {
+      "query": "查询这个月云服务账单",
+      "expected_skill": "alicloud-billing-ops",
+      "rationale": "Billing-only query",
+      "priority": "P1"
+    },
+    {
+      "query": "给 RAM 用户授权",
+      "expected_skill": "alicloud-ram-ops",
+      "rationale": "RAM permission model only",
+      "priority": "P1"
+    },
+    {
+      "query": "MongoDB 数据库操作",
+      "expected_skill": "alicloud-mongodb-ops",
+      "rationale": "MongoDB is NoSQL document database — not RDS",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 SLB 后端状态",
+      "expected_skill": "alicloud-slb-ops",
+      "rationale": "SLB load balancer — not RDS",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 Kubernetes 集群",
+      "expected_skill": "alicloud-ack-ops",
+      "rationale": "Container/K8s intent",
+      "priority": "P1"
+    }
+  ],
+  "multi_turn": [
+    {
+      "turns": [
+        {"query": "创建一台 RDS MySQL 实例", "expected_skill": "alicloud-rds-ops"},
+        {"query": "给这个实例创建一个数据库", "expected_skill": "alicloud-rds-ops"},
+        {"query": "再创建一个读写账号", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Sequential RDS intent — instance → database → account"
+    },
+    {
+      "turns": [
+        {"query": "查看 RDS 实例列表", "expected_skill": "alicloud-rds-ops"},
+        {"query": "帮我备份第一个实例", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Multi-turn — list instances then reference first one"
+    },
+    {
+      "turns": [
+        {"query": "ECS 连接 RDS 失败", "expected_skill": "alicloud-ecs-ops"},
+        {"query": "查下 RDS 白名单配置", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Cross-skill — ECS routes to RDS for whitelist issue"
+    },
+    {
+      "turns": [
+        {"query": "帮我扩容 RDS 磁盘", "expected_skill": "alicloud-rds-ops"},
+        {"query": "顺便查看下当前存储使用情况", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Sequential RDS intent — expand disk then monitor usage"
+    },
+    {
+      "turns": [
+        {"query": "RDS MySQL 实例 CPU 告警", "expected_skill": "alicloud-rds-ops"},
+        {"query": "查看下慢 SQL", "expected_skill": "alicloud-rds-ops"},
+        {"query": "再检查下性能监控", "expected_skill": "alicloud-rds-ops"}
+      ],
+      "rationale": "Diagnostic flow — alert → slow query → performance metrics"
+    }
+  ],
+  "anaphora": [
+    {
+      "setup": "创建 RDS 实例 rm-xxxx",
+      "query": "给那台 RDS 创建个数据库",
+      "expected_skill": "alicloud-rds-ops",
+      "rationale": "'那台 RDS' refers to the instance from setup turn"
+    },
+    {
+      "setup": "查看 RDS rm-yyyy 的慢 SQL",
+      "query": "把它的备份策略改成每天一次",
+      "expected_skill": "alicloud-rds-ops",
+      "rationale": "'它' = the same RDS instance; backup config requires instance context"
+    },
+    {
+      "setup": "查看 RDS 账号列表",
+      "query": "把刚才那个账号删掉",
+      "expected_skill": "alicloud-rds-ops",
+      "rationale": "'那个账号' = the account just listed; agent must remember from setup"
+    },
+    {
+      "setup": "RDS 实例 rm-zzzz 磁盘空间不足",
+      "query": "帮我扩容下这台实例",
+      "expected_skill": "alicloud-rds-ops",
+      "rationale": "'这台实例' = rm-zzzz from setup; expansion requires context"
+    }
+  ],
+  "disambiguation": [
+    {
+      "query": "弄好我的 RDS",
+      "expected_skill": "alicloud-rds-ops",
+      "expected_default": "ask_user",
+      "rationale": "Ambiguous between Restart / Modify Spec / other actions — destructive paths default to asking"
+    },
+    {
+      "query": "看下 RDS",
+      "expected_skill": "alicloud-rds-ops",
+      "expected_default": "Describe Instances",
+      "rationale": "No signal — non-destructive default to Describe"
+    },
+    {
+      "query": "RDS 慢",
+      "expected_skill": "alicloud-rds-ops",
+      "expected_default": "Slow Query + Performance Metrics",
+      "rationale": "Performance intent — default to slow query + multi-metric scan"
+    },
+    {
+      "query": "RDS 数据库出问题了",
+      "expected_skill": "alicloud-rds-ops",
+      "expected_default": "Health Check + Error Logs",
+      "rationale": "Unknown issue — default to health check and error log review"
     }
   ]
 }

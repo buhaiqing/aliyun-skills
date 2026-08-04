@@ -155,6 +155,20 @@
 | 路由表 / RouteTable | `alicloud_route_table` | 路由表 |
 | 弹性网卡 / ENI | `alicloud_network_interface` | 辅助网卡 |
 
+#### 监控告警资源
+
+| 自然语言 | Terraform 资源 | 说明 |
+|----------|---------------|------|
+| 告警 / 监控告警 | `alicloud_cms_alarm` | 告警规则 |
+| 联系人 / 联系组 | `alicloud_cms_contact_group` | 联系人组 |
+| 钉钉 / Webhook | `webhook` (在 alarm 中) | 钉钉通知 |
+| CPU 告警 / CPU 监控 | `cpu_total` | CPU 使用率 |
+| 内存告警 / 内存监控 | `memory_usedutilization` | 内存使用率 |
+| 磁盘告警 / 磁盘监控 | `diskusage_utilization` | 磁盘使用率 |
+| SLB 告警 / 5xx 错误 | `SlbHttpCode_5xx` | SLB 5xx 错误率 |
+| RDS 告警 | `CpuUsage`/`DiskUsage` | RDS 指标 |
+| Redis 告警 | `MemoryUsage`/`QPS` | Redis 指标 |
+
 ### 3.2 属性映射
 
 #### ECS 属性
@@ -188,6 +202,22 @@
 | 存储空间 | `db_instance_storage` | 100 |
 | 存储类型 | `db_instance_storage_type` | local_ssd, cloud_ssd |
 
+#### CMS 告警属性
+
+| 自然语言 | TF 属性 | 示例值 |
+|----------|---------|--------|
+| 环境 | `environment` | production, dev |
+| CPU 阈值 | `cpu_threshold` | 80 |
+| 内存阈值 | `memory_threshold` | 85 |
+| 磁盘阈值 | `disk_threshold` | 85 |
+| SLB 502 阈值 | `slb_502_threshold` | 5 |
+| 告警资源 | `alarm_resources` | [{"resource_id": "i-xxx", ...}] |
+| 钉钉 Webhook | `dingtalk_webhook` | https://oapi.dingtalk.com/... |
+| 邮件联系人 | `email_contacts` | ["ops@example.com"] |
+| 短信联系人 | `sms_contacts` | ["13800138000"] |
+| 静默周期 | `silence_minutes` | 15 |
+| 升级等待 | `escalation_minutes` | 5 |
+
 ### 3.3 默认值策略
 
 当用户未指定时，使用环境敏感的默认值:
@@ -213,6 +243,15 @@ defaults:
     db_instance_class:
       dev: "rds.mysql.t1.small"
       prod: "rds.mysql.c1.large"
+  
+  # CMS 告警
+  cms_alarm:
+    cpu_threshold: 80
+    memory_threshold: 85
+    disk_threshold: 85
+    slb_502_threshold: 5
+    silence_minutes: 15
+    escalation_minutes: 5
 ```markdown
 
 ## 4. 生成流程

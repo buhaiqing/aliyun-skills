@@ -24,6 +24,8 @@ Agent 扩展模块 → [AGENTS.md](../AGENTS.md) §4 + [references/module-covera
 | `addon-alb` | 应用型负载均衡 (ALB) |
 | `addon-security-group` | 独立安全组（含入方向规则） |
 | `addon-waf` | Web 应用防火墙 (WAF 3.0) |
+| `addon-cms-alarm` | 云监控告警规则 + 联系人组 |
+| `addon-cms-event` | 云监控事件告警（计划补充） |
 
 ## 生成物结构
 

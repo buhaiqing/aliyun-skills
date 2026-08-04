@@ -114,6 +114,18 @@
       "import_supported": false,
       "registry_level": "planned",
       "keywords": ["ess", "弹性伸缩", "autoscaling", "scaling group"]
+    },
+    "alicloud_cms_alarm": {
+      "registry_name": "cms_alarm",
+      "nl2hcl_module": "addon-cms-alarm",
+      "import_supported": true,
+      "keywords": ["cms", "alarm", "告警", "监控告警", "cloudmonitor", "alarm rule"]
+    },
+    "alicloud_cms_contact_group": {
+      "registry_name": "cms_contact",
+      "nl2hcl_module": "addon-cms-alarm",
+      "import_supported": true,
+      "keywords": ["cms contact", "告警联系人", "contact group", "联系组"]
     }
   }
 }

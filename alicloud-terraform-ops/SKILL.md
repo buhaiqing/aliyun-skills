@@ -205,6 +205,23 @@ module "web_stack" {
 
 Full module design guidelines are covered in the NL2HCL generator spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 
+#### 5.3.1 Module Catalog
+
+| 模块 | 用途 | 主要变量 |
+|------|------|----------|
+| `addon-cms-alarm` | 云监控告警规则 + 联系人组 | `environment`, `cpu_threshold`, `memory_threshold`, `alarm_resources` |
+| `compute-ecs` | 安全组 + ECS | `vpc_id`, `instance_type`, `instance_count` |
+| `addon-rds` | RDS MySQL | `engine_version`, `instance_class`, `storage` |
+| `addon-redis` | Redis | `instance_type`, `vpc_auth_mode` |
+| `addon-slb` | 负载均衡 | `backend_servers`, `listener_protocol` |
+| `vpc-network` | VPC + vSwitch | `cidr`, `az_count` |
+
+> **CMS 告警模块**（`addon-cms-alarm`）支持：
+> - 预置 CPU/内存/磁盘/SLB 502 告警规则
+> - 按资源 ID 指定告警对象（`alarm_resources`）
+> - 钉钉 Webhook 通知
+> - 静默周期配置
+
 ### 5.4 Backend Configuration
 
 ```hcl
@@ -396,7 +413,190 @@ Full spec: [references/nl2hcl-generator.md](references/nl2hcl-generator.md)
 
 Full spec: [references/reverse-engineering.md](references/reverse-engineering.md)
 
-### 11.3 HITL Multi-Mode Workflow
+### 11.3 CMS Alarm — 云监控告警 AGI 能力
+
+用户友好的云监控告警管理，支持自然语言交互。
+
+#### 触发模式
+
+| 用户说 | AGI 理解 | 执行操作 |
+|--------|----------|----------|
+| "为 ECS 创建 CPU 告警" | 创建 `cpu_alarm` 规则 | `alicloud_cms_alarm` |
+| "配置钉钉告警通知" | 设置 `dingtalk_webhook` | 钉钉通知 |
+| "配置飞书通知" | 设置 `feishu_webhook` | 飞书通知 |
+| "配置企业微信通知" | 设置 `wecom_webhook` | 企业微信通知 |
+| "配置多渠道通知" | 同时设置多个 Webhook | 多渠道通知 |
+| "添加运维团队到告警联系人" | 更新 `contact_group` | 联系人管理 |
+| "CPU 超过 90% 告警" | 设置 `cpu_threshold = 90` | 阈值配置 |
+| "查看当前告警规则" | 查询已有告警 | `terraform state list` |
+| "删除这个告警" | `terraform destroy -target` | 资源删除 |
+| "把现有告警导入 Terraform" | Reverse Engineering | `terraform import` |
+
+#### 自然语言示例
+
+**场景 1: 创建告警**
+
+```
+用户: "为生产环境的 ECS 实例创建 CPU 和内存告警，阈值分别是 80% 和 85%，同时配置钉钉和飞书通知"
+
+AGI 执行:
+1. 生成 HCL:
+   module "cms_alarm" {
+     source = "../../modules/addon-cms-alarm"
+     environment = "production"
+     cpu_threshold = 80
+     memory_threshold = 85
+     dingtalk_webhook = var.dingtalk_webhook
+     feishu_webhook = var.feishu_webhook
+     alarm_resources = [{ resource_type = "acs_ecs", metric_name = "cpu_total", ... }]
+   }
+2. terraform plan (dry-run)
+3. 用户确认后 apply
+```
+
+**场景 2: 批量告警**
+
+```
+用户: "为这 5 台 RDS 实例都添加磁盘使用率超过 80% 的告警，配置企业微信通知"
+
+AGI 执行:
+1. 解析用户提供的 RDS 实例列表
+2. 生成 for_each 循环的告警配置
+3. 配置 wecom_webhook
+4. plan → apply
+```
+
+**场景 3: 多渠道通知**
+
+```
+用户: "配置钉钉、飞书、企业微信三个渠道的告警通知"
+
+AGI 执行:
+1. 询问用户三个渠道的 Webhook URL
+2. 生成多渠道配置:
+   dingtalk_webhook = "https://oapi.dingtalk.com/..."
+   feishu_webhook = "https://open.feishu.cn/..."
+   wecom_webhook = "https://qyapi.weixin.qq.com/..."
+3. terraform plan → apply
+```
+
+**场景 4: 告警恢复**
+
+```
+用户: "生产环境磁盘告警阈值从 85% 调整到 90%"
+
+AGI 执行:
+1. 修改 variables.tf 中 disk_threshold
+2. terraform plan (显示变更)
+3. 用户确认后 apply
+```
+
+#### 告警模板变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `environment` | 环境名称 | 必填 |
+| `cpu_threshold` | CPU 告警阈值 | 80% |
+| `memory_threshold` | 内存告警阈值 | 85% |
+| `disk_threshold` | 磁盘告警阈值 | 85% |
+| `slb_502_threshold` | SLB 5xx 阈值 | 5% |
+| `alarm_resources` | 指定告警的资源 | 全量 |
+| `dingtalk_webhook` | 钉钉 Webhook URL | 可选 |
+| `feishu_webhook` | 飞书 Webhook URL | 可选 |
+| `wecom_webhook` | 企业微信 Webhook URL | 可选 |
+| `email_contacts` | 邮件联系人 | 可选 |
+| `sms_contacts` | 短信联系人 | 可选 |
+| `silence_minutes` | 静默周期 | 15 分钟 |
+
+#### AGI 意图解析规则
+
+```python
+# 意图解析逻辑
+INTENT_PATTERNS = {
+    # 创建类
+    "创建.*告警": CreateAlarm,
+    "添加.*告警": CreateAlarm,
+    "配置.*告警": CreateAlarm,
+    
+    # 修改类
+    "调整.*阈值": UpdateThreshold,
+    "修改.*告警": UpdateAlarm,
+    
+    # 删除类
+    "删除.*告警": DeleteAlarm,
+    "移除.*告警": DeleteAlarm,
+    
+    # 查询类
+    "查看.*告警": QueryAlarm,
+    "列出.*告警": ListAlarm,
+    
+    # 导入类
+    "导入.*告警": ImportAlarm,
+    "纳管.*告警": ImportAlarm,
+}
+
+# 阈值提取
+THRESHOLD_PATTERNS = {
+    "cpu.*超过.*(\d+)%": ("cpu_threshold", int(match)),
+    "cpu.*大于.*(\d+)%": ("cpu_threshold", int(match)),
+    "内存.*超过.*(\d+)%": ("memory_threshold", int(match)),
+    "磁盘.*超过.*(\d+)%": ("disk_threshold", int(match)),
+}
+# 通知渠道提取
+WEBHOOK_PATTERNS = {
+    "钉钉": "dingtalk_webhook",
+    "飞书": "feishu_webhook",
+    "lark": "feishu_webhook",
+    "企业微信": "wecom_webhook",
+}
+```
+
+#### 输出规范
+
+**创建告警输出示例:**
+
+```markdown
+## CMS 告警配置
+
+### 环境: production
+
+### 告警规则
+
+| 规则 | 指标 | 阈值 | 监控资源 |
+|------|------|------|----------|
+| CPU 告警 | cpu_total | 80% | 所有 ECS |
+| 内存告警 | memory_usedutilization | 85% | 所有 ECS |
+| 磁盘告警 | diskusage_utilization | 85% | 所有 ECS |
+
+### 通知配置
+
+| 渠道 | 状态 | 配置 |
+|------|------|------|
+| 钉钉 | ✅ 已配置 / ⏳ 未配置 | dingtalk_webhook |
+| 飞书 | ✅ 已配置 / ⏳ 未配置 | feishu_webhook |
+| 企业微信 | ✅ 已配置 / ⏳ 未配置 | wecom_webhook |
+| 邮件 | ✅ 已配置 / ⏳ 未配置 | email_contacts |
+| 短信 | ✅ 已配置 / ⏳ 未配置 | sms_contacts |
+
+### 下一步
+
+```bash
+# 预览变更
+terraform plan
+
+# 确认后应用
+terraform apply
+```
+```
+
+#### 相关文档
+
+- **规格**: [references/Spec-cms-alarm.md](references/Spec-cms-alarm.md)
+- **ADR**: [references/adr/ADR-001-terraform-cms-alarm-management.md](references/adr/ADR-001-terraform-cms-alarm-management.md)
+- **知识库**: [references/knowledge-cms-alarm.md](references/knowledge-cms-alarm.md)
+- **模块**: `modules/addon-cms-alarm/`
+
+### 11.4 HITL Multi-Mode Workflow
 
 人工介入 (Human-in-the-Loop) 工作流程，支持三种协作模式：
 

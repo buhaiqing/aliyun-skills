@@ -140,6 +140,7 @@ Document in manifest `registry_level: partial` and known_issues in registry.
 | ECS/SG | compute-ecs | ✅ |
 | RDS/Redis/SLB/NAT/EIP/Disk/Route | addon-* | ✅ |
 | MongoDB/OSS/PolarDB | ❌ | ✅ partial |
+| **CMS 告警/联系人组** | **addon-cms-alarm** | ✅ |
 | Elasticsearch/ESS | ❌ | ❌ planned |
 
 See live matrix: `python3 -c "from resource_registry import get_registry; print(get_registry().generate_support_matrix())"`

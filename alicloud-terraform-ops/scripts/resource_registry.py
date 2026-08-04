@@ -425,6 +425,46 @@ class ResourceRegistry:
             added_date=None,
             last_verified=None,
         ),
+
+        # CMS 告警配置
+        "cms_alarm": ResourceTypeInfo(
+            name="cms_alarm",
+            tf_type="alicloud_cms_alarm",
+            api_product="cms",
+            api_action="DescribeAlarmRuleList",
+            id_param="RuleId",
+            support_level=SupportLevel.FULL,
+            capabilities={
+                ResourceCapability.DISCOVER,
+                ResourceCapability.HCL_GENERATE,
+                ResourceCapability.IMPORT,
+            },
+            known_issues=[
+                "告警规则需要关联已有资源 ID",
+                "WebHook URL 建议通过环境变量注入"
+            ],
+            added_date="2026-08-02",
+            last_verified="2026-08-02"
+        ),
+
+        "cms_contact": ResourceTypeInfo(
+            name="cms_contact",
+            tf_type="alicloud_cms_contact_group",
+            api_product="cms",
+            api_action="DescribeContactGroupList",
+            id_param="GroupId",
+            support_level=SupportLevel.FULL,
+            capabilities={
+                ResourceCapability.DISCOVER,
+                ResourceCapability.HCL_GENERATE,
+                ResourceCapability.IMPORT,
+            },
+            known_issues=[
+                "联系人信息需要提前在 CMS 控制台配置"
+            ],
+            added_date="2026-08-02",
+            last_verified="2026-08-02"
+        ),
     }
 
     def __init__(self):

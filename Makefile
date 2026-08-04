@@ -24,12 +24,15 @@ LANGFUSE_TOKEN_ENV_FILE ?= LANGFUSE_ENV_FILE=.env
 
 export ALIYUN_SKILLS_ROOT := $(SKILLS_DIR)
 
+SKILL ?= alicloud-ecs-ops
+
 .PHONY: help lint lint-fix test test-coverage test-integration validate fmt build dev-up clean \
         runtime-layout runtime-clean runtime-clean-apply \
         runtime-clean-memory-fixtures runtime-clean-memory-fixtures-apply \
         memory-maintain memory-maintain-apply \
         doctor doctor-history doctor-weekly doctor-weekly-apply \
-        docker-build docker-dev docker-test ci
+        docker-build docker-dev docker-test ci \
+        skill-evolution-a skill-evolution-b skill-evolution-all
 
 # ===========================================
 # Help
@@ -78,7 +81,13 @@ help:
 	@echo "  make langfuse-token-report SESSION_ID=sess-xxx SINCE_DAYS=7"
 	@echo "      Drill down on a single sessionID"
 	@echo ""
-	@echo "Environment: SKILLS_DIR=$(SKILLS_DIR)"
+	@echo ""
+	@echo "Skill Evolution:"
+	@echo "  make skill-evolution-a     Run Milestone A (export trajectories + dataset)"
+	@echo "  make skill-evolution-b     Run Milestone B (benchmark smoke test)"
+	@echo "  make skill-evolution-all   Run A + B end-to-end (default SKILL=$(SKILL))"
+	@echo "      SKILL=alicloud-rds-ops  Override target skill"
+
 
 # ===========================================
 # Linting
@@ -344,6 +353,24 @@ doctor-weekly-apply:
 		--baseline "$(SKILLS_DIR)/docs/strategy-baseline.json" \
 		--output "$(SKILLS_DIR)/docs/strategy-report.md"
 	@echo "==> Done. Review docs/strategy-report.md (commit manually if desired)."
+
+# ===========================================
+# Skill Evolution (Microsoft SkillOpt flywheel)
+# ===========================================
+# Milestone A: export trajectories + build trainable seed + dataset
+skill-evolution-a:
+	@echo "==> Running Milestone A for $(SKILL)..."
+	@bash scripts/skill_evolution/run_milestone_a.sh $(SKILL)
+
+# Milestone B: sync initial.md + materialize splits + benchmark smoke test
+skill-evolution-b:
+	@echo "==> Running Milestone B for $(SKILL)..."
+	@bash scripts/skill_evolution/run_milestone_b.sh $(SKILL)
+
+# End-to-end: A then B
+skill-evolution-all: skill-evolution-a skill-evolution-b
+	@echo "==> Milestone A + B completed for $(SKILL)"
+	@echo "    Outputs: .runtime/skill-evolution/$(SKILL)/"
 
 # ===========================================
 # Build (Legacy alias)

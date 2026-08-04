@@ -36,6 +36,7 @@ class ModulePlan:
     enable_oss: bool = False
     enable_polardb: bool = False
     enable_alb: bool = False
+    enable_cms_alarm: bool = False
 
     ecs_count: int = 1
     az_count: int = 2
@@ -46,6 +47,8 @@ class ModulePlan:
     rds_instance_class: str = ""
     mongodb_instance_class: str = ""
     polardb_instance_class: str = ""
+    cms_alarm_environment: str = ""
+    cms_alarm_thresholds: dict = field(default_factory=dict)
 
     modules_used: set[str] = field(default_factory=set)
 
@@ -83,6 +86,7 @@ def plan_modules(intent: dict[str, Any], defaults: dict[str, str]) -> ModulePlan
     has_alb = "alicloud_alb_load_balancer" in resources
     has_security_group_standalone = "alicloud_security_group" in resources and "alicloud_instance" not in resources
     has_waf = "alicloud_wafv3_instance" in resources
+    has_cms_alarm = "alicloud_cms_alarm" in resources or intent.get("wants_cms_alarm")
     has_standalone_disk = bool(intent.get("wants_standalone_disk")) or (
         "alicloud_disk" in resources and not has_ecs
     )
@@ -177,6 +181,13 @@ def plan_modules(intent: dict[str, Any], defaults: dict[str, str]) -> ModulePlan
     # WAF（不绑定 web-stack，独立渲染）
     if has_waf:
         plan.record("addon-waf")
+
+    # CMS 告警配置（独立模块）
+    if has_cms_alarm:
+        plan.enable_cms_alarm = True
+        plan.cms_alarm_environment = intent.get("cms_environment") or environment or "production"
+        plan.cms_alarm_thresholds = intent.get("cms_thresholds") or {}
+        plan.record("addon-cms-alarm")
 
     return plan
 
@@ -378,6 +389,31 @@ def render_main_tf(plan: ModulePlan, environment: str, region: str) -> str:
 
               environment = var.environment
             }
+        """))
+
+    # CMS 告警模块（独立渲染）
+    if plan.enable_cms_alarm:
+        thresholds = plan.cms_alarm_thresholds
+        cpu_t = thresholds.get("cpu", 80)
+        mem_t = thresholds.get("memory", 85)
+        disk_t = thresholds.get("disk", 85)
+        escal_t = thresholds.get("escalation_minutes", 5)
+        blocks.append(textwrap.dedent(f"""\
+            module "cms_alarm" {{
+              source = "./modules/addon-cms-alarm"
+
+              providers = {{
+                alicloud = alicloud
+              }}
+
+              environment          = "{plan.cms_alarm_environment}"
+              contact_groups      = ["ops-team"]
+              cpu_threshold       = {cpu_t}
+              memory_threshold    = {mem_t}
+              disk_threshold      = {disk_t}
+              escalation_minutes = {escal_t}
+              project_name        = var.project_name != "" ? var.project_name : var.environment
+            }}
         """))
 
     if not blocks:
