@@ -360,3 +360,33 @@ See [docs/harness-integration-guide.md](docs/harness-integration-guide.md) for e
 - [x] **D3.1** CRITICAL 发现 + pass-rate 异常 → 自动生成工单 JSON
 - [x] **D3.2** 工单 schema：{severity, skill, finding, suggested_action, timestamp, git_commit}
 - [x] **D3.3** `references/ticket-integration.md` — Jira 集成示例文档
+
+---
+
+## Level 4 P0 — 固化工作流引擎 + 预授权白名单（Active）
+
+> **关联文档**: [`docs/architecture/ADR-002-fixed-workflow-engine.md`](docs/architecture/ADR-002-fixed-workflow-engine.md) · [`docs/specs/level4-p0-fixed-workflow-engine.md`](docs/specs/level4-p0-fixed-workflow-engine.md) · [`docs/plans/level4-p0-fixed-workflow-engine-plan.md`](docs/plans/level4-p0-fixed-workflow-engine-plan.md)
+> **目标**: 从「建议+确认」升级为「白名单内自动执行」，完成 Level 4 主动自治 P0 基础
+
+### P0-1 — 固化工作流引擎组件
+
+- [ ] **P0-1.1** `runbook-dispatcher.py` — DAG 编译 + 缓存（SPEC T1）
+- [ ] **P0-1.2** `workflow-runner.py` — 固化执行 + 白名单校验（SPEC T2）
+- [ ] **P0-1.3** `agent-fallback.py` — 异常 LLM 兜底（SPEC T3）
+- [ ] **P0-1.4** `cruise-orchestrator.py` — 主调度 + Cron 触发（SPEC T4）
+- [ ] **P0-1.5** `references/cron-template.yaml` — Cron 配置模板（SPEC T5）
+- [ ] **P0-1.6** 白名单校验器集成（L0/L1 自动执行判定）（SPEC T6）
+
+### P0-2 — 预授权白名单深化
+
+- [ ] **P0-2.1** 白名单矩阵编码为可查询结构（dict 化）（SPEC T6.1）
+- [ ] **P0-2.2** `check(operation)` 接口：返回 (level, auto_exec, notify)（SPEC T6.2）
+- [ ] **P0-2.3** 审计日志 JSONL 写入 + git_commit 字段（SPEC T6.4）
+
+### P0-3 — 验证与文档
+
+- [ ] **P0-3.1** 集成测试 + E2E（cron→orchestrator→runner→W-02 自动清理）（SPEC T7）
+- [ ] **P0-3.2** 安全测试：L3 操作注入 → 全链路 ABORT（SPEC T7.2）
+- [ ] **P0-3.3** 并发测试：file lock 防重入（SPEC T7.3）
+- [ ] **P0-3.4** ARCHITECTURE.md 双引擎章节同步引用 ADR-002（SPEC T8.3）
+- [ ] **P0-3.5** Post-Update Self-Review R1 + R2（SPEC T8.4）

@@ -24,6 +24,16 @@
       "query": "Redis 备份恢复",
       "expected_skill": "alicloud-redis-ops",
       "priority": "P1"
+    },
+    {
+      "query": "分析 Redis 大 Key",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P1"
+    },
+    {
+      "query": "查看 Redis 热 Key",
+      "expected_skill": "alicloud-redis-ops",
+      "priority": "P1"
     }
   ]
 }

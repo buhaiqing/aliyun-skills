@@ -19,8 +19,8 @@ compatibility: >-
   endpoints.
 metadata:
   author: alicloud
-  version: "1.2.4"
-  last_updated: "2026-06-16"
+  version: "1.3.0"
+  last_updated: "2026-11-25"
   runtime: Harness AI Agent, Claude Code, Cursor, or compatible Agent runtimes
   go_version_minimum: "1.21"
   go_version_jit: "1.24+"
@@ -88,6 +88,8 @@ validation, and failure recovery.
 | Modify Parameter | Modify instance parameter | Medium | Medium |
 | Describe Slow Logs | Query slow query logs | Low | None |
 | Describe History Monitor Values | Query monitor metrics | Low | None |
+| Analyze Big Keys | Locate memory-heavy keys (DAS API, offline job, or redis-cli) | Medium | None |
+| Analyze Hot Keys | Locate high-QPS keys (DAS API or redis-cli) | Medium | None |
 | Modify Instance Maintain Time | Update maintenance window | Low | Low |
 | Modify Instance SSL | Enable/disable SSL | Medium | Medium |
 | Modify Intranet Bandwidth | Adjust instance bandwidth | Medium | Medium |
@@ -138,6 +140,7 @@ validation, and failure recovery.
 | 能力 | 委托目标 | 说明 |
 |------|----------|------|
 | GCL 质量门禁 | `alicloud-gcl-runner-ops` | 对写操作执行前，委托 GCL 循环进行对抗性评审 |
+| 大 Key / 热 Key 分析（DAS CLI） | `alicloud-das-ops` | 复用其 `scripts/das-harness-wrapper.sh`（DAS 地域固定 `cn-shanghai`）；本 skill 负责判定规则与治理建议 |
 
 ## Variable Convention (Agent-Readable)
 
@@ -995,6 +998,100 @@ Poll until `InstanceStatus` returns to `Normal`:
 
 ---
 
+### Operation: Analyze Big Keys
+
+定位实例中内存占用/元素数量最高的 Key。**首选 DAS API**（只读，不改实例配置）；
+完整字段、阈值、输出 schema 与恢复策略见 [bigkey-hotkey-analysis.md](references/bigkey-hotkey-analysis.md)。
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance | `./scripts/redis-harness-wrapper.sh describe-instances --InstanceId {{user.instance_id}}` | Redis/Tair，`InstanceStatus==Normal` | HALT |
+| CLI & wrapper | `aliyun version`；`test -x ../alicloud-das-ops/scripts/das-harness-wrapper.sh` | CLI ≥3.x；wrapper 可执行 | 否则退回原生 `aliyun das` |
+| DAS registration | `../alicloud-das-ops/scripts/das-harness-wrapper.sh GetInstanceInspections --InstanceId {{user.instance_id}}` | 已注册（不报 `NotFound`） | 先 `AddHDMInstance`（告知轻微开销） |
+| Minor version | `DescribeEngineVersion` / `DescribeInstanceAttribute` | 最新小版本（Top 接口硬性要求） | 建议 `UpgradeMinorVersion`，需用户确认 |
+| RAM | `hdm:DescribeHotBigKeys` / `hdm:DescribeTopBigKeys` / `hdm:CreateCacheAnalysisJob` / `hdm:DescribeCacheAnalysisJob` | 已授权 | Delegate to `alicloud-ram-ops` |
+| Time window (历史查询) | 用户提供 | 近 4 天内，单次 ≤ 3h | 分片查询后按 `Key`+`NodeId`+`Db` 合并 |
+
+#### Execution
+
+所有 DAS 调用走 `../alicloud-das-ops/scripts/das-harness-wrapper.sh <API> --RegionId cn-shanghai --endpoint das.cn-shanghai.aliyuncs.com ...`
+（CamelCase API 名；kebab-case 需 `aliyun-cli-das` 插件）：
+
+1. **实时**：`DescribeHotBigKeys --InstanceId {{user.instance_id}}`，读取
+   `$.Data.BigKeys.BigKey[]`；`Size` 为元素数，不是字节。
+2. **历史 Top**：`DescribeTopBigKeys --InstanceId ... --StartTime <毫秒> --EndTime <毫秒>`，读取 `$.Data.BigKey[]`。
+3. **字节维度 / 全量**：`CreateCacheAnalysisJob`（取 `$.Data.JobId`），再按 10s 间隔轮询
+   `DescribeCacheAnalysisJob --JobId {{output.job_id}}`（最多 600s）至
+   `TaskState=FINISHED`/`FAILED`，读取 `BigKeys.KeyInfo[]`（`Bytes`、`Count`、
+   `ExpirationTimeMillis`）与 `KeyPrefixes.Prefix[]`。
+4. **一键脚本**：`./scripts/analyze-bigkeys-hotkeys.sh {{user.instance_id}} [realtime|top|offline]`，
+   自动完成 CLI 调用、轮询和归一化输出（见[参考文档](references/bigkey-hotkey-analysis.md)）。
+5. **兜底**：通过云助手执行 `redis-cli --bigkeys -i 0.1`（集群加 `-c`），复用
+   [redis-cli-execution.md](references/redis-cli-execution.md) 的合并脚本，禁止 `KEYS *`。
+
+#### Post-execution Validation
+
+- DAS 响应必须 `$.Code==200` 且 `$.Success==true`；`*Msg` 非空表示该维度不可用，标注「不支持」而非 0。
+- 云助手路径校验 `ExitCode=0` 并解析 `[SUMMARY]` 输出；超 600s 未完成的离线任务报告 JobId，不得伪造结果。
+- 按统一 schema 输出 `big_keys[]`、`dimensions`、`recommendations`，参考
+  [bigkey-hotkey-analysis.md §5](references/bigkey-hotkey-analysis.md)。
+
+#### Failure Recovery
+
+| Error | Action |
+|---|---|
+| `NoPermission` / `InvalidParams` | 检查 DAS RAM 授权 / 时间窗口与时间戳单位 |
+| `current version doesn't support` | 升级小版本（需确认）或改用离线分析 / redis-cli |
+| 离线任务 `FAILED` | 读取 `Data.Message`，确认备份后重试 |
+| 云助手 exit 20/21/22/30/40 | 按 [redis-cli-execution.md](references/redis-cli-execution.md) 退出码全表处理 |
+
+---
+
+### Operation: Analyze Hot Keys
+
+定位访问频次最高的 Key。DAS 的官方判定规则为 **QPS > 3000** 记为热 Key；
+完整契约见 [bigkey-hotkey-analysis.md](references/bigkey-hotkey-analysis.md)。
+
+#### Pre-flight Checks
+
+| Check | Method | Expected | On Failure |
+|-------|--------|----------|------------|
+| Instance & DAS registration | 同上 | `Normal` 且已接入 DAS | HALT / `AddHDMInstance` |
+| Minor version | Top 接口要求最新小版本 | 满足 | 建议升级，需用户确认 |
+| RAM | `hdm:DescribeHotBigKeys` / `hdm:DescribeTopHotKeys` / `hdm:DescribeHotKeys` | 已授权 | Delegate to `alicloud-ram-ops` |
+| 时间窗口 | 用户提供 | 近 4 天内，单次 ≤ 3h | 分片查询后合并 |
+| redis-cli 兜底前置 | `CONFIG GET maxmemory-policy` | `allkeys-lfu` / `volatile-lfu` | **停止**并提示；禁止静默 `CONFIG SET` |
+
+#### Execution
+
+1. **实时**：`../alicloud-das-ops/scripts/das-harness-wrapper.sh DescribeHotBigKeys --RegionId cn-shanghai --endpoint das.cn-shanghai.aliyuncs.com --InstanceId {{user.instance_id}}`，
+   读取 `$.Data.HotKeys.HotKey[]`（`Key`、`Hot`、`Lfu`、`Category`、`NodeId`）；
+   `HighTrafficKeys` 单独按流量维度解读，`*Msg` 非空标注不可用。
+2. **历史 Top**：`DescribeTopHotKeys --InstanceId ... --StartTime <毫秒> --EndTime <毫秒>`
+   （窗口 ≤ 3h），读取 `$.Data.HotKey[]`，按 `Category` 区分 `qps` / `traffic`，
+   流量类使用 `InBytes` / `OutBytes`。
+3. **一键脚本**：`./scripts/analyze-bigkeys-hotkeys.sh {{user.instance_id}} [realtime|top]`。
+4. **兜底**：通过云助手执行 `redis-cli --hotkeys`（仅 LFU 策略有效）；需要精确频次时用
+   `OBJECT FREQ <key>`（同为只读）。前者在 GCL 中分类为 `READ-ONLY`。
+
+#### Post-execution Validation
+
+- `$.Code==200` 且 `$.Success==true`；无数据时返回空列表而非报错。
+- 按 `Key`+`Db`+`NodeId` 去重合并多个时间窗口；QPS 区间（`Hot` 字段）原样展示，不要臆造单值。
+- 输出 `hot_keys[]`、`dimensions`、`recommendations`；建议仅给出本地缓存、读写分离、
+  Key 打散、扩容等治理方向，**不自动执行**任何删除/配置变更。
+
+#### Failure Recovery
+
+| Error | Action |
+|---|---|
+| `--hotkeys` 无输出 | 检查 maxmemory-policy；如需修改为 LFU，走 `ModifyParameter` 并取得显式确认 |
+| `current version doesn't support` | 升级小版本或改用 DAS 历史 Top 查询 |
+| 时间窗口越界 | 拆成多个 ≤3h 的窗口 |
+| 其他 | 与大 Key 分析相同（见上表） |
+
 ---
 
 ### Operation: Intelligent Inspection（智能巡检）
@@ -1028,6 +1125,9 @@ Poll until `InstanceStatus` returns to `Normal`:
 ### DAS 联动引用
 
 See: [DAS Cache Analysis Integration](../alicloud-das-ops/references/integration.md)
+
+大 Key / 热 Key 分析见 [references/bigkey-hotkey-analysis.md](references/bigkey-hotkey-analysis.md)
+（阿里云 CLI 调用 DAS 实时/Top/离线三种 API + redis-cli 兜底）。
 
 ### 批量操作引用
 
@@ -1289,6 +1389,8 @@ fi
 - [API & SDK Usage](references/api-sdk-usage.md) — Complete API operation mapping with request/response fields and Go SDK patterns
 - [CLI Usage](references/cli-usage.md) — `aliyun r-kvstore` command reference, output formatting, and `--waiter` usage
 - [Polling Patterns](references/polling-patterns.md) — Generic polling template and per-operation polling parameters
+- [Big Key / Hot Key Analysis](references/bigkey-hotkey-analysis.md) — 大 Key/热 Key 判定规则、阿里云 CLI 调用 DAS 实时/Top/离线 API、redis-cli 兜底、统一输出 schema 与治理建议
+- [Big/Hot Key Analysis Script](scripts/analyze-bigkeys-hotkeys.sh) — 一键 CLI 分析脚本（实时/历史/离线 + 归一化 JSON 输出）
 - [Redis CLI Execution via Cloud Assistant](references/redis-cli-execution.md) — 数据面命令执行的端到端编排（合并脚本、退出码、Failure Recovery）
 - [redis-cli Install — Design Spec + User Guide](references/redis-cli-install.md) — 设计规范、OS 支持矩阵、用户配置指南（决策树、镜像加速、离线模式、FAQ）
 - [`scripts/redis-cli-install.sh`](scripts/redis-cli-install.sh) — **可执行权威实现**（344 行 bash）：`bash redis-cli-install.sh` 直接跑，或 `source` 后调用 `ensure_redis_cli`，或在云助手脚本里 `cat` 拼装
@@ -1333,7 +1435,7 @@ in a GCL loop before the result is returned to the user.
 |---|---|
 | Required? | **Yes** (Phase 1 rollout, second skill) |
 | Default `max_iter` | **2** (inherited from `AGENTS.md` §12.8) |
-| Operations covered | ALL operations in this SKILL.md (CRUD + lifecycle + accounts + backups + whitelists + parameters + Cloud Assistant data-plane) |
+| Operations covered | ALL operations in this SKILL.md (CRUD + lifecycle + accounts + backups + whitelists + parameters + big/hot key analysis + Cloud Assistant data-plane) |
 | Operations most scrutinized | `DeleteInstance`, `FlushInstance`, `RestoreInstance`, `DeleteAccount`, `ResetAccountPassword`, `ModifySecurityIps` (especially `0.0.0.0/0`), `ModifyParameter` (high-risk params), `Execute Redis Command via Cloud Assistant` (data-plane classification) |
 
 ### Per-Op Safety Sub-Rules (Quick Reference)
@@ -1351,7 +1453,7 @@ Highlights:
 | `CreateAccount` | `AccountName` is not `root` / `admin` / `redis`; password delivered via env var, not as a CLI flag |
 | `ModifySecurityIps` | **No `0.0.0.0/0` entry** in `{{user.security_ips}}` unless user explicitly justified (Redis whitelists are network-level ACLs — more dangerous than SG rules) |
 | `ModifyParameter` | Parameter is not in the high-risk list (`maxmemory-policy`, `appendonly`, `save`, `protected-mode`, `bind`, `requirepass`) unless user explicitly justified |
-| `Execute Redis Command via Cloud Assistant` | See `rubric.md` §1.2.1 — 5 risk classes (READ-ONLY / WRITE-KEY / DESTRUCTIVE-MASS / CONFIG-MUTATION / FATAL); 8 regex hot-spots (FLUSHALL, FLUSHDB, SHUTDOWN, DEBUG, CONFIG SET, `DEL cache:*`, `KEYS *`, `EVAL ... DEL ... KEYS ...`) |
+| `Execute Redis Command via Cloud Assistant` | See `rubric.md` §1.2.1 — 5 risk classes (READ-ONLY / WRITE-KEY / DESTRUCTIVE-MASS / CONFIG-MUTATION / FATAL); 8 regex hot-spots (FLUSHALL, FLUSHDB, SHUTDOWN, DEBUG, CONFIG SET, `DEL cache:*`, `KEYS *`, `EVAL ... DEL ... KEYS ...`). Analysis commands `--bigkeys` / `--hotkeys` / `MEMORY USAGE` / `OBJECT FREQ` are `READ-ONLY`; enabling LFU via `CONFIG SET maxmemory-policy` is `CONFIG-MUTATION` and requires explicit confirmation (prefer DAS CLI path instead) |
 
 ### Redis-Specific Additions (beyond the 5 core dimensions)
 
@@ -1419,6 +1521,7 @@ This skill is subject to cross-cutting rules defined by the
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.3.0 | 2026-11-25 | 新增大 Key / 热 Key 分析：**阿里云 CLI** 调用 DAS 实时（DescribeHotBigKeys）、历史 Top（DescribeTopHotKeys/DescribeTopBigKeys）、离线全量（CreateCacheAnalysisJob/DescribeCacheAnalysisJob）三条路径 + 云助手 redis-cli `--bigkeys`/`--hotkeys` 兜底；新增 `scripts/analyze-bigkeys-hotkeys.sh` 一键脚本、`references/bigkey-hotkey-analysis.md`、主文档两个操作章节、GCL 风险分类与统一输出 schema |
 | 1.2.4 | 2026-06-16 | Added Microsoft SkillOpt integration for self-repair and dynamic configuration optimization capabilities for Redis/Tair operations |
 | 1.2.3 | 2026-06-12 | **复盘后 P0/P1 bug 修复**：(1) `use_aliyun_yum_mirror` sed 分隔符冲突修复（实测验证）；(2) 移除 `.sh` 末尾不可靠守卫，改 `REDIS_CLI_INSTALL_AUTORUN=1` 显式开关；(3) `execution.md` Step 2 残留过时文档清理；(4) 合并脚本改用 `printf %q` + `<<'BIZ'` 杜绝 shell 注入；(5) 锚点修复（章节标题去括号化）。所有改动通过 syntax check + functional sed test + source/autorun/silent 三模式验证。 |
 | 1.2.2 | 2026-06-12 | **安装脚本抽取为独立可执行文件 `scripts/redis-cli-install.sh`**（344 行 bash，通过 `bash -n` 语法检查；可被 `cat`/`source`/`bash` 三种方式调用）。`redis-cli-execution.md` 合并脚本改为 `cat scripts/redis-cli-install.sh` 即时拼装，**用户无需手动复制粘贴函数**。`redis-cli-install.md` 删除原 311 行内嵌脚本，保留为「设计规范 + 用户配置指南」（净减 264 行）。 |
